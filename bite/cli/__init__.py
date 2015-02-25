@@ -3,6 +3,7 @@ import getpass
 from io import StringIO
 import locale
 import os
+from shutil import get_terminal_size
 import stat
 import subprocess
 import sys
@@ -17,7 +18,7 @@ from urllib.parse import urlparse
 
 from bite.exceptions import RequestError, AuthError, CliError
 from bite.objects import TarAttachment
-from bite.utils import confirm, terminal_width, get_input
+from bite.utils import confirm, get_input
 
 def loginretry(func):
     """ Forces authentication on second request if the initial request was unauthenticated and failed due to insufficient permissions. """
@@ -49,7 +50,7 @@ class Cli(object):
         self.connection = connection
         self.quiet = quiet
         self.passwordcmd = passwordcmd
-        self.columns = columns or terminal_width()
+        self.columns = columns or get_terminal_size()
         self.wrapper = textwrap.TextWrapper(width = self.columns)
 
         if encoding:

@@ -29,26 +29,6 @@ def raw_input_block():
         except EOFError:
             return target
 
-def terminal_width():
-    """Return estimated terminal width."""
-    if sys.platform == 'win32':
-        return win32utils.get_console_size()[0]
-    width = 0
-    try:
-        width = int(os.environ['COLUMNS'])
-    except KeyError:
-        try:
-            import struct, fcntl, termios
-            s = struct.pack(str('HHHH'), 0, 0, 0, 0)
-            x = fcntl.ioctl(1, termios.TIOCGWINSZ, s)
-            width = struct.unpack(str('HHHH'), x)[1]
-        except IOError:
-            pass
-    if width <= 0:
-        width = 80
-
-    return width
-
 def launch_editor(initial_text, comment_from='', comment_prefix='BITE:'):
     """Launch an editor with some default text.
 
