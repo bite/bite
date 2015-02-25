@@ -17,7 +17,7 @@ def parsetime(time):
     if not isinstance(time, datetime.datetime):
         return dateparse(time)
     else:
-        return time.replace(tzinfo=utc)
+        return time.replace(tzinfo=utc.utc)
 
 class SearchRequest(Request):
     def __init__(self, service, *args, **kw):
@@ -828,4 +828,4 @@ class BugzillaAttachment(Attachment):
 
     @decompress
     def read(self):
-        return base64.b64decode(self.data)
+        return base64.b64decode(self.data).decode()

@@ -1,5 +1,5 @@
 from urllib.parse import urlparse, urlunparse
-from xmlrpclib import ProtocolError, ServerProxy, Transport, Fault, GzipDecodedResponse
+from xmlrpc.client import ProtocolError, ServerProxy, Transport, Fault, GzipDecodedResponse
 #from xml.sax.xmlreader import IncrementalParser
 
 import requests
@@ -24,7 +24,7 @@ class BugzillaXmlrpc(Bugzilla):
         return (getattr(self.xmlrpc, method), params)
 
     @staticmethod
-    def _request(request):
+    def send(request):
         """Send request object and perform checks on the response."""
         cmd, params = request
         try:
@@ -94,4 +94,4 @@ class IterContent(object):
 class BugzillaAttachmentXml(BugzillaAttachment):
     @decompress
     def read(self):
-        return self.data.data
+        return self.data.data.decode()

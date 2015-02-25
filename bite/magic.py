@@ -90,7 +90,7 @@ class Magic:
         """
         self._thread_check()
         try:
-            return magic_buffer(self.cookie, buf)
+            return magic_buffer(self.cookie, buf).decode()
         except MagicException as e:
             return self._handle509Bug(e)
 
@@ -224,11 +224,7 @@ def coerce_filename(filename):
     # .encode('ascii').  If you use the filesystem encoding 
     # then you'll get inconsistent behavior (crashes) depending on the user's
     # LANG environment variable
-    is_unicode = (sys.version_info[0] <= 2 and
-                  isinstance(filename, unicode)) or \
-                  (sys.version_info[0] >= 3 and
-                   isinstance(filename, str))
-    if is_unicode:
+    if isinstance(filename, str):
         return filename.encode('utf-8')
     else:
         return filename

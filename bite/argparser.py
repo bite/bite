@@ -113,7 +113,7 @@ class ParseArgs(ArgumentParser):
     def _check_value(self, action, value):
         # converted value must be one of the choices (if specified)
         if action.choices is not None and value not in action.choices:
-            tup = value, ', '.join(map(unicode, action.choices))
+            tup = value, ', '.join(map(str, action.choices))
             msg = ('invalid choice: {} (choose from {})').format(*tup)
             raise ArgumentError(action, msg)
 

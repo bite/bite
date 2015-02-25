@@ -78,10 +78,10 @@ def get_input(prompt=''):
         sys.stdin = open('/dev/tty')
 
     if sys.stdout.isatty():
-        return raw_input(prompt).decode(encoding)
+        return input(prompt).decode(encoding)
     else:
         print(prompt, end='', file=sys.stderr)
-        return raw_input().decode(encoding)
+        return input().decode(encoding)
 
 def confirm(prompt=None, default=False):
     """
