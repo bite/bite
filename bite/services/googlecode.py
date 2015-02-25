@@ -271,28 +271,28 @@ class Googlecode(Service):
             return None
 
 class GooglecodeIssue(Item):
-        attributes = {
-            #'cc': 'CC',
-            #'label': 'Labels',
-            #'summary': 'Summary',
-            #'updates': 'Updates',
+    attributes = {
+        #'cc': 'CC',
+        #'label': 'Labels',
+        #'summary': 'Summary',
+        #'updates': 'Updates',
 
-            # available via search
-            'id': 'ID',
-            'title': 'Title',
-            'url': 'URL',
-            'reporter': 'Reporter',
-            'opened': 'Opened',
-            'modified': 'Updated',
-            'owner': 'Owner',
-            'status': 'Status',
-            'state': 'State',
-            'stars': 'Stars',
-        }
+        # available via search
+        'id': 'ID',
+        'title': 'Title',
+        'url': 'URL',
+        'reporter': 'Reporter',
+        'opened': 'Opened',
+        'modified': 'Updated',
+        'owner': 'Owner',
+        'status': 'Status',
+        'state': 'State',
+        'stars': 'Stars',
+    }
 
-        attribute_aliases = {
-            'created': 'opened',
-        }
+    attribute_aliases = {
+        'created': 'opened',
+    }
 
     def __init__(self, labels=None, stars=0, state=None, **kw):
         self.labels = labels
