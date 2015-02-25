@@ -7,7 +7,7 @@ import sys
 import tarfile
 import zlib
 
-from magic import Magic
+from bite import magic
 
 
 def decompress(fcn):
@@ -18,7 +18,7 @@ def decompress(fcn):
             # return raw data without decompressing
             return data
 
-        mime_type, mime_subtype = Magic.buffer(data, mime=True).split('/')
+        mime_type, mime_subtype = magic.from_buffer(data, mime=True).split('/')
         while mime_subtype in ('x-bzip2', 'x-bzip', 'bzip', 'x-gzip', 'gzip', 'x-xz'):
             if mime_subtype in ('x-bzip2', 'x-bzip', 'bzip'):
                 data = bz2.decompress(data)
@@ -26,7 +26,7 @@ def decompress(fcn):
                 data = zlib.decompress(data, 16+zlib.MAX_WBITS)
             elif mime_subtype in ('x-xz'):
                 data = lzma.decompress(data)
-            mime_type, mime_subtype = Magic.buffer(data, mime=True).split('/')
+            mime_type, mime_subtype = magic.from_buffer(data, mime=True).split('/')
         return data
     return wrapper
 
@@ -104,7 +104,7 @@ class Attachment(PrintableObject):
 
         # don't trust the content type -- users often set the wrong mimetypes
         if self.data is not None:
-            mimetype = Magic.buffer(self.read(), mime=True)
+            mimetype = magic.from_buffer(self.read(), mime=True)
             if mimetype == 'application/octet-stream':
                 # assume these are plaintext
                 self.mimetype = 'text/plain'
@@ -132,7 +132,7 @@ class TarAttachment(object):
 
     def data(self):
         data = self.read()
-        mime = Magic.buffer(data, mime=True)
+        mime = magic.from_buffer(data, mime=True)
         if mime.startswith('text'):
             return data.decode('utf-8')
         else:

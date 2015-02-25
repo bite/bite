@@ -8,9 +8,8 @@ import string
 import sys
 
 from dateutil.parser import parse as dateparse
-from magic import Magic
 
-from bite import utc
+from bite import magic, utc
 from bite.objects import Item, Change, Comment, Attachment, decompress
 from bite.services import Service, Request, NullRequest
 
@@ -359,9 +358,9 @@ class Bugzilla(Service):
 
         if mimetype is None and not is_patch:
             if data is not None:
-                mimetype = Magic.buffer(data, mime=True)
+                mimetype = magic.from_buffer(data, mime=True)
             else:
-                mimetype = Magic.file(filepath, mime=True)
+                mimetype = magic.from_file(filepath, mime=True)
 
         if summary is None:
             if filepath is not None:
