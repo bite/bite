@@ -9,7 +9,6 @@ import zlib
 
 from magic import Magic
 
-__version__ = '0.0.1'
 
 def decompress(fcn):
     def wrapper(cls, raw=False, *args, **kw):
