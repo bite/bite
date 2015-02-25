@@ -13,7 +13,7 @@ setup(
     platforms=['any'],
     packages=find_packages(),
     scripts=['bin/bite'],
-    install_requires=['python-dateutil>=2.1'],
+    install_requires=['requests>=2', 'python-dateutil>=2.1'],
     classifiers=[
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
