@@ -60,6 +60,9 @@ class BugzillaJsonrpc(Bugzilla):
         if data['error'] is None:
             return data['result']
         else:
+            if data['error']['code'] == 32000 and self.base.startswith('http:'):
+                # Bugzilla strangely returns an error under http but works fine under https
+                raise RequestError('Received error reply, try using an https:// url instead')
             raise RequestError(msg=data['error']['message'],
                                code=data['error']['code'])
 
