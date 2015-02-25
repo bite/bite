@@ -1,6 +1,6 @@
 from bite import __version__
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name='bite',
@@ -11,7 +11,7 @@ setup(
     url='https://github.com/radhermit/bite/',
     license='BSD',
     platforms=['any'],
-    packages=['bite'],
+    packages=find_packages(),
     scripts=['bin/bite'],
     install_requires=['python-dateutil>=2.1'],
     classifiers=[
