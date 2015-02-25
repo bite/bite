@@ -50,7 +50,7 @@ class Cli(object):
         self.connection = connection
         self.quiet = quiet
         self.passwordcmd = passwordcmd
-        self.columns = columns or get_terminal_size()
+        self.columns = columns or get_terminal_size()[0]
         self.wrapper = textwrap.TextWrapper(width = self.columns)
 
         if encoding:
