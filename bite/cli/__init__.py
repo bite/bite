@@ -288,7 +288,7 @@ class Cli(object):
                 data = fcn(data)
         count = self.print_search(data, **kw)
         if sys.stdout.isatty():
-            self.log('{} {}(s) found.'.format(count, self.service.item))
+            self.log('{} {}{} found.'.format(count, self.service.item, 's'[count == 1:]))
 
     def _header(self, char, msg):
         return '{} {} {}'.format(char * 3, msg, char * (self.columns - len(msg) - 5))

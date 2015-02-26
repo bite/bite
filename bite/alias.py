@@ -104,4 +104,3 @@ def run_shell_cmd(cmd):
     p = subprocess.Popen(cmd, shell=True)
     p.communicate()
     sys.exit(p.returncode)
-

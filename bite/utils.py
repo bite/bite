@@ -72,16 +72,11 @@ def block_edit(comment, comment_from=''):
         return ''
 
 def get_input(prompt=''):
-    encoding = sys.stdin.encoding
-    if encoding is None:
-        encoding = 'utf-8'
-        sys.stdin = open('/dev/tty')
-
     if sys.stdout.isatty():
-        return input(prompt).decode(encoding)
+        return input(prompt)
     else:
         print(prompt, end='', file=sys.stderr)
-        return input().decode(encoding)
+        return input()
 
 def confirm(prompt=None, default=False):
     """

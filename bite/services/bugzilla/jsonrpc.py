@@ -36,7 +36,7 @@ class BugzillaJsonrpc(Bugzilla):
         cookies = []
 
         if method in ('Bug.update', 'Bug.create'):
-            if isinstance(self.auth_token, basestring):
+            if isinstance(self.auth_token, str):
                 params['token'] = self.auth_token
             else:
                 cookies = self.auth_token

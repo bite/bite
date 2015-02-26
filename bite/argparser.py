@@ -16,7 +16,10 @@ def string_list(s):
 def id_list(s):
     if sys.stdin.isatty() or s != '-':
         try:
-            return [int(item) for item in s.split(',')]
+            l = []
+            for item in s.split(','):
+                l.append(int(item))
+            return l
         except:
             if item == '-':
                 raise ArgumentTypeError("'-' is only valid when piping data in")

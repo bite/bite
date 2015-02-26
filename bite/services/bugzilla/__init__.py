@@ -1,4 +1,5 @@
 import base64
+import codecs
 import datetime
 from functools import partial
 from itertools import groupby
@@ -156,7 +157,7 @@ class ModifyRequest(Request):
                     if keys[0] == 'cc':
                         v = list(map(self.service._resuffix, v))
                     if k == 'comment-body':
-                        v = v.decode('string_escape')
+                        v = codecs.getdecoder('unicode_escape')(v)[0]
 
                     if keys[0] not in kw:
                         params[keys[0]] = {}
