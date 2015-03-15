@@ -6,7 +6,7 @@ from urllib.parse import urlparse
 
 import concurrent.futures
 import requests
-from requests.exceptions import SSLError
+from requests.exceptions import ConnectionError, SSLError
 
 from bite import __version__
 from bite.exceptions import RequestError, AuthError, NotFound
@@ -98,6 +98,8 @@ class Service(object):
             response = self.session.send(req, stream=True, timeout=self.timeout, verify=self.verify)
         except SSLError as e:
             raise RequestError('SSL certificate verification failed')
+        except ConnectionError as e:
+            raise RequestError(str(e))
         except Exception as e:
             raise
 
