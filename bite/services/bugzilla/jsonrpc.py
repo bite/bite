@@ -57,14 +57,19 @@ class BugzillaJsonrpc(Bugzilla):
 
     def send(self, req):
         data = super(BugzillaJsonrpc, self).send(req).json()
-        if data['error'] is None:
+        if data.get('error') is None:
             return data['result']
         else:
-            if data['error']['code'] == 32000 and self.base.startswith('http:'):
-                # Bugzilla strangely returns an error under http but works fine under https
-                raise RequestError('Received error reply, try using an https:// url instead')
-            raise RequestError(msg=data['error']['message'],
-                               code=data['error']['code'])
+            error = data.get('error')
+            if error.get('code') == 32000:
+                if self.base.startswith('http:'):
+                    # bugzilla strangely returns an error under http but works fine under https
+                    raise RequestError('Received error reply, try using an https:// url instead')
+                elif 'expired' in error.get('message'):
+                    # assume the auth token has expired
+                    raise AuthError('auth token expired')
+            raise RequestError(msg=error.get('message'),
+                               code=error.get('code'))
 
 class IterContent(object):
     def __init__(self, file, size=64*1024):
