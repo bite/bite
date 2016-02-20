@@ -27,9 +27,9 @@ def loginretry(func):
             return func(self, *args, **kw)
         except AuthError as e:
             if self.service.auth_token is not None:
-                self.log('Warning: Your authentication token is deprecated.', prefix=' ! ')
+                self.log('Warning: your auth token has expired', prefix=' ! ')
                 self.remove_auth_token()
-            self.log('Generating new authentication token')
+            self.log('Generating new auth token')
             self.quiet = True
             self.login()
             return func(self, *args, **kw)
