@@ -143,6 +143,7 @@ class Cli(object):
                 data = fcn(data)
         self._print_item(data, **kw)
 
+    @loginretry
     @loginrequired
     def attach(self, dry_run, ids, **kw):
         """ Attach a file to a specified item given a filename. """
@@ -214,6 +215,7 @@ class Cli(object):
         except IOError as e:
             raise RuntimeError('Cannot create file "{}": {}'.format(f.filename, e.strerror))
 
+    @loginretry
     @loginrequired
     def modify(self, ask, dry_run, ids, **kw):
         kw = self._modify_params(**kw)
@@ -232,6 +234,7 @@ class Cli(object):
         data = request.send()
         self.print_changes(data, params=kw)
 
+    @loginretry
     @loginrequired
     def create(self, ask, batch, dry_run, **kw):
         options_log, params = self._create_params(batch, **kw)
