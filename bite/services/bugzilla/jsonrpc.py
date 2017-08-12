@@ -24,11 +24,14 @@ class BugzillaJsonrpc(Bugzilla):
     #    return IterSearchRequest(self, *args, **kw)
 
     def __init__(self, **kw):
+        # make sure to use the correct jsonrpc endpoint
         url = urlparse(kw['base'])
         path = url.path.rpartition('/')[0]
         url = (url.scheme, url.netloc, path + '/jsonrpc.cgi', None, None, None)
         kw['base'] = urlunparse(url)
+
         self.headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
+
         super(BugzillaJsonrpc, self).__init__(**kw)
 
     def create_request(self, method, params=None):
