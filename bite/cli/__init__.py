@@ -21,7 +21,7 @@ from bite.objects import TarAttachment
 from bite.utils import confirm, get_input
 
 def loginretry(func):
-    """ Forces authentication on second request if the initial request was unauthenticated and failed due to insufficient permissions. """
+    """Forces authentication on second request if the initial request was unauthenticated and failed due to insufficient permissions."""
     def wrapper(self, *args, **kw):
         try:
             return func(self, *args, **kw)
@@ -36,7 +36,7 @@ def loginretry(func):
     return wrapper
 
 def loginrequired(func):
-    """ Authentication is required to use this functionality. """
+    """Authentication is required to use this functionality."""
     def wrapper(self, *args, **kw):
         self.login()
         return func(self, *args, **kw)
@@ -44,6 +44,8 @@ def loginrequired(func):
 
 
 class Cli(object):
+    """Generic commandline interface for a service."""
+
     def __init__(self, service, config_dir, connection=None, quiet=False, columns=None,
                  encoding=None, passwordcmd=None, cookies=None, login=False, authfile=None, **kw):
         self.service = service
@@ -96,6 +98,7 @@ class Cli(object):
             self.log('Service: {}'.format(self.service))
 
     def login(self):
+        """Login to a service and try to cache the authentication token."""
         if os.path.exists(self.authfile):
             self.load_auth_token()
 
@@ -105,6 +108,7 @@ class Cli(object):
             self.cache_auth_token()
 
     def get_login_data(self):
+        """Request user and password info from the user."""
         # prompt for username if not supplied with it
         if not self.service.user:
             self.log('No username given.')
@@ -121,6 +125,7 @@ class Cli(object):
                 self.service.password, _ = process.communicate()
 
     def remove_auth_token(self):
+        """Remove an authentication token."""
         if confirm(prompt='Remove auth token?', default=True):
             os.remove(self.authfile)
         else:
@@ -146,7 +151,7 @@ class Cli(object):
     @loginretry
     @loginrequired
     def attach(self, dry_run, ids, **kw):
-        """ Attach a file to a specified item given a filename. """
+        """Attach a file to a specified item given a filename."""
         params = self._attach_params(**kw)
         if dry_run: return
         data = self.service.add_attachment(ids, **params)
