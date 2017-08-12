@@ -19,20 +19,6 @@ class Bugzilla(Cli):
     def __init__(self, **kw):
         super(Bugzilla, self).__init__(**kw)
 
-    # pre 4.4.3
-    #def cache_auth_token(self):
-    #    for cookie in iter(self.service.session.cookies):
-    #        self.service.auth_token.set_cookie(cookie)
-    #    self.service.auth_token.save(ignore_discard=True)
-    #    os.chmod(self.authfile, stat.S_IWRITE | stat.S_IREAD)
-
-    #def load_auth_token(self):
-    #    self.service.auth_token = LWPCookieJar(self.authfile)
-    #    try:
-    #        self.service.auth_token.load(ignore_discard=True)
-    #    except IOError:
-    #        pass
-
     def cache_auth_token(self):
         with open(self.authfile, 'w+') as f:
             os.chmod(self.authfile, stat.S_IREAD | stat.S_IWRITE)
