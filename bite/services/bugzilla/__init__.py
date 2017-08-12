@@ -288,12 +288,12 @@ class Bugzilla(Service):
         self.attributes = self.bug.attributes
         self.attribute_aliases = self.bug.attribute_aliases
 
-    def login(self):
-        if self.user is None or self.password is None:
-            raise ValueError('Both user and password parameters must be specified')
+    def login(self, user=None, password=None):
+        """Authenticate a session."""
+        super(Bugzilla, self).login(user, password)
 
         method = 'User.login'
-        params = {'login': self.user, 'password': self.password}
+        params = {'login': user, 'password': password}
         req = self.create_request(method, params)
 
         # pre 4.4.3

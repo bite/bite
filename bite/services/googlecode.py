@@ -27,8 +27,10 @@ class Googlecode(Service):
         self.issues_url = 'https://code.google.com/feeds/issues/p/{}/issues/full'.format(self.project_name)
         self.comments_url = 'https://code.google.com/feeds/issues/p/{}/issues/{{}}/comments/full'.format(self.project_name)
 
-    def login(self):
+    def login(self, user=None, password=None):
         """Authenticate a session."""
+        super(Googlecode, self).login(user, password)
+
         # https://developers.google.com/accounts/docs/AuthForInstalledApps#Request
         if self.auth_token is None:
             params = {}

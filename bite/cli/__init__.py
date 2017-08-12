@@ -103,26 +103,25 @@ class Cli(object):
             self.load_auth_token()
 
         if self.service.auth_token is None:
-            self.get_login_data()
-            self.service.login()
+            user, password = self.get_login_data(self.service.user, self.service.password)
+            self.service.login(user, password)
             self.cache_auth_token()
 
-    def get_login_data(self):
+    def get_login_data(self, user=None, password=None):
         """Request user and password info from the user."""
-        # prompt for username if not supplied with it
-        if not self.service.user:
+        if user is None:
             self.log('No username given.')
-            self.service.user = get_input('Username: ')
+            user = get_input('Username: ')
 
-        # prompt for password if not supplied with it
-        if not self.service.password:
+        if password is None:
             if not self.passwordcmd:
                 self.log('No password given.')
-                self.service.password = getpass.getpass()
+                password = getpass.getpass()
             else:
-                process = subprocess.Popen(self.passwordcmd.split(), shell=False,
-                        stdout=subprocess.PIPE)
-                self.service.password, _ = process.communicate()
+                process = subprocess.Popen(
+                    self.passwordcmd.split(), shell=False, stdout=subprocess.PIPE)
+                password, _ = process.communicate()
+        return user, password
 
     def remove_auth_token(self):
         """Remove an authentication token."""

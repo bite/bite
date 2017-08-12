@@ -85,6 +85,16 @@ class Service(object):
 
         self.session = requests.Session()
 
+    def login(self, user=None, password=None):
+        """Authenticate a session."""
+        if user is None:
+            user = self.user
+        if password is None:
+            password = self.password
+
+        if user is None or password is None:
+            raise ValueError('Both user and password parameters must be specified')
+
     def __str__(self):
         return str(self.base)
 
