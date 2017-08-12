@@ -296,9 +296,6 @@ class Bugzilla(Service):
         params = {'login': user, 'password': password}
         req = self.create_request(method, params)
 
-        # pre 4.4.3
-        #self.send(req)
-
         content = self.send(req)
         self.auth_token = content['token']
 
