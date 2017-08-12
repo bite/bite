@@ -93,7 +93,7 @@ class Cli(object):
             self.login()
 
         if sys.stdin.isatty():
-            self.log('Service: {}'.format(self.service.base))
+            self.log('Service: {}'.format(self.service))
 
     def login(self):
         if os.path.exists(self.authfile):

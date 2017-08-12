@@ -85,6 +85,9 @@ class Service(object):
 
         self.session = requests.Session()
 
+    def __str__(self):
+        return str(self.base)
+
     def create_request(self, *args, **kw):
         """Construct a request object."""
         raise NotImplementedError
