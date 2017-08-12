@@ -99,7 +99,7 @@ class Service(object):
         except SSLError as e:
             raise RequestError('SSL certificate verification failed')
         except ConnectionError as e:
-            raise RequestError(str(e))
+            raise RequestError('failed to establish connection')
         except Exception as e:
             raise
 
