@@ -20,18 +20,6 @@ class Googlecode(Cli):
     def __init__(self, **kw):
         super(Googlecode, self).__init__(authfile='googlecode', **kw)
 
-    def cache_auth_token(self):
-        with open(self.authfile, 'w+') as f:
-            os.chmod(self.authfile, stat.S_IREAD | stat.S_IWRITE)
-            f.write(self.service.auth_token)
-
-    def load_auth_token(self):
-        try:
-            with open(self.authfile, 'r') as f:
-                self.service.auth_token = f.read()
-        except IOError:
-            return None
-
     def _search_params(self, **kw):
         query = {}
         query_list = []

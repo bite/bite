@@ -19,18 +19,6 @@ class Bugzilla(Cli):
     def __init__(self, **kw):
         super(Bugzilla, self).__init__(**kw)
 
-    def cache_auth_token(self):
-        with open(self.authfile, 'w+') as f:
-            os.chmod(self.authfile, stat.S_IREAD | stat.S_IWRITE)
-            f.write(self.service.auth_token)
-
-    def load_auth_token(self):
-        try:
-            with open(self.authfile, 'r') as f:
-                self.service.auth_token = f.read()
-        except IOError:
-            return None
-
     def _attach_params(self, **kw):
         if kw['comment'] is None:
             kw['comment'] = block_edit('Enter optional long description of attachment')

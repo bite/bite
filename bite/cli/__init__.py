@@ -347,10 +347,16 @@ class Cli(object):
                 print(line[:self.columns])
 
     def cache_auth_token(self):
-        raise NotImplementedError
+        with open(self.authfile, 'w+') as f:
+            os.chmod(self.authfile, stat.S_IREAD | stat.S_IWRITE)
+            f.write(self.service.auth_token)
 
     def load_auth_token(self):
-        raise NotImplementedError
+        try:
+            with open(self.authfile, 'r') as f:
+                self.service.auth_token = f.read()
+        except IOError:
+            return None
 
     def _attach_params(self):
         raise NotImplementedError
