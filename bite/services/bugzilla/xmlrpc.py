@@ -2,8 +2,6 @@ from urllib.parse import urlparse, urlunparse
 from xmlrpc.client import ProtocolError, ServerProxy, Transport, Fault, GzipDecodedResponse
 #from xml.sax.xmlreader import IncrementalParser
 
-import requests
-
 from bite.objects import decompress
 from bite.exceptions import RequestError, AuthError
 from bite.services.bugzilla import Bugzilla, BugzillaAttachment
@@ -52,14 +50,11 @@ class RequestTransport(Transport):
         Transport.__init__(self, use_datetime=use_datetime)
 
     def request(self, host, handler, request_body, verbose=0):
-        try:
-            r = self.service.session.post(self.uri, data=request_body, cookies=self.service.auth_token,
-                                          headers=self.service.headers, verify=self.service.verify, stream=True,
-                                          timeout=self.service.timeout)
-        except:
-            raise
+        r = self.service.session.post(self.uri, data=request_body, cookies=self.service.auth_token,
+                                      headers=self.service.headers, verify=self.service.verify, stream=True,
+                                      timeout=self.service.timeout)
 
-        if r.status_code == requests.codes.ok:
+        if r.ok:
             return self.parse_response(IterContent(r))
         else:
             if r.status_code == 411 and self.uri.startswith('http:'):
