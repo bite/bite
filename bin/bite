@@ -23,7 +23,7 @@ if __name__ == '__main__':
         #client.run(args, **initial_args)
 
     except (CliError, CommandError, RequestError) as e:
-        print(' ! Error: {}'.format(e))
+        print('bite: error: {}'.format(e))
         sys.exit(1)
     except:
         raise
