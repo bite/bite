@@ -22,9 +22,10 @@ service: googlecode
 base: https://bugzilla.mozilla.org/
 service: bugzilla-jsonrpc
 
+# all RPC interfaces disabled on the server
 [openssh]
 base: https://bugzilla.mindrot.org/
-service: bugzilla-xmlrpc
+service: bugzilla-jsonrpc
 
 [freedesktop]
 base: https://bugs.freedesktop.org/
