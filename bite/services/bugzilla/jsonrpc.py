@@ -28,7 +28,7 @@ class BugzillaJsonrpc(Bugzilla):
         url = urlparse(kw['base'])
         path = url.path.rpartition('/')[0]
         url = (url.scheme, url.netloc, path + '/jsonrpc.cgi', None, None, None)
-        kw['base'] = urlunparse(url)
+        self._base = urlunparse(url)
 
         self.headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
 
@@ -49,7 +49,7 @@ class BugzillaJsonrpc(Bugzilla):
         args['params'] = [params]
         args['id'] = '0'
 
-        req = Request(method='POST', url=self.base, headers=self.headers,
+        req = Request(method='POST', url=self._base, headers=self.headers,
                       data=json.dumps(args), cookies=cookies)
         return req.prepare()
 
@@ -65,7 +65,7 @@ class BugzillaJsonrpc(Bugzilla):
         else:
             error = data.get('error')
             if error.get('code') == 32000:
-                if self.base.startswith('http:'):
+                if self._base.startswith('http:'):
                     # bugzilla strangely returns an error under http but works fine under https
                     raise RequestError('Received error reply, try using an https:// url instead')
                 elif 'expired' in error.get('message'):

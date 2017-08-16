@@ -13,15 +13,17 @@ class BugzillaXmlrpc(Bugzilla):
         url = urlparse(kw['base'])
         path = url.path.rpartition('/')[0]
         url = (url.scheme, url.netloc, path + '/xmlrpc.cgi', None, None, None)
-        kw['base'] = urlunparse(url)
+        self._base = urlunparse(url)
+
         self.headers = {'Content-Type': 'text/xml'}
+
         super(BugzillaXmlrpc, self).__init__(**kw)
-        self.xmlrpc = BugzillaProxy(service=self, uri=self.base)
+        self._xmlrpc = BugzillaProxy(service=self, uri=self._base)
         self.attachment = BugzillaAttachmentXml
 
     def create_request(self, method, params=None):
         """Construct and return a tuple containing the XMLRPC method and params to send."""
-        return (getattr(self.xmlrpc, method), params)
+        return (getattr(self._xmlrpc, method), params)
 
     @staticmethod
     def send(request):
