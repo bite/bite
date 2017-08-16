@@ -65,7 +65,7 @@ class RequestTransport(Transport):
             if r.status_code == 411 and self.uri.startswith('http:'):
                 # Bugzilla strangely returns an error under http but works fine under https
                 raise RequestError('Received error reply, try using an https:// url instead')
-            raise ProtocolError(self.uri, resp.status, resp.reason, resp.msg)
+            raise ProtocolError(self.uri, r.status_code, r.reason, r.text)
 
     def parse_response(self, response):
         # read response data from httpresponse, and parse it
