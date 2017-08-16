@@ -197,14 +197,15 @@ def fill_config(args, parser, section):
 def get_config(args, parser):
     args.config_dir = CONFIG_DIR
     if args.config_file is None:
-        args.config_file = os.path.join(CONFIG_DIR, 'bite.conf')
+        args.config_file = os.path.join(CONFIG_DIR, 'config')
 
     config = configparser.ConfigParser(interpolation=BiteInterpolation())
 
     try:
-        config.read(args.config_file)
-    except IOError:
-        raise CliError('config file "{}" does not exist'.format(args.config))
+        config.read_file(open(os.path.join(CONFIG_DIR, 'services')))
+        config.read_file(open(args.config_file))
+    except IOError as e:
+        raise CliError('cannot load config file "{}": {}'.format(e.filename, e.strerror))
     except Exception as e:
         raise
 
