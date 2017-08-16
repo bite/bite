@@ -1,0 +1,3 @@
+[gcc]
+base: https://gcc.gnu.org/bugzilla/
+service: bugzilla-jsonrpc

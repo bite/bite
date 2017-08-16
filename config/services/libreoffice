@@ -1,0 +1,3 @@
+[libreoffice]
+base: https://www.libreoffice.org/bugzilla/
+service: bugzilla-jsonrpc

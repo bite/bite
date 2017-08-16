@@ -201,8 +201,11 @@ def get_config(args, parser):
 
     config = configparser.ConfigParser(interpolation=BiteInterpolation())
 
+    # load service settings
+    services_dir = os.path.join(CONFIG_DIR, 'services')
+    config.read([os.path.join(services_dir, x) for x in os.listdir(services_dir)])
+
     try:
-        config.read_file(open(os.path.join(CONFIG_DIR, 'services')))
         config.read_file(open(args.config_file))
     except IOError as e:
         raise CliError('cannot load config file "{}": {}'.format(e.filename, e.strerror))

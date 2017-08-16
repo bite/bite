@@ -1,0 +1,4 @@
+# all RPC interfaces disabled on the server
+[openssh]
+base: https://bugzilla.mindrot.org/
+service: bugzilla-jsonrpc

@@ -1,0 +1,4 @@
+[gentoo-xml]
+base: https://bugs.gentoo.org/
+service: bugzilla-xmlrpc
+suffix: @gentoo.org
