@@ -77,7 +77,10 @@ class RequestTransport(Transport):
             data = stream.read(64*1024)
             if not data:
                 break
-            p.feed(data)
+            try:
+                p.feed(data)
+            except Exception:
+                raise RequestError('error decoding response, XML-RPC interface likely disabled on server')
 
         if stream is not response:
             stream.close()

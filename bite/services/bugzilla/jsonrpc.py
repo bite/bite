@@ -59,7 +59,13 @@ class BugzillaJsonrpc(Bugzilla):
     #    return self.send(req)
 
     def send(self, req):
-        data = super(BugzillaJsonrpc, self).send(req).json()
+        response = super(BugzillaJsonrpc, self).send(req)
+
+        try:
+            data = response.json()
+        except json.decoder.JSONDecodeError as e:
+            raise RequestError('error decoding response, JSON-RPC interface likely disabled on server')
+
         if data.get('error') is None:
             return data['result']
         else:
