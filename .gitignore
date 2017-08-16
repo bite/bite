@@ -1,0 +1,12 @@
+*.py[co]
+.*.sw[po]
+
+# various generated files
+/build
+/cache
+/dist
+/.tox
+/.coverage
+/*.egg-info
+/doc/_build/
+/doc/generated/
