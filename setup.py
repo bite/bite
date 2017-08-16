@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+from glob import glob
 
 from setuptools import setup, find_packages
 
@@ -19,6 +20,9 @@ setup(
     packages=find_packages(),
     scripts=os.listdir('bin'),
     install_requires=['requests>=2', 'python-dateutil>=2.1'],
+    data_files=[
+        ('share/bite/services', glob('config/services/*')),
+    ],
     cmdclass={
         'build_scripts': pkgdist.build_scripts,
         'sdist': pkgdist.sdist,
