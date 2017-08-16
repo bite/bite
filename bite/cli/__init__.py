@@ -90,8 +90,8 @@ class Cli(object):
                     authfile = '{}{}'.format(url.netloc, url.path.replace('/', '-'))
             self.authfile = os.path.join(authdir, authfile)
 
-        # login if requested, or a cached auth token exists, or both the user and password have been specified
-        if login or os.path.exists(self.authfile) or (self.service.user is not None and self.service.password is not None):
+        # login if requested; otherwise, login will be required when necessary
+        if login:
             self.login()
 
         if sys.stdin.isatty():
