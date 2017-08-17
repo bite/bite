@@ -5,6 +5,6 @@ SERVICES = [
     'bugzilla-jsonrpc',
     'bugzilla-xmlrpc',
     'bugzilla-rest',
-    'googlecode',
+    'monorail',
     'github',
 ]

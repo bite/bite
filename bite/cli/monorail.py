@@ -16,9 +16,9 @@ from bite.argparser import parse_stdin
 from bite.cli import Cli
 from bite.rfc3339 import datetimetostr
 
-class Googlecode(Cli):
+class Monorail(Cli):
     def __init__(self, **kw):
-        super(Googlecode, self).__init__(authfile='googlecode', **kw)
+        super(Monorail, self).__init__(authfile='googlecode', **kw)
 
     def _search_params(self, **kw):
         query = {}

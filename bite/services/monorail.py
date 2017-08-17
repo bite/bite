@@ -1,3 +1,6 @@
+# Support for the Google Code issue tracker
+# https://chromium.googlesource.com/infra/infra/+/master/appengine/monorail/doc/api.md
+
 from itertools import chain
 import os
 import re
@@ -17,11 +20,11 @@ from bite.exceptions import RequestError, AuthError, BadAuthToken
 from bite.services import Service
 from bite.rfc3339 import parse_datetime as parsetime
 
-class Googlecode(Service):
+class Monorail(Service):
     def __init__(self, service, **kw):
         self.headers = {}
         #self.headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
-        super(Googlecode, self).__init__(service, **kw)
+        super(Monorail, self).__init__(service, **kw)
         self.item = 'issue'
         self.project_name = filter(None, self.base.split('/'))[-1]
         self.issues_url = 'https://code.google.com/feeds/issues/p/{}/issues/full'.format(self.project_name)
@@ -29,7 +32,7 @@ class Googlecode(Service):
 
     def login(self, user=None, password=None):
         """Authenticate a session."""
-        super(Googlecode, self).login(user, password)
+        super(Monorail, self).login(user, password)
 
         # https://developers.google.com/accounts/docs/AuthForInstalledApps#Request
         if self.auth_token is None:
