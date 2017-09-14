@@ -74,7 +74,7 @@ class Change(PrintableObject):
 class Comment(Change):
     def __init__(self, creator, date, id=None, count=None, changes=None, text=None):
         self.text = text
-        super(Comment, self).__init__(id=id, creator=creator, date=date, changes=changes, count=count)
+        super().__init__(id=id, creator=creator, date=date, changes=changes, count=count)
 
     def __str__(self):
         if self.count == 0:

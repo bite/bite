@@ -12,7 +12,7 @@ class AuthError(RequestError):
     """Exception related to failed authentication or lack of sufficient privileges."""
 
     def __init__(self, msg, code=None, expired=False):
-        super(AuthError, self).__init__(msg, code)
+        super().__init__(msg, code)
         self.expired = expired
 
 class BadAuthToken(RequestError):

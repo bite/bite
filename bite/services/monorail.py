@@ -24,7 +24,7 @@ class Monorail(Service):
     def __init__(self, service, **kw):
         self.headers = {}
         #self.headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
-        super(Monorail, self).__init__(service, **kw)
+        super().__init__(service, **kw)
         self.item = 'issue'
         self.project_name = filter(None, self.base.split('/'))[-1]
         self.issues_url = 'https://code.google.com/feeds/issues/p/{}/issues/full'.format(self.project_name)
@@ -32,7 +32,7 @@ class Monorail(Service):
 
     def login(self, user=None, password=None):
         """Authenticate a session."""
-        super(Monorail, self).login(user, password)
+        super().login(user, password)
 
         # https://developers.google.com/accounts/docs/AuthForInstalledApps#Request
         if self.auth_token is None:
@@ -303,7 +303,7 @@ class GooglecodeIssue(Item):
         self.labels = labels
         self.stars = stars
         self.state = state
-        super(GooglecodeIssue, self).__init__(**kw)
+        super().__init__(**kw)
 
     def __str__(self):
         lines = []
@@ -351,4 +351,4 @@ class GooglecodeComment(Comment):
     def __init__(self, id=None, creator=None, date=None, count=None, changes=None, text=None, **kw):
         if not text:
             text = '(No comment was entered for this change)'
-        super(GooglecodeComment, self).__init__(id, creator, date, count, changes, text)
+        super().__init__(id, creator, date, count, changes, text)

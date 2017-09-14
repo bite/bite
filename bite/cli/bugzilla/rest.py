@@ -4,7 +4,7 @@ from bite.cli.bugzilla import Bugzilla
 
 class BugzillaBzapi(Bugzilla):
     def __init__(self, **kw):
-        super(BugzillaBzapi, self).__init__(**kw)
+        super().__init__(**kw)
 
     def parse_search(self, **kw):
         params = {}

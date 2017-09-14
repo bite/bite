@@ -15,7 +15,7 @@ class BugzillaXmlrpc(Bugzilla):
 
         self.headers = {'Content-Type': 'text/xml'}
 
-        super(BugzillaXmlrpc, self).__init__(**kw)
+        super().__init__(**kw)
         self._xmlrpc = BugzillaProxy(service=self, uri=self._base)
         self.attachment = BugzillaAttachmentXml
 

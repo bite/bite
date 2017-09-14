@@ -17,7 +17,7 @@ from bite.utc import utc
 
 class Bugzilla(Cli):
     def __init__(self, **kw):
-        super(Bugzilla, self).__init__(**kw)
+        super().__init__(**kw)
 
     def _attach_params(self, **kw):
         if kw['comment'] is None:

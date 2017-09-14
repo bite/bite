@@ -11,7 +11,7 @@ from bite.services.bugzilla import Bugzilla, SearchRequest
 class IterSearchRequest(SearchRequest):
     def __init__(self, *args, **kw):
         """Construct a search request."""
-        super(IterSearchRequest, self).__init__(*args, **kw)
+        super().__init__(*args, **kw)
 
     def parse(self, data, *args, **kw):
         bugs = ijson.items(data, 'result.bugs.item')
@@ -32,7 +32,7 @@ class BugzillaJsonrpc(Bugzilla):
 
         self.headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
 
-        super(BugzillaJsonrpc, self).__init__(**kw)
+        super().__init__(**kw)
 
     def create_request(self, method, params=None):
         """Construct and return a request object."""
@@ -59,7 +59,7 @@ class BugzillaJsonrpc(Bugzilla):
     #    return self.send(req)
 
     def send(self, req):
-        response = super(BugzillaJsonrpc, self).send(req)
+        response = super().send(req)
 
         try:
             data = response.json()

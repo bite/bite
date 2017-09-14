@@ -18,7 +18,7 @@ class BugzillaRest(Bugzilla):
             'Content-Type': 'application/json'
         }
 
-        super(BugzillaRest, self).__init__(**kw)
+        super().__init__(**kw)
         self.bug = RestBug
 
     def login(self):

@@ -23,7 +23,7 @@ def parsetime(time):
 class SearchRequest(Request):
     def __init__(self, service, *args, **kw):
         """Construct a search request."""
-        super(SearchRequest, self).__init__(service)
+        super().__init__(service)
         method = 'Bug.search'
 
         params = {}
@@ -92,7 +92,7 @@ class SearchRequest(Request):
 class CommentsRequest(Request):
     def __init__(self, service, ids, comment_ids=None, created=None, fields=None, *args, **kw):
         """Construct a comments request."""
-        super(CommentsRequest, self).__init__(service, *args, **kw)
+        super().__init__(service, *args, **kw)
         method = 'Bug.comments'
 
         self.ids = ids
@@ -122,7 +122,7 @@ class ChangesRequest(Request):
 class GetRequest(Request):
     def __init__(self, service, ids, fields=None, *args, **kw):
         """Construct a get request."""
-        super(GetRequest, self).__init__(service)
+        super().__init__(service)
         if not ids:
             raise ValueError('No bug ID(s) specified')
         method = 'Bug.get'
@@ -139,7 +139,7 @@ class GetRequest(Request):
 class ModifyRequest(Request):
     def __init__(self, service, ids, *args, **kw):
         """Construct a modify request."""
-        super(ModifyRequest, self).__init__(service)
+        super().__init__(service)
 
         options_log = []
         params = {}
@@ -240,7 +240,7 @@ class AttachRequest(Request):
 class AttachmentsRequest(Request):
     def __init__(self, service, ids, fields=None, *args, **kw):
         """Construct a attachments request."""
-        super(AttachmentsRequest, self).__init__(service, *args, **kw)
+        super().__init__(service, *args, **kw)
         method = 'Bug.attachments'
         if not ids:
             raise ValueError('No bug ID(s) specified')
@@ -261,7 +261,7 @@ class AttachmentsRequest(Request):
 
 class HistoryRequest(Request):
     def __init__(self, service, ids, *args, **kw):
-        super(HistoryRequest, self).__init__(service, *args, **kw)
+        super().__init__(service, *args, **kw)
         method = 'Bug.history'
         if not ids:
             raise ValueError('No bug ID(s) specified')
@@ -279,7 +279,7 @@ class HistoryRequest(Request):
 class Bugzilla(Service):
     def __init__(self, **kw):
         self.item = 'bug'
-        super(Bugzilla, self).__init__(**kw)
+        super().__init__(**kw)
 
         self.attachment = BugzillaAttachment
         self.bug = BugzillaBug
@@ -290,7 +290,7 @@ class Bugzilla(Service):
 
     def login(self, user=None, password=None):
         """Authenticate a session."""
-        super(Bugzilla, self).login(user, password)
+        super().login(user, password)
 
         method = 'User.login'
         params = {'login': user, 'password': password}
@@ -722,8 +722,9 @@ class BugzillaComment(Comment):
         if 'attachment_id' in comment:
             changes['attachment_id'] = comment['attachment_id']
 
-        super(BugzillaComment, self).__init__(id=id, creator=creator, date=date,
-                                              count=count, changes=changes, text=text)
+        super().__init__(
+            id=id, creator=creator, date=date,
+            count=count, changes=changes, text=text)
 
 class BugzillaEvent(Change):
     def __init__(self, change, id, alias=None, count=None, rest=False, **kw):
@@ -735,8 +736,9 @@ class BugzillaEvent(Change):
             creator = change['who']
             date = parsetime(change['when'])
         changes = change['changes']
-        super(BugzillaEvent, self).__init__(creator=creator, date=date, id=id,
-                                            changes=changes, count=count)
+        super().__init__(
+            creator=creator, date=date, id=id,
+            changes=changes, count=count)
 
     def __str__(self):
         change_fields = {
@@ -809,7 +811,7 @@ class BugzillaAttachment(Attachment):
 
             setattr(self, name, v)
 
-        super(BugzillaAttachment, self).__init__(
+        super().__init__(
             id=id, filename=file_name, size=size, mimetype=content_type,
             data=data, created=creation_time, modified=last_change_time)
 
