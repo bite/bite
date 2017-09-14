@@ -1,5 +1,6 @@
 class RequestError(Exception):
     """Generic http(s) request exceptions."""
+
     def __init__(self, msg, code=None):
         self.msg = msg
         self.code = code
@@ -9,7 +10,10 @@ class RequestError(Exception):
 
 class AuthError(RequestError):
     """Exception related to failed authentication or lack of sufficient privileges."""
-    pass
+
+    def __init__(self, msg, code=None, expired=False):
+        super(AuthError, self).__init__(msg, code)
+        self.expired = expired
 
 class BadAuthToken(RequestError):
     """Exception for old or bad authentication tokens."""

@@ -26,12 +26,14 @@ def loginretry(func):
         try:
             return func(self, *args, **kw)
         except AuthError as e:
-            if self.service.auth_token is not None:
+            # don't show redundant output from retried commands
+            self.quiet = True
+            if e.expired and self.service.auth_token is not None:
                 self.log('Warning: your auth token has expired', prefix=' ! ')
                 self.remove_auth_token()
-            self.log('Generating new auth token')
-            self.quiet = True
-            self.login()
+                self.log('Generating new auth token')
+                self.login()
+            self.load_auth_token()
             return func(self, *args, **kw)
     return wrapper
 

@@ -38,7 +38,7 @@ class BugzillaJsonrpc(Bugzilla):
         """Construct and return a request object."""
         cookies = []
 
-        if method in ('Bug.update', 'Bug.create'):
+        if self.auth_token is not None:
             if isinstance(self.auth_token, str):
                 params['token'] = self.auth_token
             else:
@@ -76,7 +76,9 @@ class BugzillaJsonrpc(Bugzilla):
                     raise RequestError('Received error reply, try using an https:// url instead')
                 elif 'expired' in error.get('message'):
                     # assume the auth token has expired
-                    raise AuthError('auth token expired')
+                    raise AuthError('auth token expired', expired=True)
+            elif error.get('code') == 102:
+                raise AuthError('access denied')
             raise RequestError(msg=error.get('message'),
                                code=error.get('code'))
 
