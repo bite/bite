@@ -1,0 +1,2 @@
+requests>=2
+python-dateutil>=2.1
