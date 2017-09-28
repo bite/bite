@@ -6,7 +6,6 @@ from urllib.parse import urlparse
 
 import concurrent.futures
 import requests
-from requests.exceptions import ConnectionError, SSLError
 
 from bite import __version__
 from bite.exceptions import RequestError, AuthError, NotFound
@@ -109,20 +108,22 @@ class Service(object):
 
         try:
             response = self.session.send(req, stream=True, timeout=self.timeout, verify=self.verify)
-        except SSLError as e:
+        except requests.exceptions.SSLError as e:
             raise RequestError('SSL certificate verification failed')
-        except ConnectionError as e:
+        except requests.exceptions.ConnectionError as e:
             raise RequestError('failed to establish connection')
-        except Exception as e:
-            raise
 
         if response.ok:
             return response
         else:
-            if response.status_code in [401, 403]:
+            if response.status_code in (401, 403):
                 raise AuthError('Authentication failed')
             else:
-                raise response.raise_for_status()
+                try:
+                    raise response.raise_for_status()
+                except requests.exceptions.HTTPError:
+                    raise RequestError('HTTP Error {}: {}'.format(
+                        response.status_code, response.reason.lower()), text=response.text)
 
     #def _parallel_send(self, reqs, size=8, block=True):
     #    """Run parallel requests at once."""

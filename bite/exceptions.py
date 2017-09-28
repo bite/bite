@@ -1,9 +1,10 @@
 class RequestError(Exception):
     """Generic http(s) request exceptions."""
 
-    def __init__(self, msg, code=None):
+    def __init__(self, msg, code=None, text=None):
         self.msg = msg
         self.code = code
+        self.text = text
 
     def __str__(self):
         return self.msg

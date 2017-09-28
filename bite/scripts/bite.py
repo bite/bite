@@ -143,7 +143,7 @@ def parse_args():
         unparsed_args = [unparsed_args]
 
     fcn_args = iterate_fcn_args(parser, initial_args, unparsed_args)
-    return (vars(initial_args), fcn_args)
+    return vars(initial_args), fcn_args
 
 def substitute_args(args, initial_args):
     for input_list in initial_args.input:
@@ -193,11 +193,8 @@ def main(args):
         for args in args_list:
             cmd = getattr(client, args['fcn'])
             cmd(**args)
-
         #client.run(args, **initial_args)
-
     except (CliError, CommandError, RequestError) as e:
+        # TODO: output verbose text attr from RequestError if verbose is enabled
         print('bite: error: {}'.format(e))
         sys.exit(1)
-    except:
-        raise
