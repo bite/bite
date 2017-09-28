@@ -1,8 +1,12 @@
+"""bug and issue extraction tool
+
+A command line tool for interacting with bugs and issues from various trackers.
+"""
+
 import argparse
 import logging
 import os
 import re
-from signal import signal, SIGPIPE, SIG_DFL, SIGINT
 import sys
 
 import bite
@@ -11,139 +15,140 @@ from bite.argparser import ParseInitialArgs, ParseArgs, parse_file
 from bite.config import get_config
 from bite.exceptions import CliError, CommandError, RequestError
 
+from snakeoil.cli import arghparse
 
-def make_initialparser():
-    parser = ParseInitialArgs(
-        add_help=False,
-        epilog='use -h after a sub-command for sub-command specific help')
-    parser.add_argument('-a', '--alias',
-        dest='save_alias',
-        help='save the specified parameters to an alias')
-    parser.add_argument('-i', '--input',
-        type=argparse.FileType('r'),
-        action=parse_file,
-        help='read data from an input file')
-    parser.add_argument('-j', '--jobs',
-        type=int,
-        default=8,
-        help='Run commands in parallel from a job pool')
-    parser.add_argument('-l', '--login',
-        action='store_true',
-        help='force authentication to the specified service')
-    parser.add_argument('-n', '--dry-run',
-        action='store_true',
-        help='do everything except requesting or sending data')
-    parser.add_argument('-q', '--quiet',
-        action='store_true',
-        help='quiet mode')
-    parser.add_argument('--config-file',
-        help='read an alternate configuration file')
-    parser.add_argument('--columns',
-        type=int,
-        help='maximum number of columns output should use')
-    parser.add_argument('--encoding',
-        help='output encoding (default: utf-8)')
-    parser.add_argument('--list-aliases',
-        action='store_true',
-        help='list the available aliases')
-    parser.add_argument('--no-verify',
-        action='store_false',
-        dest='verify',
-        help='skip verifying SSL certificates')
-    parser.add_argument('--suffix',
-        help='domain suffix to strip or add when displaying or searching '
-             '(e.g. "@domain.com")')
-    parser.add_argument('--timeout',
-        type=int,
-        metavar='SECONDS',
-        help='amount of time to wait before timing out requests')
-    parser.add_argument('--version',
-        action='version',
-        help='show program version and exit',
-        version='%(prog)s ' + bite.__version__)
-    auth = parser.add_argument_group('Authentication')
-    auth.add_argument('-u', '--user',
-        help='username for authentication')
-    auth.add_argument('-p', '--password',
-        help='password for authentication')
-    auth.add_argument('--load-cookies',
-        dest='cookies',
-        help='load cookies from file for authentication')
-    auth.add_argument('--passwordcmd',
-        help='password command to evaluate authentication')
-    service = parser.add_argument_group('Service')
-    service.add_argument('-b', '--base',
-        help='base URL of service')
-    service.add_argument('-c', '--connection',
-        help='use a connection from the config file')
-    service.add_argument('-s', '--service',
-        help='service type: {}'.format(', '.join(bite.SERVICES)))
-    return parser
+initial_parser = ParseInitialArgs(add_help=False)
+options = initial_parser.add_argument_group('Options')
+options.add_argument('-a', '--alias',
+    dest='save_alias',
+    help='save the specified parameters to an alias')
+options.add_argument('-i', '--input',
+    type=argparse.FileType('r'),
+    action=parse_file,
+    help='read data from an input file')
+options.add_argument('-j', '--jobs',
+    type=int,
+    default=8,
+    help='Run commands in parallel from a job pool')
+options.add_argument('-l', '--login',
+    action='store_true',
+    help='force authentication to the specified service')
+options.add_argument('-n', '--dry-run',
+    action='store_true',
+    help='do everything except requesting or sending data')
+options.add_argument('--config-file',
+    help='read an alternate configuration file')
+options.add_argument('--columns',
+    type=int,
+    help='maximum number of columns output should use')
+options.add_argument('--encoding',
+    help='output encoding (default: utf-8)')
+options.add_argument('--list-aliases',
+    action='store_true',
+    help='list the available aliases')
+options.add_argument('--no-verify',
+    action='store_false',
+    dest='verify',
+    help='skip verifying SSL certificates')
+options.add_argument('--suffix',
+    help='domain suffix to strip or add when displaying or searching '
+            '(e.g. "@domain.com")')
+options.add_argument('--timeout',
+    type=int,
+    metavar='SECONDS',
+    help='amount of time to wait before timing out requests')
 
-def parse_args():
-    initial_parser = make_initialparser()
-    initial_args, unparsed_args = initial_parser.parse_known_args()
+auth = initial_parser.add_argument_group('Authentication')
+auth.add_argument('-u', '--user',
+    help='username for authentication')
+auth.add_argument('-p', '--password',
+    help='password for authentication')
+auth.add_argument('--load-cookies',
+    dest='cookies',
+    help='load cookies from file for authentication')
+auth.add_argument('--passwordcmd',
+    help='password command to evaluate authentication')
 
-    # allow symlinks to bite to override the connection type
-    if os.path.basename(sys.argv[0]) != 'bite':
-        initial_args.connection = os.path.basename(sys.argv[0])
+service = initial_parser.add_argument_group('Service')
+service.add_argument('-b', '--base',
+    help='base URL of service')
+service.add_argument('-c', '--connection',
+    help='use a connection from the config file')
+service.add_argument('-s', '--service',
+    help='service type: {}'.format(', '.join(bite.SERVICES)))
 
-    # get settings from the config file
-    get_config(initial_args, initial_parser)
 
-    logger = logging.getLogger(__name__)
-    #logger.setLevel(logging.DEBUG)
+class ArgumentParser(arghparse.ArgumentParser):
 
-    # default to gentoo bugzilla if no service is selected
-    if initial_args.base is None and initial_args.service is None:
-        initial_args.base = 'https://bugs.gentoo.org/'
-        initial_args.service = 'bugzilla-jsonrpc'
+    def parse_args(self, args=None, namespace=None):
+        if namespace is None:
+            namespace = arghparse.Namespace()
 
-    if initial_args.base is None or initial_args.service is None:
-        initial_parser.error('both arguments -b/--base and -s/--service are required '
-                             'or must be specified in the config file for a connection')
+        initial_args, unparsed_args = initial_parser.parse_known_args(args, namespace)
 
-    service_name = initial_args.service
+        # allow symlinks to bite to override the connection type
+        if os.path.basename(sys.argv[0]) != 'bite':
+            initial_args.connection = os.path.basename(sys.argv[0])
 
-    if initial_args.list_aliases:
-        list_aliases(initial_args)
-        sys.exit(0)
+        # get settings from the config file
+        get_config(initial_args, initial_parser)
 
-    # create sub-command argument parser for the specified service type
-    parser = ParseArgs(parents=[initial_parser],
-        epilog = 'use -h after a sub-command for sub-command specific help')
-    subparsers = parser.add_subparsers(help = 'help for sub-commands')
-    module_name = 'bite.args.' + service_name.replace('-', '.')
+        logger = logging.getLogger(__name__)
+        #logger.setLevel(logging.DEBUG)
 
-    # add any additional service specific top level commands
-    try:
-        maincmds = __import__(module_name, globals(), locals(), ['maincmds']).maincmds
-        maincmds(parser)
-    except AttributeError:
-        pass
+        # default to gentoo bugzilla if no service is selected
+        if initial_args.base is None and initial_args.service is None:
+            initial_args.base = 'https://bugs.gentoo.org/'
+            initial_args.service = 'bugzilla-jsonrpc'
 
-    # add sub-commands
-    subcmds = __import__(module_name, globals(), locals(), ['subcmds']).subcmds
-    subcmds(subparsers)
+        if initial_args.base is None or initial_args.service is None:
+            argparser.error('both arguments -b/--base and -s/--service are required '
+                                'or must be specified in the config file for a connection')
 
-    # check if unparsed args match any aliases
-    if unparsed_args:
-        unparsed_args = substitute_alias(initial_args, unparsed_args)
+        service_name = initial_args.service
 
-    # save args as specified alias
-    if initial_args.save_alias is not None:
-        save_alias(initial_args, ' '.join(unparsed_args))
+        if initial_args.list_aliases:
+            list_aliases(initial_args)
+            sys.exit(0)
 
-    parser.set_defaults(connection=initial_args.connection)
+        if not unparsed_args:
+            argparser.error('a subcommand must be selected')
 
-    if initial_args.input is not None:
-        unparsed_args = substitute_args(unparsed_args, initial_args)
-    else:
-        initial_args, unparsed_args = initial_parser.parse_known_args(unparsed_args, initial_args)
-        unparsed_args = [unparsed_args]
+        # create subcommand argument parser for the specified service type
+        subcmd_parser = ParseArgs(parents=[initial_parser],
+            epilog = 'use -h after a subcommand for subcommand specific help')
+        subparsers = subcmd_parser.add_subparsers(help = 'help for subcommands')
+        module_name = 'bite.args.' + service_name.replace('-', '.')
 
-    fcn_args = iterate_fcn_args(parser, initial_args, unparsed_args)
-    return vars(initial_args), fcn_args
+        # add any additional service specific top level commands
+        try:
+            maincmds = __import__(module_name, globals(), locals(), ['maincmds']).maincmds
+            maincmds(subcmdparser)
+        except AttributeError:
+            pass
+
+        # add subcommands
+        subcmds = __import__(module_name, globals(), locals(), ['subcmds']).subcmds
+        subcmds(subparsers)
+
+        # check if unparsed args match any aliases
+        if unparsed_args:
+            unparsed_args = substitute_alias(initial_args, unparsed_args)
+
+        # save args as specified alias
+        if initial_args.save_alias is not None:
+            save_alias(initial_args, ' '.join(unparsed_args))
+
+        subcmd_parser.set_defaults(connection=initial_args.connection)
+
+        if initial_args.input is not None:
+            unparsed_args = substitute_args(unparsed_args, initial_args)
+        else:
+            initial_args, unparsed_args = initial_parser.parse_known_args(unparsed_args, initial_args)
+            unparsed_args = [unparsed_args]
+
+        initial_args.fcn_args = iterate_fcn_args(subcmd_parser, initial_args, unparsed_args)
+        return super().parse_args('', initial_args)
 
 def substitute_args(args, initial_args):
     for input_list in initial_args.input:
@@ -180,21 +185,23 @@ def get_service(service_name, module_name, **kw):
     klass = getattr(module, klass_name)
     return klass(**kw)
 
-def main(args):
-    signal(SIGPIPE, SIG_DFL)
-    signal(SIGINT, SIG_DFL)
 
+argparser = ArgumentParser(
+    description=__doc__, script=(__file__, __name__), parents=(initial_parser,))
+
+@argparser.bind_main_func
+def main(options, out, err):
     try:
-        initial_args, args_list = parse_args()
-        service_name = initial_args['service']
-        service = get_service(service_name, module_name='bite.services', **initial_args)
-        initial_args['service'] = service
-        client = get_service(service_name, module_name='bite.cli', **initial_args)
-        for args in args_list:
-            cmd = getattr(client, args['fcn'])
-            cmd(**args)
+        args = vars(options)
+        service_name = args['service']
+        service = get_service(service_name, module_name='bite.services', **args)
+        args['service'] = service
+        client = get_service(service_name, module_name='bite.cli', **args)
+        for fcn_args in options.fcn_args:
+            cmd = getattr(client, fcn_args['fcn'])
+            cmd(**fcn_args)
         #client.run(args, **initial_args)
     except (CliError, CommandError, RequestError) as e:
         # TODO: output verbose text attr from RequestError if verbose is enabled
-        print('bite: error: {}'.format(e))
+        err.write('bite: error: {}'.format(e))
         sys.exit(1)

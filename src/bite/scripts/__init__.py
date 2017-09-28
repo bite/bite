@@ -7,9 +7,10 @@ import os
 import sys
 
 
-def run(script_name, args=None):
-    args = args if args is not None else sys.argv[1:]
+def run(script_name):
+    """Run a given script module."""
     try:
+        from snakeoil.cli.tool import Tool
         script_module = '.'.join(
             os.path.realpath(__file__).split(os.path.sep)[-3:-1] +
             [script_name.replace('-', '_')])
@@ -20,12 +21,13 @@ def run(script_name, args=None):
             'Verify that bite and its deps are properly installed '
             'and/or PYTHONPATH is set correctly for python %s.\n' %
             ('.'.join(map(str, sys.version_info[:3])),))
-        if '--debug' in args:
+        if '--debug' in sys.argv[1:]:
             raise
         sys.stderr.write('Add --debug to the commandline for a traceback.\n')
         sys.exit(1)
 
-    script.main(args)
+    tool = Tool(script.argparser)
+    sys.exit(tool())
 
 
 if __name__ == '__main__':
