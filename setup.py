@@ -15,10 +15,12 @@ setup(
     url='https://github.com/radhermit/bite/',
     license='BSD',
     platforms=['any'],
-    data_files=[
+    data_files=(
         ('share/bite/services', glob('config/services/*')),
-    ],
-    cmdclass=dict(**pkgdist_cmds),
+    ),
+    cmdclass=dict(
+        test=pkgdist.pytest,
+        **pkgdist_cmds),
     classifiers=(
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
