@@ -16,7 +16,7 @@ from urllib.parse import urlparse
 #from gevent import monkey
 #monkey.patch_all(thread=False, select=False)
 
-from bite.exceptions import RequestError, AuthError, CliError
+from bite.exceptions import AuthError, CliError
 from bite.objects import TarAttachment
 from bite.utils import confirm, get_input
 

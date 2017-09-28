@@ -103,7 +103,7 @@ class ArgumentParser(arghparse.ArgumentParser):
 
         if initial_args.base is None or initial_args.service is None:
             argparser.error('both arguments -b/--base and -s/--service are required '
-                                'or must be specified in the config file for a connection')
+                            'or must be specified in the config file for a connection')
 
         service_name = initial_args.service
 
@@ -203,5 +203,9 @@ def main(options, out, err):
         #client.run(args, **initial_args)
     except (CliError, CommandError, RequestError) as e:
         # TODO: output verbose text attr from RequestError if verbose is enabled
-        err.write('bite: error: {}'.format(e))
+        if options.verbose:
+            msg = e.verbose()
+        else:
+            msg = str(e)
+        err.write('bite: error: {}'.format(msg))
         sys.exit(1)
