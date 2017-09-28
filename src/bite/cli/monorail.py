@@ -18,7 +18,7 @@ from bite.rfc3339 import datetimetostr
 
 class Monorail(Cli):
     def __init__(self, **kw):
-        super().__init__(authfile='googlecode', **kw)
+        super().__init__(authfile='monorail', **kw)
 
     def _search_params(self, **kw):
         query = {}
