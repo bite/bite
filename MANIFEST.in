@@ -1,0 +1,5 @@
+include LICENSE *.py *.rst
+include tox.ini
+recursive-include bin *
+recursive-include doc *
+global-exclude *.pyc *.pyo __pycache__
