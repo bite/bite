@@ -52,7 +52,7 @@ class BugzillaXmlrpc(Bugzilla):
         # read response data from httpresponse, and parse it
         stream = response
 
-        p, u = getparser()
+        p, u = getparser(use_datetime=True)
 
         while 1:
             data = stream.read(64*1024)
