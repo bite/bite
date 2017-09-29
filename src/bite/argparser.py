@@ -372,7 +372,8 @@ class ArgumentParser(arghparse.ArgumentParser):
         required_actions = []
         for action in self._actions:
             if action not in seen_actions:
-                if action.required:
+                # ignore required subcommands as they'll be handled later
+                if action.required and not isinstance(action, _SubParsersAction):
                     required_actions.append(_get_action_name(action))
                 else:
                     # Convert action default now instead of doing it before
