@@ -95,13 +95,13 @@ def _ls(options, out, error):
                 else:
                     out.write(name)
     elif options.item == 'connections':
-        for service in sorted(options.config.sections()):
+        for connection in sorted(options.config.sections()):
             if options.verbose:
-                out.write('[{}]'.format(service))
-                for (name, value) in options.config.items(service):
+                out.write('[{}]'.format(connection))
+                for (name, value) in options.config.items(connection):
                     out.write('  {}: {}'.format(name, value))
             else:
-                out.write(service)
+                out.write(connection)
     elif options.item == 'services':
         out.write('\n'.join(sorted(SERVICES)))
     return 0
