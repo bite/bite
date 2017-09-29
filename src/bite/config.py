@@ -92,10 +92,10 @@ class BiteInterpolation(configparser.ExtendedInterpolation):
                     "'%' must be followed by '%' or '{', "
                     "found: %r" % (rest,))
 
-def parse_config(config_filename):
+def parse_config(config_path):
     parser = configparser.ConfigParser(interpolation=BiteInterpolation())
     try:
-        parser.read(os.path.join(CONFIG_DIR, config_filename))
+        parser.read(config_path)
     except IOError:
         return
     except Exception as e:
@@ -149,11 +149,7 @@ def set_config_option(config_file, section, option, value, exists=False):
         f.truncate()
         f.writelines(config)
 
-def get_matching_options(config_file, section, regex):
-    parser = configparser.ConfigParser()
-    with open(config_file, 'r+') as f:
-        parser.readfp(f)
-
+def get_matching_options(parser, section, regex):
     values = []
     for (name, value) in parser.items(section):
         if re.match(regex, name):
@@ -197,22 +193,24 @@ def fill_config(args, parser, section):
 def get_config(args, parser):
     args.config_dir = CONFIG_DIR
     if args.config_file is None:
-        args.config_file = os.path.join(CONFIG_DIR, 'config')
+        args.config_file = os.path.join(args.config_dir, 'config')
 
     config = configparser.ConfigParser(interpolation=BiteInterpolation())
 
     # load service settings
-    services_dir = os.path.join(CONFIG_DIR, 'services')
+    services_dir = os.path.join(args.config_dir, 'services')
     config.read([os.path.join(services_dir, x) for x in os.listdir(services_dir)])
 
     try:
-        config.read_file(open(args.config_file))
+        with open(args.config_file) as f:
+            config.read_file(f)
     except IOError as e:
         raise CliError('cannot load config file "{}": {}'.format(e.filename, e.strerror))
     except Exception as e:
         raise
 
     args.config = config
+    args.aliases = parse_config(os.path.join(args.config_dir, 'aliases'))
 
     if args.service is None and args.base is None:
         if 'default' in config.sections():

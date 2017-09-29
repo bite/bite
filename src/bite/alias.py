@@ -28,14 +28,14 @@ def save_alias(args, value):
                         value=value, exists=exists)
 
 def list_aliases(args):
-    regex = r'^alias-.*$'
     aliases = []
 
     for section in [args.connection, 'default']:
-        aliases.extend(get_matching_options(args.config, section, regex))
+        for name, value in args.aliases.items(section):
+            aliases.append((name, value))
 
     for name, value in aliases:
-        print('{}: {}'.format(name.split('-', 1)[1], value))
+        print('{}: {}'.format(name, value))
 
 def shell_split(string):
     lex = shlex.shlex(string)
@@ -61,8 +61,6 @@ def substitute_alias(args, unparsed_args):
     alias_name = unparsed_args[0]
     extra_cmds = unparsed_args[1:]
 
-    parser = parse_config('aliases')
-
     sections = []
     if args.connection is not None:
         sections.append(args.connection)
@@ -70,7 +68,7 @@ def substitute_alias(args, unparsed_args):
 
     for section in sections:
         try:
-            alias_cmd = parser[section][alias_name].strip()
+            alias_cmd = args.aliases[section][alias_name].strip()
             break
         except KeyError:
             alias_cmd = None
