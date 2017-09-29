@@ -9,6 +9,7 @@ import os
 import sys
 
 from bite import SERVICES
+from bite.alias import list_aliases
 from bite.argparser import ArgumentParser, parse_file
 from bite.exceptions import CliError, CommandError, RequestError
 
@@ -41,9 +42,6 @@ options.add_argument('--columns',
     help='maximum number of columns output should use')
 options.add_argument('--encoding',
     help='output encoding (default: utf-8)')
-options.add_argument('--list-aliases',
-    action='store_true',
-    help='list the available aliases')
 options.add_argument('--no-verify',
     action='store_false',
     dest='verify',
@@ -75,12 +73,24 @@ service.add_argument('-s', '--service',
 service.add_argument('-c', '--connection',
     help='use a configured connection')
 
+subparsers = argparser.add_subparsers(help='help for subcommands')
+ls = subparsers.add_parser('ls', description='list various config info')
+ls.add_argument(
+    '--aliases',
+    action='store_true',
+    help='list the available aliases')
 
 def get_service(service_name, module_name, **kw):
     module_name = '{}.{}'.format(module_name, service_name.replace('-', '.'))
     klass_name = ''.join([s.capitalize() for s in service_name.split('-')])
     klass = getattr(import_module(module_name), klass_name)
     return klass(**kw)
+
+
+@ls.bind_main_func
+def _ls(options, out, error):
+    list_aliases(options)
+    return 0
 
 
 @argparser.bind_main_func

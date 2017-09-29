@@ -10,7 +10,7 @@ import re
 import shlex
 import sys
 
-from bite.alias import list_aliases, save_alias, substitute_alias
+from bite.alias import save_alias, substitute_alias
 from bite.config import get_config, CONFIG_DIR
 
 from snakeoil.cli import arghparse
@@ -447,10 +447,6 @@ class ArgumentParser(arghparse.ArgumentParser):
                             'or must be specified in the config file for a connection')
 
         service_name = initial_args.service
-
-        if initial_args.list_aliases:
-            list_aliases(initial_args)
-            sys.exit(0)
 
         # add subcommand parsers for the specified service type
         subparsers = self.add_subparsers(help='help for subcommands')
