@@ -1,6 +1,7 @@
-"""bug and issue extraction tool
+"""bug, issue, and ticket extraction tool
 
-A command line tool for interacting with bugs and issues from various trackers.
+A command line tool for interacting with bugs, issues, and tickets from various
+trackers in different manners.
 """
 
 import argparse
