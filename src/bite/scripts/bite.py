@@ -75,7 +75,7 @@ service.add_argument('-c', '--connection',
 subparsers = argparser.add_subparsers(help='help for subcommands')
 ls = subparsers.add_parser('ls', description='list various config info')
 ls.add_argument(
-    'item', choices=('aliases', 'connections'),
+    'item', choices=('aliases', 'connections', 'services'),
     help='items to list')
 
 def get_service(service_name, module_name, **kw):
@@ -102,6 +102,8 @@ def _ls(options, out, error):
                     out.write('  {}: {}'.format(name, value))
             else:
                 out.write(service)
+    elif options.item == 'services':
+        out.write('\n'.join(sorted(SERVICES)))
     return 0
 
 
