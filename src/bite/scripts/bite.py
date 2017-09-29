@@ -104,6 +104,7 @@ def _ls(options, out, error):
                 out.write(connection)
     elif options.item == 'services':
         out.write('\n'.join(sorted(SERVICES)))
+
     return 0
 
 
@@ -124,4 +125,6 @@ def main(options, out, err):
         else:
             msg = str(e)
         err.write('bite: error: {}'.format(msg))
-        sys.exit(1)
+        return 1
+
+    return 0
