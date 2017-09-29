@@ -27,16 +27,6 @@ def save_alias(args, value):
     set_config_option(args.config, section, option=option,
                         value=value, exists=exists)
 
-def list_aliases(args):
-    aliases = []
-
-    for section in [args.connection, 'default']:
-        for name, value in args.aliases.items(section):
-            aliases.append((name, value))
-
-    for name, value in aliases:
-        print('{}: {}'.format(name, value))
-
 def shell_split(string):
     lex = shlex.shlex(string)
     lex.whitespace_split = True

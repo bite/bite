@@ -9,7 +9,6 @@ import os
 import sys
 
 from bite import SERVICES
-from bite.alias import list_aliases
 from bite.argparser import ArgumentParser, parse_file
 from bite.exceptions import CliError, CommandError, RequestError
 
@@ -76,9 +75,8 @@ service.add_argument('-c', '--connection',
 subparsers = argparser.add_subparsers(help='help for subcommands')
 ls = subparsers.add_parser('ls', description='list various config info')
 ls.add_argument(
-    '--aliases',
-    action='store_true',
-    help='list the available aliases')
+    'item', choices=('aliases', 'connections'),
+    help='items to list')
 
 def get_service(service_name, module_name, **kw):
     module_name = '{}.{}'.format(module_name, service_name.replace('-', '.'))
@@ -89,7 +87,21 @@ def get_service(service_name, module_name, **kw):
 
 @ls.bind_main_func
 def _ls(options, out, error):
-    list_aliases(options)
+    if options.item == 'aliases':
+        for section in ('default', options.connection):
+            for name, value in options.aliases.items(section):
+                if options.verbose:
+                    out.write('{}: {}'.format(name, value))
+                else:
+                    out.write(name)
+    elif options.item == 'connections':
+        for service in sorted(options.config.sections()):
+            if options.verbose:
+                out.write('[{}]'.format(service))
+                for (name, value) in options.config.items(service):
+                    out.write('  {}: {}'.format(name, value))
+            else:
+                out.write(service)
     return 0
 
 
