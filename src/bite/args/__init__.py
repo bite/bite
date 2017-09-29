@@ -6,13 +6,14 @@ def generic_options(subparsers, get_actions, send_actions):
     # iterate through subparsers adding generic options for send/receive methods
     for method, parser in subparsers.choices.items():
         try:
-            getattr(sys.modules[__name__], method)(parser)
+            options = parser.add_argument_group('{} options'.format(method.capitalize()))
+            getattr(sys.modules[__name__], method)(options)
         except AttributeError:
             pass
         if method in get_actions:
-            generic_receive(parser)
+            generic_receive(options)
         elif method in send_actions:
-            generic_send(parser)
+            generic_send(options)
 
 def generic_receive(parser):
     parser.add_argument('-f', '--fields',
