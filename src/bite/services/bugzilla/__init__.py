@@ -16,7 +16,7 @@ from bite.services import Service, Request, NullRequest
 
 def parsetime(time):
     if not isinstance(time, datetime.datetime):
-        return dateparse(time)
+        return dateparse(str(time))
     else:
         return time.replace(tzinfo=utc.utc)
 
