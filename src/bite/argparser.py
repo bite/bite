@@ -1,11 +1,18 @@
-from argparse import ArgumentParser, SUPPRESS, Action, ArgumentError, ArgumentTypeError
+from argparse import SUPPRESS, Action, ArgumentError, ArgumentTypeError
 import fileinput
-import imp
+from importlib import import_module
+import importlib.util
+import logging
 import os
+import re
 import shlex
 import sys
 
-import bite
+from bite.alias import list_aliases, save_alias, substitute_alias
+from bite.config import get_config, CONFIG_DIR
+
+from snakeoil.cli import arghparse
+
 
 def string_list(s):
     if sys.stdin.isatty() or s != '-':
@@ -70,13 +77,6 @@ class parse_stdin(Action):
                     sys.stdin = open('/dev/tty')
         setattr(namespace, self.dest, values)
 
-def _import(filename):
-    (path, name) = os.path.split(filename)
-    (name, ext) = os.path.splitext(name)
-
-    (file, filename, data) = imp.find_module(name, [path])
-    return imp.load_module(name, file, filename, data)
-
 class parse_filters(Action):
     def __call__(self, parser, namespace, values, option_string=None):
         filters = []
@@ -87,10 +87,12 @@ class parse_filters(Action):
                 fcn_name = module_name
                 module_name = namespace.connection
 
-            try:
-                module = _import(os.path.join(bite.CONFIG_DIR, 'python', module_name))
-            except ImportError as e:
-                parser.error(e)
+            spec = importlib.util.spec_from_file_location(
+                module_name, os.path.join(CONFIG_DIR, 'python'))
+            if spec is None:
+                parser.error('filter module not found: {}'.format(module_name))
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
 
             try:
                 filters.append(getattr(module, fcn_name))
@@ -109,27 +111,48 @@ class parse_append(Action):
         else:
             current.extend(values)
 
-class ParseArgs(ArgumentParser):
-    """
-    ArgumentParser subclass that suppresses unicode string prefixes on the output message.
-    """
-    def _check_value(self, action, value):
-        # converted value must be one of the choices (if specified)
-        if action.choices is not None and value not in action.choices:
-            tup = value, ', '.join(map(str, action.choices))
-            msg = ('invalid choice: {} (choose from {})').format(*tup)
-            raise ArgumentError(action, msg)
 
-class ParseInitialArgs(ArgumentParser):
-    """
-    ArgumentParser subclass that modifies the argument parsing
-    scheme to stop at the first positional argument.
+class ArgumentParser(arghparse.ArgumentParser):
 
-    This is used to allow multiple shortcuts (like -c or -h) at both the
-    general level and the method level. Otherwise, the argparse module
-    wouldn't allow two of the same shortcuts to exist at the same time.
-    """
-    def _parse_known_args(self, arg_strings, namespace):
+    def parse_optionals(self, args=None, namespace=None):
+        """Parse optional arguments until the first positional or -h/--help.
+
+        This is used to allow multiple shortcuts (like -c or -h) at both the
+        global command level and the subcommand level. Otherwise, the argparse
+        module wouldn't allow two of the same shortcuts to exist at the same
+        time.
+        """
+        if args is None:
+            # args default to the system args
+            args = sys.argv[1:]
+        else:
+            # make sure that args are mutable
+            args = list(args)
+
+        # default Namespace built from parser defaults
+        if namespace is None:
+            namespace = arghparse.Namespace()
+
+        # add any action defaults that aren't present
+        for action in self._actions:
+            if action.dest is not SUPPRESS:
+                if not hasattr(namespace, action.dest):
+                    if action.default is not SUPPRESS:
+                        setattr(namespace, action.dest, action.default)
+
+        # add any parser defaults that aren't present
+        for dest in self._defaults:
+            if not hasattr(namespace, dest):
+                setattr(namespace, dest, self._defaults[dest])
+
+        # parse the arguments and exit if there are any errors
+        try:
+            return self._parse_optionals(args, namespace)
+        except ArgumentError:
+            err = sys.exc_info()[1]
+            self.error(str(err))
+
+    def _parse_optionals(self, arg_strings, namespace):
         # replace arg strings that are file references
         if self.fromfile_prefix_chars is not None:
             arg_strings = self._read_args_from_files(arg_strings)
@@ -187,7 +210,7 @@ class ParseInitialArgs(ArgumentParser):
                 seen_non_default_actions.add(action)
                 for conflict_action in action_conflicts.get(action, []):
                     if conflict_action in seen_non_default_actions:
-                        msg = _('not allowed with argument {}')
+                        msg = _('not allowed with argument %s')
                         action_name = _get_action_name(conflict_action)
                         raise ArgumentError(action, msg % action_name)
 
@@ -214,6 +237,12 @@ class ParseInitialArgs(ArgumentParser):
                     extras.append(arg_strings[start_index])
                     return start_index + 1
 
+                # if we match help options, skip them for now so subparsers
+                # show up in the help output
+                if arg_strings[start_index] in ('-h', '--help'):
+                    extras.append(arg_strings[start_index])
+                    return start_index + 1
+
                 # if there is an explicit argument, try to match the
                 # optional's string arguments to only this
                 if explicit_arg is not None:
@@ -233,7 +262,7 @@ class ParseInitialArgs(ArgumentParser):
                             action = optionals_map[option_string]
                             explicit_arg = new_explicit_arg
                         else:
-                            msg = _('ignored explicit argument {}')
+                            msg = _('ignored explicit argument %r')
                             raise ArgumentError(action, msg % explicit_arg)
 
                     # if the action expect exactly one argument, we've
@@ -247,7 +276,7 @@ class ParseInitialArgs(ArgumentParser):
                     # error if a double-dash option did not use the
                     # explicit argument
                     else:
-                        msg = _('ignored explicit argument {}')
+                        msg = _('ignored explicit argument %r')
                         raise ArgumentError(action, msg % explicit_arg)
 
                 # if there is no explicit argument, try to match the
@@ -334,17 +363,28 @@ class ParseInitialArgs(ArgumentParser):
         # if we didn't consume all the argument strings, there were extras
         extras.extend(arg_strings[stop_index:])
 
-        # if we didn't use all the Positional objects, there were too few
-        # arg strings supplied.
-        if positionals:
-            self.error(_('too few arguments'))
-
-        # make sure all required actions were present
+        # make sure all required actions were present and also convert
+        # action defaults which were not given as arguments
+        required_actions = []
         for action in self._actions:
-            if action.required:
-                if action not in seen_actions:
-                    name = _get_action_name(action)
-                    self.error(_('argument {} is required') % name)
+            if action not in seen_actions:
+                if action.required:
+                    required_actions.append(_get_action_name(action))
+                else:
+                    # Convert action default now instead of doing it before
+                    # parsing arguments to avoid calling convert functions
+                    # twice (which may fail) if the argument was given, but
+                    # only if it was defined already in the namespace
+                    if (action.default is not None and
+                        isinstance(action.default, str) and
+                        hasattr(namespace, action.dest) and
+                        action.default is getattr(namespace, action.dest)):
+                        setattr(namespace, action.dest,
+                                self._get_value(action, action.default))
+
+        if required_actions:
+            self.error(_('the following arguments are required: %s') %
+                       ', '.join(required_actions))
 
         # make sure all required groups had one option present
         for group in self._mutually_exclusive_groups:
@@ -358,8 +398,89 @@ class ParseInitialArgs(ArgumentParser):
                     names = [_get_action_name(action)
                              for action in group._group_actions
                              if action.help is not SUPPRESS]
-                    msg = _('one of the arguments {} is required')
+                    msg = _('one of the arguments %s is required')
                     self.error(msg % ' '.join(names))
 
         # return the updated namespace and the extra arguments
         return namespace, extras
+
+    @staticmethod
+    def _substitute_args(args, initial_args):
+        for input_list in initial_args.input:
+            line = []
+            try:
+                for s in args:
+                    if re.match(r'^@[0-9]+$', s):
+                        line.append(input_list[int(s[1:])])
+                    elif re.match(r'^@@$', s):
+                        line.extend(input_list)
+                    else:
+                        line.append(s)
+                yield line
+            except IndexError:
+                raise RuntimeError('nonexistent replacement "{}", only {} values exist'.format(s, len(input_list)))
+
+    def parse_args(self, args=None, namespace=None):
+        initial_args, unparsed_args = self.parse_optionals(args, namespace)
+
+        # allow symlinks to bite to override the connection type
+        if os.path.basename(sys.argv[0]) != 'bite':
+            initial_args.connection = os.path.basename(sys.argv[0])
+
+        # get settings from the config file
+        get_config(initial_args, self)
+
+        logger = logging.getLogger(__name__)
+        #logger.setLevel(logging.DEBUG)
+
+        # default to gentoo bugzilla if no service is selected
+        if initial_args.base is None and initial_args.service is None:
+            initial_args.base = 'https://bugs.gentoo.org/'
+            initial_args.service = 'bugzilla-jsonrpc'
+
+        if initial_args.base is None or initial_args.service is None:
+            self.error('both arguments -b/--base and -s/--service are required '
+                            'or must be specified in the config file for a connection')
+
+        service_name = initial_args.service
+
+        if initial_args.list_aliases:
+            list_aliases(initial_args)
+            sys.exit(0)
+
+        # add subcommand parsers for the specified service type
+        subparsers = self.add_subparsers(help='help for subcommands')
+        module_name = 'bite.args.' + service_name.replace('-', '.')
+
+        # add any additional service specific top level commands
+        try:
+            maincmds = import_module(module_name).maincmds
+            maincmds(subparsers)
+        except AttributeError:
+            pass
+
+        # add subcommands
+        subcmds = import_module(module_name).subcmds
+        subcmds(subparsers)
+
+        # check if unparsed args match any aliases
+        if unparsed_args:
+            unparsed_args = substitute_alias(initial_args, unparsed_args)
+
+        # save args as specified alias
+        if initial_args.save_alias is not None:
+            save_alias(initial_args, ' '.join(unparsed_args))
+
+        self.set_defaults(connection=initial_args.connection)
+
+        if initial_args.input is not None:
+            fcn_args = self._substitute_args(unparsed_args, initial_args)
+
+        fcn_args = super().parse_args(unparsed_args, arghparse.Namespace())
+        args = vars(initial_args)
+        fcn_args = {k:v for k,v in vars(fcn_args).items() if k not in args}
+        for i in ['dry_run', 'jobs']:
+            if i in args:
+                fcn_args[i] = args[i]
+        initial_args.fcn_args = fcn_args
+        return initial_args
