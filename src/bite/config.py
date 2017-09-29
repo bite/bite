@@ -206,8 +206,6 @@ def get_config(args, parser):
             config.read_file(f)
     except IOError as e:
         raise CliError('cannot load config file "{}": {}'.format(e.filename, e.strerror))
-    except Exception as e:
-        raise
 
     args.config = config
     args.aliases = parse_config(os.path.join(args.config_dir, 'aliases'))
