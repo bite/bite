@@ -1,4 +1,6 @@
-from argparse import SUPPRESS, Action, ArgumentError, ArgumentTypeError
+from argparse import (
+    SUPPRESS, Action, ArgumentError, ArgumentTypeError,
+    _get_action_name, _SubParsersAction, _)
 import fileinput
 from importlib import import_module
 import importlib.util
@@ -337,7 +339,8 @@ class ArgumentParser(arghparse.ArgumentParser):
                 for index in option_string_indices
                 if index >= start_index])
             if start_index != next_option_string_index:
-                positionals_end_index = consume_positionals(start_index)
+                # positionals_end_index = consume_positionals(start_index)
+                positionals_end_index = start_index
 
                 # only try to parse the next optional if we didn't consume
                 # the option string during the positionals parsing
@@ -358,7 +361,8 @@ class ArgumentParser(arghparse.ArgumentParser):
             start_index = consume_optional(start_index)
 
         # consume any positionals following the last Optional
-        stop_index = consume_positionals(start_index)
+        # stop_index = consume_positionals(start_index)
+        stop_index = start_index
 
         # if we didn't consume all the argument strings, there were extras
         extras.extend(arg_strings[stop_index:])
