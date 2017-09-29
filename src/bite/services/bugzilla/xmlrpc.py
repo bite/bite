@@ -1,10 +1,12 @@
 from urllib.parse import urlparse, urlunparse
-from xmlrpc.client import ProtocolError, ServerProxy, Transport, Fault, GzipDecodedResponse
-#from xml.sax.xmlreader import IncrementalParser
+from xmlrpc.client import dumps, getparser
 
 from bite.objects import decompress
 from bite.exceptions import RequestError, AuthError
 from bite.services.bugzilla import Bugzilla, BugzillaAttachment
+
+from requests import Request
+
 
 class BugzillaXmlrpc(Bugzilla):
     def __init__(self, **kw):
@@ -16,57 +18,41 @@ class BugzillaXmlrpc(Bugzilla):
         self.headers = {'Content-Type': 'text/xml'}
 
         super().__init__(**kw)
-        self._xmlrpc = BugzillaProxy(service=self, uri=self._base)
         self.attachment = BugzillaAttachmentXml
 
     def create_request(self, method, params=None):
         """Construct and return a tuple containing the XMLRPC method and params to send."""
-        return (getattr(self._xmlrpc, method), params)
+        encoding = 'utf-8'
+        allow_none = False
+        params = (params,)
 
-    @staticmethod
-    def send(request):
+        xml_data = dumps(params, method, encoding=encoding,
+                         allow_none=allow_none).encode(encoding, 'xmlcharrefreplace')
+        req = Request(method='POST', url=self._base, data=xml_data,
+                      cookies=self.auth_token, headers=self.headers)
+        return req.prepare()
+
+    def send(self, request):
         """Send request object and perform checks on the response."""
-        cmd, params = request
-        try:
-            return cmd(params)
-        except Fault as e:
-            # Fault code 410 means login required
-            if e.faultCode == 410:
-                raise AuthError(msg=e.faultString, code=e.faultCode)
-            else:
-                raise RequestError(msg=e.faultString, code=e.faultCode)
-
-class BugzillaProxy(ServerProxy):
-    def __init__(self, service, uri, verbose=0, allow_none=0, use_datetime=1,):
-
-        transport = RequestTransport(service, use_datetime=use_datetime, uri=uri)
-        ServerProxy.__init__(self, uri=uri, transport=transport,
-                verbose=verbose, allow_none=allow_none, use_datetime=use_datetime)
-
-class RequestTransport(Transport):
-    def __init__(self, service, uri, use_datetime=1):
-        self.service = service
-        self.uri = uri
-        Transport.__init__(self, use_datetime=use_datetime)
-
-    def request(self, host, handler, request_body, verbose=0):
-        r = self.service.session.post(self.uri, data=request_body, cookies=self.service.auth_token,
-                                      headers=self.service.headers, verify=self.service.verify, stream=True,
-                                      timeout=self.service.timeout)
+        r = super().send(request)
 
         if r.ok:
-            return self.parse_response(IterContent(r))
+            return self.parse_response(IterContent(r))[0]
         else:
-            if r.status_code == 411 and self.uri.startswith('http:'):
+            if r.status_code == 410:
+                raise AuthError(r.reason)
+            elif r.status_code == 411 and self.uri.startswith('http:'):
                 # Bugzilla strangely returns an error under http but works fine under https
                 raise RequestError('Received error reply, try using an https:// url instead')
-            raise ProtocolError(self.uri, r.status_code, r.reason, r.text)
+            else:
+                raise RequestError(r.reason)
 
-    def parse_response(self, response):
+    @staticmethod
+    def parse_response(response):
         # read response data from httpresponse, and parse it
         stream = response
 
-        p, u = self.getparser()
+        p, u = getparser()
 
         while 1:
             data = stream.read(64*1024)
@@ -82,6 +68,7 @@ class RequestTransport(Transport):
         p.close()
 
         return u.close()
+
 
 class IterContent(object):
     def __init__(self, file, size=64*1024):
