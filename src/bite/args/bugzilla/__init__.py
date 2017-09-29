@@ -70,7 +70,8 @@ def subcmds(subparsers):
         dest='is_patch')
 
     # attachment arguments
-    parser = subparsers.add_parser('attachment',
+    parser = subparsers.add_parser(
+        'attachment', verbose=False,
         description='get attachment(s)',
         help='get attachment(s)')
     parser.set_defaults(fcn='attachment')
@@ -228,7 +229,8 @@ def subcmds(subparsers):
         help='show obsolete attachments')
 
     # modify arguments
-    parser = subparsers.add_parser('modify',
+    parser = subparsers.add_parser(
+        'modify', verbose=False,
         description='modify bug(s)',
         help='modify bug(s)')
     parser.set_defaults(fcn='modify')
@@ -401,7 +403,8 @@ def subcmds(subparsers):
         help='get the info for users matching the given information (either ID, login, or matching string')
 
     # search arguments
-    parser = subparsers.add_parser('search',
+    parser = subparsers.add_parser(
+        'search', verbose=False,
         description='search for bugs',
         help='search for bugs')
     parser.set_defaults(fcn='search')
