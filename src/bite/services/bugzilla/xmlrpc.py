@@ -1,4 +1,3 @@
-from urllib.parse import urlparse, urlunparse
 from xmlrpc.client import dumps, getparser
 
 from bite.objects import decompress
@@ -12,13 +11,8 @@ class BugzillaXmlrpc(Bugzilla):
     """Support Bugzilla's deprecated XML-RPC interface."""
 
     def __init__(self, **kw):
-        url = urlparse(kw['base'])
-        path = url.path.rstrip('/')
-        url = (url.scheme, url.netloc, path + '/xmlrpc.cgi', None, None, None)
-        self._base = urlunparse(url)
-
+        self.endpoint = '/xmlrpc.cgi'
         self.headers = {'Content-Type': 'text/xml'}
-
         super().__init__(**kw)
         self.attachment = BugzillaAttachmentXml
 

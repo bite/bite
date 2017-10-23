@@ -1,5 +1,3 @@
-from urllib.parse import urlparse, urlunparse
-
 try: import simplejson as json
 except ImportError: import json
 #import ijson
@@ -26,13 +24,8 @@ class BugzillaJsonrpc(Bugzilla):
     #    return IterSearchRequest(self, *args, **kw)
 
     def __init__(self, **kw):
-        url = urlparse(kw['base'])
-        path = url.path.rstrip('/')
-        url = (url.scheme, url.netloc, path + '/jsonrpc.cgi', None, None, None)
-        self._base = urlunparse(url)
-
+        self.endpoint = '/jsonrpc.cgi'
         self.headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
-
         super().__init__(**kw)
 
     def create_request(self, method, params=None):

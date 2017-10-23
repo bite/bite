@@ -7,6 +7,7 @@ import os
 import re
 import string
 import sys
+from urllib.parse import urlparse, urlunparse
 
 from dateutil.parser import parse as dateparse
 
@@ -279,6 +280,14 @@ class HistoryRequest(Request):
 class Bugzilla(Service):
     def __init__(self, **kw):
         self.item = 'bug'
+
+        url = urlparse(kw['base'])
+        self._base = urlunparse((
+            url.scheme,
+            url.netloc,
+            url.path.rstrip('/') + self.endpoint,
+            None, None, None))
+
         super().__init__(**kw)
 
         self.attachment = BugzillaAttachment
