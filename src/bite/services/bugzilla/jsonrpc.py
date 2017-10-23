@@ -20,13 +20,14 @@ class IterSearchRequest(SearchRequest):
 
 
 class BugzillaJsonrpc(Bugzilla):
+    """Support Bugzilla's deprecated JSON-RPC interface."""
+
     #def search(self, *args, **kw):
     #    return IterSearchRequest(self, *args, **kw)
 
     def __init__(self, **kw):
-        # make sure to use the correct jsonrpc endpoint
         url = urlparse(kw['base'])
-        path = url.path.rpartition('/')[0]
+        path = url.path.rstrip('/')
         url = (url.scheme, url.netloc, path + '/jsonrpc.cgi', None, None, None)
         self._base = urlunparse(url)
 
@@ -35,7 +36,7 @@ class BugzillaJsonrpc(Bugzilla):
         super().__init__(**kw)
 
     def create_request(self, method, params=None):
-        """Construct and return a request object."""
+        """Construct a JSON-RPC request."""
         cookies = []
 
         if self.auth_token is not None:

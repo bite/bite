@@ -9,9 +9,11 @@ from requests import Request
 
 
 class BugzillaXmlrpc(Bugzilla):
+    """Support Bugzilla's deprecated XML-RPC interface."""
+
     def __init__(self, **kw):
         url = urlparse(kw['base'])
-        path = url.path.rpartition('/')[0]
+        path = url.path.rstrip('/')
         url = (url.scheme, url.netloc, path + '/xmlrpc.cgi', None, None, None)
         self._base = urlunparse(url)
 
@@ -21,7 +23,7 @@ class BugzillaXmlrpc(Bugzilla):
         self.attachment = BugzillaAttachmentXml
 
     def create_request(self, method, params=None):
-        """Construct and return a tuple containing the XMLRPC method and params to send."""
+        """Construct an XML-RPC request."""
         encoding = 'utf-8'
         allow_none = False
         params = (params,)
@@ -37,7 +39,7 @@ class BugzillaXmlrpc(Bugzilla):
         r = super().send(request)
 
         if r.ok:
-            return self.parse_response(IterContent(r))[0]
+            return self._parse_response(IterContent(r))[0]
         else:
             if r.status_code == 410:
                 raise AuthError(r.reason)
@@ -48,8 +50,8 @@ class BugzillaXmlrpc(Bugzilla):
                 raise RequestError(r.reason)
 
     @staticmethod
-    def parse_response(response):
-        # read response data from httpresponse, and parse it
+    def _parse_response(response):
+        """Parse XML data from response."""
         stream = response
 
         p, u = getparser(use_datetime=True)
@@ -71,6 +73,7 @@ class BugzillaXmlrpc(Bugzilla):
 
 
 class IterContent(object):
+
     def __init__(self, file, size=64*1024):
         self.initial = True
         self.chunks = file.iter_content(chunk_size=size)
@@ -82,6 +85,7 @@ class IterContent(object):
             return
 
 class BugzillaAttachmentXml(BugzillaAttachment):
+
     @decompress
     def read(self):
         return self.data.data.decode()
