@@ -11,6 +11,7 @@ import tarfile
 import textwrap
 from urllib.parse import urlparse
 
+from bite.const import USER_CONFIG_PATH
 from bite.exceptions import AuthError, CliError
 from bite.objects import TarAttachment
 from bite.utils import confirm, get_input
@@ -45,7 +46,7 @@ def loginrequired(func):
 class Cli(object):
     """Generic commandline interface for a service."""
 
-    def __init__(self, service, config_dir, connection=None, quiet=False, columns=None,
+    def __init__(self, service, connection=None, quiet=False, columns=None,
                  encoding=None, passwordcmd=None, auth_file=None, skip_auth=True, **kw):
         self.service = service
         self.connection = connection
@@ -55,6 +56,10 @@ class Cli(object):
         self.wrapper = textwrap.TextWrapper(width = self.columns)
         self.skip_auth = skip_auth
         self.auth_file = auth_file
+
+        auth_requested = any(
+            (self.auth_file, self.service.auth_token, self.passwordcmd,
+             self.service.user, self.service.password))
 
         if encoding:
             self.enc = encoding
@@ -70,23 +75,15 @@ class Cli(object):
         if sys.stdin.encoding is None:
             sys.stdin = codecs.getreader(self.enc)(sys.stdin)
 
-        # cached auth token dir
-        authdir = os.path.join(config_dir, 'auth')
-        if not os.path.isdir(authdir):
-            os.makedirs(authdir)
-
         if self.auth_file is None:
             url = urlparse(self.service.base)
             if len(url.path) <= 1:
                 auth_file = url.netloc
             else:
                 auth_file = '{}{}'.format(url.netloc, url.path.replace('/', '-'))
-            self.auth_file = os.path.join(authdir, auth_file)
+            self.auth_file = os.path.join(USER_CONFIG_PATH, 'auth', auth_file)
 
         # login if requested; otherwise, login will be required when necessary
-        auth_requested = any(
-            (os.path.exists(self.auth_file), self.service.auth_token, self.passwordcmd,
-             self.service.user, self.service.password))
         if auth_requested:
             self.login()
 
@@ -98,8 +95,7 @@ class Cli(object):
         if self.skip_auth:
             return
 
-        if os.path.exists(self.auth_file):
-            self.load_auth_token()
+        self.load_auth_token()
 
         # fallback to manual user/pass login
         if self.service.auth_token is None:
@@ -122,16 +118,6 @@ class Cli(object):
                     self.passwordcmd.split(), shell=False, stdout=subprocess.PIPE)
                 password, _ = process.communicate()
         return user, password
-
-    def remove_auth_token(self):
-        """Remove an authentication token."""
-        if confirm(prompt='Remove auth token?', default=True):
-            os.remove(self.auth_file)
-        else:
-            # currently only keep one backup and which is overwritten if it already exists
-            self.log('Moving old auth token to "{}"'.format(self.auth_file + '.old'))
-            os.rename(self.auth_file, self.auth_file + '.old')
-        self.service.auth_token = None
 
     @loginretry
     def get(self, dry_run, ids, filters, **kw):
@@ -335,6 +321,11 @@ class Cli(object):
         # TODO: Move caching to library side to make sure it's only done
         # after successful login or API call of some type and to use with other clients.
         try:
+            os.makedirs(os.path.dirname(self.auth_file))
+        except FileExistsError:
+            pass
+
+        try:
             with open(self.auth_file, 'w+') as f:
                 os.chmod(self.auth_file, stat.S_IREAD | stat.S_IWRITE)
                 f.write(self.service.auth_token)
@@ -348,6 +339,16 @@ class Cli(object):
                 self.service.auth_token = f.read()
         except IOError:
             return None
+
+    def remove_auth_token(self):
+        """Remove an authentication token."""
+        if confirm(prompt='Remove auth token?', default=True):
+            os.remove(self.auth_file)
+        else:
+            # currently only keep one backup and which is overwritten if it already exists
+            self.log('Moving old auth token to {!r}'.format(self.auth_file + '.old'))
+            os.rename(self.auth_file, self.auth_file + '.old')
+        self.service.auth_token = None
 
     def _attach_params(self):
         raise NotImplementedError

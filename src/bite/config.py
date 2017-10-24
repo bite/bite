@@ -1,15 +1,11 @@
+import configparser
+from configparser import NoOptionError, NoSectionError, InterpolationMissingOptionError
 import os
 import re
 
-import configparser
-from configparser import NoOptionError, NoSectionError, InterpolationMissingOptionError
-
+from bite import const
 from bite.exceptions import CliError
 
-if 'XDG_CONFIG_HOME' in os.environ:
-    CONFIG_DIR = os.path.join(os.environ['XDG_CONFIG_HOME'], 'bite')
-else:
-    CONFIG_DIR = os.path.expanduser('~/.config/bite/')
 
 class BiteInterpolation(configparser.ExtendedInterpolation):
     """Modified version of ExtendedInterpolation
@@ -192,14 +188,14 @@ def fill_config(args, parser, section):
     fill_config_option(args, parser, parser.get, section, 'suffix')
 
 def get_config(args, parser):
-    args.config_dir = CONFIG_DIR
+    config_dir = const.CONFIG_PATH
     if args.config_file is None:
-        args.config_file = os.path.join(args.config_dir, 'config')
+        args.config_file = os.path.join(config_dir, 'config')
 
     config = configparser.ConfigParser(interpolation=BiteInterpolation())
 
     # load service settings
-    services_dir = os.path.join(args.config_dir, 'services')
+    services_dir = os.path.join(const.DATA_PATH, 'services')
     config.read([os.path.join(services_dir, x) for x in os.listdir(services_dir)])
 
     try:
@@ -209,7 +205,7 @@ def get_config(args, parser):
         raise CliError('cannot load config file {!r}: {}'.format(e.filename, e.strerror))
 
     args.config = config
-    args.aliases = parse_config(os.path.join(args.config_dir, 'aliases'))
+    args.aliases = parse_config(os.path.join(config_dir, 'aliases'))
 
     if args.service is None and args.base is None:
         if 'default' in config.sections():

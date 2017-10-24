@@ -11,7 +11,8 @@ import shlex
 import sys
 
 from bite.alias import substitute_alias
-from bite.config import get_config, CONFIG_DIR
+from bite.config import get_config
+from bite.const import CONFIG_PATH
 
 from snakeoil.cli import arghparse
 
@@ -90,7 +91,7 @@ class parse_filters(Action):
                 module_name = namespace.connection
 
             spec = importlib.util.spec_from_file_location(
-                module_name, os.path.join(CONFIG_DIR, 'python'))
+                module_name, os.path.join(CONFIG_PATH, 'python'))
             if spec is None:
                 parser.error('filter module not found: {}'.format(module_name))
             module = importlib.util.module_from_spec(spec)
