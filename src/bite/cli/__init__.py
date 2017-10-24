@@ -179,7 +179,7 @@ class Cli(object):
         compressed = ['x-bzip2', 'x-bzip', 'x-gzip', 'gzip', 'x-tar', 'x-xz']
         mime_type, mime_subtype = f.mimetype.split('/')
         if sys.stdout.isatty() and not (mime_type == 'text' or mime_subtype in compressed):
-            self.log(' ! Warning: The attachment "{}" has type "{}"'.format(f.filename, f.mimetype))
+            self.log(' ! Warning: The attachment "{}" has type {!r}'.format(f.filename, f.mimetype))
             if not confirm('Are you sure you want to view it?'):
                 return
 
@@ -207,7 +207,7 @@ class Cli(object):
 
     def save_file(self, f):
         if os.path.exists(f.filename):
-            print(' ! Warning: The file "{}" already exists'.format(f.filename))
+            print(' ! Warning: The file {!r} already exists'.format(f.filename))
             if not confirm('Do you want to overwrite it?'):
                 return
 
@@ -217,7 +217,7 @@ class Cli(object):
                 os.chmod(f.filename, stat.S_IREAD | stat.S_IWRITE)
                 save_file.write(f.read(raw=True))
         except IOError as e:
-            raise RuntimeError('Cannot create file "{}": {}'.format(f.filename, e.strerror))
+            raise RuntimeError('Cannot create file {!r}: {}'.format(f.filename, e.strerror))
 
     @loginretry
     @loginrequired

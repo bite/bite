@@ -206,7 +206,7 @@ def get_config(args, parser):
         with open(args.config_file) as f:
             config.read_file(f)
     except IOError as e:
-        raise CliError('cannot load config file "{}": {}'.format(e.filename, e.strerror))
+        raise CliError('cannot load config file {!r}: {}'.format(e.filename, e.strerror))
 
     args.config = config
     args.aliases = parse_config(os.path.join(args.config_dir, 'aliases'))
@@ -220,4 +220,4 @@ def get_config(args, parser):
     if args.connection in config.sections():
         fill_config(args, config, args.connection)
     elif args.connection is not None:
-        parser.error('connection "{}" does not exist in config file'.format(args.connection))
+        parser.error('{!r} connection does not exist in config file'.format(args.connection))
