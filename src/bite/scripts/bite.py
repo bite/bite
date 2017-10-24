@@ -25,10 +25,6 @@ options.add_argument('-i', '--input',
     type=argparse.FileType('r'),
     action=parse_file,
     help='read data from an input file')
-options.add_argument('-j', '--jobs',
-    type=int,
-    default=8,
-    help='Run commands in parallel from a job pool')
 options.add_argument('-l', '--login',
     action='store_true',
     help='force authentication to the specified service')

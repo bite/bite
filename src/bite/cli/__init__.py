@@ -11,11 +11,6 @@ import tarfile
 import textwrap
 from urllib.parse import urlparse
 
-#import gevent
-#from gevent.pool import Pool
-#from gevent import monkey
-#monkey.patch_all(thread=False, select=False)
-
 from bite.exceptions import AuthError, CliError
 from bite.objects import TarAttachment
 from bite.utils import confirm, get_input
@@ -264,21 +259,6 @@ class Cli(object):
             self.log('Submitted {} {}'.format(self.service.item, data))
         else:
             sys.stdout.write(str(data))
-
-    def run(self, args_list, dry_run, jobs, **kw):
-        #pool = Pool(jobs if jobs > 0 else 1)
-        #cmds = [pool.spawn(getattr(self, args['fcn']), **args) for args in args_list]
-        #gevent.joinall(cmds, raise_error=True)
-
-        #with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
-        #    cmds = [executor.submit(getattr(self, args['fcn']), **args) for args in args_list]
-        #for future in concurrent.futures.as_completed(cmds):
-        #    yield future.result()
-        #    yield t
-
-        for args in args_list:
-            cmd = getattr(self, args['fcn'])
-            cmd(**args)
 
     def search(self, dry_run, filters, **kw):
         kw = self._search_params(**kw)
