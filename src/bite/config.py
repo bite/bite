@@ -88,16 +88,6 @@ class BiteInterpolation(configparser.ExtendedInterpolation):
                     "'%' must be followed by '%' or '{', "
                     "found: %r" % (rest,))
 
-def parse_config(config_path):
-    parser = configparser.ConfigParser(interpolation=BiteInterpolation())
-    try:
-        parser.read(config_path)
-    except IOError:
-        return
-    except Exception as e:
-        raise
-    return parser
-
 def config_option(parser, get, section, option):
     if parser.has_option(section, option):
         try:
@@ -188,27 +178,37 @@ def fill_config(args, parser, section):
     fill_config_option(args, parser, parser.get, section, 'suffix')
 
 def get_config(args, parser):
-    config_dir = const.CONFIG_PATH
-    if args.config_file is None:
-        args.config_file = os.path.join(config_dir, 'config')
+    system_config = os.path.join(const.CONFIG_PATH, 'config')
+    user_config = os.path.join(const.USER_CONFIG_PATH, 'config')
+    system_aliases = os.path.join(const.CONFIG_PATH, 'aliases')
+    user_aliases = os.path.join(const.USER_CONFIG_PATH, 'aliases')
 
     config = configparser.ConfigParser(interpolation=BiteInterpolation())
 
-    # load service settings
-    system_services_dir = os.path.join(const.DATA_PATH, 'services')
-    config.read([os.path.join(system_services_dir, x) for x in os.listdir(system_services_dir)])
-    user_services_dir = os.path.join(const.USER_CONFIG_PATH, 'services')
-    if os.path.exists(user_services_dir):
-        config.read([os.path.join(user_services_dir, x) for x in os.listdir(user_services_dir)])
+    # load system service settings and then user service settings over them
+    system_services = os.path.join(const.DATA_PATH, 'services')
+    config.read([os.path.join(system_services, x) for x in os.listdir(system_services)])
+    user_services = os.path.join(const.USER_CONFIG_PATH, 'services')
+    if os.path.exists(user_services):
+        config.read([os.path.join(user_services, x) for x in os.listdir(user_services)])
 
     try:
-        with open(args.config_file) as f:
+        with open(system_config) as f:
             config.read_file(f)
+        config.read(user_config)
     except IOError as e:
         raise CliError('cannot load config file {!r}: {}'.format(e.filename, e.strerror))
 
+    aliases = configparser.ConfigParser(interpolation=BiteInterpolation())
+    try:
+        with open(system_aliases) as f:
+            aliases.read_file(f)
+        aliases.read(user_aliases)
+    except IOError as e:
+        raise CliError('cannot load aliases file {!r}: {}'.format(e.filename, e.strerror))
+
     args.config = config
-    args.aliases = parse_config(os.path.join(config_dir, 'aliases'))
+    args.aliases = aliases
 
     if args.service is None and args.base is None:
         if 'default' in config.sections():

@@ -36,8 +36,4 @@ else:
 
 DATA_PATH = _GET_CONST('DATA_PATH', _reporoot)
 if CONFIG_PATH is None:
-    if os.path.exists(USER_CONFIG_PATH):
-        CONFIG_PATH = USER_CONFIG_PATH
-    else:
-        # fall back to installed example config
-        CONFIG_PATH = _GET_CONST('CONFIG_PATH', '%(DATA_PATH)s/config')
+    CONFIG_PATH = _GET_CONST('CONFIG_PATH', '%(DATA_PATH)s/config')

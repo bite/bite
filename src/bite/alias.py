@@ -1,11 +1,7 @@
-import configparser
-import os
 import shlex
 import subprocess
 import sys
 
-from bite.config import get_config_option, get_matching_options, set_config_option, BiteInterpolation, parse_config
-from bite.utils import confirm
 
 def shell_split(string):
     lex = shlex.shlex(string)
