@@ -27,23 +27,19 @@ class BugzillaXmlrpc(Bugzilla):
         req = Request(method='POST', url=self._base, data=xml_data, headers=self.headers)
         return req.prepare()
 
-    def send(self, request):
+    def parse_response(self, response):
         """Send request object and perform checks on the response."""
-        r = super().send(request)
-
-        if r.ok:
-            return self._parse_response(IterContent(r))[0]
+        data = self._parse_xml(IterContent(response))[0]
+        if not data.get('faults', None):
+            return data
         else:
-            if r.status_code == 410:
-                raise AuthError(r.reason)
-            elif r.status_code == 411 and self.uri.startswith('http:'):
-                # Bugzilla strangely returns an error under http but works fine under https
-                raise RequestError('Received error reply, try using an https:// url instead')
-            else:
-                raise RequestError(r.reason)
+            error = data.get('faults')[0]
+            if error.get('faultCode') == 102:
+                raise AuthError('access denied')
+            raise RequestError(msg=error.get('faultString'), code=error.get('faultCode'))
 
     @staticmethod
-    def _parse_response(response):
+    def _parse_xml(response):
         """Parse XML data from response."""
         stream = response
 

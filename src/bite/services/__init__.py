@@ -101,8 +101,12 @@ class Service(object):
         """Construct a request object."""
         raise NotImplementedError
 
+    def parse_response(self, response):
+        """Parse the returned response."""
+        raise NotImplementedError
+
     def send(self, req):
-        """Sends raw request and returns raw response."""
+        """Send raw request and return raw response."""
         #logging.debug(req.url)
         #logging.debug(req.headers)
 
@@ -114,7 +118,7 @@ class Service(object):
             raise RequestError('failed to establish connection')
 
         if response.ok:
-            return response
+            return self.parse_response(response)
         else:
             if response.status_code in (401, 403):
                 raise AuthError('Authentication failed')

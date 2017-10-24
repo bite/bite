@@ -43,9 +43,7 @@ class BugzillaJsonrpc(Bugzilla):
     #    req = self.create_request(method, params)
     #    return self.send(req)
 
-    def send(self, req):
-        response = super().send(req)
-
+    def parse_response(self, response):
         try:
             data = response.json()
         except json.decoder.JSONDecodeError as e:
@@ -64,8 +62,7 @@ class BugzillaJsonrpc(Bugzilla):
                     raise AuthError('auth token expired', expired=True)
             elif error.get('code') == 102:
                 raise AuthError('access denied')
-            raise RequestError(msg=error.get('message'),
-                               code=error.get('code'))
+            raise RequestError(msg=error.get('message'), code=error.get('code'))
 
 class IterContent(object):
     def __init__(self, file, size=64*1024):
