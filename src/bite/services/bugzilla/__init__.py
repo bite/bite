@@ -297,6 +297,12 @@ class Bugzilla(Service):
         self.attributes = self.bug.attributes
         self.attribute_aliases = self.bug.attribute_aliases
 
+    def inject_auth(self, params):
+        """Add auth token to request params."""
+        if self.auth_token is not None:
+            params['Bugzilla_token'] = self.auth_token
+        return params
+
     def login(self, user=None, password=None):
         """Authenticate a session."""
         super().login(user, password)

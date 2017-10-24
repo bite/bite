@@ -20,12 +20,11 @@ class BugzillaXmlrpc(Bugzilla):
         """Construct an XML-RPC request."""
         encoding = 'utf-8'
         allow_none = False
-        params = (params,)
+        params = (super().inject_auth(params),)
 
         xml_data = dumps(params, method, encoding=encoding,
                          allow_none=allow_none).encode(encoding, 'xmlcharrefreplace')
-        req = Request(method='POST', url=self._base, data=xml_data,
-                      cookies=self.auth_token, headers=self.headers)
+        req = Request(method='POST', url=self._base, data=xml_data, headers=self.headers)
         return req.prepare()
 
     def send(self, request):

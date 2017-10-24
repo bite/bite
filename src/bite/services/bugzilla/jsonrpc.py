@@ -30,21 +30,12 @@ class BugzillaJsonrpc(Bugzilla):
 
     def create_request(self, method, params=None):
         """Construct a JSON-RPC request."""
-        cookies = []
-
-        if self.auth_token is not None:
-            if isinstance(self.auth_token, str):
-                params['token'] = self.auth_token
-            else:
-                cookies = self.auth_token
-
         args = {}
         args['method'] = method
-        args['params'] = [params]
+        args['params'] = [super().inject_auth(params)]
         args['id'] = '0'
 
-        req = Request(method='POST', url=self._base, headers=self.headers,
-                      data=json.dumps(args), cookies=cookies)
+        req = Request(method='POST', url=self._base, headers=self.headers, data=json.dumps(args))
         return req.prepare()
 
     #def request(self, method, params=None, iter_content=False):
