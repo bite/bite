@@ -44,13 +44,15 @@ class Cli(object):
     """Generic commandline interface for a service."""
 
     def __init__(self, service, config_dir, connection=None, quiet=False, columns=None,
-                 encoding=None, passwordcmd=None, authfile=None, login=False, **kw):
+                 encoding=None, passwordcmd=None, auth_token=None, authfile=None, login=False,
+                 **kw):
         self.service = service
         self.connection = connection
         self.quiet = quiet
         self.passwordcmd = passwordcmd
         self.columns = columns or get_terminal_size()[0]
         self.wrapper = textwrap.TextWrapper(width = self.columns)
+        self.auth_token = auth_token
 
         if encoding:
             self.enc = encoding
@@ -90,9 +92,17 @@ class Cli(object):
 
     def login(self):
         """Login to a service and try to cache the authentication token."""
-        if os.path.exists(self.authfile):
+        # TODO: move caching to library side to make sure it's only done
+        # after successful login or API call of some type
+        if self.auth_token is not None:
+            # use specified auth token
+            self.service.auth_token = self.auth_token
+            self.cache_auth_token()
+        elif os.path.exists(self.authfile):
+            # use cached auth token
             self.load_auth_token()
 
+        # fallback to manual user/pass login
         if self.service.auth_token is None:
             user, password = self.get_login_data(self.service.user, self.service.password)
             self.service.login(user, password)

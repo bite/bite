@@ -48,16 +48,19 @@ options.add_argument('--timeout',
     help='amount of time to wait before timing out requests')
 
 auth = argparser.add_argument_group('Authentication')
-auth.add_argument('-u', '--user',
+single_auth = auth.add_mutually_exclusive_group()
+single_auth.add_argument('-a', '--auth-token',
+    help='use the specified token for authentication')
+single_auth.add_argument('-u', '--user',
     help='username for authentication')
 auth.add_argument('-p', '--password',
     help='password for authentication')
-auth.add_argument('--load-auth',
+single_auth.add_argument('--load-auth',
     dest='authfile',
     type=argparse.FileType('r'),
     help='load auth token from file')
 auth.add_argument('--passwordcmd',
-    help='password command to evaluate authentication')
+    help='password command to evaluate authentication (overrides -p/--password)')
 
 service = argparser.add_argument_group('Service')
 service.add_argument('-b', '--base',
