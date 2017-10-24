@@ -3,6 +3,8 @@ import sys
 
 from snakeoil import mappings
 
+from bite import __title__
+
 _reporoot = os.path.realpath(__file__).rsplit(os.path.sep, 3)[0]
 try:
     # This is a file written during installation;
@@ -30,19 +32,19 @@ def _GET_CONST(attr, default_value):
 
 
 if 'XDG_CONFIG_HOME' in os.environ:
-    USER_CONFIG_PATH = os.path.join(os.environ['XDG_CONFIG_HOME'], 'bite')
+    USER_CONFIG_PATH = os.path.join(os.environ['XDG_CONFIG_HOME'], __title__)
 else:
-    USER_CONFIG_PATH = os.path.expanduser('~/.config/bite/')
+    USER_CONFIG_PATH = os.path.expanduser(os.path.join('~/.config', __title__))
 
 if 'XDG_CACHE_HOME' in os.environ:
-    USER_CACHE_PATH = os.path.join(os.environ['XDG_CACHE_HOME'], 'bite')
+    USER_CACHE_PATH = os.path.join(os.environ['XDG_CACHE_HOME'], __title__)
 else:
-    USER_CACHE_PATH = os.path.expanduser('~/.cache/bite/')
+    USER_CACHE_PATH = os.path.expanduser(os.path.join('~/.cache', __title__))
 
 if 'XDG_DATA_HOME' in os.environ:
-    USER_DATA_PATH = os.path.join(os.environ['XDG_DATA_HOME'], 'bite')
+    USER_DATA_PATH = os.path.join(os.environ['XDG_DATA_HOME'], __title__)
 else:
-    USER_DATA_PATH = os.path.expanduser('~/.local/share/bite/')
+    USER_DATA_PATH = os.path.expanduser(os.path.join('~/.local/share', __title__))
 
 DATA_PATH = _GET_CONST('DATA_PATH', _reporoot)
 if CONFIG_PATH is None:
