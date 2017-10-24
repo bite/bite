@@ -1,5 +1,4 @@
 import base64
-from http.cookiejar import LWPCookieJar
 import os
 import re
 import stat
