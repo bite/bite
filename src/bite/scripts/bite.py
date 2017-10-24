@@ -117,7 +117,7 @@ def main(options, out, err):
         service = get_service(service_name, module_name='bite.services', **args)
         args['service'] = service
         client = get_service(service_name, module_name='bite.cli', **args)
-        cmd = getattr(client, options.fcn_args['fcn'])
+        cmd = getattr(client, options.fcn_args.pop('fcn'))
         cmd(**options.fcn_args)
     except (CliError, CommandError, RequestError) as e:
         # TODO: output verbose text attr from RequestError if verbose is enabled
