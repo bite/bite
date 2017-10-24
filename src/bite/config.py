@@ -195,8 +195,11 @@ def get_config(args, parser):
     config = configparser.ConfigParser(interpolation=BiteInterpolation())
 
     # load service settings
-    services_dir = os.path.join(const.DATA_PATH, 'services')
-    config.read([os.path.join(services_dir, x) for x in os.listdir(services_dir)])
+    system_services_dir = os.path.join(const.DATA_PATH, 'services')
+    config.read([os.path.join(system_services_dir, x) for x in os.listdir(system_services_dir)])
+    user_services_dir = os.path.join(const.USER_CONFIG_PATH, 'services')
+    if os.path.exists(user_services_dir):
+        config.read([os.path.join(user_services_dir, x) for x in os.listdir(user_services_dir)])
 
     try:
         with open(args.config_file) as f:
