@@ -34,6 +34,16 @@ if 'XDG_CONFIG_HOME' in os.environ:
 else:
     USER_CONFIG_PATH = os.path.expanduser('~/.config/bite/')
 
+if 'XDG_CACHE_HOME' in os.environ:
+    USER_CACHE_PATH = os.path.join(os.environ['XDG_CACHE_HOME'], 'bite')
+else:
+    USER_CACHE_PATH = os.path.expanduser('~/.cache/bite/')
+
+if 'XDG_DATA_HOME' in os.environ:
+    USER_DATA_PATH = os.path.join(os.environ['XDG_DATA_HOME'], 'bite')
+else:
+    USER_DATA_PATH = os.path.expanduser('~/.local/share/bite/')
+
 DATA_PATH = _GET_CONST('DATA_PATH', _reporoot)
 if CONFIG_PATH is None:
     CONFIG_PATH = _GET_CONST('CONFIG_PATH', '%(DATA_PATH)s/config')
