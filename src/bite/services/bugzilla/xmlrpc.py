@@ -10,13 +10,19 @@ class BugzillaXmlrpc(Bugzilla):
 
     def __init__(self, **kw):
         self.endpoint = '/xmlrpc.cgi'
-        self.headers = {'Content-Type': 'text/xml'}
         super().__init__(**kw)
+        self.session.headers.update({
+            'Accept': 'text/xml',
+            'Content-Type': 'text/xml'
+        })
         self.attachment = BugzillaAttachmentXml
 
     def encode_request(self, method, params=None):
         """Encode the data body for an XML-RPC request."""
+        if self.auth_token is not None:
+            params['Bugzilla_token'] = self.auth_token
         encoding = 'utf-8'
+
         return dumps((params,), method, encoding=encoding,
                      allow_none=False).encode(encoding, 'xmlcharrefreplace')
 

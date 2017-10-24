@@ -304,12 +304,9 @@ class Bugzilla(Service):
 
     def create_request(self, method, params=None):
         """Construct a request."""
-        if self.auth_token is not None:
-            params['Bugzilla_token'] = self.auth_token
-
         data = self.encode_request(method, params)
-        req = Base_Request(method='POST', url=self._base, headers=self.headers, data=data)
-        return req.prepare()
+        return self.session.prepare_request(
+            Base_Request(method='POST', url=self._base, data=data))
 
     def login(self, user=None, password=None):
         """Authenticate a session."""

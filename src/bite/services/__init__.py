@@ -77,12 +77,9 @@ class Service(object):
         self.verify = verify
         self.timeout = timeout
 
-        self.headers['User-Agent'] = '{}-{}'.format('bite', __version__)
-        self.headers['Accept-Encoding'] = ', '.join(('gzip', 'deflate', 'compress'))
-        if 'Accept' not in self.headers:
-            self.headers['Accept'] = '*/*'
-
         self.session = requests.Session()
+        self.session.headers['User-Agent'] = '{}-{}'.format('bite', __version__)
+        self.session.headers['Accept-Encoding'] = ', '.join(('gzip', 'deflate', 'compress'))
 
     def login(self, user=None, password=None):
         """Authenticate a session."""

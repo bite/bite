@@ -25,16 +25,23 @@ class BugzillaJsonrpc(Bugzilla):
 
     def __init__(self, **kw):
         self.endpoint = '/jsonrpc.cgi'
-        self.headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
         super().__init__(**kw)
+        self.session.headers.update({
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        })
 
     def encode_request(self, method, params=None):
         """Encode the data body for a JSON-RPC request."""
+        if self.auth_token is not None:
+            params['Bugzilla_token'] = self.auth_token
+
         args = {
             'method': method,
             'params': [params],
             'id': 0,
         }
+
         return json.dumps(args)
 
     #def request(self, method, params=None, iter_content=False):
