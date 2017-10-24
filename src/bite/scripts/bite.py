@@ -55,10 +55,8 @@ single_auth.add_argument('-u', '--user',
     help='username for authentication')
 auth.add_argument('-p', '--password',
     help='password for authentication')
-single_auth.add_argument('--load-auth',
-    dest='authfile',
-    type=argparse.FileType('r'),
-    help='load auth token from file')
+single_auth.add_argument('--auth-file',
+    help='load/save auth token using specified file')
 auth.add_argument('--passwordcmd',
     help='password command to evaluate authentication (overrides -p/--password)')
 
@@ -104,6 +102,12 @@ def _ls(options, out, error):
         out.write('\n'.join(sorted(SERVICES)))
 
     return 0
+
+
+@argparser.bind_final_check
+def _validate_args(parser, namespace):
+    if namespace.auth_file is not None:
+        namespace.auth_file = os.path.abspath(namespace.auth_file)
 
 
 @argparser.bind_main_func

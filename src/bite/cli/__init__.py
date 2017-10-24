@@ -46,7 +46,7 @@ class Cli(object):
     """Generic commandline interface for a service."""
 
     def __init__(self, service, config_dir, connection=None, quiet=False, columns=None,
-                 encoding=None, passwordcmd=None, authfile=None, skip_auth=True, **kw):
+                 encoding=None, passwordcmd=None, auth_file=None, skip_auth=True, **kw):
         self.service = service
         self.connection = connection
         self.quiet = quiet
@@ -54,6 +54,7 @@ class Cli(object):
         self.columns = columns or get_terminal_size()[0]
         self.wrapper = textwrap.TextWrapper(width = self.columns)
         self.skip_auth = skip_auth
+        self.auth_file = auth_file
 
         if encoding:
             self.enc = encoding
@@ -74,19 +75,17 @@ class Cli(object):
         if not os.path.isdir(authdir):
             os.makedirs(authdir)
 
-        if authfile is not None:
-            self.authfile = authfile.name
-        else:
+        if self.auth_file is None:
             url = urlparse(self.service.base)
             if len(url.path) <= 1:
-                authfile = url.netloc
+                auth_file = url.netloc
             else:
-                authfile = '{}{}'.format(url.netloc, url.path.replace('/', '-'))
-            self.authfile = os.path.join(authdir, authfile)
+                auth_file = '{}{}'.format(url.netloc, url.path.replace('/', '-'))
+            self.auth_file = os.path.join(authdir, auth_file)
 
         # login if requested; otherwise, login will be required when necessary
         auth_requested = any(
-            (os.path.exists(self.authfile), self.service.auth_token, self.passwordcmd,
+            (os.path.exists(self.auth_file), self.service.auth_token, self.passwordcmd,
              self.service.user, self.service.password))
         if auth_requested:
             self.login()
@@ -99,7 +98,7 @@ class Cli(object):
         if self.skip_auth:
             return
 
-        if os.path.exists(self.authfile):
+        if os.path.exists(self.auth_file):
             self.load_auth_token()
 
         # fallback to manual user/pass login
@@ -127,11 +126,11 @@ class Cli(object):
     def remove_auth_token(self):
         """Remove an authentication token."""
         if confirm(prompt='Remove auth token?', default=True):
-            os.remove(self.authfile)
+            os.remove(self.auth_file)
         else:
             # currently only keep one backup and which is overwritten if it already exists
-            self.log('Moving old auth token to "{}"'.format(self.authfile + '.old'))
-            os.rename(self.authfile, self.authfile + '.old')
+            self.log('Moving old auth token to "{}"'.format(self.auth_file + '.old'))
+            os.rename(self.auth_file, self.auth_file + '.old')
         self.service.auth_token = None
 
     @loginretry
@@ -335,13 +334,17 @@ class Cli(object):
     def cache_auth_token(self):
         # TODO: Move caching to library side to make sure it's only done
         # after successful login or API call of some type and to use with other clients.
-        with open(self.authfile, 'w+') as f:
-            os.chmod(self.authfile, stat.S_IREAD | stat.S_IWRITE)
-            f.write(self.service.auth_token)
+        try:
+            with open(self.auth_file, 'w+') as f:
+                os.chmod(self.auth_file, stat.S_IREAD | stat.S_IWRITE)
+                f.write(self.service.auth_token)
+        except (PermissionError, IsADirectoryError) as e:
+            raise CliError('failed caching auth token to {!r}: {}'.format(
+                self.auth_file, e.strerror))
 
     def load_auth_token(self):
         try:
-            with open(self.authfile, 'r') as f:
+            with open(self.auth_file, 'r') as f:
                 self.service.auth_token = f.read()
         except IOError:
             return None
