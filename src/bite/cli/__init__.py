@@ -44,7 +44,7 @@ class Cli(object):
     """Generic commandline interface for a service."""
 
     def __init__(self, service, config_dir, connection=None, quiet=False, columns=None,
-                 encoding=None, passwordcmd=None, cookies=None, login=False, authfile=None, **kw):
+                 encoding=None, passwordcmd=None, authfile=None, login=False, **kw):
         self.service = service
         self.connection = connection
         self.quiet = quiet
@@ -71,20 +71,14 @@ class Cli(object):
         if not os.path.isdir(authdir):
             os.makedirs(authdir)
 
-        if cookies is not None:
-            if os.path.exists(cookies):
-                self.authfile = cookies
-            elif os.path.exists(os.path.join(authdir, cookies)):
-                self.authfile = os.path.join(authdir, cookies)
-            else:
-                raise CliError('Cookie file "{}" does not exist'.format(cookies))
+        if authfile is not None:
+            self.authfile = authfile.name
         else:
             url = urlparse(self.service.base)
-            if authfile is None:
-                if len(url.path) <= 1:
-                    authfile = url.netloc
-                else:
-                    authfile = '{}{}'.format(url.netloc, url.path.replace('/', '-'))
+            if len(url.path) <= 1:
+                authfile = url.netloc
+            else:
+                authfile = '{}{}'.format(url.netloc, url.path.replace('/', '-'))
             self.authfile = os.path.join(authdir, authfile)
 
         # login if requested; otherwise, login will be required when necessary

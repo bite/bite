@@ -55,9 +55,10 @@ auth.add_argument('-u', '--user',
     help='username for authentication')
 auth.add_argument('-p', '--password',
     help='password for authentication')
-auth.add_argument('--load-cookies',
-    dest='cookies',
-    help='load cookies from file for authentication')
+auth.add_argument('--load-auth',
+    dest='authfile',
+    type=argparse.FileType('r'),
+    help='load auth token from file')
 auth.add_argument('--passwordcmd',
     help='password command to evaluate authentication')
 
