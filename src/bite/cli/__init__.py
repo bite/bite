@@ -11,7 +11,7 @@ import tarfile
 import textwrap
 from urllib.parse import urlparse
 
-from bite.const import USER_CONFIG_PATH
+from bite.const import USER_CACHE_PATH
 from bite.exceptions import AuthError, CliError
 from bite.objects import TarAttachment
 from bite.utils import confirm, get_input
@@ -81,7 +81,7 @@ class Cli(object):
                 auth_file = url.netloc
             else:
                 auth_file = '{}{}'.format(url.netloc, url.path.replace('/', '-'))
-            self.auth_file = os.path.join(USER_CONFIG_PATH, 'auth', auth_file)
+            self.auth_file = os.path.join(USER_CACHE_PATH, 'auth', auth_file)
 
         # login if requested; otherwise, login will be required when necessary
         if auth_requested:

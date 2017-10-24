@@ -188,7 +188,7 @@ def get_config(args, parser):
     # load system service settings and then user service settings over them
     system_services = os.path.join(const.DATA_PATH, 'services')
     config.read([os.path.join(system_services, x) for x in os.listdir(system_services)])
-    user_services = os.path.join(const.USER_CONFIG_PATH, 'services')
+    user_services = os.path.join(const.USER_DATA_PATH, 'services')
     if os.path.exists(user_services):
         config.read([os.path.join(user_services, x) for x in os.listdir(user_services)])
 
