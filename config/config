@@ -1,0 +1,15 @@
+# config.example - an example configuration file for bite
+#
+# This file consists of sections which define parameters for each
+# ticket tracker you plan to use.
+#
+# Each section begins with a name in square brackets. This is also the
+# name that should be used with the --connection parameter to the bite
+# command.
+#
+# Each section of this file consists of lines in the form:
+# key: value
+# as listed below.
+
+[default]
+connection: gentoo

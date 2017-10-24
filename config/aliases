@@ -1,0 +1,7 @@
+[default]
+	s: search
+	g: get
+	a: attachment
+	m: modify
+	c: create
+	at: attach
