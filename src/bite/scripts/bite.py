@@ -18,9 +18,6 @@ argparser = ArgumentParser(
     description=__doc__, script=(__file__, __name__))
 
 options = argparser.add_argument_group('Options')
-options.add_argument('-a', '--alias',
-    dest='save_alias',
-    help='save the specified parameters to an alias')
 options.add_argument('-i', '--input',
     type=argparse.FileType('r'),
     action=parse_file,

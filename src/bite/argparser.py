@@ -10,7 +10,7 @@ import re
 import shlex
 import sys
 
-from bite.alias import save_alias, substitute_alias
+from bite.alias import substitute_alias
 from bite.config import get_config, CONFIG_DIR
 
 from snakeoil.cli import arghparse
@@ -467,10 +467,6 @@ class ArgumentParser(arghparse.ArgumentParser):
         # check if unparsed args match any aliases
         if unparsed_args:
             unparsed_args = substitute_alias(initial_args, unparsed_args)
-
-        # save args as specified alias
-        if initial_args.save_alias is not None:
-            save_alias(initial_args, ' '.join(unparsed_args))
 
         self.set_defaults(connection=initial_args.connection)
 

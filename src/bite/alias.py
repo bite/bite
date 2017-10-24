@@ -7,26 +7,6 @@ import sys
 from bite.config import get_config_option, get_matching_options, set_config_option, BiteInterpolation, parse_config
 from bite.utils import confirm
 
-def save_alias(args, value):
-    if args.connection is not None:
-        section = args.connection
-    else:
-        section = 'default'
-
-    exists = False
-    try:
-        alias_cmd = args.config[section]['alias'][args.alias]
-        print(' ! Alias "{}" already exists. '.format(args.alias), end='')
-        if confirm('Overwrite it?'):
-            exists = True
-        else:
-            return
-    except KeyError:
-        pass
-
-    set_config_option(args.config, section, option=option,
-                        value=value, exists=exists)
-
 def shell_split(string):
     lex = shlex.shlex(string)
     lex.whitespace_split = True
