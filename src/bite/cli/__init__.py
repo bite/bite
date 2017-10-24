@@ -32,7 +32,7 @@ def loginretry(func):
                 self.log('Warning: your auth token has expired', prefix=' ! ')
                 self.remove_auth_token()
                 self.log('Generating new auth token')
-                self.login()
+            self.login()
             self.load_auth_token()
             return func(self, *args, **kw)
     return wrapper
