@@ -4,8 +4,6 @@ from bite.objects import decompress
 from bite.exceptions import RequestError, AuthError
 from bite.services.bugzilla import Bugzilla, BugzillaAttachment
 
-from requests import Request
-
 
 class BugzillaXmlrpc(Bugzilla):
     """Support Bugzilla's deprecated XML-RPC interface."""
@@ -16,16 +14,11 @@ class BugzillaXmlrpc(Bugzilla):
         super().__init__(**kw)
         self.attachment = BugzillaAttachmentXml
 
-    def create_request(self, method, params=None):
-        """Construct an XML-RPC request."""
+    def encode_request(self, method, params=None):
+        """Encode the data body for an XML-RPC request."""
         encoding = 'utf-8'
-        allow_none = False
-        params = (super().inject_auth(params),)
-
-        xml_data = dumps(params, method, encoding=encoding,
-                         allow_none=allow_none).encode(encoding, 'xmlcharrefreplace')
-        req = Request(method='POST', url=self._base, data=xml_data, headers=self.headers)
-        return req.prepare()
+        return dumps((params,), method, encoding=encoding,
+                     allow_none=False).encode(encoding, 'xmlcharrefreplace')
 
     def parse_response(self, response):
         """Send request object and perform checks on the response."""

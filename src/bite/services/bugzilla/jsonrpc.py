@@ -1,10 +1,10 @@
 try: import simplejson as json
 except ImportError: import json
 #import ijson
-from requests import Request
 
 from bite.exceptions import AuthError, RequestError
 from bite.services.bugzilla import Bugzilla, SearchRequest
+
 
 class IterSearchRequest(SearchRequest):
     def __init__(self, *args, **kw):
@@ -28,15 +28,14 @@ class BugzillaJsonrpc(Bugzilla):
         self.headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
         super().__init__(**kw)
 
-    def create_request(self, method, params=None):
-        """Construct a JSON-RPC request."""
-        args = {}
-        args['method'] = method
-        args['params'] = [super().inject_auth(params)]
-        args['id'] = '0'
-
-        req = Request(method='POST', url=self._base, headers=self.headers, data=json.dumps(args))
-        return req.prepare()
+    def encode_request(self, method, params=None):
+        """Encode the data body for a JSON-RPC request."""
+        args = {
+            'method': method,
+            'params': [params],
+            'id': 0,
+        }
+        return json.dumps(args)
 
     #def request(self, method, params=None, iter_content=False):
     #    # temporary compatibility shim

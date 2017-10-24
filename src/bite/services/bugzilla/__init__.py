@@ -10,6 +10,7 @@ import sys
 from urllib.parse import urlparse, urlunparse
 
 from dateutil.parser import parse as dateparse
+from requests import Request as Base_Request
 
 from bite import magic, utc
 from bite.objects import Item, Change, Comment, Attachment, decompress
@@ -297,11 +298,18 @@ class Bugzilla(Service):
         self.attributes = self.bug.attributes
         self.attribute_aliases = self.bug.attribute_aliases
 
-    def inject_auth(self, params):
-        """Add auth token to request params."""
+    def encode_request(self, method, params=None):
+        """Encode the data body for a request."""
+        raise NotImplementedError
+
+    def create_request(self, method, params=None):
+        """Construct a request."""
         if self.auth_token is not None:
             params['Bugzilla_token'] = self.auth_token
-        return params
+
+        data = self.encode_request(method, params)
+        req = Base_Request(method='POST', url=self._base, headers=self.headers, data=data)
+        return req.prepare()
 
     def login(self, user=None, password=None):
         """Authenticate a session."""
