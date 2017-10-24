@@ -110,12 +110,13 @@ def _ls(options, out, error):
 def main(options, out, err):
     try:
         args = vars(options)
+        fcn_args = args.pop('fcn_args')
         service_name = args['service']
         service = get_service(service_name, module_name='bite.services', **args)
         args['service'] = service
         client = get_service(service_name, module_name='bite.cli', **args)
-        cmd = getattr(client, options.fcn_args.pop('fcn'))
-        cmd(**options.fcn_args)
+        cmd = getattr(client, fcn_args.pop('fcn'))
+        cmd(**fcn_args)
     except (CliError, CommandError, RequestError) as e:
         # TODO: output verbose text attr from RequestError if verbose is enabled
         if options.verbose:
