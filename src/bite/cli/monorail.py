@@ -17,8 +17,7 @@ from bite.cli import Cli
 from bite.rfc3339 import datetimetostr
 
 class Monorail(Cli):
-    def __init__(self, **kw):
-        super().__init__(authfile='monorail', **kw)
+    """CLI for Monorail service."""
 
     def _search_params(self, **kw):
         query = {}

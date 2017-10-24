@@ -3,8 +3,6 @@ from dateutil.parser import parse as parsetime
 from bite.cli.bugzilla import Bugzilla
 
 class BugzillaBzapi(Bugzilla):
-    def __init__(self, **kw):
-        super().__init__(**kw)
 
     def parse_search(self, **kw):
         params = {}

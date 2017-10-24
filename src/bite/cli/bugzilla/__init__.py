@@ -16,8 +16,7 @@ from bite.exceptions import CliError
 from bite.utc import utc
 
 class Bugzilla(Cli):
-    def __init__(self, **kw):
-        super().__init__(**kw)
+    """CLI for Bugzilla service."""
 
     def _attach_params(self, **kw):
         if kw['comment'] is None:
