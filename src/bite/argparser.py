@@ -438,14 +438,9 @@ class ArgumentParser(arghparse.ArgumentParser):
         logger = logging.getLogger(__name__)
         #logger.setLevel(logging.DEBUG)
 
-        # default to gentoo bugzilla if no service is selected
-        if initial_args.base is None and initial_args.service is None:
-            initial_args.base = 'https://bugs.gentoo.org/'
-            initial_args.service = 'bugzilla-jsonrpc'
-
         if initial_args.base is None or initial_args.service is None:
             self.error('both arguments -b/--base and -s/--service are required '
-                            'or must be specified in the config file for a connection')
+                       'or must be specified in the config file for a connection')
 
         service_name = initial_args.service
 
