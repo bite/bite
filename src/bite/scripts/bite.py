@@ -25,6 +25,10 @@ options.add_argument('-i', '--input',
     type=argparse.FileType('r'),
     action=parse_file,
     help='read data from an input file')
+options.add_argument('-k', '--insecure',
+    action='store_false',
+    dest='verify',
+    help='skip SSL certificate verification')
 options.add_argument('-l', '--login',
     action='store_true',
     help='force authentication to the specified service')
@@ -38,10 +42,6 @@ options.add_argument('--columns',
     help='maximum number of columns output should use')
 options.add_argument('--encoding',
     help='output encoding (default: utf-8)')
-options.add_argument('--no-verify',
-    action='store_false',
-    dest='verify',
-    help='skip verifying SSL certificates')
 options.add_argument('--suffix',
     help='domain suffix to strip or add when displaying or searching '
          '(e.g. "@domain.com")')
