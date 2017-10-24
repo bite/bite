@@ -67,15 +67,17 @@ class NullRequest(Request):
         pass
 
 class Service(object):
-    def __init__(self, base, verify=True, user=None, password=None,
-                 cookies=None, suffix=None, timeout=None, **kw):
+    def __init__(self, base, verify=True, user=None, password=None, skip_auth=True,
+                 auth_token=None, suffix=None, timeout=None, **kw):
         self.base = base
         self.user = user
         self.password = password
         self.suffix = suffix
-        self.auth_token = cookies
         self.verify = verify
         self.timeout = timeout
+
+        self.skip_auth = skip_auth
+        self.auth_token = auth_token if not skip_auth else None
 
         self.session = requests.Session()
         self.session.headers['User-Agent'] = '{}-{}'.format('bite', __version__)

@@ -21,6 +21,8 @@ def loginretry(func):
         try:
             return func(self, *args, **kw)
         except AuthError as e:
+            if self.skip_auth:
+                raise e
             # don't show redundant output from retried commands
             self.quiet = True
             if e.expired and self.service.auth_token is not None:
@@ -44,15 +46,14 @@ class Cli(object):
     """Generic commandline interface for a service."""
 
     def __init__(self, service, config_dir, connection=None, quiet=False, columns=None,
-                 encoding=None, passwordcmd=None, auth_token=None, authfile=None, login=False,
-                 **kw):
+                 encoding=None, passwordcmd=None, authfile=None, skip_auth=True, **kw):
         self.service = service
         self.connection = connection
         self.quiet = quiet
         self.passwordcmd = passwordcmd
         self.columns = columns or get_terminal_size()[0]
         self.wrapper = textwrap.TextWrapper(width = self.columns)
-        self.auth_token = auth_token
+        self.skip_auth = skip_auth
 
         if encoding:
             self.enc = encoding
@@ -84,7 +85,10 @@ class Cli(object):
             self.authfile = os.path.join(authdir, authfile)
 
         # login if requested; otherwise, login will be required when necessary
-        if login:
+        auth_requested = any(
+            (os.path.exists(self.authfile), self.service.auth_token, self.passwordcmd,
+             self.service.user, self.service.password))
+        if auth_requested:
             self.login()
 
         if sys.stdin.isatty():
@@ -92,14 +96,10 @@ class Cli(object):
 
     def login(self):
         """Login to a service and try to cache the authentication token."""
-        # TODO: move caching to library side to make sure it's only done
-        # after successful login or API call of some type
-        if self.auth_token is not None:
-            # use specified auth token
-            self.service.auth_token = self.auth_token
-            self.cache_auth_token()
-        elif os.path.exists(self.authfile):
-            # use cached auth token
+        if self.skip_auth:
+            return
+
+        if os.path.exists(self.authfile):
             self.load_auth_token()
 
         # fallback to manual user/pass login
@@ -333,6 +333,8 @@ class Cli(object):
                 print(line[:self.columns])
 
     def cache_auth_token(self):
+        # TODO: Move caching to library side to make sure it's only done
+        # after successful login or API call of some type and to use with other clients.
         with open(self.authfile, 'w+') as f:
             os.chmod(self.authfile, stat.S_IREAD | stat.S_IWRITE)
             f.write(self.service.auth_token)

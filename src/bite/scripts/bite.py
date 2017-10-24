@@ -26,9 +26,6 @@ options.add_argument('-k', '--insecure',
     action='store_false',
     dest='verify',
     help='skip SSL certificate verification')
-options.add_argument('-l', '--login',
-    action='store_true',
-    help='force authentication to the specified service')
 options.add_argument('-n', '--dry-run',
     action='store_true',
     help='do everything except requesting or sending data')
@@ -51,6 +48,9 @@ auth = argparser.add_argument_group('Authentication')
 single_auth = auth.add_mutually_exclusive_group()
 single_auth.add_argument('-a', '--auth-token',
     help='use the specified token for authentication')
+single_auth.add_argument('-S', '--skip-auth',
+    action='store_true',
+    help='skip authenticating to the specified service')
 single_auth.add_argument('-u', '--user',
     help='username for authentication')
 auth.add_argument('-p', '--password',
