@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import errno
-from glob import glob
+from itertools import chain
 import os
 import sys
 
@@ -76,10 +76,10 @@ setup(
     url='https://github.com/radhermit/bite/',
     license='BSD',
     platforms=['any'],
-    data_files=(
-        ('share/bite/config', glob('config/*')),
-        ('share/bite/services', glob('services/*')),
-    ),
+    data_files=list(chain(
+        pkgdist.data_mapping(CONFIG_INSTALL_OFFSET, 'config'),
+        pkgdist.data_mapping(os.path.join(DATA_INSTALL_OFFSET, 'services'), 'services'),
+    )),
     cmdclass=dict(
         pkgdist_cmds,
         install=install,

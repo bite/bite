@@ -177,20 +177,16 @@ def fill_config(args, parser, section):
     fill_config_option(args, parser, parser.get, section, 'suffix')
 
 def get_config(args, parser):
-    system_config = os.path.join(const.CONFIG_PATH, 'config')
-    user_config = os.path.join(const.USER_CONFIG_PATH, 'config')
-    system_aliases = os.path.join(const.CONFIG_PATH, 'aliases')
-    user_aliases = os.path.join(const.USER_CONFIG_PATH, 'aliases')
-
     config = configparser.ConfigParser(interpolation=BiteInterpolation())
 
     # load system service settings and then user service settings over them
-    system_services = os.path.join(const.DATA_PATH, 'services')
-    config.read([os.path.join(system_services, x) for x in os.listdir(system_services)])
-    user_services = os.path.join(const.USER_DATA_PATH, 'services')
-    if os.path.exists(user_services):
-        config.read([os.path.join(user_services, x) for x in os.listdir(user_services)])
+    for service_dir in (os.path.join(const.DATA_PATH, 'services'),
+                        os.path.join(const.USER_DATA_PATH, 'services')):
+        for root, _, files in os.walk(service_dir):
+            config.read([os.path.join(root, f) for f in files])
 
+    system_config = os.path.join(const.CONFIG_PATH, 'config')
+    user_config = os.path.join(const.USER_CONFIG_PATH, 'config')
     try:
         with open(system_config) as f:
             config.read_file(f)
@@ -199,6 +195,8 @@ def get_config(args, parser):
         raise CliError('cannot load config file {!r}: {}'.format(e.filename, e.strerror))
 
     aliases = configparser.ConfigParser(interpolation=BiteInterpolation())
+    system_aliases = os.path.join(const.CONFIG_PATH, 'aliases')
+    user_aliases = os.path.join(const.USER_CONFIG_PATH, 'aliases')
     try:
         with open(system_aliases) as f:
             aliases.read_file(f)
