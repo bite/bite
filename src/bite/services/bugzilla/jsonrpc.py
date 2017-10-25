@@ -49,11 +49,6 @@ class BugzillaJsonrpc(Bugzilla):
 
         return json.dumps(args)
 
-    #def request(self, method, params=None, iter_content=False):
-    #    # temporary compatibility shim
-    #    req = self.create_request(method, params)
-    #    return self.send(req)
-
     def parse_response(self, response):
         try:
             data = response.json()
