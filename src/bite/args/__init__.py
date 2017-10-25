@@ -53,10 +53,10 @@ def get(parser):
         help="open item page in a browser")
 
 def attachment(parser):
-    parser.add_argument('-u', '--url',
+    parser.add_argument('-U', '--url',
         action='store_true',
         help='output the URL of the attachment')
-    parser.add_argument('-v', '--view',
+    parser.add_argument('-V', '--view',
         action='store_true',
         help='print attachment data')
 
