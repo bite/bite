@@ -66,7 +66,9 @@ class NullRequest(Request):
     def send(self):
         pass
 
+
 class Service(object):
+
     def __init__(self, base, verify=True, user=None, password=None, skip_auth=True,
                  auth_token=None, suffix=None, timeout=None, **kw):
         self.base = base
@@ -75,6 +77,9 @@ class Service(object):
         self.suffix = suffix
         self.verify = verify
         self.timeout = timeout
+
+        self.item = 'issue'
+        self.item_web_endpoint = None
 
         self.skip_auth = skip_auth
         self.auth_token = auth_token if not skip_auth else None

@@ -48,6 +48,9 @@ def get(parser):
         action='store_false',
         help='do not show comments',
         dest='get_comments')
+    parser.add_argument('-B', '--browser',
+        action='store_true',
+        help="open item page in a browser")
 
 def attachment(parser):
     parser.add_argument('-u', '--url',

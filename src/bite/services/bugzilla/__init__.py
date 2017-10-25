@@ -278,10 +278,10 @@ class HistoryRequest(Request):
         for b in bugs:
             yield [BugzillaEvent(change=x, id=b['id'], alias=b['alias'], count=i) for i, x in enumerate(b['history'], start=1)]
 
-class Bugzilla(Service):
-    def __init__(self, **kw):
-        self.item = 'bug'
 
+class Bugzilla(Service):
+
+    def __init__(self, **kw):
         url = urlparse(kw['base'])
         self._base = urlunparse((
             url.scheme,
@@ -291,6 +291,8 @@ class Bugzilla(Service):
 
         super().__init__(**kw)
 
+        self.item = 'bug'
+        self.item_web_endpoint = '/show_bug.cgi?id='
         self.attachment = BugzillaAttachment
         self.bug = BugzillaBug
 

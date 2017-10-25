@@ -120,18 +120,34 @@ class Cli(object):
         return user, password
 
     @loginretry
-    def get(self, dry_run, ids, filters, **kw):
+    def get(self, dry_run, ids, filters, browser=False, **kw):
         if not ids:
             raise RuntimeError('No {} ID(s) specified'.format(self.service.item))
 
-        self.log(self._truncate('Getting {}(s): {}'.format(self.service.item, ', '.join(map(str, ids)))))
+        if browser:
+            if self.service.item_web_endpoint is None:
+                raise CliError("service doesn't define a web endpoint")
 
-        if dry_run: return
-        data = self.service.get(ids, **kw)
-        if filters is not None:
-            for fcn in filters:
-                data = fcn(data)
-        self._print_item(data, **kw)
+            for id in ids:
+                url = self.service.base.rstrip('/') + self.service.item_web_endpoint + str(id)
+                browser = os.environ.get('BROWSER', 'xdg-open')
+                self.log(self._truncate('Launching {} in browser: {} {!r}'.format(
+                    self.service.item, browser, url)))
+
+                try:
+                    subprocess.run([browser, "{}".format(url)],
+                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                except (PermissionError, FileNotFoundError) as e:
+                    raise CliError('failed running browser {!r}: {}'.format(browser, e.strerror))
+        else:
+            self.log(self._truncate('Getting {}(s): {}'.format(self.service.item, ', '.join(map(str, ids)))))
+
+            if dry_run: return
+            data = self.service.get(ids, **kw)
+            if filters is not None:
+                for fcn in filters:
+                    data = fcn(data)
+            self._print_item(data, **kw)
 
     @loginretry
     @loginrequired
