@@ -9,10 +9,10 @@ from itertools import chain, groupby
 
 from dateutil.parser import parse as parsetime
 
-from bite.utils import block_edit, confirm, get_input
-from bite.cli import Cli
-from bite.exceptions import CliError
-from bite.utc import utc
+from .. import Cli
+from ...utils import block_edit, confirm, get_input
+from ...exceptions import CliError
+from ...utc import utc
 
 class Bugzilla(Cli):
     """CLI for Bugzilla service."""

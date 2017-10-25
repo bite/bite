@@ -15,10 +15,10 @@ import lxml.html
 import requests
 import xdg.Mime
 
-from bite.objects import decompress, Item, Comment, Attachment
-from bite.exceptions import RequestError, AuthError, BadAuthToken
-from bite.services import Service
-from bite.rfc3339 import parse_datetime as parsetime
+from . import Service
+from ..objects import decompress, Item, Comment, Attachment
+from ..exceptions import RequestError, AuthError, BadAuthToken
+from ..rfc3339 import parse_datetime as parsetime
 
 class Monorail(Service):
     def __init__(self, service, **kw):

@@ -5,8 +5,8 @@ import datetime
 from dateutil.parser import parse as parsetime
 from dateutil.relativedelta import *
 
-from bite.argparser import parse_stdin, string_list, id_list, ids
-from bite.args import generic_options
+from . import generic_options
+from ..argparser import parse_stdin, string_list, id_list, ids
 
 def subcmds(subparsers):
     # modification related methods not supported yet

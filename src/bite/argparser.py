@@ -10,11 +10,11 @@ import re
 import shlex
 import sys
 
-from bite.alias import substitute_alias
-from bite.config import get_config
-from bite.const import CONFIG_PATH
-
 from snakeoil.cli import arghparse
+
+from .alias import substitute_alias
+from .config import get_config
+from .const import CONFIG_PATH
 
 
 def string_list(s):

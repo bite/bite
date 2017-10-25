@@ -6,7 +6,7 @@ import sys
 import string
 import tempfile
 
-from bite.exceptions import CommandError
+from .exceptions import CommandError
 
 COMMENT_TEMPLATE = \
 """

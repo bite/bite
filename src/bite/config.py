@@ -1,10 +1,9 @@
 import configparser
-from configparser import NoOptionError, NoSectionError, InterpolationMissingOptionError
 import os
 import re
 
-from bite import const
-from bite.exceptions import CliError
+from . import const
+from .exceptions import CliError
 
 
 class BiteInterpolation(configparser.ExtendedInterpolation):
@@ -71,8 +70,8 @@ class BiteInterpolation(configparser.ExtendedInterpolation):
                         raise InterpolationSyntaxError(
                             option, section,
                             "More than one ':' found: %r" % (rest,))
-                except (KeyError, NoSectionError, NoOptionError):
-                    raise InterpolationMissingOptionError(
+                except (KeyError, configparser.NoSectionError, configparser.NoOptionError):
+                    raise configparser.InterpolationMissingOptionError(
                         option, section, rest, ":".join(path))
                 if "%" in v:
                     self._interpolate_some(parser, opt, accum, v, sect,

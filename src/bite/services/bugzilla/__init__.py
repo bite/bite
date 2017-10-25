@@ -12,9 +12,9 @@ from urllib.parse import urlparse, urlunparse
 from dateutil.parser import parse as dateparse
 from requests import Request as Base_Request
 
-from bite import magic, utc
-from bite.objects import Item, Change, Comment, Attachment, decompress
-from bite.services import Service, Request, NullRequest
+from .. import Service, Request, NullRequest
+from ... import magic, utc
+from ...objects import Item, Change, Comment, Attachment, decompress
 
 def parsetime(time):
     if not isinstance(time, datetime.datetime):

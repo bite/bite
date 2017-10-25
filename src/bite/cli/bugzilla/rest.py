@@ -1,6 +1,6 @@
 from dateutil.parser import parse as parsetime
 
-from bite.cli.bugzilla import Bugzilla
+from . import Bugzilla
 
 class BugzillaBzapi(Bugzilla):
 

@@ -1,8 +1,8 @@
 from xmlrpc.client import dumps, getparser
 
-from bite.objects import decompress
-from bite.exceptions import RequestError, AuthError
-from bite.services.bugzilla import Bugzilla, BugzillaAttachment
+from . import Bugzilla, BugzillaAttachment
+from ...objects import decompress
+from ...exceptions import RequestError, AuthError
 
 
 class BugzillaXmlrpc(Bugzilla):

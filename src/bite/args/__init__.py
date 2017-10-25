@@ -1,6 +1,6 @@
 import sys
 
-from bite.argparser import string_list, parse_filters
+from ..argparser import string_list, parse_filters
 
 def generic_options(subparsers, get_actions, send_actions):
     # iterate through subparsers adding generic options for send/receive methods

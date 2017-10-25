@@ -7,8 +7,8 @@ from urllib.parse import urlparse
 import concurrent.futures
 import requests
 
-from bite import __version__
-from bite.exceptions import RequestError, AuthError, NotFound
+from .. import __version__
+from ..exceptions import RequestError, AuthError, NotFound
 
 #requests_log = logging.getLogger('requests')
 #requests_log.setLevel(logging.DEBUG)

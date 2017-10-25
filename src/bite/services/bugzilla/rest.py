@@ -3,8 +3,8 @@ except ImportError: import json
 import ijson
 import requests
 
-from bite.exceptions import RequestError
-from bite.services.bugzilla import Bugzilla, BugzillaAttachment, BugzillaComment, BugzillaEvent
+from . import Bugzilla, BugzillaAttachment, BugzillaComment, BugzillaEvent
+from ...exceptions import RequestError
 
 class BugzillaRest(Bugzilla):
     def __init__(self, **kw):

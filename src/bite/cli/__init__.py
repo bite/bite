@@ -11,10 +11,10 @@ import tarfile
 import textwrap
 from urllib.parse import urlparse
 
-from bite.const import USER_CACHE_PATH
-from bite.exceptions import AuthError, CliError
-from bite.objects import TarAttachment
-from bite.utils import confirm, get_input
+from ..const import USER_CACHE_PATH
+from ..exceptions import AuthError, CliError
+from ..objects import TarAttachment
+from ..utils import confirm, get_input
 
 def loginretry(func):
     """Forces authentication on second request if the initial request was unauthenticated and failed due to insufficient permissions."""

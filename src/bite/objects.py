@@ -7,7 +7,7 @@ import sys
 import tarfile
 import zlib
 
-from bite import magic
+from . import magic
 
 
 def decompress(fcn):

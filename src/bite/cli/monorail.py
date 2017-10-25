@@ -12,9 +12,9 @@ from urllib.parse import urlencode
 import dateutil.parser
 from dateutil.relativedelta import *
 
-from bite.argparser import parse_stdin
-from bite.cli import Cli
-from bite.rfc3339 import datetimetostr
+from . import Cli
+from ..argparser import parse_stdin
+from ..rfc3339 import datetimetostr
 
 class Monorail(Cli):
     """CLI for Monorail service."""

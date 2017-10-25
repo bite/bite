@@ -2,8 +2,8 @@ try: import simplejson as json
 except ImportError: import json
 #import ijson
 
-from bite.exceptions import AuthError, RequestError
-from bite.services.bugzilla import Bugzilla, SearchRequest
+from . import Bugzilla, SearchRequest
+from ...exceptions import AuthError, RequestError
 
 
 class IterSearchRequest(SearchRequest):

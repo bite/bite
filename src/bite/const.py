@@ -3,7 +3,7 @@ import sys
 
 from snakeoil import mappings
 
-from bite import __title__
+from . import __title__
 
 _reporoot = os.path.realpath(__file__).rsplit(os.path.sep, 3)[0]
 _module = sys.modules[__name__]
@@ -11,7 +11,7 @@ try:
     # This is a file written during installation;
     # if it exists, we defer to it. If it doesn't, then we're
     # running from a git checkout or a tarball.
-    from bite import _const as _defaults
+    from . import _const as _defaults
     CONFIG_PATH = None
 except ImportError:
     _defaults = object()

@@ -9,9 +9,9 @@ from importlib import import_module
 import os
 import sys
 
-from bite import SERVICES
-from bite.argparser import ArgumentParser, parse_file
-from bite.exceptions import CliError, CommandError, RequestError
+from .. import SERVICES
+from ..argparser import ArgumentParser, parse_file
+from ..exceptions import CliError, CommandError, RequestError
 
 
 argparser = ArgumentParser(

@@ -1,8 +1,8 @@
 import argparse
 
-from bite.argparser import parse_stdin, string_list, id_list, ids, itemfilter
-from bite.args import *
-from bite.args.bugzilla import parse_date
+from . import parse_date
+from .. import *
+from ...argparser import parse_stdin, string_list, id_list, ids, itemfilter
 
 def person_search(s):
     strings = s.split()
