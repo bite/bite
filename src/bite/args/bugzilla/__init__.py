@@ -6,7 +6,7 @@ import datetime
 from dateutil.parser import parse as parsetime
 from dateutil.relativedelta import *
 
-from .. import generic_options
+from .. import base_options, generic_receive, generic_send
 from ...argparser import parse_stdin, string_list, id_list, ids
 from ...utc import utc
 
@@ -62,9 +62,10 @@ def subcmds(subparsers):
         metavar='ID',
         help='bug ID(s) where the file should be attached')
     # optional args
-    parser.add_argument('-c', '--content-type',
+    attach = base_options(parser, 'attach')
+    attach.add_argument('-c', '--content-type',
         help='mimetype of the file e.g. text/plain (default: auto-detect)')
-    parser.add_argument('-p', '--patch',
+    attach.add_argument('-p', '--patch',
         action='store_true',
         help='attachment is a patch',
         dest='is_patch')
@@ -82,11 +83,12 @@ def subcmds(subparsers):
         metavar='ID',
         help='attachment ID(s) (or bug ID(s) when --bugid is used)')
     # optional args
-    parser.add_argument('-l', '--list',
+    attachment = base_options(parser, 'attachment')
+    attachment.add_argument('-l', '--list',
         action='store_true',
         dest='metadata',
         help='list attachment metadata')
-    parser.add_argument('--bugid',
+    attachment.add_argument('--bugid',
         action='store_true',
         help='search by bug ID(s) rather than attachment ID(s)')
 
@@ -101,23 +103,25 @@ def subcmds(subparsers):
         action=parse_stdin,
         metavar='ID',
         help='ID(s) or alias(es) of the bug(s) to retrieve all changes')
-    parser.add_argument('-c', '--created',
+    # optional args
+    changes = base_options(parser, 'changes')
+    changes.add_argument('-c', '--created',
         dest='creation_time',
         metavar='TIME',
         type=parse_date,
         action=parse_stdin,
         help='changes made at this time or later')
-    parser.add_argument('-m', '--match',
+    changes.add_argument('-m', '--match',
         type=string_list,
         help='restrict by matching changed fields')
-    parser.add_argument('-n', '--number',
+    changes.add_argument('-n', '--number',
         dest='change_num',
         type=id_list,
         action=parse_stdin,
         help='restrict by change number(s)')
-    parser.add_argument('--output',
+    changes.add_argument('--output',
         help='custom format for output')
-    parser.add_argument('-r', '--creator',
+    changes.add_argument('-r', '--creator',
         type=string_list,
         action=parse_stdin,
         help='restrict by person who made the change')
@@ -133,23 +137,25 @@ def subcmds(subparsers):
         action=parse_stdin,
         metavar='ID',
         help='ID(s) or alias(es) of the bug(s) to retrieve all comments')
-    parser.add_argument('-n', '--number',
+    # optional args
+    comments = base_options(parser, 'comments')
+    comments.add_argument('-n', '--number',
         dest='comment_num',
         type=id_list,
         action=parse_stdin,
         help='restrict by comment number(s)')
-    parser.add_argument('--output',
+    comments.add_argument('--output',
         help='custom format for output')
-    parser.add_argument('-c', '--created',
+    comments.add_argument('-c', '--created',
         dest='creation_time',
         metavar='TIME',
         type=parse_date,
         help='comments made at this time or later')
-    parser.add_argument('-r', '--creator',
+    comments.add_argument('-r', '--creator',
         type=string_list,
         action=parse_stdin,
         help='restrict by the email of the person who made the comment')
-    parser.add_argument('-a', '--attachment',
+    comments.add_argument('-a', '--attachment',
         action='store_true',
         help='restrict by comments that include attachments')
 
@@ -159,6 +165,7 @@ def subcmds(subparsers):
         help='create a new bug')
     parser.set_defaults(fcn='create')
     # optional args
+    create = base_options(parser, 'create')
     person = parser.add_argument_group('Person related')
     person.add_argument('-a', '--assigned-to',
         help='assign bug to someone other than the default assignee')
@@ -220,11 +227,12 @@ def subcmds(subparsers):
         metavar='ID',
         help='ID(s) or alias(es) of the bug(s) to retrieve')
     # optional args
-    parser.add_argument('--history',
+    get = base_options(parser, 'get')
+    get.add_argument('--history',
         action='store_true',
         help='show bug history',
         dest='get_history')
-    parser.add_argument('--show-obsolete',
+    get.add_argument('--show-obsolete',
         action='store_true',
         help='show obsolete attachments')
 
@@ -241,6 +249,7 @@ def subcmds(subparsers):
         metavar='ID',
         help='ID(s) of the bug(s) to modify')
     # optional args
+    modify = base_options(parser, 'modify')
     attr = parser.add_argument_group('Attribute related')
     attr.add_argument('-c', '--comment',
         help='add comment from command line',
@@ -382,23 +391,24 @@ def subcmds(subparsers):
         help='raw queries to perform on bugzilla of the format "method[#params]" '
             '(e.g. use "Bug.get#{\'ids\': [100]}" to get bug 100)')
     # optional args
-    parser.add_argument('--bugzilla-version',
+    query = base_options(parser, 'query')
+    query.add_argument('--bugzilla-version',
         action='store_true',
         help='get the version of bugzilla')
-    parser.add_argument('--raw',
+    query.add_argument('--raw',
         action='store_true',
         help='print raw, unformatted json responses')
-    parser.add_argument('--bugzilla-extensions',
+    query.add_argument('--bugzilla-extensions',
         action='store_true',
         help='get the extensions of bugzilla')
-    parser.add_argument('--products',
+    query.add_argument('--products',
         action='append',
         help='get the info for products matching the given information (either ID or name')
-    parser.add_argument('-f', '--fields',
+    query.add_argument('-f', '--fields',
         action='append',
         nargs='?',
         help='get the info for fields matching the given information (either ID or name')
-    parser.add_argument('--users',
+    query.add_argument('--users',
         action='append',
         help='get the info for users matching the given information (either ID, login, or matching string')
 
@@ -414,7 +424,8 @@ def subcmds(subparsers):
         nargs='*',
         help='strings to search for in title and/or body')
     # optional args
-    parser.add_argument('--output',
+    search = base_options(parser, 'search')
+    search.add_argument('--output',
         help='custom format for search output')
     person = parser.add_argument_group('Person related')
     person.add_argument('-a', '--assigned-to',
@@ -495,6 +506,10 @@ def subcmds(subparsers):
         help='restrict by target milestone (one or more)')
 
     # add generic options for subcommands
-    get_actions = ['get', 'search', 'comments', 'changes']
-    send_actions = ['attach', 'modify', 'create']
-    generic_options(subparsers, get_actions, send_actions)
+    get_actions = [get, search, comments, changes]
+    send_actions = [attach, modify, create]
+
+    for group in get_actions:
+        generic_receive(group)
+    for group in send_actions:
+        generic_send(group)

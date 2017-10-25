@@ -5,7 +5,7 @@ import datetime
 from dateutil.parser import parse as parsetime
 from dateutil.relativedelta import *
 
-from . import generic_options
+from . import base_options, generic_receive, generic_send
 from ..argparser import parse_stdin, string_list, id_list, ids
 
 def subcmds(subparsers):
@@ -13,16 +13,19 @@ def subcmds(subparsers):
 
     parser = subparsers.add_parser('attachment',
         help='get an attachment')
+    parser.set_defaults(fcn='attachment')
+    # positional args
     parser.add_argument('ids',
         type=attachment_id,
         action=parse_stdin,
         nargs='+',
         help='the ID(s) of the attachment(s)')
     # optional args
-    parser.set_defaults(fcn='attachment')
+    attachment = base_options(parser, 'attachment')
 
     parser = subparsers.add_parser('get',
         help='get an issue')
+    parser.set_defaults(fcn='get')
     # positional args
     parser.add_argument('ids',
         type=ids,
@@ -31,111 +34,116 @@ def subcmds(subparsers):
         metavar='ID',
         help='the ID(s) of the issues(s) to retrieve')
     # optional args
-    parser.add_argument('--no-updates',
+    get = base_options(parser, 'get')
+    get.add_argument('--no-updates',
         action='store_false',
         default=True,
         help='do not show updates to fields like labels, status, owner, ...',
         dest='get_updates')
-    parser.set_defaults(fcn='get')
 
     parser = subparsers.add_parser('search',
         help='search for issues')
+    parser.set_defaults(fcn='search')
     # positional args
     parser.add_argument('terms',
         action=parse_stdin,
         nargs='*',
         help='strings to search for in title and/or body')
     # optional args
-    parser.add_argument('--has',
+    search = base_options(parser, 'search')
+    search.add_argument('--has',
         choices=['attachment', 'no-attachment', 'cc', 'no-cc', 'owner', 'no-owner',
                 'comment', 'no-comment', 'label', 'no-label', 'status', 'no-status',
                 'type', 'no-type'],
         action='append',
         help="restrict by issues that have or don't have a specified field")
-    parser.add_argument('--attachment',
+    search.add_argument('--attachment',
         help='restrict by issues that have attachments matching a certain filename')
-    parser.add_argument('--blocked',
+    search.add_argument('--blocked',
         action='store_true',
         help='restrict by issues that are blocked')
-    parser.add_argument('--blocked-on',
+    search.add_argument('--blocked-on',
         action='append',
         type=int,
         help='restrict by blocked on issues (one or more)')
-    parser.add_argument('--blocking',
+    search.add_argument('--blocking',
         action='append',
         type=int,
         help='restrict by blocking issues (one or more)')
-    parser.add_argument('-o', '--owner',
+    search.add_argument('-o', '--owner',
         help='owner of the issue (or none for no owner)')
-    parser.add_argument('-r', '--reporter',
+    search.add_argument('-r', '--reporter',
         help='restrict by reporter')
-    parser.add_argument('--cc',
+    search.add_argument('--cc',
         action='append',
         help='restrict by CC email address (one or more)')
-    parser.add_argument('--commenter',
+    search.add_argument('--commenter',
         action='append',
         help='restrict by commenter email address (one or more)')
-    parser.add_argument('-s', '--status',
+    search.add_argument('-s', '--status',
         action='append',
         help='restrict by status (one or more, use all for all statuses)')
-    parser.add_argument('-l', '--label',
+    search.add_argument('-l', '--label',
         action='append',
         help='restrict by label (one or more)')
-    parser.add_argument('--attr',
+    search.add_argument('--attr',
         type=attribute,
         action='append',
         help='restrict by attribute and value (one or more of type attr:value)')
-    parser.add_argument('-t', '--type',
+    search.add_argument('-t', '--type',
         action='append',
         help='restrict by type (one or more)')
-    parser.add_argument('--milestone',
+    search.add_argument('--milestone',
         action='append',
         help='restrict by milestone (one or more)')
-    parser.add_argument('--opened',
+    search.add_argument('--opened',
         type=parse_dates,
         help='restrict by opened date')
-    parser.add_argument('--modified',
+    search.add_argument('--modified',
         type=parse_dates,
         help='restrict by last modified date')
-    parser.add_argument('--closed',
+    search.add_argument('--closed',
         type=parse_dates,
         help='restrict by closed date')
-    parser.add_argument('--published',
+    search.add_argument('--published',
         type=parse_dates2,
         help='restrict by published date')
-    parser.add_argument('--updated',
+    search.add_argument('--updated',
         type=parse_dates2,
         help='restrict by updated date')
-    parser.add_argument('--stars',
+    search.add_argument('--stars',
         type=parse_stars,
         help='restrict by number of stars')
-    parser.add_argument('--summary',
+    search.add_argument('--summary',
         action='store_true',
         help='search in the issue summary')
-    parser.add_argument('--description',
+    search.add_argument('--description',
         action='store_true',
         help='search in the issue description')
-    parser.add_argument('--comment',
+    search.add_argument('--comment',
         action='store_true',
         help='search in the issue comments')
-    parser.add_argument('-q', '--query',
+    search.add_argument('--query',
         help='manually specify an advanced query')
-    parser.add_argument('--sort',
+    search.add_argument('--sort',
         #choices=service.attributes.keys() + ['-' + key for key in service.attributes.keys()],
         help='sort by field type')
-    parser.add_argument('-u', '--url',
+    search.add_argument('-u', '--url',
         action='store_true',
         help='show search url for the browser')
-    parser.add_argument('--output',
+    search.add_argument('--output',
         type=str,
         help='custom format for search output')
-    parser.set_defaults(fcn='search')
 
     # add generic options for subcommands
-    get_actions = ['get', 'search']
+    get_actions = [get, search]
     send_actions = []
-    #send_actions = ['attach', 'modify', 'create']
-    generic_options(subparsers, get_actions, send_actions)
+
+    for group in get_actions:
+        generic_receive(group)
+    for group in send_actions:
+        generic_send(group)
+
 
 def modify(subparsers):
     parser = subparsers.add_parser('modify',
