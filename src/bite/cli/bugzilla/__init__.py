@@ -57,7 +57,7 @@ class Bugzilla(Cli):
                 if r['products']:
                     default_version = r['products'][0]['versions'][-1]['name']
                 else:
-                    raise CliError('Product "{}" not found'.format(kw['product']))
+                    raise CliError('Product {!r} not found'.format(kw['product']))
 
                 line = get_input('Enter version (default: {}): '.format(default_version))
                 if len(line):
@@ -399,7 +399,7 @@ class Bugzilla(Cli):
                     try:
                         value = getattr(bug, field)
                     except AttributeError:
-                        raise CliError('"{}" is not a valid bug field'.format(field))
+                        raise CliError('{!r} is not a valid field'.format(field))
                     if value is None:
                         continue
                     if isinstance(value, list):
@@ -412,7 +412,7 @@ class Bugzilla(Cli):
                     for field in fields:
                         values.append(getattr(bug, field))
                 except AttributeError:
-                    raise CliError('"{}" is not a valid bug field'.format(field))
+                    raise CliError('{!r} is not a valid field'.format(field))
                 self._print_lines(output.format(*values), wrap=False)
             count += 1
         return count
@@ -504,7 +504,7 @@ class Bugzilla(Cli):
                         try:
                             value = getattr(change, field)
                         except AttributeError:
-                            raise CliError('"{}" is not a valid bug field'.format(field))
+                            raise CliError('{!r} is not a valid bug field'.format(field))
                         if value is None:
                             continue
                         if isinstance(value, list):
@@ -518,7 +518,7 @@ class Bugzilla(Cli):
                         for field in fields:
                             values.append(getattr(change, field))
                     except AttributeError:
-                        raise CliError('"{}" is not a valid bug field'.format(field))
+                        raise CliError('{!r} is not a valid field'.format(field))
                     self._print_lines(output.format(*values))
             else:
                 changes = list(str(x) for x in changes)
@@ -563,7 +563,7 @@ class Bugzilla(Cli):
                         try:
                             value = getattr(comment, field)
                         except AttributeError:
-                            raise CliError('"{}" is not a valid bug field'.format(field))
+                            raise CliError('{!r} is not a valid bug field'.format(field))
                         if value is None:
                             continue
                         if isinstance(value, list):
@@ -577,7 +577,7 @@ class Bugzilla(Cli):
                         for field in fields:
                             values.append(getattr(comment, field))
                     except AttributeError:
-                        raise CliError('"{}" is not a valid bug field'.format(field))
+                        raise CliError('{!r} is not a valid field'.format(field))
                     self._print_lines(output.format(*values))
             else:
                 comments = list(str(x) for x in comments)
