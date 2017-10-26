@@ -1,4 +1,5 @@
 import base64
+from collections import OrderedDict
 import os
 import re
 import stat
@@ -367,17 +368,19 @@ class Bugzilla(Cli):
             self.log('No matching products found')
 
     def print_users(self, users):
+        print_fields = OrderedDict((
+            ('real_name', 'Real name'),
+            ('email', 'Email'),
+            ('id', 'ID'),
+            ('can_login', 'Can login'),
+            ('email_enabled', 'Email enabled'),
+        ))
+
         if users:
             for u in users:
-                if 'real_name' in u:
-                    print('Real name: {}'.format(u['real_name']))
-                print('Email: {}'.format(u['email']))
-                if u['email'] != u['name']:
-                    print('Login: {}'.format(u['name']))
-                print('ID: {}'.format(u['id']))
-                print('Can login: {}'.format(u['can_login']))
-                if 'email_enabled' in u:
-                    print('Email enabled: {}'.format(u['email_enabled']))
+                for k, v in print_fields.items():
+                    if k in u:
+                        print('{}: {}'.format(v, u[k]))
                 print('-' * self.columns)
         else:
             self.log('No matching users found')
