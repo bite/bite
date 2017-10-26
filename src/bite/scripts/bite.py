@@ -122,12 +122,7 @@ def main(options, out, err):
         cmd = getattr(client, fcn_args.pop('fcn'))
         cmd(**fcn_args)
     except (CliError, CommandError, RequestError) as e:
-        # TODO: output verbose text attr from RequestError if verbose is enabled
-        if options.verbose:
-            msg = e.verbose()
-        else:
-            msg = str(e)
-        err.write('bite: error: {}'.format(msg))
+        err.write('bite: error: {}'.format(e.message))
         return 1
 
     return 0

@@ -9,7 +9,8 @@ class BiteError(Exception):
     def __str__(self):
         return self.msg
 
-    def verbose(self):
+    @property
+    def message(self):
         if not self.text:
             return self.msg
         return ' '.join((self.msg, self.text))
@@ -17,7 +18,12 @@ class BiteError(Exception):
 class RequestError(BiteError):
     """Generic request exceptions."""
 
-    def verbose(self):
+    @property
+    def message(self):
+        if not self.text:
+            return self.msg
+
+        # use beautifulsoup if it exists to render server response
         try:
             from bs4 import BeautifulSoup
             soup = BeautifulSoup(self.text, "lxml")
