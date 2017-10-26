@@ -136,8 +136,9 @@ class Cli(object):
                     self.service.item, browser, url)))
 
                 try:
-                    subprocess.run([browser, "{}".format(url)],
-                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    subprocess.Popen(
+                        [browser, "{}".format(url)],
+                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 except (PermissionError, FileNotFoundError) as e:
                     raise CliError('failed running browser {!r}: {}'.format(browser, e.strerror))
         else:
