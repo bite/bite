@@ -2,30 +2,23 @@ try: import simplejson as json
 except ImportError: import json
 
 from . import Bugzilla, SearchRequest
+from .._jsonrpc import Jsonrpc
 from ...exceptions import AuthError, RequestError
 
 
-class BugzillaJsonrpc(Bugzilla):
+class BugzillaJsonrpc(Bugzilla, Jsonrpc):
     """Support Bugzilla's deprecated JSON-RPC interface."""
 
     def __init__(self, **kw):
         kw['endpoint'] = '/jsonrpc.cgi'
         super().__init__(**kw)
-        self.session.headers.update({
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-        })
 
     def encode_request(self, method, params):
         """Encode the data body for a JSON-RPC request."""
-        return json.dumps({'method': method, 'params': [params], 'id': 0})
+        return super().encode_request(method=method, params=params, id=0)
 
     def parse_response(self, response):
-        try:
-            data = response.json()
-        except json.decoder.JSONDecodeError as e:
-            raise RequestError('error decoding response, JSON-RPC interface likely disabled on server')
-
+        data = super().parse_response(response)
         if data.get('error') is None:
             return data['result']
         else:
