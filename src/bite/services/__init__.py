@@ -56,6 +56,13 @@ class Request(object):
         #    else:
         #        raise(e)
 
+    def __str__(self):
+        return '{}\n{}\n\n{}'.format(
+            self.request.method + ' ' + self.request.url,
+            '\n'.join('{}: {}'.format(k, v) for k, v in self.request.headers.items()),
+            self.request.body,
+        )
+
     def parse(self, data):
         return data
 
