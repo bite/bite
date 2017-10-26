@@ -2,7 +2,7 @@ class BiteError(Exception):
     """Generic http(s) request exceptions."""
 
     def __init__(self, msg, code=None, text=None):
-        self.msg = msg
+        self.msg = str(msg)
         self.code = code
         self.text = text
 

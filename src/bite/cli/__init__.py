@@ -176,7 +176,7 @@ class Cli(object):
                 else:
                     self.save_file(f)
         except ValueError as e:
-            raise RuntimeError(e)
+            raise CliError(e)
 
     def view_file(self, f, metadata):
         compressed = ['x-bzip2', 'x-bzip', 'x-gzip', 'gzip', 'x-tar', 'x-xz']
@@ -220,7 +220,7 @@ class Cli(object):
                 os.chmod(f.filename, stat.S_IREAD | stat.S_IWRITE)
                 save_file.write(f.read(raw=True))
         except IOError as e:
-            raise RuntimeError('Cannot create file {!r}: {}'.format(f.filename, e.strerror))
+            raise CliError('Cannot create file {!r}: {}'.format(f.filename, e.strerror))
 
     @loginretry
     @loginrequired
@@ -259,7 +259,7 @@ class Cli(object):
         try:
             data = self.service.create(**params)
         except ValueError as e:
-            raise RuntimeError(e)
+            raise CliError(e)
 
         if sys.stdout.isatty():
             self.log('Submitted {} {}'.format(self.service.item, data))
