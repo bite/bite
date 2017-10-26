@@ -726,21 +726,10 @@ class BugzillaComment(Comment):
             else:
                 creator = comment['creator']['name']
         else:
-            if 'creator' in comment:
-                # >= bugzilla-4.0
-                creator = comment['creator']
-            else:
-                creator = comment['author']
+            creator = comment['creator']
 
-        if 'creation_time' in comment:
-            # >= bugzilla-4.4
-            date = parsetime(comment['creation_time'])
-        else:
-            date = parsetime(comment['time'])
-
-        if 'count' in comment:
-            # >= bugzilla-4.4
-            count = comment['count']
+        date = parsetime(comment['creation_time'])
+        count = comment['count']
 
         if comment['text'] is None:
             text = None
@@ -826,19 +815,8 @@ class BugzillaAttachment(Attachment):
         if last_change_time is not None:
             last_change_time = parsetime(last_change_time)
 
-        map_name = {
-            # < bugzilla-4.0
-            'attacher': 'creator',
-            'description': 'summary',
-        }
-
         for k, v in kw.items():
-            try:
-                name = map_name[k]
-            except KeyError:
-                name = k
-
-            setattr(self, name, v)
+            setattr(self, k, v)
 
         super().__init__(
             id=id, filename=file_name, size=size, mimetype=content_type,
