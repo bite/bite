@@ -505,42 +505,42 @@ class Bugzilla(Service):
         return data['id']
 
     def products(self, params):
-        """Query bugzilla for product data
-
-        """
+        """Query bugzilla for product data."""
         method = 'Product.get'
         req = self.create_request(method, params)
         data = self.send(req)
         return data['products']
 
     def fields(self, params):
-        """Query bugzilla for field data"""
+        """Query bugzilla for field data."""
         method = 'Bug.fields'
         req = self.create_request(method, params)
         data = self.send(req)
         return data['fields']
 
     def users(self, params):
-        """Query bugzilla for user data"""
+        """Query bugzilla for user data."""
         method = 'User.get'
         req = self.create_request(method, params)
         data = self.send(req)
         return data['users']
 
     def version(self):
+        """Get bugzilla version."""
         method = 'Bugzilla.version'
         req = self.create_request(method)
         data = self.send(req)
         return data['version']
 
     def extensions(self):
+        """Get bugzilla extensions."""
         method = 'Bugzilla.extensions'
         req = self.create_request(method)
         data = self.send(req)
         return data['extensions']
 
     def query(self, method, params=None):
-        """Query bugzilla for various data"""
+        """Query bugzilla for various data."""
         req = self.create_request(method, params)
         data = self.send(req)
         return data
