@@ -97,13 +97,21 @@ class Service(object):
     def send(self, req):
         """Send raw request and return raw response."""
         try:
-            response = self.session.send(req, stream=True, timeout=self.timeout, verify=self.verify)
+            response = self.session.send(
+                req, stream=True, timeout=self.timeout, verify=self.verify, allow_redirects=False)
         except requests.exceptions.SSLError as e:
             raise RequestError('SSL certificate verification failed')
         except requests.exceptions.ConnectionError as e:
             raise RequestError('failed to establish connection')
         except requests.exceptions.ReadTimeout as e:
             raise RequestError('request timed out')
+
+        if response.status_code in (301,):
+            old = self.base
+            new = response.headers['Location']
+            if new.endswith(self.endpoint):
+                new = new[:-len(self.endpoint)]
+            raise RequestError('service moved permanently: {} -> {}'.format(old, new))
 
         if response.ok:
             return self.parse_response(response)
