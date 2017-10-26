@@ -57,10 +57,6 @@ class Cli(object):
         self.skip_auth = skip_auth
         self.auth_file = auth_file
 
-        auth_requested = any(
-            (self.auth_file, self.service.auth_token, self.passwordcmd,
-             self.service.user, self.service.password))
-
         if encoding:
             self.enc = encoding
         else:
@@ -82,6 +78,10 @@ class Cli(object):
             else:
                 auth_file = '{}{}'.format(url.netloc, url.path.replace('/', '-'))
             self.auth_file = os.path.join(USER_CACHE_PATH, 'auth', auth_file)
+
+        auth_requested = any(
+            ((auth_file or os.path.exists(self.auth_file)), self.service.auth_token, self.passwordcmd,
+             self.service.user, self.service.password))
 
         # login if requested; otherwise, login will be required when necessary
         if auth_requested:
