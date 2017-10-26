@@ -1,4 +1,3 @@
-import logging
 import os
 import stat
 import sys
@@ -10,9 +9,6 @@ import requests
 from .. import __version__
 from ..exceptions import RequestError, AuthError, NotFound
 
-#requests_log = logging.getLogger('requests')
-#requests_log.setLevel(logging.DEBUG)
-#from functools import wraps
 
 def command(function):
     def wrapper(self, *args, **kw):
@@ -31,30 +27,8 @@ class Request(object):
     def __init__(self, service):
         self.service = service
 
-    #def __unicode__(self):
-    #    return '\n'.join(self.options)
-
-    #def __str__(self):
-    #    return unicode(self).encode('utf-8')
-
-    #def __call__(*args, **kw):
-    #    #return request(*args, **kw)
-    #    raise NotImplementedError
-
-    #def __get__():
-    #    raise NotImplementedError
-
     def send(self):
         return self.parse(self.service.send(self.request))
-
-        #try:
-        #    return self.parse(self.service.send(self.request))
-        #except Exception as e:
-        #    error_code = str(e.response.status_code)
-        #    if error_code in self.errors.keys():
-        #        raise(self.errors[error_code](e))
-        #    else:
-        #        raise(e)
 
     def __str__(self):
         return '{}\n{}\n\n{}'.format(
@@ -122,9 +96,6 @@ class Service(object):
 
     def send(self, req):
         """Send raw request and return raw response."""
-        #logging.debug(req.url)
-        #logging.debug(req.headers)
-
         try:
             response = self.session.send(req, stream=True, timeout=self.timeout, verify=self.verify)
         except requests.exceptions.SSLError as e:
@@ -146,15 +117,6 @@ class Service(object):
                     raise RequestError('HTTP Error {}: {}'.format(
                         response.status_code, response.reason.lower()), text=response.text)
 
-    #def _parallel_send(self, reqs, size=8, block=True):
-    #    """Run parallel requests at once."""
-    #    # TODO: tune this and merge all send functionality into cleaner api
-    #    # http://www.dalkescientific.com/writings/diary/archive/2012/01/19/concurrent.futures.html
-    #    with concurrent.futures.ThreadPoolExecutor(max_workers=size) as executor:
-    #        jobs = [executor.submit(lambda x: x.send(), req) for req in reqs]
-    #        for job in jobs:
-    #            yield job.result()
-
     def parallel_send(self, reqs, size=8, block=True):
         """Run parallel requests at once."""
         jobs = []
@@ -167,23 +129,6 @@ class Service(object):
 
         for job in jobs:
             yield job.result()
-
-                #if job.exception() is not None:
-                #    print(dir(job.exception()))
-                #else:
-                #    yield job.result()
-                #try:
-                #    yield job.result()
-                #except AttributeError:
-                #    # TODO: fix this workaround for empty set cases
-                #    yield None
-
-            ## return as threads complete
-            #for future in concurrent.futures.as_completed(jobs):
-            #    yield future.result()
-
-            #for resp in executor.map(self.send2, reqs):
-            #    yield resp
 
     def _desuffix(self, s):
         if self.suffix is not None:
