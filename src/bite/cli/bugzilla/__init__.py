@@ -263,6 +263,54 @@ class Bugzilla(Cli):
                 print(self._header('-', 'Added comment'))
                 print(params['comment-body'])
 
+    def version(self, **kw):
+        version = self.service.version()
+        print('Bugzilla version: {}'.format(version))
+
+    def extensions(self, **kw):
+        extensions = self.service.extensions()
+        if extensions:
+            print('Bugzilla extensions')
+            print('-------------------')
+            for e, v in extensions.items():
+                print('{}: {}'.format(e, v['version']))
+        else:
+            print('No installed Bugzilla extensions')
+
+    def users(self, **kw):
+        params = {}
+        for user in kw['users']:
+            if re.match(r'.+@.+', user):
+                params.setdefault('names', []).append(user)
+            elif re.match(r'^\d+$', user):
+                params.setdefault('ids', []).append(user)
+            else:
+                params.setdefault('match', []).append(user)
+        users = self.service.users(params)
+        self.print_users(users)
+
+    def fields(self, **kw):
+        params = defaultdict(list)
+        if not kw['fields'] == [None]:
+            for field in kw['fields']:
+                if re.match(r'^\d+$', field):
+                    params['ids'].append(field)
+                else:
+                    params['names'].append(field)
+        fields = self.service.fields(params)
+        import json
+        print(json.dumps(fields, indent=2))
+
+    def products(self, **kw):
+        params = defaultdict(list)
+        for product in kw['products']:
+            if re.match(r'^\d+$', product):
+                params['ids'].append(product)
+            else:
+                params['names'].append(product)
+        products = self.service.products(params)
+        self.print_products(products)
+
     def query(self, raw, **kw):
         if kw['queries']:
             if len(kw['queries']) == 0:
@@ -282,65 +330,6 @@ class Bugzilla(Cli):
                     print(json.dumps(result, indent=2))
                 else:
                     print(json.dumps(result))
-
-        if kw['bugzilla_version']:
-            version = self.service.version()
-            print('Bugzilla version: {}'.format(version))
-
-        if kw['bugzilla_extensions']:
-            extensions = self.service.extensions()
-            if extensions:
-                if not raw:
-                    print('Bugzilla extensions')
-                    print('-------------------')
-                    for e, v in extensions.iteritems():
-                        print('{}: {}'.format(e, v['version']))
-                else:
-                    print(json.dumps(extensions))
-            else:
-                print('No installed Bugzilla extensions')
-
-        if kw['users']:
-            params = defaultdict(list)
-            for user in kw['users']:
-                if re.match(r'.+@.+', user):
-                    params['names'].append(user)
-                elif re.match(r'^\d+$', user):
-                    params['ids'].append(user)
-                else:
-                    params['match'].append(user)
-            users = self.service.users(params)
-            if not raw:
-                self.print_users(users)
-            else:
-                print(json.dumps(users))
-
-        if kw['fields']:
-            params = defaultdict(list)
-            if not kw['fields'] == [None]:
-                for field in kw['fields']:
-                    if re.match(r'^\d+$', field):
-                        params['ids'].append(field)
-                    else:
-                        params['names'].append(field)
-            fields = self.service.fields(params)
-            if not raw:
-                print(json.dumps(fields, indent=2))
-            else:
-                print(json.dumps(fields))
-
-        if kw['products']:
-            params = defaultdict(list)
-            for product in kw['products']:
-               if re.match(r'^\d+$', product):
-                   params['ids'].append(product)
-               else:
-                   params['names'].append(product)
-            products = self.service.products(params)
-            if not raw:
-                self.print_products(products)
-            else:
-                print(json.dumps(products))
 
     def print_products(self, products):
         if products:

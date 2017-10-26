@@ -522,13 +522,13 @@ class Bugzilla(Service):
 
     def version(self):
         method = 'Bugzilla.version'
-        req = self.create_request(method, params)
+        req = self.create_request(method)
         data = self.send(req)
         return data['version']
 
     def extensions(self):
         method = 'Bugzilla.extensions'
-        req = self.create_request(method, params)
+        req = self.create_request(method)
         data = self.send(req)
         return data['extensions']
 

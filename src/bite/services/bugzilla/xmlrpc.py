@@ -19,6 +19,9 @@ class BugzillaXmlrpc(Bugzilla):
 
     def encode_request(self, method, params=None):
         """Encode the data body for an XML-RPC request."""
+        if params is None:
+            params = {}
+
         if self.auth_token is not None:
             # TODO: Is there a better way to determine the difference between
             # tokens and API keys?

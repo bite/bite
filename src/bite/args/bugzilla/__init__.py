@@ -379,39 +379,6 @@ def subcmds(subparsers):
         metavar='TIME',
         help='set number of hours worked on this bug as part of this change'),
 
-    # query arguments
-    parser = subparsers.add_parser('query',
-        description='query bugzilla for various data',
-        help='query bugzilla for various data')
-    parser.set_defaults(fcn='query')
-    # positional args
-    parser.add_argument('queries',
-        action=parse_stdin,
-        nargs='*',
-        help='raw queries to perform on bugzilla of the format "method[#params]" '
-            '(e.g. use "Bug.get#{\'ids\': [100]}" to get bug 100)')
-    # optional args
-    query = base_options(parser, 'query')
-    query.add_argument('--bugzilla-version',
-        action='store_true',
-        help='get the version of bugzilla')
-    query.add_argument('--raw',
-        action='store_true',
-        help='print raw, unformatted json responses')
-    query.add_argument('--bugzilla-extensions',
-        action='store_true',
-        help='get the extensions of bugzilla')
-    query.add_argument('--products',
-        action='append',
-        help='get the info for products matching the given information (either ID or name')
-    query.add_argument('-f', '--fields',
-        action='append',
-        nargs='?',
-        help='get the info for fields matching the given information (either ID or name')
-    query.add_argument('--users',
-        action='append',
-        help='get the info for users matching the given information (either ID, login, or matching string')
-
     # search arguments
     parser = subparsers.add_parser(
         'search', verbose=False,
@@ -504,6 +471,58 @@ def subcmds(subparsers):
         type=string_list,
         action=parse_stdin,
         help='restrict by target milestone (one or more)')
+
+    # version cmd
+    parser = subparsers.add_parser('version', help='get bugzilla version')
+    parser.set_defaults(fcn='version')
+
+    # extensions cmd
+    parser = subparsers.add_parser('extensions', help='get bugzilla extensions')
+    parser.set_defaults(fcn='extensions')
+
+    # products cmd
+    parser = subparsers.add_parser('products', help='get bugzilla products')
+    parser.set_defaults(fcn='products')
+    # positional args
+    parser.add_argument('products',
+        action=parse_stdin,
+        nargs='+',
+        help='either ID or name')
+
+    # users cmd
+    parser = subparsers.add_parser('users', help='get bugzilla users')
+    parser.set_defaults(fcn='users')
+    # positional args
+    parser.add_argument('users',
+        action=parse_stdin,
+        nargs='+',
+        help='either ID, login, or matching string')
+
+    # fields cmd
+    parser = subparsers.add_parser('fields', help='get bugzilla fields')
+    parser.set_defaults(fcn='fields')
+    # positional args
+    parser.add_argument('fields',
+        action=parse_stdin,
+        nargs='+',
+        help='either ID or name')
+
+    # query arguments
+    parser = subparsers.add_parser('query',
+        description='query bugzilla for various data',
+        help='query bugzilla for various data')
+    parser.set_defaults(fcn='query')
+    # positional args
+    parser.add_argument('queries',
+        action=parse_stdin,
+        nargs='*',
+        help='raw queries to perform on bugzilla of the format "method[#params]" '
+            '(e.g. use "Bug.get#{\'ids\': [100]}" to get bug 100)')
+    # optional args
+    query = base_options(parser, 'query')
+    query.add_argument('--raw',
+        action='store_true',
+        help='print raw, unformatted json responses')
 
     # add generic options for subcommands
     get_actions = [get, search, comments, changes]
