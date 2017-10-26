@@ -46,11 +46,12 @@ def loginrequired(func):
 class Cli(object):
     """Generic commandline interface for a service."""
 
-    def __init__(self, service, connection=None, quiet=False, columns=None,
+    def __init__(self, service, connection=None, quiet=False, verbose=False, columns=None,
                  encoding=None, passwordcmd=None, auth_file=None, skip_auth=True, **kw):
         self.service = service
         self.connection = connection
         self.quiet = quiet
+        self.verbose = verbose
         self.passwordcmd = passwordcmd
         self.columns = columns or get_terminal_size()[0]
         self.wrapper = textwrap.TextWrapper(width = self.columns)
