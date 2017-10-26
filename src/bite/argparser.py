@@ -12,6 +12,7 @@ import sys
 
 from snakeoil.cli import arghparse
 
+from . import SERVICES
 from .alias import substitute_alias
 from .config import get_config
 from .const import CONFIG_PATH
@@ -444,21 +445,26 @@ class ArgumentParser(arghparse.ArgumentParser):
                        'or must be specified in the config file for a connection')
 
         service_name = initial_args.service
+        if service_name not in SERVICES:
+            self.error('{!r} service is unknown (available services: {})'.format(
+                service_name, ', '.join(SERVICES)))
 
         # add subcommand parsers for the specified service type
         subparsers = self.add_subparsers(help='help for subcommands')
-        module_name = 'bite.args.' + service_name.replace('-', '.')
+
+        try:
+            service_args = import_module('bite.args.' + service_name.replace('-', '.'))
+        except ImportError:
+            self.error('failed getting {!r} service options'.format(service_name))
 
         # add any additional service specific top level commands
         try:
-            maincmds = import_module(module_name).maincmds
-            maincmds(subparsers)
+            service_args.maincmds(subcommands)
         except AttributeError:
             pass
 
         # add subcommands
-        subcmds = import_module(module_name).subcmds
-        subcmds(subparsers)
+        service_args.subcmds(subparsers)
 
         # check if unparsed args match any aliases
         if unparsed_args:
