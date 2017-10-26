@@ -79,7 +79,6 @@ class SearchRequest(Request):
             fields = kw['fields']
             options_log.append('{}: {}'.format('Fields', ' '.join(fields)))
 
-        # TODO: only supported >=3.6
         params['include_fields'] = fields
 
         self.fields = fields

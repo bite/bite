@@ -1,27 +1,12 @@
 try: import simplejson as json
 except ImportError: import json
-#import ijson
 
 from . import Bugzilla, SearchRequest
 from ...exceptions import AuthError, RequestError
 
 
-class IterSearchRequest(SearchRequest):
-    def __init__(self, *args, **kw):
-        """Construct a search request."""
-        super().__init__(*args, **kw)
-
-    def parse(self, data, *args, **kw):
-        bugs = ijson.items(data, 'result.bugs.item')
-        bugs = (self.bug(service=self, bug=x) for x in bugs)
-        return bugs
-
-
 class BugzillaJsonrpc(Bugzilla):
     """Support Bugzilla's deprecated JSON-RPC interface."""
-
-    #def search(self, *args, **kw):
-    #    return IterSearchRequest(self, *args, **kw)
 
     def __init__(self, **kw):
         self.endpoint = '/jsonrpc.cgi'
@@ -44,32 +29,56 @@ class BugzillaJsonrpc(Bugzilla):
         if data.get('error') is None:
             return data['result']
         else:
-            error = data.get('error')
-            if error.get('code') == 32000:
-                if self._base.startswith('http:'):
-                    # bugzilla strangely returns an error under http but works fine under https
-                    raise RequestError('Received error reply, try using an https:// url instead')
-                elif 'expired' in error.get('message'):
-                    # assume the auth token has expired
-                    raise AuthError('auth token expired', expired=True)
-            elif error.get('code') == 102:
-                raise AuthError('access denied')
-            raise RequestError(msg=error.get('message'), code=error.get('code'))
+            self.handle_error(data.get('error'))
 
-class IterContent(object):
+    @staticmethod
+    def handle_error(error):
+        if error.get('code') == 32000:
+            if 'expired' in error.get('message'):
+                # assume the auth token has expired
+                raise AuthError('auth token expired', expired=True)
+        elif error.get('code') == 102:
+            raise AuthError('access denied')
+        raise RequestError(msg=error.get('message'), code=error.get('code'))
+
+
+class _StreamingBugzillaJsonrpc(BugzillaJsonrpc):
+
+    def search(self, *args, **kw):
+       return _IterSearchRequest(self, *args, **kw)
+
+    def parse_response(self, response):
+        return _IterContent(response)
+
+
+class _IterSearchRequest(SearchRequest):
+
+    def __init__(self, *args, **kw):
+        """Construct a search request."""
+        super().__init__(*args, **kw)
+
+    def parse(self, data, *args, **kw):
+        import ijson.backends.yajl2 as ijson
+        bugs = ijson.items(data, 'result.bugs.item')
+        return (self.service.bug(service=self.service, bug=bug) for bug in bugs)
+
+
+class _IterContent(object):
+
     def __init__(self, file, size=64*1024):
         self.initial = True
         self.chunks = file.iter_content(chunk_size=size)
 
     def read(self, size=64*1024):
         chunk = next(self.chunks)
-        # hacky method of checking the initial chunk for errors
+        # check the initial chunk for errors
         if self.initial:
             self.initial = False
-            if not chunk.startswith(b'{"error":null,'):
-                error = json.loads(str(chunk))['error']
-                if error['code'] == 102:
-                    raise AuthError(msg=error['message'], code=error['code'])
-                else:
-                    raise RequestError(msg=error['message'], code=error['code'])
+            try:
+                error = json.loads(chunk)['error']
+            except json.decoder.JSONDecodeError as e:
+                # if we can't load it, assume it's a valid json doc chunk
+                return chunk
+            if error is not None:
+                BugzillaJsonrpc.handle_error(error)
         return chunk

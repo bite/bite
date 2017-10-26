@@ -26,7 +26,7 @@ class BugzillaXmlrpc(Bugzilla):
     def parse_response(self, response):
         """Send request object and perform checks on the response."""
         try:
-            data = self._parse_xml(IterContent(response))[0]
+            data = self._parse_xml(_IterContent(response))[0]
         except Fault as e:
             raise RequestError(msg=e.faultString, code=e.faultCode)
 
@@ -61,7 +61,7 @@ class BugzillaXmlrpc(Bugzilla):
         return u.close()
 
 
-class IterContent(object):
+class _IterContent(object):
 
     def __init__(self, file, size=64*1024):
         self.initial = True
