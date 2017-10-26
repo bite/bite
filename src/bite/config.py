@@ -216,4 +216,4 @@ def get_config(args, parser):
     if args.connection in config.sections():
         fill_config(args, config, args.connection)
     elif args.connection is not None:
-        parser.error('{!r} connection does not exist in config file'.format(args.connection))
+        parser.error('unknown connection: {!r}'.format(args.connection))
