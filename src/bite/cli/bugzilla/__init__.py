@@ -408,7 +408,9 @@ class Bugzilla(Cli):
                         print(value)
             else:
                 try:
-                    values = [getattr(bug, field) for field in fields]
+                    values = []
+                    for field in fields:
+                        values.append(getattr(bug, field))
                 except AttributeError:
                     raise CliError('"{}" is not a valid bug field'.format(field))
                 self._print_lines(output.format(*values), wrap=False)
@@ -512,7 +514,9 @@ class Bugzilla(Cli):
             elif fields and output:
                 for change in changes:
                     try:
-                        values = [getattr(change, field) for field in fields]
+                        values = []
+                        for field in fields:
+                            values.append(getattr(change, field))
                     except AttributeError:
                         raise CliError('"{}" is not a valid bug field'.format(field))
                     self._print_lines(output.format(*values))
@@ -569,7 +573,9 @@ class Bugzilla(Cli):
             elif fields and output:
                 for comment in comments:
                     try:
-                        values = [getattr(comment, field) for field in fields]
+                        values = []
+                        for field in fields:
+                            values.append(getattr(comment, field))
                     except AttributeError:
                         raise CliError('"{}" is not a valid bug field'.format(field))
                     self._print_lines(output.format(*values))
