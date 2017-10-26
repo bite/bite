@@ -75,10 +75,10 @@ class Cli(object):
         if self.auth_file is None:
             url = urlparse(self.service.base)
             if len(url.path) <= 1:
-                auth_file = url.netloc
+                auth_name = url.netloc
             else:
-                auth_file = '{}{}'.format(url.netloc, url.path.replace('/', '-'))
-            self.auth_file = os.path.join(USER_CACHE_PATH, 'auth', auth_file)
+                auth_name = '{}{}'.format(url.netloc, url.path.rstrip('/').replace('/', '-'))
+            self.auth_file = os.path.join(USER_CACHE_PATH, 'auth', auth_name)
 
         auth_requested = any(
             ((auth_file or os.path.exists(self.auth_file)), self.service.auth_token, self.passwordcmd,
