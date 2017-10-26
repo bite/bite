@@ -192,7 +192,7 @@ def subcmds(subparsers):
         help='URL for this bug')
     attr.add_argument('--product',
         help='product')
-    attr.add_argument('--component',
+    attr.add_argument('-C', '--component',
         help='component')
     attr.add_argument('--version',
         help='version of the product')
@@ -407,6 +407,11 @@ def subcmds(subparsers):
         type=string_list,
         action=parse_stdin,
         help='email of the person who created the bug')
+    # undocumented in the Bugzilla Webservice API, but it works
+    person.add_argument('--cc',
+        type=string_list,
+        action=parse_stdin,
+        help='email in the CC list for the bug')
     person.add_argument('--qa-contact',
         help='email of the QA contact for the bug')
     time = parser.add_argument_group('Time related')
@@ -435,19 +440,14 @@ def subcmds(subparsers):
         type=string_list,
         action=parse_stdin,
         help='status whiteboard')
-    # undocumented in the Bugzilla Webservice API, but it works
-    attr.add_argument('--cc',
+    attr.add_argument('-C', '--component',
         type=string_list,
         action=parse_stdin,
-        help='email in the CC list for the bug')
+        help='restrict by component (one or more)')
     attr.add_argument('--alias',
         type=string_list,
         action=parse_stdin,
         help='unique alias for this bug')
-    attr.add_argument('--component',
-        type=string_list,
-        action=parse_stdin,
-        help='restrict by component (one or more)')
     attr.add_argument('--id',
         type=id_list,
         action=partial(parse_stdin, ids),
