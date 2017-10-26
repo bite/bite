@@ -120,6 +120,8 @@ class Service(object):
             raise RequestError('SSL certificate verification failed')
         except requests.exceptions.ConnectionError as e:
             raise RequestError('failed to establish connection')
+        except requests.exceptions.ReadTimeout as e:
+            raise RequestError('request timed out')
 
         if response.ok:
             return self.parse_response(response)
