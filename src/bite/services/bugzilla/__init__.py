@@ -10,7 +10,7 @@ import sys
 from urllib.parse import urlparse, urlunparse
 
 from dateutil.parser import parse as dateparse
-from requests import Request as Base_Request
+from requests import Request as HttpRequest
 
 from .. import Service, Request, NullRequest
 from ... import magic, utc
@@ -315,7 +315,7 @@ class Bugzilla(Service):
 
         data = self.encode_request(method, params)
         return self.session.prepare_request(
-            Base_Request(method='POST', url=self._base, data=data))
+            HttpRequest(method='POST', url=self._base, data=data))
 
     def login(self, user=None, password=None):
         """Authenticate a session."""
