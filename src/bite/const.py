@@ -31,6 +31,7 @@ def _GET_CONST(attr, default_value):
         result = tuple(result)
     return result
 
+BROWSER = os.environ.get('BROWSER', 'xdg-open')
 
 # determine XDG compatible paths
 for xdg_var, var_name, fallback_dir in (

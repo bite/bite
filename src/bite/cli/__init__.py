@@ -11,7 +11,7 @@ import tarfile
 import textwrap
 from urllib.parse import urlparse
 
-from ..const import USER_CACHE_PATH
+from ..const import USER_CACHE_PATH, BROWSER
 from ..exceptions import AuthError, CliError
 from ..objects import TarAttachment
 from ..utils import confirm, get_input
@@ -131,16 +131,15 @@ class Cli(object):
 
             for id in ids:
                 url = self.service.base.rstrip('/') + self.service.item_web_endpoint + str(id)
-                browser = os.environ.get('BROWSER', 'xdg-open')
                 self.log(self._truncate('Launching {} in browser: {} {!r}'.format(
-                    self.service.item, browser, url)))
+                    self.service.item, BROWSER, url)))
 
                 try:
                     subprocess.Popen(
-                        [browser, "{}".format(url)],
+                        [BROWSER, "{}".format(url)],
                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 except (PermissionError, FileNotFoundError) as e:
-                    raise CliError('failed running browser {!r}: {}'.format(browser, e.strerror))
+                    raise CliError('failed running browser {!r}: {}'.format(BROWSER, e.strerror))
         else:
             self.log(self._truncate('Getting {}(s): {}'.format(self.service.item, ', '.join(map(str, ids)))))
 
