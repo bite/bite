@@ -435,6 +435,11 @@ def subcmds(subparsers):
         type=string_list,
         action=parse_stdin,
         help='status whiteboard')
+    # undocumented in the Bugzilla Webservice API, but it works
+    attr.add_argument('--cc',
+        type=string_list,
+        action=parse_stdin,
+        help='email in the CC list for the bug')
     attr.add_argument('--alias',
         type=string_list,
         action=parse_stdin,
