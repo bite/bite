@@ -125,7 +125,7 @@ class IterContent(object):
 
 class RestBug(Item):
     def __init__(self, bug, comments=None, attachments=None, history=None, **kw):
-        for k, v in bug.iteritems():
+        for k, v in bug.items():
             try:
                 if not v or v == '---':
                     # skip empty lists and blank fields
@@ -210,7 +210,7 @@ class RestBug(Item):
                 values = value
             lines.append('{:<12}: {}'.format(title, values))
 
-        custom_fields = ((k, v) for (k, v) in vars(self).iteritems()
+        custom_fields = ((k, v) for (k, v) in vars(self).items()
                          if re.match(r'^cf_\w+$', k))
         for k, v in custom_fields:
             title = string.capwords(k[3:], '_')

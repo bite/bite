@@ -24,7 +24,7 @@ class Monorail(Cli):
         query_list = []
         options_log = []
 
-        for k, v in ((k, v) for (k, v) in kw.iteritems() if v):
+        for k, v in ((k, v) for (k, v) in kw.items() if v):
             if k == 'query':
                 query_list.append(v)
                 options_log.append('  advanced query: {}'.format(v))

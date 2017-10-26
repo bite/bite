@@ -7,7 +7,7 @@ class BugzillaBzapi(Bugzilla):
     def parse_search(self, **kw):
         params = {}
         options_log = []
-        for k, v in ((k, v) for (k, v) in kw.iteritems() if v):
+        for k, v in ((k, v) for (k, v) in kw.items() if v):
             if k in self.service.attributes:
                 if k == 'creation_time' or k == 'last_change_time':
                     params[k] = v[1]

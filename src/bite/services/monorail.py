@@ -262,7 +262,7 @@ class Monorail(Service):
 
     def _parse_updates(self, updates):
         u = {}
-        for k, v in updates.iteritems():
+        for k, v in updates.items():
             if k.startswith('issues$'): k = k[7:] # strip off issues$ prefix
             if k.endswith('Update'): k = k[:-6] # strip off Update suffix
             k = k.capitalize()
