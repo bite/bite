@@ -1,4 +1,5 @@
 import argparse
+from functools import partial
 import re
 import sys
 
@@ -18,33 +19,36 @@ def parse_bug_list(s):
         raise argparse.ArgumentTypeError(msg)
 
 def parse_date(s):
-    today = datetime.datetime.utcnow()
-    offset = re.match(r'^(\d+)([ymwdhs]|min)$', s)
+    if sys.stdin.isatty() or s != '-':
+        today = datetime.datetime.utcnow()
+        offset = re.match(r'^(\d+)([ymwdhs]|min)$', s)
 
-    if offset:
-        units = {'y': 'years', 'm': 'months', 'w': 'weeks', 'd': 'days',
-            'h': 'hours', 'min': 'minutes', 's': 'seconds'}
-        unit = units[offset.group(2)]
-        value = -int(offset.group(1))
-        kw = {unit: value}
-        date = today + relativedelta(**kw)
-    elif re.match(r'^\d\d\d\d$', s):
-        date = parsetime(s) + relativedelta(yearday=1)
-    elif re.match(r'^\d\d\d\d[-/]\d\d$', s):
-        date = parsetime(s) + relativedelta(day=1)
-    elif re.match(r'^(\d\d)?\d\d[-/]\d\d[-/]\d\d$', s):
-        date = parsetime(s)
-    elif re.match(r'^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d(\+\d\d:\d\d)?$', s):
-        try:
-            # try converting timezone if one is specified
-            date = parsetime(s).astimezone(utc)
-        except ValueError:
-            # otherwise default to UTC if none is specified
-            date = parsetime(s).replace(tzinfo=utc)
+        if offset:
+            units = {'y': 'years', 'm': 'months', 'w': 'weeks', 'd': 'days',
+                'h': 'hours', 'min': 'minutes', 's': 'seconds'}
+            unit = units[offset.group(2)]
+            value = -int(offset.group(1))
+            kw = {unit: value}
+            date = today + relativedelta(**kw)
+        elif re.match(r'^\d\d\d\d$', s):
+            date = parsetime(s) + relativedelta(yearday=1)
+        elif re.match(r'^\d\d\d\d[-/]\d\d$', s):
+            date = parsetime(s) + relativedelta(day=1)
+        elif re.match(r'^(\d\d)?\d\d[-/]\d\d[-/]\d\d$', s):
+            date = parsetime(s)
+        elif re.match(r'^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d(\+\d\d:\d\d)?$', s):
+            try:
+                # try converting timezone if one is specified
+                date = parsetime(s).astimezone(utc)
+            except ValueError:
+                # otherwise default to UTC if none is specified
+                date = parsetime(s).replace(tzinfo=utc)
+        else:
+            msg = '"{}" is not a valid date argument'.format(s)
+            raise argparse.ArgumentTypeError(msg)
+        return (s, date.isoformat())
     else:
-        msg = '"{}" is not a valid date argument'.format(s)
-        raise argparse.ArgumentTypeError(msg)
-    return (s, date.isoformat())
+        return s
 
 def subcmds(subparsers):
     # attach arguments
@@ -58,7 +62,7 @@ def subcmds(subparsers):
         help='path of the file to attach')
     parser.add_argument('ids',
         type=id_list,
-        action=parse_stdin,
+        action=partial(parse_stdin, ids),
         metavar='ID',
         help='bug ID(s) where the file should be attached')
     # optional args
@@ -79,7 +83,7 @@ def subcmds(subparsers):
     # positional args
     parser.add_argument('ids',
         type=id_list,
-        action=parse_stdin,
+        action=partial(parse_stdin, ids),
         metavar='ID',
         help='attachment ID(s) (or bug ID(s) when --bugid is used)')
     # optional args
@@ -100,7 +104,7 @@ def subcmds(subparsers):
     # positional args
     parser.add_argument('ids',
         type=id_list,
-        action=parse_stdin,
+        action=partial(parse_stdin, ids),
         metavar='ID',
         help='ID(s) or alias(es) of the bug(s) to retrieve all changes')
     # optional args
@@ -109,7 +113,7 @@ def subcmds(subparsers):
         dest='creation_time',
         metavar='TIME',
         type=parse_date,
-        action=parse_stdin,
+        action=partial(parse_stdin, parse_date),
         help='changes made at this time or later')
     changes.add_argument('-m', '--match',
         type=string_list,
@@ -117,7 +121,7 @@ def subcmds(subparsers):
     changes.add_argument('-n', '--number',
         dest='change_num',
         type=id_list,
-        action=parse_stdin,
+        action=partial(parse_stdin, ids),
         help='restrict by change number(s)')
     changes.add_argument('--output',
         help='custom format for output')
@@ -134,7 +138,7 @@ def subcmds(subparsers):
     # positional args
     parser.add_argument('ids',
         type=id_list,
-        action=parse_stdin,
+        action=partial(parse_stdin, ids),
         metavar='ID',
         help='ID(s) or alias(es) of the bug(s) to retrieve all comments')
     # optional args
@@ -142,7 +146,7 @@ def subcmds(subparsers):
     comments.add_argument('-n', '--number',
         dest='comment_num',
         type=id_list,
-        action=parse_stdin,
+        action=partial(parse_stdin, ids),
         help='restrict by comment number(s)')
     comments.add_argument('--output',
         help='custom format for output')
@@ -223,7 +227,7 @@ def subcmds(subparsers):
     # positional args
     parser.add_argument('ids',
         type=id_list,
-        action=parse_stdin,
+        action=partial(parse_stdin, ids),
         metavar='ID',
         help='ID(s) or alias(es) of the bug(s) to retrieve')
     # optional args
@@ -245,7 +249,7 @@ def subcmds(subparsers):
     # positional args
     parser.add_argument('ids',
         type=id_list,
-        action=parse_stdin,
+        action=partial(parse_stdin, ids),
         metavar='ID',
         help='ID(s) of the bug(s) to modify')
     # optional args
@@ -410,13 +414,13 @@ def subcmds(subparsers):
         dest='creation_time',
         metavar='TIME',
         type=parse_date,
-        action=parse_stdin,
+        action=partial(parse_stdin, parse_date),
         help='bugs created at this time or later')
     time.add_argument('-m', '--modified',
         dest='last_change_time',
         metavar='TIME',
         type=parse_date,
-        action=parse_stdin,
+        action=partial(parse_stdin, parse_date),
         help='bugs modified at this time or later')
     attr = parser.add_argument_group('Attribute related')
     attr.add_argument('-s', '--status',
@@ -441,7 +445,7 @@ def subcmds(subparsers):
         help='restrict by component (one or more)')
     attr.add_argument('--id',
         type=id_list,
-        action=parse_stdin,
+        action=partial(parse_stdin, ids),
         help='restrict by bug ID(s)')
     attr.add_argument('--op-sys',
         type=string_list,

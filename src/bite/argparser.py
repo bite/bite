@@ -11,6 +11,7 @@ import shlex
 import sys
 
 from snakeoil.cli import arghparse
+from snakeoil.sequences import iflatten_instance
 
 from . import SERVICES
 from .alias import substitute_alias
@@ -63,6 +64,11 @@ class parse_file(Action):
         setattr(namespace, self.dest, lines)
 
 class parse_stdin(Action):
+
+    def __init__(self, convert_type=None, *args, **kwargs):
+        self.convert_type = convert_type if convert_type is not None else lambda x: x
+        super().__init__(*args, **kwargs)
+
     def __call__(self, parser, namespace, values, option_string=None):
         if values is not None and len(values) == 1 and values[0] == '-':
             if not sys.stdin.isatty():
@@ -77,7 +83,14 @@ class parse_stdin(Action):
                 except AttributeError:
                     setattr(namespace, 'stdin', option)
                     # read args from standard input for specified option
-                    values = [x.strip() for x in sys.stdin.readlines() if x.strip() != '']
+                    values = []
+                    for x in sys.stdin.readlines():
+                        v = x.strip()
+                        if v:
+                            try:
+                                values.extend(iflatten_instance([self.convert_type(v)]))
+                            except ArgumentTypeError as e:
+                                raise ArgumentError(self, e)
                     sys.stdin = open('/dev/tty')
         setattr(namespace, self.dest, values)
 
