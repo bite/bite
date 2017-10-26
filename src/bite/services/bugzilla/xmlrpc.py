@@ -1,4 +1,4 @@
-from xmlrpc.client import dumps, getparser
+from xmlrpc.client import dumps, getparser, Fault
 
 from . import Bugzilla, BugzillaAttachment
 from ...objects import decompress
@@ -33,7 +33,11 @@ class BugzillaXmlrpc(Bugzilla):
 
     def parse_response(self, response):
         """Send request object and perform checks on the response."""
-        data = self._parse_xml(IterContent(response))[0]
+        try:
+            data = self._parse_xml(IterContent(response))[0]
+        except Fault as e:
+            raise RequestError(msg=e.faultString, code=e.faultCode)
+
         if not data.get('faults', None):
             return data
         else:
