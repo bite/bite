@@ -108,13 +108,17 @@ class Service(object):
     def __str__(self):
         return str(self.base)
 
+    def encode_request(self, method, params):
+        """Encode the data body for a request."""
+        raise NotImplementedError()
+
     def create_request(self, *args, **kw):
         """Construct a request object."""
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def parse_response(self, response):
         """Parse the returned response."""
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def send(self, req):
         """Send raw request and return raw response."""

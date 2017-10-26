@@ -31,26 +31,9 @@ class BugzillaJsonrpc(Bugzilla):
             'Content-Type': 'application/json'
         })
 
-    def encode_request(self, method, params=None):
+    def encode_request(self, method, params):
         """Encode the data body for a JSON-RPC request."""
-        if params is None:
-            params = {}
-
-        if self.auth_token is not None:
-            # TODO: Is there a better way to determine the difference between
-            # tokens and API keys?
-            if len(self.auth_token) > 16:
-                params['Bugzilla_api_key'] = self.auth_token
-            else:
-                params['Bugzilla_token'] = self.auth_token
-
-        args = {
-            'method': method,
-            'params': [params],
-            'id': 0,
-        }
-
-        return json.dumps(args)
+        return json.dumps({'method': method, 'params': [params], 'id': 0})
 
     def parse_response(self, response):
         try:

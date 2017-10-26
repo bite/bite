@@ -17,19 +17,8 @@ class BugzillaXmlrpc(Bugzilla):
         })
         self.attachment = BugzillaAttachmentXml
 
-    def encode_request(self, method, params=None):
+    def encode_request(self, method, params):
         """Encode the data body for an XML-RPC request."""
-        if params is None:
-            params = {}
-
-        if self.auth_token is not None:
-            # TODO: Is there a better way to determine the difference between
-            # tokens and API keys?
-            if len(self.auth_token) > 16:
-                params['Bugzilla_api_key'] = self.auth_token
-            else:
-                params['Bugzilla_token'] = self.auth_token
-
         encoding = 'utf-8'
         return dumps((params,), method, encoding=encoding,
                      allow_none=False).encode(encoding, 'xmlcharrefreplace')

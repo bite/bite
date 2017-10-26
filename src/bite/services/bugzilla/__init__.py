@@ -300,12 +300,19 @@ class Bugzilla(Service):
         self.attributes = self.bug.attributes
         self.attribute_aliases = self.bug.attribute_aliases
 
-    def encode_request(self, method, params=None):
-        """Encode the data body for a request."""
-        raise NotImplementedError
-
     def create_request(self, method, params=None):
         """Construct a request."""
+        if params is None:
+            params = {}
+
+        if self.auth_token is not None:
+            # TODO: Is there a better way to determine the difference between
+            # tokens and API keys?
+            if len(self.auth_token) > 16:
+                params['Bugzilla_api_key'] = self.auth_token
+            else:
+                params['Bugzilla_token'] = self.auth_token
+
         data = self.encode_request(method, params)
         return self.session.prepare_request(
             Base_Request(method='POST', url=self._base, data=data))
