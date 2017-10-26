@@ -152,6 +152,7 @@ def setup():
 
     cmds = {
         'sdist': sdist,
+        'build_py': build_py,
     }
 
     # check for scripts
