@@ -9,7 +9,7 @@ class BugzillaJsonrpc(Bugzilla):
     """Support Bugzilla's deprecated JSON-RPC interface."""
 
     def __init__(self, **kw):
-        self.endpoint = '/jsonrpc.cgi'
+        kw['endpoint'] = '/jsonrpc.cgi'
         super().__init__(**kw)
         self.session.headers.update({
             'Accept': 'application/json',

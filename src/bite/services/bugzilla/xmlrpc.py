@@ -9,7 +9,7 @@ class BugzillaXmlrpc(Bugzilla):
     """Support Bugzilla's deprecated XML-RPC interface."""
 
     def __init__(self, **kw):
-        self.endpoint = '/xmlrpc.cgi'
+        kw['endpoint'] = '/xmlrpc.cgi'
         super().__init__(**kw)
         self.session.headers.update({
             'Accept': 'text/xml',

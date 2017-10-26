@@ -7,10 +7,8 @@ import os
 import re
 import string
 import sys
-from urllib.parse import urlparse, urlunparse
 
 from dateutil.parser import parse as dateparse
-from requests import Request as HttpRequest
 
 from .. import Service, Request, NullRequest
 from ... import magic, utc
@@ -84,7 +82,7 @@ class SearchRequest(Request):
         self.fields = fields
         self.options = options_log
 
-        self.request = self.service.create_request(method, params)
+        self.request = self.service.create_request(method=method, params=params)
 
     def parse(self, data, *args, **kw):
         bugs = data['bugs']
@@ -110,7 +108,7 @@ class CommentsRequest(Request):
         # TODO: this
         self.options = ['REPLACE ME']
 
-        self.request = self.service.create_request(method, params)
+        self.request = self.service.create_request(method=method, params=params)
 
     def parse(self, data, *args, **kw):
         bugs = data['bugs']
@@ -132,7 +130,7 @@ class GetRequest(Request):
         params['ids'] = ids
         if fields is not None:
             params['include_fields'] = fields
-        self.request = self.service.create_request(method, params)
+        self.request = self.service.create_request(method=method, params=params)
 
     def parse(self, data):
         return data['bugs']
@@ -227,7 +225,7 @@ class ModifyRequest(Request):
             raise ValueError('No bug ID(s) specified')
         params['ids'] = ids
         method = 'Bug.update'
-        self.request = self.service.create_request(method, params)
+        self.request = self.service.create_request(method=method, params=params)
 
     def parse(self, data, *args, **kw):
         return data['bugs']
@@ -248,7 +246,7 @@ class AttachmentsRequest(Request):
         params = {'ids': ids, 'exclude_fields': ['data']}
         if fields is not None:
             params['include_fields'] = fields
-        self.request = self.service.create_request(method, params)
+        self.request = self.service.create_request(method=method, params=params)
 
         # TODO: this
         self.options = ['REPLACE ME']
@@ -267,7 +265,7 @@ class HistoryRequest(Request):
         if not ids:
             raise ValueError('No bug ID(s) specified')
         params = {'ids': ids}
-        self.request = self.service.create_request(method, params)
+        self.request = self.service.create_request(method=method, params=params)
 
         # TODO: this
         self.options = ['REPLACE ME']
@@ -281,15 +279,7 @@ class HistoryRequest(Request):
 class Bugzilla(Service):
 
     def __init__(self, **kw):
-        url = urlparse(kw['base'])
-        self._base = urlunparse((
-            url.scheme,
-            url.netloc,
-            url.path.rstrip('/') + self.endpoint,
-            None, None, None))
-
         super().__init__(**kw)
-
         self.item = 'bug'
         self.item_web_endpoint = '/show_bug.cgi?id='
         self.attachment = BugzillaAttachment
@@ -299,22 +289,14 @@ class Bugzilla(Service):
         self.attributes = self.bug.attributes
         self.attribute_aliases = self.bug.attribute_aliases
 
-    def create_request(self, method, params=None):
-        """Construct a request."""
-        if params is None:
-            params = {}
-
-        if self.auth_token is not None:
-            # TODO: Is there a better way to determine the difference between
-            # tokens and API keys?
-            if len(self.auth_token) > 16:
-                params['Bugzilla_api_key'] = self.auth_token
-            else:
-                params['Bugzilla_token'] = self.auth_token
-
-        data = self.encode_request(method, params)
-        return self.session.prepare_request(
-            HttpRequest(method='POST', url=self._base, data=data))
+    def inject_auth(self, params):
+        # TODO: Is there a better way to determine the difference between
+        # tokens and API keys?
+        if len(self.auth_token) > 16:
+            params['Bugzilla_api_key'] = self.auth_token
+        else:
+            params['Bugzilla_token'] = self.auth_token
+        return params
 
     def login(self, user=None, password=None):
         """Authenticate a session."""
@@ -322,7 +304,7 @@ class Bugzilla(Service):
 
         method = 'User.login'
         params = {'login': user, 'password': password}
-        req = self.create_request(method, params)
+        req = self.create_request(method=method, params=params)
 
         content = self.send(req)
         self.auth_token = content['token']
@@ -403,7 +385,7 @@ class Bugzilla(Service):
         params['is_patch'] = is_patch
 
         method = 'Bug.add_attachment'
-        req = self.create_request(method, params)
+        req = self.create_request(method=method, params=params)
         result = self.send(req)
         return result['attachments']
 
@@ -422,7 +404,7 @@ class Bugzilla(Service):
             params['ids'] = ids
         if names is not None:
             params['names'] = names
-        req = self.create_request(method, params)
+        req = self.create_request(method=method, params=params)
         data = self.send(req)
         fields = data['fields']
         return fields
@@ -438,7 +420,7 @@ class Bugzilla(Service):
 
         method = 'Bug.attachments'
         params = {'attachment_ids': ids}
-        req = self.create_request(method, params)
+        req = self.create_request(method=method, params=params)
         data = self.send(req)
         attachments = data['attachments']
         for i in ids:
@@ -499,48 +481,48 @@ class Bugzilla(Service):
             params['status'] = status
 
         method = 'Bug.create'
-        req = self.create_request(method, params)
+        req = self.create_request(method=method, params=params)
         data = self.send(req)
         return data['id']
 
     def products(self, params):
         """Query bugzilla for product data."""
         method = 'Product.get'
-        req = self.create_request(method, params)
+        req = self.create_request(method=method, params=params)
         data = self.send(req)
         return data['products']
 
     def fields(self, params):
         """Query bugzilla for field data."""
         method = 'Bug.fields'
-        req = self.create_request(method, params)
+        req = self.create_request(method=method, params=params)
         data = self.send(req)
         return data['fields']
 
     def users(self, params):
         """Query bugzilla for user data."""
         method = 'User.get'
-        req = self.create_request(method, params)
+        req = self.create_request(method=method, params=params)
         data = self.send(req)
         return data['users']
 
     def version(self):
         """Get bugzilla version."""
         method = 'Bugzilla.version'
-        req = self.create_request(method)
+        req = self.create_request(method=method)
         data = self.send(req)
         return data['version']
 
     def extensions(self):
         """Get bugzilla extensions."""
         method = 'Bugzilla.extensions'
-        req = self.create_request(method)
+        req = self.create_request(method=method)
         data = self.send(req)
         return data['extensions']
 
     def query(self, method, params=None):
         """Query bugzilla for various data."""
-        req = self.create_request(method, params)
+        req = self.create_request(method=method, params=params)
         data = self.send(req)
         return data
 

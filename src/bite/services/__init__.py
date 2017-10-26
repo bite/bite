@@ -1,7 +1,7 @@
 import os
 import stat
 import sys
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlunparse
 
 import concurrent.futures
 import requests
@@ -59,11 +59,18 @@ class Service(object):
         self.verify = verify
         self.timeout = timeout
 
+        url = urlparse(self.base)
+        self._base = urlunparse((
+            url.scheme,
+            url.netloc,
+            url.path.rstrip('/') + kw.get('endpoint', ''),
+            None, None, None))
+
         self.item = 'issue'
         self.item_web_endpoint = None
 
         self.skip_auth = skip_auth
-        self.auth_token = auth_token if not skip_auth else None
+        self.auth_token = auth_token
 
         self.session = requests.Session()
         self.session.headers['User-Agent'] = '{}-{}'.format('bite', __version__)
@@ -86,9 +93,23 @@ class Service(object):
         """Encode the data body for a request."""
         raise NotImplementedError()
 
-    def create_request(self, *args, **kw):
-        """Construct a request object."""
+    def inject_auth(self, params):
+        """Add authentication data to a request."""
         raise NotImplementedError()
+
+    def create_request(self, url=None, method=None, params=None):
+        """Construct a request."""
+        if url is None:
+            url = self._base
+        if params is None:
+            params = {}
+
+        if not self.skip_auth and self.auth_token is not None:
+            params = self.inject_auth(params)
+
+        data = self.encode_request(method, params)
+        return self.session.prepare_request(
+            requests.Request(method='POST', url=url, data=data))
 
     def parse_response(self, response):
         """Parse the returned response."""
