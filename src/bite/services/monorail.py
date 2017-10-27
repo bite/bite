@@ -15,18 +15,16 @@ import lxml.html
 import requests
 import xdg.Mime
 
-from . import Service
+from ._jsonrpc import Jsonrpc
 from ..objects import decompress, Item, Comment, Attachment
 from ..exceptions import RequestError, AuthError, BadAuthToken
 from ..rfc3339 import parse_datetime as parsetime
 
-class Monorail(Service):
-    def __init__(self, service, **kw):
-        self.headers = {}
-        #self.headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
-        super().__init__(service, **kw)
+class Monorail(Jsonrpc):
+    def __init__(self, **kw):
+        super().__init__(**kw)
         self.item = 'issue'
-        self.project_name = filter(None, self.base.split('/'))[-1]
+        self.project_name = list(filter(None, self.base.split('/')))[-1]
         self.issues_url = 'https://code.google.com/feeds/issues/p/{}/issues/full'.format(self.project_name)
         self.comments_url = 'https://code.google.com/feeds/issues/p/{}/issues/{{}}/comments/full'.format(self.project_name)
 
