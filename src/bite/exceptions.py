@@ -1,5 +1,5 @@
 class BiteError(Exception):
-    """Generic http(s) request exceptions."""
+    """Generic bite exceptions."""
 
     def __init__(self, msg, code=None, text=None):
         self.msg = str(msg)
@@ -16,7 +16,7 @@ class BiteError(Exception):
         return ' '.join((self.msg, self.text))
 
 class RequestError(BiteError):
-    """Generic request exceptions."""
+    """Generic http(s) request exceptions."""
 
     @property
     def message(self):
@@ -41,9 +41,6 @@ class AuthError(RequestError):
 
 class BadAuthToken(RequestError):
     """Exception for old or bad authentication tokens."""
-    pass
-
-class CommandError(BiteError):
     pass
 
 class CliError(BiteError):

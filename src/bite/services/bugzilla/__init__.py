@@ -12,7 +12,7 @@ from dateutil.parser import parse as dateparse
 
 from .. import Service, Request, NullRequest
 from ... import magic, utc
-from ...exceptions import RequestError
+from ...exceptions import RequestError, BiteError
 from ...objects import Item, Change, Comment, Attachment, decompress
 
 
@@ -83,7 +83,7 @@ class SearchRequest(Request):
                     params[k] = v
 
         if not params:
-            raise ValueError('No search terms or options specified')
+            raise BiteError('no supported search terms or options specified')
 
         if not 'status' in params:
             params['status'] = ['UNCONFIRMED', 'NEW', 'CONFIRMED', 'ASSIGNED', 'IN_PROGRESS', 'REOPENED']

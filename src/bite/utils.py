@@ -6,7 +6,7 @@ import sys
 import string
 import tempfile
 
-from .exceptions import CommandError
+from .exceptions import BiteError
 
 COMMENT_TEMPLATE = \
 """
@@ -45,7 +45,7 @@ def launch_editor(initial_text, comment_from='', comment_prefix='BITE:'):
     if editor:
         result = os.system('{} "{}"'.format(editor, name))
         if result != 0:
-            raise CommandError('Unable to launch editor: {}'.format(editor))
+            raise BiteError('unable to launch editor: {}'.format(editor))
 
         new_text = codecs.open(name, encoding='utf-8').read()
         new_text = re.sub('(?m)^{}.*\n'.format(comment_prefix), '', new_text)

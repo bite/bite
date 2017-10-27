@@ -11,7 +11,7 @@ import sys
 
 from .. import SERVICES
 from ..argparser import ArgumentParser, parse_file
-from ..exceptions import CliError, CommandError, RequestError
+from ..exceptions import BiteError, CliError, RequestError
 
 
 argparser = ArgumentParser(
@@ -121,7 +121,7 @@ def main(options, out, err):
         client = get_service(service_name, module_name='bite.cli', **args)
         cmd = getattr(client, fcn_args.pop('fcn'))
         cmd(**fcn_args)
-    except (CliError, CommandError, RequestError) as e:
+    except (CliError, BiteError, RequestError) as e:
         err.write('bite: error: {}'.format(e.message))
         return 1
 
