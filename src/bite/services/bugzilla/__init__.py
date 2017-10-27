@@ -62,7 +62,16 @@ class SearchRequest(Request):
                 if k == 'terms':
                     params['summary'] = v
                     options_log.append('{}: {}'.format('Summary', ', '.join(map(str, v))))
-                elif k in ['limit', 'offset']:
+                elif k == 'commenter':
+                    # XXX: probably fragile since it uses custom search URL params
+                    # only works with >=bugzilla-5, previous versions return invalid parameter errors
+                    for i, val in enumerate(v):
+                        i = str(i + 1)
+                        params['f' + i] = 'commenter'
+                        params['o' + i] = 'substring'
+                        params['v' + i] = val
+                    options_log.append('{}: {}'.format('Commenter', ', '.join(map(str, v))))
+                elif k in ['limit', 'offset', 'votes']:
                     params[k] = v
 
         if not params:

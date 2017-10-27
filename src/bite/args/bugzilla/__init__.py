@@ -215,7 +215,7 @@ def subcmds(subparsers):
     attr.add_argument('--depends',
         type=parse_bug_list,
         help='list of bugs this bug depends on')
-    attr.add_argument('--keywords',
+    attr.add_argument('-K', '--keywords',
         type=string_list,
         help='set the keywords of this bug')
 
@@ -310,7 +310,7 @@ def subcmds(subparsers):
         help='remove a group from this bug',
         metavar='GROUP',
         dest='groups-remove')
-    attr.add_argument('--keywords',
+    attr.add_argument('-K', '--keywords',
         type=string_list,
         help='set the keywords of this bug',
         metavar='KEYWORDS',
@@ -407,11 +407,18 @@ def subcmds(subparsers):
         type=string_list,
         action=parse_stdin,
         help='email of the person who created the bug')
-    # undocumented in the Bugzilla Webservice API, but it works
+    # XXX: undocumented in the Bugzilla Webservice API
+    # only works with >= bugzilla-5
     person.add_argument('--cc',
         type=string_list,
         action=parse_stdin,
         help='email in the CC list for the bug')
+    # XXX: undocumented in the Bugzilla Webservice API, uses advanced search URL params
+    # only works with >= bugzilla-5
+    person.add_argument('--commenter',
+        type=string_list,
+        action=parse_stdin,
+        help='commenter in the bug')
     person.add_argument('--qa-contact',
         help='email of the QA contact for the bug')
     time = parser.add_argument_group('Time related')
@@ -444,6 +451,29 @@ def subcmds(subparsers):
         type=string_list,
         action=parse_stdin,
         help='restrict by component (one or more)')
+    # XXX: undocumented in the Bugzilla Webservice API
+    # only works with >= bugzilla-5
+    attr.add_argument('-K', '--keywords',
+        type=string_list,
+        action=parse_stdin,
+        help='restrict by keywords (one or more)')
+    # XXX: undocumented in the Bugzilla Webservice API
+    # only works with >= bugzilla-5
+    attr.add_argument('--blocks',
+        type=id_list,
+        action=partial(parse_stdin, ids),
+        help='restrict by bug blocks')
+    # XXX: undocumented in the Bugzilla Webservice API
+    # only works with >= bugzilla-5
+    attr.add_argument('--depends',
+        type=id_list,
+        action=partial(parse_stdin, ids),
+        dest='depends_on',
+        help='restrict by bug depends')
+    # XXX: used to be documented in the Bugzilla 3.6 Webservice API, but is now undocumented
+    # assumes Bugzilla instance uses votes, otherwise returns odd results
+    attr.add_argument('--votes',
+        help='restrict bugs by the specified number of votes or greater')
     attr.add_argument('--alias',
         type=string_list,
         action=parse_stdin,
