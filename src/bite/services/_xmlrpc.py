@@ -60,4 +60,4 @@ class _IterContent(object):
         try:
             return next(self.chunks)
         except StopIteration:
-            return
+            return b''
