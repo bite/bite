@@ -108,7 +108,7 @@ def get_client(args):
 @ls.bind_main_func
 def _ls(options, out, err):
     if options.item == 'aliases':
-        for section in ('default', options.connection):
+        for section in (options.aliases.default_section, options.connection):
             for name, value in options.aliases.items(section):
                 if options.verbose:
                     out.write('{}: {}'.format(name, value))

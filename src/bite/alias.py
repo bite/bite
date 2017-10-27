@@ -27,23 +27,12 @@ def substitute_alias(args, unparsed_args):
     alias_name = unparsed_args[0]
     extra_cmds = unparsed_args[1:]
 
-    sections = []
-    if args.connection is not None:
-        sections.append(args.connection)
-    sections.append('default')
-
-    for section in sections:
-        try:
-            alias_cmd = args.aliases[section][alias_name].strip()
-            break
-        except KeyError:
-            alias_cmd = None
-        except Exception as e:
-            # TODO: catch more specific exceptions and show more specific errors here
-            raise
+    alias_cmd = args.aliases.get(args.connection, alias_name, fallback=None)
 
     if alias_cmd is None:
         return unparsed_args
+
+    alias_cmd = alias_cmd.strip()
 
     if alias_cmd[0] == '!':
         #print(alias_cmd[0])

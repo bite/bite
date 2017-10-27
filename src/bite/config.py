@@ -60,7 +60,7 @@ class BiteInterpolation(configparser.ExtendedInterpolation):
                         try:
                             v = map[opt]
                         except KeyError:
-                            sect = 'DEFAULT'
+                            sect = parser.default_section
                             v = parser.get(sect, opt, raw=True)
                     elif len(path) == 2:
                         sect = path[0]
@@ -227,4 +227,5 @@ def get_config(args, parser):
     if config.has_section(args.connection):
         fill_config(args, config, args.connection)
     elif args.connection:
-        parser.error('unknown connection: {!r}'.format(args.connection))
+        parser.error('unknown connection: {!r} (available: use `bite ls connections`)'.format(
+            args.connection, ', '.join(sorted(config.sections()))))
