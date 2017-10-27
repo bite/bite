@@ -11,5 +11,5 @@
 # key: value
 # as listed below.
 
-[default]
+[DEFAULT]
 connection: gentoo
