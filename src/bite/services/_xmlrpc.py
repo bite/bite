@@ -15,10 +15,14 @@ class Xmlrpc(Service):
             'Content-Type': 'text/xml'
         })
 
-    def encode_request(self, method, params):
+    def encode_request(self, method, params=None):
         """Encode the data body for an XML-RPC request."""
         encoding = 'utf-8'
-        return dumps((params,), method, encoding=encoding,
+        if isinstance(params, list):
+            params = tuple(params)
+        else:
+            params = (params,) if params is not None else ()
+        return dumps(params, method, encoding=encoding,
                      allow_none=False).encode(encoding, 'xmlcharrefreplace')
 
     def parse_response(self, response):
