@@ -50,6 +50,10 @@ def parse_date(s):
     else:
         return s
 
+def maincmds(opts):
+    """Add service specific arguments."""
+    pass
+
 def subcmds(subparsers):
     # attach arguments
     parser = subparsers.add_parser('attach',

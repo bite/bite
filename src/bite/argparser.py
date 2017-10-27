@@ -462,9 +462,6 @@ class ArgumentParser(arghparse.ArgumentParser):
             self.error('{!r} service is unknown (available services: {})'.format(
                 service_name, ', '.join(SERVICES)))
 
-        # add subcommand parsers for the specified service type
-        subparsers = self.add_subparsers(help='help for subcommands')
-
         try:
             service_args = import_module('bite.args.' + service_name.replace('-', '.'))
         except ImportError:
@@ -472,9 +469,14 @@ class ArgumentParser(arghparse.ArgumentParser):
 
         # add any additional service specific top level commands
         try:
-            service_args.maincmds(subcommands)
+            # import arg group from script so help is placed before subcmds defined in the script
+            from .scripts.bite import service as service_opts
+            service_args.maincmds(service_opts)
         except AttributeError:
             pass
+
+        # add subcommand parsers for the specified service type
+        subparsers = self.add_subparsers(help='help for subcommands')
 
         # add subcommands
         service_args.subcmds(subparsers)

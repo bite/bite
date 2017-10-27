@@ -60,13 +60,16 @@ single_auth.add_argument('--auth-file',
 auth.add_argument('--passwordcmd',
     help='password command to evaluate authentication (overrides -p/--password)')
 
-service = argparser.add_argument_group('Service')
-service.add_argument('-b', '--base',
+connect = argparser.add_argument_group('Connection')
+connect.add_argument('-b', '--base',
     help='base URL of service')
-service.add_argument('-s', '--service',
+connect.add_argument('-s', '--service',
     help='supported services: {}'.format(', '.join(SERVICES)))
-service.add_argument('-c', '--connection',
+connect.add_argument('-c', '--connection',
     help='use a configured connection')
+
+# stub for service specific arguments
+service = argparser.add_argument_group('Service')
 
 subparsers = argparser.add_subparsers(help='help for subcommands')
 ls = subparsers.add_parser('ls', description='list various config info')
