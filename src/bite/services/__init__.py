@@ -118,8 +118,8 @@ class Service(object):
         """Parse the returned response."""
         raise NotImplementedError()
 
-    def send(self, req):
-        """Send raw request and return raw response."""
+    def send(self, req, raw=False):
+        """Send raw request and return a response."""
         try:
             response = self.session.send(
                 req, stream=True, timeout=self.timeout, verify=self.verify, allow_redirects=False)
@@ -138,6 +138,8 @@ class Service(object):
             raise RequestError('service moved permanently: {} -> {}'.format(old, new))
 
         if response.ok:
+            if raw:
+                return response
             return self.parse_response(response)
         else:
             if response.status_code in (401, 403):
