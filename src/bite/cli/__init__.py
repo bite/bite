@@ -73,17 +73,19 @@ class Cli(object):
         if sys.stdin.encoding is None:
             sys.stdin = codecs.getreader(self.enc)(sys.stdin)
 
-        url = urlparse(self.service.base)
-        if len(url.path) <= 1:
-            netloc = url.netloc
-        else:
-            netloc = '{}{}'.format(url.netloc, url.path.rstrip('/').replace('/', '-'))
-        if url.username is not None or url.password is not None:
-            netloc = netloc.split('@', 1)[1]
-        self.cached_config = os.path.join(USER_CACHE_PATH, 'config', netloc)
+        file_name = self.connection
+        if file_name is None:
+            url = urlparse(self.service.base)
+            if len(url.path) <= 1:
+                file_name = url.netloc
+            else:
+                file_name = '{}{}'.format(url.netloc, url.path.rstrip('/').replace('/', '-'))
+            if url.username is not None or url.password is not None:
+                file_name = file_name.split('@', 1)[1]
+        self.cached_config = os.path.join(USER_CACHE_PATH, 'config', file_name)
 
         if self.auth_file is None:
-            self.auth_file = os.path.join(USER_CACHE_PATH, 'auth', netloc)
+            self.auth_file = os.path.join(USER_CACHE_PATH, 'auth', file_name)
 
         auth_requested = any(
             ((auth_file or os.path.exists(self.auth_file)), self.service.auth_token, self.passwordcmd,
