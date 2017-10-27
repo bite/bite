@@ -8,4 +8,5 @@ SERVICES = [
     'bugzilla-rest',
     'monorail',
     'github',
+    'roundup',
 ]
