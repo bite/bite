@@ -1,7 +1,7 @@
-from . import Bugzilla, BugzillaAttachment
+from . import Bugzilla, BugzillaAttachment, BugzillaError
 from .._xmlrpc import Xmlrpc
 from ...objects import decompress
-from ...exceptions import RequestError, AuthError
+from ...exceptions import AuthError, RequestError
 
 
 class BugzillaXmlrpc(Bugzilla, Xmlrpc):
@@ -14,14 +14,18 @@ class BugzillaXmlrpc(Bugzilla, Xmlrpc):
 
     def parse_response(self, response):
         """Send request object and perform checks on the response."""
-        data = super().parse_response(response)
+        try:
+            data = super().parse_response(response)
+        except RequestError as e:
+            raise BugzillaError(msg=e.msg, code=e.code, text=e.text)
+
         if not data.get('faults', None):
             return data
         else:
             error = data.get('faults')[0]
             if error.get('faultCode') == 102:
                 raise AuthError('access denied')
-            raise RequestError(msg=error.get('faultString'), code=error.get('faultCode'))
+            raise BugzillaError(msg=error.get('faultString'), code=error.get('faultCode'))
 
 
 class BugzillaAttachmentXml(BugzillaAttachment):

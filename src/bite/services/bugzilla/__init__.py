@@ -12,7 +12,15 @@ from dateutil.parser import parse as dateparse
 
 from .. import Service, Request, NullRequest
 from ... import magic, utc
+from ...exceptions import RequestError
 from ...objects import Item, Change, Comment, Attachment, decompress
+
+
+class BugzillaError(RequestError):
+
+    def __init__(self, msg, code=None, text=None):
+        msg = 'Bugzilla error: ' + msg
+        super().__init__(msg, code, text)
 
 def parsetime(time):
     if not isinstance(time, datetime.datetime):

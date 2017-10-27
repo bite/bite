@@ -1,9 +1,9 @@
 try: import simplejson as json
 except ImportError: import json
 
-from . import Bugzilla, SearchRequest
+from . import Bugzilla, SearchRequest, BugzillaError
 from .._jsonrpc import Jsonrpc
-from ...exceptions import AuthError, RequestError
+from ...exceptions import AuthError
 
 
 class BugzillaJsonrpc(Bugzilla, Jsonrpc):
@@ -32,7 +32,7 @@ class BugzillaJsonrpc(Bugzilla, Jsonrpc):
                 raise AuthError('auth token expired', expired=True)
         elif error.get('code') == 102:
             raise AuthError('access denied')
-        raise RequestError(msg=error.get('message'), code=error.get('code'))
+        raise BugzillaError(msg=error.get('message'), code=error.get('code'))
 
 
 class _StreamingBugzillaJsonrpc(BugzillaJsonrpc):
