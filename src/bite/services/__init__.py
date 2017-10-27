@@ -57,7 +57,7 @@ class Service(object):
         self.password = password
         self.suffix = suffix
         self.verify = verify
-        self.timeout = timeout
+        self.timeout = timeout if timeout is not None else 30
 
         url = urlparse(self.base)
         self._base = urlunparse((

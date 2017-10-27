@@ -43,7 +43,7 @@ options.add_argument('--suffix',
 options.add_argument('--timeout',
     type=int,
     metavar='SECONDS',
-    help='amount of time to wait before timing out requests')
+    help='amount of time to wait before timing out requests (defaults to 30 seconds)')
 
 auth = argparser.add_argument_group('Authentication')
 single_auth = auth.add_mutually_exclusive_group()
