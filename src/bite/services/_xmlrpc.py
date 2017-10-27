@@ -1,7 +1,8 @@
 from xmlrpc.client import dumps, getparser, Fault
+from xml.parsers.expat import ExpatError
 
 from . import Service
-from ..exceptions import RequestError
+from ..exceptions import RequestError, ParsingError
 
 
 class Xmlrpc(Service):
@@ -23,14 +24,14 @@ class Xmlrpc(Service):
     def parse_response(self, response):
         """Send request object and perform checks on the response."""
         try:
-            return self._parse_xml(_IterContent(response))[0]
+            return self._parse_xml(response)[0]
         except Fault as e:
             raise RequestError(msg=e.faultString, code=e.faultCode)
 
     @staticmethod
     def _parse_xml(response):
         """Parse XML data from response."""
-        stream = response
+        stream = _IterContent(response)
 
         p, u = getparser(use_datetime=True)
 
@@ -40,13 +41,12 @@ class Xmlrpc(Service):
                 break
             try:
                 p.feed(data)
-            except Exception:
-                raise RequestError('error decoding response, XML-RPC interface likely disabled on server')
+            except ExpatError as e:
+                if not response.headers['Content-Type'].startswith('text/xml'):
+                    raise RequestError('XML-RPC interface likely disabled on server')
+                raise ParsingError(msg='failed parsing XML: {}'.format(str(e)))
 
-        if stream is not response:
-            stream.close()
         p.close()
-
         return u.close()
 
 

@@ -32,6 +32,10 @@ class RequestError(BiteError):
             text = self.text
         return self.msg + ' -- (see server response below)\n\n' + text
 
+class ParsingError(RequestError):
+    """Parser failed to process the returned data."""
+    pass
+
 class AuthError(RequestError):
     """Exception related to failed authentication or lack of sufficient privileges."""
 

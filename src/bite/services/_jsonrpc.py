@@ -2,7 +2,7 @@ try: import simplejson as json
 except ImportError: import json
 
 from . import Service
-from ..exceptions import RequestError
+from ..exceptions import ParsingError, RequestError
 
 
 class Jsonrpc(Service):
@@ -23,4 +23,6 @@ class Jsonrpc(Service):
         try:
             return response.json()
         except json.decoder.JSONDecodeError as e:
-            raise RequestError('error decoding response, JSON-RPC interface likely disabled on server')
+            if not response.headers['Content-Type'].startswith('application/json'):
+                raise RequestError('JSON-RPC interface likely disabled on server')
+            raise ParsingError(msg='failed parsing JSON: {}'.format(str(e)))

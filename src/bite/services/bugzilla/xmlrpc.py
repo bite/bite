@@ -1,7 +1,7 @@
 from . import Bugzilla, BugzillaAttachment, BugzillaError
 from .._xmlrpc import Xmlrpc
 from ...objects import decompress
-from ...exceptions import AuthError, RequestError
+from ...exceptions import AuthError, RequestError, ParsingError
 
 
 class BugzillaXmlrpc(Bugzilla, Xmlrpc):
@@ -16,6 +16,8 @@ class BugzillaXmlrpc(Bugzilla, Xmlrpc):
         """Send request object and perform checks on the response."""
         try:
             data = super().parse_response(response)
+        except ParsingError as e:
+            raise
         except RequestError as e:
             raise BugzillaError(msg=e.msg, code=e.code, text=e.text)
 
