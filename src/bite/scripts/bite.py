@@ -128,7 +128,8 @@ def _cache(options, out, error):
         client, fcn_args = get_client(options)
         client.cache_config(**fcn_args)
     except (CliError, BiteError, RequestError) as e:
-        err.write('bite cache: error: {}'.format(e.message))
+        msg = e.message if options.verbose else str(e)
+        err.write('bite cache: error: {}'.format(msg))
         return 1
 
     return 0
@@ -147,7 +148,8 @@ def main(options, out, err):
         cmd = getattr(client, fcn_args.pop('fcn'))
         cmd(**fcn_args)
     except (CliError, BiteError, RequestError) as e:
-        err.write('bite: error: {}'.format(e.message))
+        msg = e.message if options.verbose else str(e)
+        err.write('bite: error: {}'.format(msg))
         return 1
 
     return 0

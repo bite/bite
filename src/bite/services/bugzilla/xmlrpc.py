@@ -17,7 +17,8 @@ class BugzillaXmlrpc(Bugzilla, Xmlrpc):
         try:
             data = super().parse_response(response)
         except ParsingError as e:
-            raise
+            msg = e.msg + ", use the jsonrpc interface if available"
+            raise ParsingError(msg=msg, text=e.text)
         except RequestError as e:
             raise BugzillaError(msg=e.msg, code=e.code, text=e.text)
 

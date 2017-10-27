@@ -44,7 +44,7 @@ class Xmlrpc(Service):
             except ExpatError as e:
                 if not response.headers['Content-Type'].startswith('text/xml'):
                     raise RequestError('XML-RPC interface likely disabled on server')
-                raise ParsingError(msg='failed parsing XML: {}'.format(str(e)))
+                raise ParsingError(msg='failed parsing XML', text=str(e))
 
         p.close()
         return u.close()

@@ -13,7 +13,7 @@ class BiteError(Exception):
     def message(self):
         if not self.text:
             return self.msg
-        return ' '.join((self.msg, self.text))
+        return ' -- '.join((self.msg, self.text))
 
 class RequestError(BiteError):
     """Generic http(s) request exceptions."""
@@ -32,7 +32,7 @@ class RequestError(BiteError):
             text = self.text
         return self.msg + ' -- (see server response below)\n\n' + text
 
-class ParsingError(RequestError):
+class ParsingError(BiteError):
     """Parser failed to process the returned data."""
     pass
 
