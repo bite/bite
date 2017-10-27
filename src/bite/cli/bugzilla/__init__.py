@@ -5,7 +5,6 @@ import re
 import stat
 import subprocess
 import sys
-from collections import defaultdict
 from itertools import chain, groupby
 
 from dateutil.parser import parse as parsetime
@@ -309,12 +308,12 @@ class Bugzilla(Cli):
                             print('    open: {}'.format(value['is_open']))
 
     def products(self, **kw):
-        params = defaultdict(list)
+        params = {}
         for product in kw['products']:
             if re.match(r'^\d+$', product):
-                params['ids'].append(product)
+                params.setdefault('ids', []).append(product)
             else:
-                params['names'].append(product)
+                params.setdefault('names', []).append(product)
         products = self.service.products(params)
         self.print_products(products)
 
