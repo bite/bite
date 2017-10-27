@@ -480,6 +480,10 @@ def subcmds(subparsers):
         type=string_list,
         action=parse_stdin,
         help='restrict by target milestone (one or more)')
+    attr.add_argument('--url',
+        type=string_list,
+        action=parse_stdin,
+        help='restrict by url (one or more)')
 
     # version cmd
     parser = subparsers.add_parser('version', help='get bugzilla version')
