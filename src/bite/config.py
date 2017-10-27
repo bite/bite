@@ -60,7 +60,7 @@ class BiteInterpolation(configparser.ExtendedInterpolation):
                         try:
                             v = map[opt]
                         except KeyError:
-                            sect = 'default'
+                            sect = 'DEFAULT'
                             v = parser.get(sect, opt, raw=True)
                     elif len(path) == 2:
                         sect = path[0]
@@ -221,12 +221,10 @@ def get_config(args, parser):
     args.aliases = aliases
 
     if args.service is None and args.base is None:
-        if 'default' in config.sections():
-            fill_config(args, config, 'default')
         if args.connection is None:
-            args.connection = config_option(config, config.get, 'default', 'connection')
+            args.connection = config.defaults().get('connection', None)
 
-    if args.connection in config.sections():
+    if config.has_section(args.connection):
         fill_config(args, config, args.connection)
-    elif args.connection is not None:
+    elif args.connection:
         parser.error('unknown connection: {!r}'.format(args.connection))
