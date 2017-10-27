@@ -79,8 +79,12 @@ ls.add_argument(
 
 cache = subparsers.add_parser('cache', description='various cache related options')
 cache_opts = cache.add_argument_group('Cache options')
-cache_opts.add_argument('--update', action='store_true', help='update various data caches')
-cache_opts.add_argument('--remove', action='store_true', help='remove various data caches')
+cache_opts.add_argument(
+    '--update', action='store_true', help='update various data caches')
+cache_opts.add_argument(
+    '--remove', action='store_true', help='remove various data caches')
+cache_opts.add_argument(
+    '--all', action='store_true', help='perform changes for all known connections')
 
 
 def get_module(service_name, module_name, **kw):
@@ -89,8 +93,9 @@ def get_module(service_name, module_name, **kw):
     klass = getattr(import_module(module_name), klass_name)
     return klass(**kw)
 
-def get_client(options):
-    args = vars(options)
+def get_client(args):
+    if not isinstance(args, dict):
+        args = vars(args)
     fcn_args = args.pop('fcn_args')
     service_name = args['service']
     service = get_module(service_name, module_name='bite.services', **args)
@@ -123,14 +128,35 @@ def _ls(options, out, err):
 
 
 @cache.bind_main_func
-def _cache(options, out, error):
-    try:
-        client, fcn_args = get_client(options)
-        client.cache_config(**fcn_args)
-    except (CliError, BiteError, RequestError) as e:
-        msg = e.message if options.verbose else str(e)
-        err.write('bite cache: error: {}'.format(msg))
-        return 1
+def _cache(options, out, err):
+    if options.all:
+        options.skip_auth = True
+        for connection in sorted(options.config.sections()):
+            service = options.config.get(connection, 'service', fallback=None)
+            base = options.config.get(connection, 'base', fallback=None)
+            if service is None or base is None:
+                continue
+            options.connection = connection
+            options.service = service
+            options.base = base
+            client, fcn_args = get_client(dict(vars(options)))
+            try:
+                client.cache_config(**fcn_args)
+            except RequestError as e:
+                out.write('failed updating cached data: {}: {}'.format(connection, str(e)))
+                continue
+            except (CliError, BiteError) as e:
+                msg = e.message if options.verbose else str(e)
+                err.write('bite cache: error: {}'.format(msg))
+                return 1
+    else:
+        try:
+            client, fcn_args = get_client(options)
+            client.cache_config(**fcn_args)
+        except (CliError, BiteError, RequestError) as e:
+            msg = e.message if options.verbose else str(e)
+            err.write('bite cache: error: {}'.format(msg))
+            return 1
 
     return 0
 
