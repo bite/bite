@@ -372,13 +372,16 @@ class Cli(object):
 
     def cache_config(self, update=False, remove=False, *args, **kw):
         if update:
+            self.log('Updating cached data: {}'.format(self.connection))
             data = self.service.cache_updates()
-            try:
-                os.makedirs(os.path.dirname(self.cached_config))
-            except FileExistsError:
-                pass
-            update_config(self.cached_config, self.connection, data)
+            if data is not None:
+                try:
+                    os.makedirs(os.path.dirname(self.cached_config))
+                except FileExistsError:
+                    pass
+                update_config(self.cached_config, self.connection, data)
         elif remove:
+            self.log('Removing cached data: {}'.format(self.connection))
             if os.path.exists(self.cached_config):
                 os.remove(self.cached_config)
 
