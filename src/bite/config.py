@@ -93,9 +93,9 @@ def config_option(parser, get, section, option):
             if get(section, option) != '':
                 return get(section, option)
             else:
-                parser.error('"{}" is not set'.format(option))
+                parser.error('{!r} is not set'.format(option))
         except ValueError as e:
-            parser.error('option "{}" is not in the right format: {}'.format(option, str(e)))
+            parser.error('option {!r} is not in the right format: {}'.format(option, str(e)))
 
 def set_config_option(config_file, section, option, value, exists=False):
     """Save a config option and value to a specified config file.
@@ -113,7 +113,7 @@ def set_config_option(config_file, section, option, value, exists=False):
                 break
 
         if i >= len(config)-1:
-            raise RuntimeError('Cannot find section "{}" in config file'.format(section))
+            raise RuntimeError('Cannot find section {!r} in config file'.format(section))
 
         config_option = '{}: {}\n'.format(option, value)
 
@@ -149,9 +149,9 @@ def get_config_option(config_file, section, option):
     try:
         value = parser.get(section, option)
     except configparser.NoOptionError:
-        raise ValueError('No option "{}" for section "{}"'.format(option, section))
+        raise ValueError('No option {!r} for section {!r}'.format(option, section))
     except configparser.NoSectionError:
-        raise ValueError('No section "{}"'.format(section))
+        raise ValueError('No section {!r}'.format(section))
     return value
 
 def fill_config_option(args, parser, get, section, option):

@@ -157,7 +157,7 @@ class Cli(object):
         params = self._attach_params(**kw)
         if dry_run: return
         data = self.service.add_attachment(ids, **params)
-        self.log(self._truncate('"{}" attached to {}(s): {}'.format(filename, self.service.item, ', '.join(map(str, ids)))))
+        self.log(self._truncate('{!r} attached to {}(s): {}'.format(filename, self.service.item, ', '.join(map(str, ids)))))
 
     @loginretry
     def attachment(self, dry_run, ids, view, metadata, url, **kw):
@@ -182,7 +182,7 @@ class Cli(object):
         compressed = ['x-bzip2', 'x-bzip', 'x-gzip', 'gzip', 'x-tar', 'x-xz']
         mime_type, mime_subtype = f.mimetype.split('/')
         if sys.stdout.isatty() and not (mime_type == 'text' or mime_subtype in compressed):
-            self.log(' ! Warning: The attachment "{}" has type {!r}'.format(f.filename, f.mimetype))
+            self.log(' ! Warning: The attachment {!r} has type {!r}'.format(f.filename, f.mimetype))
             if not confirm('Are you sure you want to view it?'):
                 return
 

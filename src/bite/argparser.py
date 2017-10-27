@@ -36,7 +36,7 @@ def id_list(s):
             if item == '-':
                 raise ArgumentTypeError("'-' is only valid when piping data in")
             else:
-                raise ArgumentTypeError('invalid ID value: {}'.format(item))
+                raise ArgumentTypeError('invalid ID value: {!r}'.format(item))
     else:
         return s
 
@@ -48,13 +48,13 @@ def ids(s):
             if s == '-':
                 raise ArgumentTypeError("'-' is only valid when piping data in")
             else:
-                raise ArgumentTypeError('invalid ID value: {}'.format(s))
+                raise ArgumentTypeError('invalid ID value: {!r}'.format(s))
     else:
         return s
 
 def existing_file(s):
     if not os.path.exists(s):
-        msg = '"{}" does not exist'.format(s)
+        msg = '{!r} does not exist'.format(s)
         raise ArgumentTypeError(msg)
     return s
 
@@ -438,7 +438,7 @@ class ArgumentParser(arghparse.ArgumentParser):
                         line.append(s)
                 yield line
             except IndexError:
-                raise RuntimeError('nonexistent replacement "{}", only {} values exist'.format(s, len(input_list)))
+                raise RuntimeError('nonexistent replacement {!r}, only {} values exist'.format(s, len(input_list)))
 
     def parse_args(self, args=None, namespace=None):
         initial_args, unparsed_args = self.parse_optionals(args, namespace)

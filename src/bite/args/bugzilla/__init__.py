@@ -15,7 +15,7 @@ def parse_bug_list(s):
     try:
         return [int(i) for i in s.split(',')]
     except ValueError:
-        msg = '"{}" is not a valid bug id'.format(i)
+        msg = 'invalid bug ID: {!r}'.format(i)
         raise argparse.ArgumentTypeError(msg)
 
 def parse_date(s):
@@ -44,7 +44,7 @@ def parse_date(s):
                 # otherwise default to UTC if none is specified
                 date = parsetime(s).replace(tzinfo=utc)
         else:
-            msg = '"{}" is not a valid date argument'.format(s)
+            msg = 'invalid date argument: {!r}'.format(s)
             raise argparse.ArgumentTypeError(msg)
         return (s, date.isoformat())
     else:
