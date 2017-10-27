@@ -45,20 +45,18 @@ class SearchRequest(Request):
                     params[k] = list(map(self.service._resuffix, v))
                     options_log.append('{}: {}'.format(BugzillaBug.attributes[k], ', '.join(map(str, v))))
                 elif k == 'status':
-                    params[k] = []
                     status_alias = []
+                    status_map = {
+                        'open': self.service.open_status,
+                        'closed': self.service.closed_status,
+                        'all': self.service.open_status + self.service.closed_status,
+                    }
                     for status in v:
-                        if status.lower() == 'all':
+                        if status_map.get(status.lower(), False):
                             status_alias.append(status)
-                            params[k].extend(['UNCONFIRMED', 'NEW', 'CONFIRMED', 'ASSIGNED', 'IN_PROGRESS', 'REOPENED', 'RESOLVED', 'VERIFIED'])
-                        elif status.lower() == 'open':
-                            status_alias.append(status)
-                            params[k].extend(['UNCONFIRMED', 'NEW', 'CONFIRMED', 'ASSIGNED', 'IN_PROGRESS', 'REOPENED'])
-                        elif status.lower() == 'closed':
-                            status_alias.append(status)
-                            params[k].extend(['RESOLVED', 'VERIFIED'])
+                            params.setdefault(k, []).extend(status_map[status.lower()])
                         else:
-                            params[k].append(status)
+                            params.setdefault(k, []).append(status)
                     if status_alias:
                         options_log.append('{}: {} ({})'.format(BugzillaBug.attributes[k], ', '.join(status_alias), ', '.join(params[k])))
                     else:
@@ -85,8 +83,9 @@ class SearchRequest(Request):
         if not params:
             raise BiteError('no supported search terms or options specified')
 
+        # only return open bugs by default
         if not 'status' in params:
-            params['status'] = ['UNCONFIRMED', 'NEW', 'CONFIRMED', 'ASSIGNED', 'IN_PROGRESS', 'REOPENED']
+            params['status'] = self.service.open_status
 
         if not 'fields' in kw or kw['fields'] is None:
             fields = ['id', 'assigned_to', 'summary']
@@ -298,12 +297,20 @@ class HistoryRequest(Request):
 
 class Bugzilla(Service):
 
-    def __init__(self, **kw):
+    def __init__(self, open_status=None, closed_status=None, **kw):
         super().__init__(**kw)
         self.item = 'bug'
         self.item_web_endpoint = '/show_bug.cgi?id='
         self.attachment = BugzillaAttachment
         self.bug = BugzillaBug
+
+        # default to bugzilla-5 open/closed statuses if undefined
+        if open_status is None:
+            open_status = ['CONFIRMED', 'IN_PROGRESS', 'UNCONFIRMED']
+        self.open_status = open_status
+        if closed_status is None:
+            closed_status = ['RESOLVED', 'VERIFIED']
+        self.closed_status = closed_status
 
         # TODO: temporary compat
         self.attributes = self.bug.attributes
