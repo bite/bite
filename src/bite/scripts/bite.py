@@ -79,13 +79,13 @@ ls.add_argument(
     help='items to list')
 
 cache = subparsers.add_parser('cache', description='various cache related options')
+cache.add_argument(
+    'connections', nargs='*', help='connection cache(s) to update')
 cache_opts = cache.add_argument_group('Cache options')
 cache_opts.add_argument(
     '--update', action='store_true', help='update various data caches')
 cache_opts.add_argument(
     '--remove', action='store_true', help='remove various data caches')
-cache_opts.add_argument(
-    '--all', action='store_true', help='perform changes for all known connections')
 
 
 def get_module(service_name, module_name, **kw):
@@ -130,47 +130,42 @@ def _ls(options, out, err):
 
 @cache.bind_main_func
 def _cache(options, out, err):
-    if options.all:
-        def cache_update(options, connection):
-            service = options.config.get(connection, 'service', fallback=None)
-            base = options.config.get(connection, 'base', fallback=None)
-            if service is None or base is None:
-                return 1
-            options.connection = connection
-            options.service = service
-            options.base = base
-            client, fcn_args = get_client(dict(vars(options)))
-            try:
-                client.cache_config(**fcn_args)
-            except RequestError as e:
-                err.write('failed updating cached data: {}: {}'.format(connection, str(e)))
-                return 1
-            except (CliError, BiteError) as e:
-                msg = e.message if options.verbose else str(e)
-                err.write('bite cache: error: {}'.format(msg))
-                return 1
-            return 0
-
-        # run all cache updates in parallel
-        options.quiet = True
-        options.skip_auth = True
+    connections = options.pop('connections')
+    if not connections:
+        connections = [options.connection]
+    elif connections == ['all']:
         connections = options.config.sections()
-        ret = []
-        with concurrent.futures.ThreadPoolExecutor(max_workers=len(connections)) as executor:
-            future_to_c = {executor.submit(cache_update, options, c): c for c in connections}
-            for future in concurrent.futures.as_completed(future_to_c):
-                ret.append(future.result())
-        return int(any(ret))
-    else:
+
+    def _cache_update(options, connection):
+        service = options.config.get(connection, 'service', fallback=None)
+        base = options.config.get(connection, 'base', fallback=None)
+        if service is None or base is None:
+            return 1
+        options.connection = connection
+        options.service = service
+        options.base = base
+        client, fcn_args = get_client(dict(vars(options)))
         try:
-            client, fcn_args = get_client(options)
             client.cache_config(**fcn_args)
-        except (CliError, BiteError, RequestError) as e:
+        except RequestError as e:
+            err.write('failed updating cached data: {}: {}'.format(connection, str(e)))
+            return 1
+        except (CliError, BiteError) as e:
             msg = e.message if options.verbose else str(e)
             err.write('bite cache: error: {}'.format(msg))
             return 1
+        return 0
 
-    return 0
+    # run all cache updates in parallel
+    if len(connections) > 1:
+        options.quiet = True
+    options.skip_auth = True
+    ret = []
+    with concurrent.futures.ThreadPoolExecutor(max_workers=len(connections)) as executor:
+        future_to_c = {executor.submit(_cache_update, options, c): c for c in connections}
+        for future in concurrent.futures.as_completed(future_to_c):
+            ret.append(future.result())
+    return int(any(ret))
 
 
 @argparser.bind_final_check
