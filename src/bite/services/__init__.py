@@ -93,27 +93,26 @@ class Service(object):
         """Update cached data for the service."""
         pass
 
-    def encode_request(self, method, params):
+    def encode_request(self, method, params=None):
         """Encode the data body for a request."""
         raise NotImplementedError()
 
-    def inject_auth(self, params):
+    def inject_auth(self, request, params):
         """Add authentication data to a request."""
-        raise NotImplementedError()
+        return request, params
 
     def create_request(self, url=None, method=None, params=None):
         """Construct a request."""
         if url is None:
             url = self._base
-        if params is None:
-            params = {}
+
+        request = requests.Request(method='POST', url=url)
 
         if not self.skip_auth and self.auth_token is not None:
-            params = self.inject_auth(params)
+            request, params = self.inject_auth(request, params)
 
-        data = self.encode_request(method, params)
-        return self.session.prepare_request(
-            requests.Request(method='POST', url=url, data=data))
+        request.data = self.encode_request(method, params)
+        return self.session.prepare_request(request)
 
     def parse_response(self, response):
         """Parse the returned response."""

@@ -338,14 +338,16 @@ class Bugzilla(Service):
 
         return config_updates
 
-    def inject_auth(self, params):
+    def inject_auth(self, request, params):
+        if params is None:
+            params = {}
         # TODO: Is there a better way to determine the difference between
         # tokens and API keys?
         if len(self.auth_token) > 16:
             params['Bugzilla_api_key'] = self.auth_token
         else:
             params['Bugzilla_token'] = self.auth_token
-        return params
+        return request, params
 
     def login(self, user=None, password=None):
         """Authenticate a session."""
