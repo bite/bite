@@ -291,16 +291,22 @@ class Bugzilla(Cli):
         self.print_users(users)
 
     def fields(self, **kw):
-        params = defaultdict(list)
+        params = {}
         if not kw['fields'] == [None]:
             for field in kw['fields']:
                 if re.match(r'^\d+$', field):
-                    params['ids'].append(field)
+                    params.setdefault('ids', []).append(field)
                 else:
-                    params['names'].append(field)
+                    params.setdefault('names', []).append(field)
         fields = self.service.fields(params)
-        import json
-        print(json.dumps(fields, indent=2))
+        for field in fields:
+            print('{} ({})'.format(field['display_name'], field['name']))
+            if self.verbose or len(fields) == 1:
+                for value in field.get('values', []):
+                    if value.get('name', False):
+                        print('  {}'.format(value['name']))
+                        if 'is_open' in value:
+                            print('    open: {}'.format(value['is_open']))
 
     def products(self, **kw):
         params = defaultdict(list)

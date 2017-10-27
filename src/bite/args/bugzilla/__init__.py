@@ -551,7 +551,7 @@ def subcmds(subparsers):
     # positional args
     parser.add_argument('fields',
         action=parse_stdin,
-        nargs='+',
+        nargs='*',
         help='either ID or name')
 
     # query arguments
