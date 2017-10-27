@@ -89,7 +89,7 @@ class Service(object):
     def __str__(self):
         return str(self.base)
 
-    def update_cache(self):
+    def cache_updates(self):
         """Update cached data for the service."""
         pass
 
