@@ -5,6 +5,7 @@ trackers in different manners.
 """
 
 import argparse
+import concurrent.futures
 from importlib import import_module
 import os
 import sys
@@ -130,12 +131,11 @@ def _ls(options, out, err):
 @cache.bind_main_func
 def _cache(options, out, err):
     if options.all:
-        options.skip_auth = True
-        for connection in sorted(options.config.sections()):
+        def cache_update(options, connection):
             service = options.config.get(connection, 'service', fallback=None)
             base = options.config.get(connection, 'base', fallback=None)
             if service is None or base is None:
-                continue
+                return 1
             options.connection = connection
             options.service = service
             options.base = base
@@ -143,12 +143,24 @@ def _cache(options, out, err):
             try:
                 client.cache_config(**fcn_args)
             except RequestError as e:
-                out.write('failed updating cached data: {}: {}'.format(connection, str(e)))
-                continue
+                err.write('failed updating cached data: {}: {}'.format(connection, str(e)))
+                return 1
             except (CliError, BiteError) as e:
                 msg = e.message if options.verbose else str(e)
                 err.write('bite cache: error: {}'.format(msg))
                 return 1
+            return 0
+
+        # run all cache updates in parallel
+        options.quiet = True
+        options.skip_auth = True
+        connections = options.config.sections()
+        ret = []
+        with concurrent.futures.ThreadPoolExecutor(max_workers=len(connections)) as executor:
+            future_to_c = {executor.submit(cache_update, options, c): c for c in connections}
+            for future in concurrent.futures.as_completed(future_to_c):
+                ret.append(future.result())
+        return int(any(ret))
     else:
         try:
             client, fcn_args = get_client(options)
