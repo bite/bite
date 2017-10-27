@@ -78,6 +78,8 @@ class Cli(object):
             netloc = url.netloc
         else:
             netloc = '{}{}'.format(url.netloc, url.path.rstrip('/').replace('/', '-'))
+        if url.username is not None or url.password is not None:
+            netloc = netloc.split('@', 1)[1]
         self.cached_config = os.path.join(USER_CACHE_PATH, 'config', netloc)
 
         if self.auth_file is None:
