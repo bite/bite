@@ -309,6 +309,28 @@ class Bugzilla(Service):
         self.attributes = self.bug.attributes
         self.attribute_aliases = self.bug.attribute_aliases
 
+    def cache_updates(self):
+        """Update cached data for the service."""
+        config_updates = {}
+
+        # get open/closed status values
+        params = {}
+        params['names'] = 'bug_status'
+        statuses = self.fields(params)[0]
+
+        open_status = []
+        closed_status = []
+        for status in statuses.get('values', []):
+            if status.get('name', None) is not None:
+                if status.get('is_open', False):
+                    open_status.append(status['name'])
+                else:
+                    closed_status.append(status['name'])
+        config_updates['open_status'] = ', '.join(sorted(open_status))
+        config_updates['closed_status'] = ', '.join(sorted(closed_status))
+
+        return config_updates
+
     def inject_auth(self, params):
         # TODO: Is there a better way to determine the difference between
         # tokens and API keys?

@@ -89,6 +89,10 @@ class Service(object):
     def __str__(self):
         return str(self.base)
 
+    def update_cache(self):
+        """Update cached data for the service."""
+        pass
+
     def encode_request(self, method, params):
         """Encode the data body for a request."""
         raise NotImplementedError()

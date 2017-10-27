@@ -11,6 +11,7 @@ import tarfile
 import textwrap
 from urllib.parse import urlparse
 
+from ..config import update_config
 from ..const import USER_CACHE_PATH, BROWSER
 from ..exceptions import AuthError, CliError
 from ..objects import TarAttachment
@@ -72,13 +73,15 @@ class Cli(object):
         if sys.stdin.encoding is None:
             sys.stdin = codecs.getreader(self.enc)(sys.stdin)
 
+        url = urlparse(self.service.base)
+        if len(url.path) <= 1:
+            netloc = url.netloc
+        else:
+            netloc = '{}{}'.format(url.netloc, url.path.rstrip('/').replace('/', '-'))
+        self.cached_config = os.path.join(USER_CACHE_PATH, 'config', netloc)
+
         if self.auth_file is None:
-            url = urlparse(self.service.base)
-            if len(url.path) <= 1:
-                auth_name = url.netloc
-            else:
-                auth_name = '{}{}'.format(url.netloc, url.path.rstrip('/').replace('/', '-'))
-            self.auth_file = os.path.join(USER_CACHE_PATH, 'auth', auth_name)
+            self.auth_file = os.path.join(USER_CACHE_PATH, 'auth', netloc)
 
         auth_requested = any(
             ((auth_file or os.path.exists(self.auth_file)), self.service.auth_token, self.passwordcmd,
@@ -366,6 +369,18 @@ class Cli(object):
             self.log('Moving old auth token to {!r}'.format(self.auth_file + '.old'))
             os.rename(self.auth_file, self.auth_file + '.old')
         self.service.auth_token = None
+
+    def cache_config(self, update=False, remove=False, *args, **kw):
+        if update:
+            data = self.service.cache_updates()
+            try:
+                os.makedirs(os.path.dirname(self.cached_config))
+            except FileExistsError:
+                pass
+            update_config(self.cached_config, self.connection, data)
+        elif remove:
+            if os.path.exists(self.cached_config):
+                os.remove(self.cached_config)
 
     def _attach_params(self):
         raise NotImplementedError

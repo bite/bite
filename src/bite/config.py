@@ -154,10 +154,17 @@ def get_config_option(config_file, section, option):
         raise ValueError('No section {!r}'.format(section))
     return value
 
-def fill_config_option(args, parser, get, section, option):
+def update_config(config_file, section, data):
+    config = configparser.ConfigParser()
+    config[section] = data
+    with open(config_file, 'w') as f:
+        config.write(f)
+
+def fill_config_option(args, parser, get, section, option, func=None):
+    func = func if func is not None else lambda x: x
     value = config_option(parser, get, section, option)
     if value is not None:
-        setattr(args, option, value)
+        setattr(args, option, func(value))
 
 def fill_config(args, parser, section):
     fill_config_option(args, parser, parser.get, section, 'service')
@@ -176,11 +183,17 @@ def fill_config(args, parser, section):
     fill_config_option(args, parser, parser.getboolean, section, 'quiet')
     fill_config_option(args, parser, parser.get, section, 'suffix')
 
+    split_list = lambda v: [x.strip() for x in v.split(',')]
+    fill_config_option(args, parser, parser.get, section, 'open_status', split_list)
+    fill_config_option(args, parser, parser.get, section, 'closed_status', split_list)
+
 def get_config(args, parser):
     config = configparser.ConfigParser(interpolation=BiteInterpolation())
 
-    # load system service settings and then user service settings over them
+    # load system service settings, cached settings, and finally user service settings
+    # later settings override earlier ones
     for service_dir in (os.path.join(const.DATA_PATH, 'services'),
+                        os.path.join(const.USER_CACHE_PATH, 'config'),
                         os.path.join(const.USER_DATA_PATH, 'services')):
         for root, _, files in os.walk(service_dir):
             config.read([os.path.join(root, f) for f in files])

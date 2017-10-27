@@ -77,11 +77,26 @@ ls.add_argument(
     'item', choices=('aliases', 'connections', 'services'),
     help='items to list')
 
-def get_service(service_name, module_name, **kw):
+cache = subparsers.add_parser('cache', description='various cache related options')
+cache_opts = cache.add_argument_group('Cache options')
+cache_opts.add_argument('--update', action='store_true', help='update various data caches')
+cache_opts.add_argument('--remove', action='store_true', help='remove various data caches')
+
+
+def get_module(service_name, module_name, **kw):
     module_name = '{}.{}'.format(module_name, service_name.replace('-', '.'))
     klass_name = ''.join([s.capitalize() for s in service_name.split('-')])
     klass = getattr(import_module(module_name), klass_name)
     return klass(**kw)
+
+def get_client(options):
+    args = vars(options)
+    fcn_args = args.pop('fcn_args')
+    service_name = args['service']
+    service = get_module(service_name, module_name='bite.services', **args)
+    args['service'] = service
+    client = get_module(service_name, module_name='bite.cli', **args)
+    return client, fcn_args
 
 
 @ls.bind_main_func
@@ -107,6 +122,18 @@ def _ls(options, out, error):
     return 0
 
 
+@cache.bind_main_func
+def _cache(options, out, error):
+    try:
+        client, fcn_args = get_client(options)
+        client.cache_config(**fcn_args)
+    except (CliError, BiteError, RequestError) as e:
+        err.write('bite cache: error: {}'.format(e.message))
+        return 1
+
+    return 0
+
+
 @argparser.bind_final_check
 def _validate_args(parser, namespace):
     if namespace.auth_file is not None:
@@ -116,12 +143,7 @@ def _validate_args(parser, namespace):
 @argparser.bind_main_func
 def main(options, out, err):
     try:
-        args = vars(options)
-        fcn_args = args.pop('fcn_args')
-        service_name = args['service']
-        service = get_service(service_name, module_name='bite.services', **args)
-        args['service'] = service
-        client = get_service(service_name, module_name='bite.cli', **args)
+        client, fcn_args = get_client(options)
         cmd = getattr(client, fcn_args.pop('fcn'))
         cmd(**fcn_args)
     except (CliError, BiteError, RequestError) as e:
