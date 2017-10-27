@@ -92,6 +92,9 @@ class SearchRequest(Request):
             fields = ['id', 'assigned_to', 'summary']
         else:
             fields = kw['fields']
+            unknown_fields = set(fields).difference(BugzillaBug.attributes.keys())
+            if unknown_fields:
+                raise BiteError('unknown fields: {}'.format(', '.join(unknown_fields)))
             options_log.append('{}: {}'.format('Fields', ' '.join(fields)))
 
         params['include_fields'] = fields
