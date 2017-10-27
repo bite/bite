@@ -105,7 +105,7 @@ class SearchRequest(Request):
 
     def parse(self, data, *args, **kw):
         bugs = data['bugs']
-        return (self.service.bug(service=self.service, bug=bug) for bug in bugs)
+        return (self.service.item(service=self.service, bug=bug) for bug in bugs)
 
 class CommentsRequest(Request):
     def __init__(self, service, ids, comment_ids=None, created=None, fields=None, *args, **kw):
@@ -299,10 +299,10 @@ class Bugzilla(Service):
 
     def __init__(self, open_status=None, closed_status=None, **kw):
         super().__init__(**kw)
-        self.item = 'bug'
+        self.item = BugzillaBug
+        self.item_type = 'bug'
         self.item_web_endpoint = '/show_bug.cgi?id='
         self.attachment = BugzillaAttachment
-        self.bug = BugzillaBug
 
         # default to bugzilla-5 open/closed statuses if undefined
         if open_status is None:
@@ -313,8 +313,8 @@ class Bugzilla(Service):
         self.closed_status = closed_status
 
         # TODO: temporary compat
-        self.attributes = self.bug.attributes
-        self.attribute_aliases = self.bug.attribute_aliases
+        self.attributes = self.item.attributes
+        self.attribute_aliases = self.item.attribute_aliases
 
     def cache_updates(self):
         """Update cached data for the service."""
@@ -491,7 +491,7 @@ class Bugzilla(Service):
             else:
                 reqs.append(NullRequest())
         bugs, attachments, comments, history = self.parallel_send(reqs, size=4)
-        return (self.bug(self, bug, comments, attachments, history) for bug in bugs)
+        return (self.item(self, bug, comments, attachments, history) for bug in bugs)
 
     def create(self, product, component, version, summary, description=None, op_sys=None,
                platform=None, priority=None, severity=None, alias=None, assigned_to=None,

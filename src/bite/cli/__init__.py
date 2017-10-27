@@ -126,7 +126,7 @@ class Cli(object):
     @loginretry
     def get(self, dry_run, ids, filters, browser=False, **kw):
         if not ids:
-            raise RuntimeError('No {} ID(s) specified'.format(self.service.item))
+            raise RuntimeError('No {} ID(s) specified'.format(self.service.item_type))
 
         if browser:
             if self.service.item_web_endpoint is None:
@@ -135,7 +135,7 @@ class Cli(object):
             for id in ids:
                 url = self.service.base.rstrip('/') + self.service.item_web_endpoint + str(id)
                 self.log(self._truncate('Launching {} in browser: {} {!r}'.format(
-                    self.service.item, BROWSER, url)))
+                    self.service.item_type, BROWSER, url)))
 
                 try:
                     subprocess.Popen(
@@ -144,7 +144,7 @@ class Cli(object):
                 except (PermissionError, FileNotFoundError) as e:
                     raise CliError('failed running browser {!r}: {}'.format(BROWSER, e.strerror))
         else:
-            self.log(self._truncate('Getting {}(s): {}'.format(self.service.item, ', '.join(map(str, ids)))))
+            self.log(self._truncate('Getting {}(s): {}'.format(self.service.item_type, ', '.join(map(str, ids)))))
 
             if dry_run: return
             data = self.service.get(ids, **kw)
@@ -160,7 +160,7 @@ class Cli(object):
         params = self._attach_params(**kw)
         if dry_run: return
         data = self.service.add_attachment(ids, **params)
-        self.log(self._truncate('{!r} attached to {}(s): {}'.format(filename, self.service.item, ', '.join(map(str, ids)))))
+        self.log(self._truncate('{!r} attached to {}(s): {}'.format(filename, self.service.item_type, ', '.join(map(str, ids)))))
 
     @loginretry
     def attachment(self, dry_run, ids, view, metadata, url, **kw):
@@ -231,12 +231,12 @@ class Cli(object):
         kw = self._modify_params(**kw)
         request = self.service.modify(ids, **kw)
 
-        self.log(self._truncate('Modifying {}(s): {}'.format(self.service.item,
+        self.log(self._truncate('Modifying {}(s): {}'.format(self.service.item_type,
                                ', '.join(map(str, ids)))))
         self.log(request.options, prefix='')
 
         if ask:
-            if not confirm(prompt='Modify {}(s)?'.format(self.service.item), default=True):
+            if not confirm(prompt='Modify {}(s)?'.format(self.service.item_type), default=True):
                 self.log('Modification aborted')
                 return
 
@@ -253,7 +253,7 @@ class Cli(object):
             self.log(line, prefix='')
 
         if ask or not batch:
-            if not confirm(prompt='Submit {}?'.format(self.service.item), default=True):
+            if not confirm(prompt='Submit {}?'.format(self.service.item_type), default=True):
                 self.log('Submission aborted')
                 return
 
@@ -265,7 +265,7 @@ class Cli(object):
             raise CliError(e)
 
         if sys.stdout.isatty():
-            self.log('Submitted {} {}'.format(self.service.item, data))
+            self.log('Submitted {} {}'.format(self.service.item_type, data))
         else:
             sys.stdout.write(str(data))
 
@@ -276,7 +276,7 @@ class Cli(object):
         if kw['fields'] is None:
             kw['fields'] = request.fields
 
-        self.log('Searching for {}s with the following options:'.format(self.service.item))
+        self.log('Searching for {}s with the following options:'.format(self.service.item_type))
         self.log(request.options, prefix='   - ')
 
         if dry_run: return
@@ -286,7 +286,7 @@ class Cli(object):
                 data = fcn(data)
         count = self.print_search(data, **kw)
         if sys.stdout.isatty():
-            self.log('{} {}{} found.'.format(count, self.service.item, 's'[count == 1:]))
+            self.log('{} {}{} found.'.format(count, self.service.item_type, 's'[count == 1:]))
 
     def _header(self, char, msg):
         return '{} {} {}'.format(char * 3, msg, char * (self.columns - len(msg) - 5))

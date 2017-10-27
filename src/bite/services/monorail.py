@@ -23,7 +23,7 @@ from ..rfc3339 import parse_datetime as parsetime
 class Monorail(Jsonrpc):
     def __init__(self, **kw):
         super().__init__(**kw)
-        self.item = 'issue'
+        self.item_type = 'issue'
         self.project_name = list(filter(None, self.base.split('/')))[-1]
         self.issues_url = 'https://code.google.com/feeds/issues/p/{}/issues/full'.format(self.project_name)
         self.comments_url = 'https://code.google.com/feeds/issues/p/{}/issues/{{}}/comments/full'.format(self.project_name)

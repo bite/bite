@@ -19,7 +19,7 @@ class BugzillaRest(Bugzilla):
         }
 
         super().__init__(**kw)
-        self.bug = RestBug
+        self.item = RestBug
 
     def login(self):
         if self.auth_token:

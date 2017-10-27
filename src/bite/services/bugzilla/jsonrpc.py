@@ -53,7 +53,7 @@ class _IterSearchRequest(SearchRequest):
     def parse(self, data, *args, **kw):
         import ijson.backends.yajl2 as ijson
         bugs = ijson.items(data, 'result.bugs.item')
-        return (self.service.bug(service=self.service, bug=bug) for bug in bugs)
+        return (self.service.item(service=self.service, bug=bug) for bug in bugs)
 
 
 class _IterContent(object):
