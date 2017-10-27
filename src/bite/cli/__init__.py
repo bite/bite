@@ -395,8 +395,8 @@ class Cli(object):
     def _modify_params(self, *args, **kw):
         return kw
 
-    def _create_params(self):
-        raise NotImplementedError
+    def _create_params(self, *args, **kw):
+        return [], kw
 
     def _search_params(self, *args, **kw):
         return kw
