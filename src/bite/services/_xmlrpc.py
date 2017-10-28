@@ -23,7 +23,7 @@ class Xmlrpc(Service):
         else:
             params = (params,) if params is not None else ()
         return dumps(params, method, encoding=encoding,
-                     allow_none=False).encode(encoding, 'xmlcharrefreplace')
+                     allow_none=True).encode(encoding, 'xmlcharrefreplace')
 
     def parse_response(self, response):
         """Send request object and perform checks on the response."""
