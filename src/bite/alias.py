@@ -27,7 +27,11 @@ def substitute_alias(args, unparsed_args):
     alias_name = unparsed_args[0]
     extra_cmds = unparsed_args[1:]
 
-    alias_cmd = args.aliases.get(args.connection, alias_name, fallback=None)
+    if args.connection is not None and args.aliases.has_section(args.connection):
+        section = args.connection
+    else:
+        section = args.aliases.default_section
+    alias_cmd = args.aliases.get(section, alias_name, fallback=None)
 
     if alias_cmd is None:
         return unparsed_args
