@@ -122,14 +122,8 @@ class Roundup(Xmlrpc):
         data = self.send(req)
         return data
 
-    def get(self, id, fields=None, **kw):
-        params = ['issue' + str(id[0])]
-        if fields is not None:
-            params.extend(fields)
-
-        req = self.create_request(method='display', params=params)
-        data = self.send(req)
-        return (self.item(self, **data),)
+    def get(self, ids, fields=None, get_comments=False, get_attachments=False, **kw):
+        return GetRequest(self, ids, fields)
 
     def modify(self, id, **kw):
         params = ['issue' + str(id[0])]

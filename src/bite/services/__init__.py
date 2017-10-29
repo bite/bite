@@ -29,23 +29,40 @@ class Request(object):
 
     def __init__(self, service):
         self.service = service
+        self.requests = []
 
     def send(self):
-        return self.parse(self.service.send(self.request))
+        if len(self.requests) > 1:
+            return self.parse(self.service.parallel_send(self.requests))
+        else:
+            return self.parse(self.service.send(self.requests[0]))
+
+    @staticmethod
+    def http_req_str(req):
+        return '{}\n{}\n\n{}'.format(
+            req.method + ' ' + req.url,
+            '\n'.join('{}: {}'.format(k, v) for k, v in req.headers.items()),
+            req.body,
+        )
 
     def __str__(self):
-        return '{}\n{}\n\n{}'.format(
-            self.request.method + ' ' + self.request.url,
-            '\n'.join('{}: {}'.format(k, v) for k, v in self.request.headers.items()),
-            self.request.body,
-        )
+        requests = []
+        for req in self.requests:
+            if isinstance(req, Request):
+                requests.extend(req.requests)
+            else:
+                requests.append(req)
+
+        raw_requests = []
+        for req in requests:
+            raw_requests.append(self.http_req_str(req))
+
+        return '\n\n'.join(raw_requests)
 
     def parse(self, data):
         return data
 
 class NullRequest(Request):
-    def __init__(self):
-        pass
 
     def send(self):
         pass

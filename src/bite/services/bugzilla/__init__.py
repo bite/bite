@@ -101,7 +101,7 @@ class SearchRequest(Request):
         self.fields = fields
         self.options = options_log
 
-        self.request = self.service.create_request(method=method, params=params)
+        self.requests.append(self.service.create_request(method=method, params=params))
 
     def parse(self, data, *args, **kw):
         bugs = data['bugs']
@@ -127,7 +127,7 @@ class CommentsRequest(Request):
         # TODO: this
         self.options = ['REPLACE ME']
 
-        self.request = self.service.create_request(method=method, params=params)
+        self.requests.append(self.service.create_request(method=method, params=params))
 
     def parse(self, data, *args, **kw):
         bugs = data['bugs']
@@ -144,7 +144,6 @@ class GetRequest(Request):
         super().__init__(service)
         if not ids:
             raise ValueError('No bug ID(s) specified')
-        self.requests = []
 
         method = 'Bug.get'
         params = {}
@@ -159,10 +158,7 @@ class GetRequest(Request):
                 self.requests.append(getattr(
                     sys.modules[__name__], call.capitalize() + 'Request')(self.service, ids))
             else:
-                self.requests.append(NullRequest())
-
-    def send(self):
-        return self.parse(self.service.parallel_send(self.requests, size=4))
+                self.requests.append(NullRequest(self.service))
 
     def parse(self, data):
         data, attachments, comments, history = data
@@ -259,7 +255,7 @@ class ModifyRequest(Request):
             raise ValueError('No bug ID(s) specified')
         params['ids'] = ids
         method = 'Bug.update'
-        self.request = self.service.create_request(method=method, params=params)
+        self.requests.append(self.service.create_request(method=method, params=params))
 
     def parse(self, data, *args, **kw):
         return data['bugs']
@@ -280,7 +276,7 @@ class AttachmentsRequest(Request):
         params = {'ids': ids, 'exclude_fields': ['data']}
         if fields is not None:
             params['include_fields'] = fields
-        self.request = self.service.create_request(method=method, params=params)
+        self.requests.append(self.service.create_request(method=method, params=params))
 
         # TODO: this
         self.options = ['REPLACE ME']
@@ -299,7 +295,7 @@ class HistoryRequest(Request):
         if not ids:
             raise ValueError('No bug ID(s) specified')
         params = {'ids': ids}
-        self.request = self.service.create_request(method=method, params=params)
+        self.requests.append(self.service.create_request(method=method, params=params))
 
         # TODO: this
         self.options = ['REPLACE ME']
