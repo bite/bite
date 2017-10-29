@@ -144,10 +144,8 @@ class Roundup(Xmlrpc):
                 search_params[k] = kw[k]
         params.append(search_params)
 
-        print(params)
         req = self.create_request(method='filter', params=params)
         data = self.send(req)
-        print(data)
         return data
 
     def parse_response(self, response):
@@ -165,27 +163,64 @@ class Roundup(Xmlrpc):
 
 class RoundupIssue(Item):
     attributes = {
+        'creator': 'Reporter',
+        'creation': 'Created',
         'assignedto': 'Assignee',
-        'files': 'Attachments',
         'keyword': 'Keywords',
         'priority': 'Priority',
         'status': 'Status',
         'title': 'Title',
         'nosy': 'Nosy List',
+        'superseder': 'Duplicate of',
+        'actor': 'Modified by',
+        'activity': 'Modified',
+        'messages': 'Comments',
+        'files': 'Attachments',
     }
 
     def __init__(self, service, **kw):
         self.service = service
         for k, v in kw.items():
-            setattr(self, k, v)
+            if k in ('creation', 'activity'):
+                setattr(self, k, datetime.strptime(v, '<Date %Y-%m-%d.%X.%f>'))
+            elif k in ('creator', 'actor'):
+                try:
+                    username = self.service.users[int(v)-1]
+                except IndexError:
+                    # cache needs update
+                    username = v
+                setattr(self, k, username)
+            elif k == 'status':
+                try:
+                    status = self.service.status[int(v)-1]
+                except IndexError:
+                    # cache needs update
+                    status = v
+                setattr(self, k, status)
+            elif k == 'priority' and v is not None:
+                try:
+                    priority = self.service.priority[int(v)-1]
+                except IndexError:
+                    # cache needs update
+                    priority = v
+                setattr(self, k, priority)
+            else:
+                setattr(self, k, v)
 
     def __str__(self):
         lines = []
         print_fields = [
             ('title', 'Title'),
             ('assignedto', 'Assignee'),
+            ('creation', 'Created'),
+            ('creator', 'Reporter'),
+            ('activity', 'Modified'),
+            ('actor', 'Modified by'),
             ('status', 'Status'),
+            ('priority', 'Priority'),
+            ('superseder', 'Duplicate'),
             ('keyword', 'Keywords'),
+            ('messages', 'Comments'),
             ('files', 'Attachments'),
         ]
 
@@ -194,11 +229,10 @@ class RoundupIssue(Item):
             if value is None:
                 continue
 
-            values = value
             if isinstance(value, list):
-                values = ', '.join(map(str, value))
+                value = ', '.join(map(str, value))
 
-            lines.append('{:<12}: {}'.format(title, values))
+            lines.append('{:<12}: {}'.format(title, value))
 
         return '\n'.join(lines)
 

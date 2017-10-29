@@ -716,11 +716,10 @@ class BugzillaBug(Item):
             # Initial comment is the bug description
             if field == 'comments': value -= 1
 
-            values = value
             if isinstance(value, list):
-                values = ', '.join(map(str, value))
+                value = ', '.join(map(str, value))
 
-            lines.append('{:<12}: {}'.format(title, values))
+            lines.append('{:<12}: {}'.format(title, value))
 
         custom_fields = ((k, v) for (k, v) in vars(self).items()
                          if re.match(r'^cf_\w+$', k))
