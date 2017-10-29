@@ -243,6 +243,9 @@ class RoundupIssue(Item):
             if value is None:
                 continue
 
+            if field in ('messages', 'files'):
+                value = len(value)
+
             if isinstance(value, list):
                 value = ', '.join(map(str, value))
 
