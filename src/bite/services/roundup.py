@@ -47,6 +47,7 @@ class Roundup(Xmlrpc):
         # cached value mappings
         self.status = ()
         self.priority = ()
+        self.keyword = ()
         self.users = ()
 
         kw['endpoint'] = '/xmlrpc'
@@ -82,16 +83,20 @@ class Roundup(Xmlrpc):
         # get possible priority values
         reqs.append(self.create_request(method='list', params=['priority']))
 
+        # get possible keyword values
+        reqs.append(self.create_request(method='list', params=['keyword']))
+
         # get possible user values requires login, otherwise returns empty list
         self.skip_auth = False
         self.load_auth_token()
         reqs.append(self.create_request(method='list', params=['user']))
 
-        status, priority, users = self.parallel_send(reqs, size=3)
+        status, priority, keyword, users = self.parallel_send(reqs, size=3)
 
         # don't sort, ordering is important for the mapping to work properly
         config_updates['status'] = ', '.join(status)
         config_updates['priority'] = ', '.join(priority)
+        config_updates['keyword'] = ', '.join(keyword)
         if users:
             config_updates['users'] = ', '.join(users)
 
@@ -100,7 +105,7 @@ class Roundup(Xmlrpc):
     def _load_cache(self, settings):
         """Set attrs from cached data."""
         for k, v in settings:
-            if k in ('status', 'priority', 'users'):
+            if k in ('status', 'priority', 'keyword', 'users'):
                 setattr(self, k, tuple(x.strip() for x in v.split(',')))
             else:
                 setattr(self, k, v)
@@ -204,6 +209,15 @@ class RoundupIssue(Item):
                     # cache needs update
                     priority = v
                 setattr(self, k, priority)
+            elif k == 'keyword' and v is not None:
+                keywords = []
+                for keyword in v:
+                    try:
+                        keywords.append(self.service.keyword[int(keyword)-1])
+                    except IndexError:
+                        # cache needs update
+                        keywords.append(keyword)
+                setattr(self, k, keywords)
             else:
                 setattr(self, k, v)
 
