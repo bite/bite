@@ -138,21 +138,36 @@ class ChangesRequest(Request):
     pass
 
 class GetRequest(Request):
-    def __init__(self, service, ids, fields=None, *args, **kw):
+    def __init__(self, service, ids, fields=None, get_comments=False,
+                 get_attachments=False, get_history=False, **kw):
         """Construct a get request."""
         super().__init__(service)
         if not ids:
             raise ValueError('No bug ID(s) specified')
+        self.requests = []
+
         method = 'Bug.get'
         params = {}
         params['permissive'] = True
         params['ids'] = ids
         if fields is not None:
             params['include_fields'] = fields
-        self.request = self.service.create_request(method=method, params=params)
+        self.requests.append(self.service.create_request(method=method, params=params))
+
+        for call in ['attachments', 'comments', 'history']:
+            if locals()['get_' + call]:
+                self.requests.append(getattr(
+                    sys.modules[__name__], call.capitalize() + 'Request')(self.service, ids))
+            else:
+                self.requests.append(NullRequest())
+
+    def send(self):
+        return self.parse(self.service.parallel_send(self.requests, size=4))
 
     def parse(self, data):
-        return data['bugs']
+        data, attachments, comments, history = data
+        bugs = data['bugs']
+        return (self.service.item(self, bug, comments, attachments, history) for bug in bugs)
 
 class ModifyRequest(Request):
     def __init__(self, service, ids, *args, **kw):
@@ -480,21 +495,6 @@ class Bugzilla(Service):
             except KeyError:
                 raise ValueError('No such attachment ID: {}'.format(i))
 
-    def get(self, ids, fields=None, get_comments=False,
-            get_attachments=False, get_history=False, **kw):
-        """Return a bug object given the bug id"""
-        # construct list of requests to send
-        reqs = []
-        reqs.append(GetRequest(self, ids, fields))
-        for call in ['attachments', 'comments', 'history']:
-            if locals()['get_' + call]:
-                req = getattr(sys.modules[__name__], call.capitalize() + 'Request')(self, ids)
-                reqs.append(req)
-            else:
-                reqs.append(NullRequest())
-        bugs, attachments, comments, history = self.parallel_send(reqs, size=4)
-        return (self.item(self, bug, comments, attachments, history) for bug in bugs)
-
     def create(self, product, component, version, summary, description=None, op_sys=None,
                platform=None, priority=None, severity=None, alias=None, assigned_to=None,
                cc=None, target_milestone=None, groups=None, status=None, **kw):
@@ -577,6 +577,7 @@ class Bugzilla(Service):
         data = self.send(req)
         return data
 
+setattr(Bugzilla, 'get', lambda self, *args, **kw: GetRequest(self, *args, **kw))
 setattr(Bugzilla, 'search', lambda self, *args, **kw: SearchRequest(self, *args, **kw))
 setattr(Bugzilla, 'comments', lambda self, *args, **kw: CommentsRequest(self, *args, **kw))
 setattr(Bugzilla, 'history', lambda self, *args, **kw: HistoryRequest(self, *args, **kw))

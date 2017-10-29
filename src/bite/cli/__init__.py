@@ -148,10 +148,11 @@ class Cli(object):
                 except (PermissionError, FileNotFoundError) as e:
                     raise CliError('failed running browser {!r}: {}'.format(BROWSER, e.strerror))
         else:
+            request = self.service.get(ids, **kw)
             self.log(self._truncate('Getting {}(s): {}'.format(self.service.item_type, ', '.join(map(str, ids)))))
 
             if dry_run: return
-            data = self.service.get(ids, **kw)
+            data = request.send()
             if filters is not None:
                 for fcn in filters:
                     data = fcn(data)

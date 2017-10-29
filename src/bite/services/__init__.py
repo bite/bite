@@ -159,7 +159,11 @@ class Service(object):
                 if isinstance(req, tuple) or isinstance(req, list):
                     yield self.parallel_send(req)
                 else:
-                    jobs.append(executor.submit(lambda x: x.send(), req))
+                    # XXX: hack to support both internal request format and HTTP requests
+                    if isinstance(req, Request):
+                        jobs.append(executor.submit(lambda x: x.send(), req))
+                    else:
+                        jobs.append(executor.submit(self.send, req))
 
         for job in jobs:
             yield job.result()
