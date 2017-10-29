@@ -67,9 +67,8 @@ class Roundup(Xmlrpc):
         # XXX: Hacky method of saving the HTTP basic auth token, probably
         # should auth token usage to support setting session.auth or
         # session.headers as well so it doesn't have to be injected every time.
-        auth = requests.auth.HTTPBasicAuth(user, password)
         request = requests.Request(method='POST')
-        auth(request)
+        requests.auth.HTTPBasicAuth(user, password)(request)
         self.auth_token = request.headers['Authorization']
 
     def _cache_update(self):
