@@ -312,27 +312,24 @@ class HistoryRequest(Request):
 
 class Bugzilla(Service):
 
-    def __init__(self, open_status=None, closed_status=None, **kw):
+    def __init__(self, **kw):
+        # default to bugzilla-5 open/closed statuses, cache overrides if it exists
+        self.open_status = ('CONFIRMED', 'IN_PROGRESS', 'UNCONFIRMED')
+        self.closed_status = ('RESOLVED', 'VERIFIED')
+
         super().__init__(**kw)
+
         self.item = BugzillaBug
         self.item_type = 'bug'
         self.item_web_endpoint = '/show_bug.cgi?id='
         self.attachment = BugzillaAttachment
 
-        # default to bugzilla-5 open/closed statuses if undefined
-        if open_status is None:
-            open_status = ['CONFIRMED', 'IN_PROGRESS', 'UNCONFIRMED']
-        self.open_status = open_status
-        if closed_status is None:
-            closed_status = ['RESOLVED', 'VERIFIED']
-        self.closed_status = closed_status
-
         # TODO: temporary compat
         self.attributes = self.item.attributes
         self.attribute_aliases = self.item.attribute_aliases
 
-    def cache_updates(self):
-        """Update cached data for the service."""
+    def _cache_update(self):
+        """Pull latest data from service for cache update."""
         config_updates = {}
 
         # get open/closed status values
@@ -374,6 +371,14 @@ class Bugzilla(Service):
 
         content = self.send(req)
         self.auth_token = content['token']
+
+    def _load_cache(self, settings):
+        """Set attrs from cached data."""
+        for k, v in settings:
+            if k in ('open_status', 'closed_status'):
+                setattr(self, k, tuple(x.strip() for x in v.split(',')))
+            else:
+                setattr(self, k, v)
 
     def add_attachment(self, ids, data=None, filepath=None, filename=None, mimetype=None,
                        is_patch=False, is_private=False, comment=None, summary=None, **kw):

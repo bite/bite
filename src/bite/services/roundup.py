@@ -1,17 +1,57 @@
+"""XML-RPC access to Roundup
+
+http://www.roundup-tracker.org/docs/xmlrpc.html
+"""
+
+import re
+
+from datetime import datetime
+import requests
+
+from . import Request
 from ._xmlrpc import Xmlrpc
 from ..objects import decompress
 from ..exceptions import AuthError, RequestError, ParsingError
 from ..objects import Item, Attachment
 
-import requests
+
+class GetRequest(Request):
+
+    def __init__(self, service, ids, fields=None, *args, **kw):
+        """Construct a get request."""
+        super().__init__(service)
+        if not ids:
+            raise ValueError('No {} ID(s) specified'.format(self.service.item_name))
+
+        self.requests = []
+        for i in ids:
+            params = ['issue' + str(i)]
+            if fields is not None:
+                params.extend(fields)
+            else:
+                params.extend(self.service.item.attributes.keys())
+            self.requests.append(self.service.create_request(method='display', params=params))
+
+    def send(self):
+        for data in self.service.parallel_send(self.requests):
+            yield self.parse(data)
+
+    def parse(self, data):
+        return self.service.item(self.service, **data)
 
 
 class Roundup(Xmlrpc):
     """Support Roundup's XML-RPC interface."""
 
     def __init__(self, **kw):
+        # cached value mappings
+        self.status = ()
+        self.priority = ()
+        self.users = ()
+
         kw['endpoint'] = '/xmlrpc'
         super().__init__(**kw)
+
         self.item = RoundupIssue
         self.item_type = 'issue'
         self.item_web_endpoint = '/issue'
@@ -31,6 +71,40 @@ class Roundup(Xmlrpc):
         request = requests.Request(method='POST')
         auth(request)
         self.auth_token = request.headers['Authorization']
+
+    def _cache_update(self):
+        """Pull latest data from service for cache update."""
+        config_updates = {}
+        reqs = []
+
+        # get possible status values
+        reqs.append(self.create_request(method='list', params=['status']))
+
+        # get possible priority values
+        reqs.append(self.create_request(method='list', params=['priority']))
+
+        # get possible user values requires login, otherwise returns empty list
+        self.skip_auth = False
+        self.load_auth_token()
+        reqs.append(self.create_request(method='list', params=['user']))
+
+        status, priority, users = self.parallel_send(reqs, size=3)
+
+        # don't sort, ordering is important for the mapping to work properly
+        config_updates['status'] = ', '.join(status)
+        config_updates['priority'] = ', '.join(priority)
+        if users:
+            config_updates['users'] = ', '.join(users)
+
+        return config_updates
+
+    def _load_cache(self, settings):
+        """Set attrs from cached data."""
+        for k, v in settings:
+            if k in ('status', 'priority', 'users'):
+                setattr(self, k, tuple(x.strip() for x in v.split(',')))
+            else:
+                setattr(self, k, v)
 
     def create(self, title, **kw):
         """Create a new issue given a list of parameters

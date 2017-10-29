@@ -1,3 +1,4 @@
+import configparser
 import os
 import stat
 import sys
@@ -8,6 +9,8 @@ import requests
 
 from .. import __version__
 from ..exceptions import RequestError, AuthError, NotFound
+from ..config import update_config
+from ..const import USER_CACHE_PATH
 
 
 def command(function):
@@ -50,8 +53,9 @@ class NullRequest(Request):
 
 class Service(object):
 
-    def __init__(self, base, verify=True, user=None, password=None, skip_auth=True,
-                 auth_token=None, suffix=None, timeout=None, **kw):
+    def __init__(self, base, connection=None, verify=True, user=None, password=None, skip_auth=True,
+                 auth_token=None, suffix=None, timeout=None, auth_file=None, **kw):
+        self.connection = connection
         self.base = base
         self.user = user
         self.password = password
@@ -69,8 +73,24 @@ class Service(object):
         self.item = 'issue'
         self.item_web_endpoint = None
 
+        file_name = self.connection
+        if file_name is None:
+            url = urlparse(self.service.base)
+            if len(url.path) <= 1:
+                file_name = url.netloc
+            else:
+                file_name = '{}{}'.format(url.netloc, url.path.rstrip('/').replace('/', '-'))
+            if url.username is not None or url.password is not None:
+                file_name = file_name.split('@', 1)[1]
+        self.cached_config = os.path.join(USER_CACHE_PATH, 'config', file_name)
+        self.load_cache()
+
         self.skip_auth = skip_auth
         self.auth_token = auth_token
+        if auth_file is None:
+            self.auth_file = os.path.join(USER_CACHE_PATH, 'auth', file_name)
+        else:
+            self.auth_file = auth_file
 
         self.session = requests.Session()
         self.session.headers['User-Agent'] = '{}-{}'.format('bite', __version__)
@@ -86,12 +106,67 @@ class Service(object):
         if user is None or password is None:
             raise ValueError('Both user and password parameters must be specified')
 
+    def cache_auth_token(self):
+        try:
+            os.makedirs(os.path.dirname(self.auth_file))
+        except FileExistsError:
+            pass
+
+        try:
+            with open(self.auth_file, 'w+') as f:
+                os.chmod(self.auth_file, stat.S_IREAD | stat.S_IWRITE)
+                f.write(self.auth_token)
+        except (PermissionError, IsADirectoryError) as e:
+            raise BiteError('failed caching auth token to {!r}: {}'.format(
+                self.auth_file, e.strerror))
+
+    def load_auth_token(self):
+        try:
+            with open(self.auth_file, 'r') as f:
+                self.auth_token = f.read()
+        except IOError:
+            return None
+
+    def remove_auth_token(self):
+        """Remove an authentication token."""
+        try:
+            os.remove(self.auth_file)
+        except FileExistsError:
+            pass
+        self.auth_token = None
+
     def __str__(self):
         return str(self.base)
 
-    def cache_updates(self):
+    def _cache_update(self):
+        """Pull latest data from service for cache update."""
+        return None
+
+    def cache_update(self):
         """Update cached data for the service."""
-        pass
+        data = self._cache_update()
+        if data is not None:
+            try:
+                os.makedirs(os.path.dirname(self.cached_config))
+            except FileExistsError:
+                pass
+            update_config(self.cached_config, self.connection, data)
+
+    def _load_cache(self, settings):
+        """Set attrs from cached data."""
+        for k, v in settings:
+            setattr(self, k, v)
+
+    def load_cache(self):
+        """Load cached data from config."""
+        try:
+            with open(self.cached_config, 'r') as f:
+                config = configparser.ConfigParser()
+                config.read(self.cached_config)
+                settings = config.items(self.connection)
+        except IOError:
+            settings = ()
+        self._load_cache(settings)
 
     def encode_request(self, method, params=None):
         """Encode the data body for a request."""

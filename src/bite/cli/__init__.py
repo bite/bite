@@ -11,7 +11,6 @@ import tarfile
 import textwrap
 from urllib.parse import urlparse
 
-from ..config import update_config
 from ..const import USER_CACHE_PATH, BROWSER
 from ..exceptions import AuthError, CliError
 from ..objects import TarAttachment
@@ -29,10 +28,10 @@ def loginretry(func):
             self.quiet = True
             if e.expired and self.service.auth_token is not None:
                 self.log('Warning: your auth token has expired', prefix=' ! ')
-                self.remove_auth_token()
+                self.service.remove_auth_token()
                 self.log('Generating new auth token')
             self.login()
-            self.load_auth_token()
+            self.service.load_auth_token()
             return func(self, *args, **kw)
     return wrapper
 
@@ -47,17 +46,15 @@ def loginrequired(func):
 class Cli(object):
     """Generic commandline interface for a service."""
 
-    def __init__(self, service, connection=None, quiet=False, verbose=False, columns=None,
+    def __init__(self, service, quiet=False, verbose=False, columns=None,
                  encoding=None, passwordcmd=None, auth_file=None, skip_auth=True, **kw):
         self.service = service
-        self.connection = connection
         self.quiet = quiet
         self.verbose = verbose
         self.passwordcmd = passwordcmd
         self.columns = columns or get_terminal_size()[0]
         self.wrapper = textwrap.TextWrapper(width = self.columns)
         self.skip_auth = skip_auth
-        self.auth_file = auth_file
 
         if encoding:
             self.enc = encoding
@@ -73,22 +70,8 @@ class Cli(object):
         if sys.stdin.encoding is None:
             sys.stdin = codecs.getreader(self.enc)(sys.stdin)
 
-        file_name = self.connection
-        if file_name is None:
-            url = urlparse(self.service.base)
-            if len(url.path) <= 1:
-                file_name = url.netloc
-            else:
-                file_name = '{}{}'.format(url.netloc, url.path.rstrip('/').replace('/', '-'))
-            if url.username is not None or url.password is not None:
-                file_name = file_name.split('@', 1)[1]
-        self.cached_config = os.path.join(USER_CACHE_PATH, 'config', file_name)
-
-        if self.auth_file is None:
-            self.auth_file = os.path.join(USER_CACHE_PATH, 'auth', file_name)
-
         auth_requested = any(
-            ((auth_file or os.path.exists(self.auth_file)), self.service.auth_token, self.passwordcmd,
+            ((auth_file or os.path.exists(self.service.auth_file)), self.service.auth_token, self.passwordcmd,
              self.service.user, self.service.password))
 
         # login if requested; otherwise, login will be required when necessary
@@ -103,13 +86,13 @@ class Cli(object):
         if self.skip_auth:
             return
 
-        self.load_auth_token()
+        self.service.load_auth_token()
 
         # fallback to manual user/pass login
         if self.service.auth_token is None:
             user, password = self.get_login_data(self.service.user, self.service.password)
             self.service.login(user, password)
-            self.cache_auth_token()
+            self.service.cache_auth_token()
 
     def get_login_data(self, user=None, password=None):
         """Request user and password info from the user."""
@@ -342,53 +325,14 @@ class Cli(object):
             else:
                 print(line[:self.columns])
 
-    def cache_auth_token(self):
-        # TODO: Move caching to library side to make sure it's only done
-        # after successful login or API call of some type and to use with other clients.
-        try:
-            os.makedirs(os.path.dirname(self.auth_file))
-        except FileExistsError:
-            pass
-
-        try:
-            with open(self.auth_file, 'w+') as f:
-                os.chmod(self.auth_file, stat.S_IREAD | stat.S_IWRITE)
-                f.write(self.service.auth_token)
-        except (PermissionError, IsADirectoryError) as e:
-            raise CliError('failed caching auth token to {!r}: {}'.format(
-                self.auth_file, e.strerror))
-
-    def load_auth_token(self):
-        try:
-            with open(self.auth_file, 'r') as f:
-                self.service.auth_token = f.read()
-        except IOError:
-            return None
-
-    def remove_auth_token(self):
-        """Remove an authentication token."""
-        if confirm(prompt='Remove auth token?', default=True):
-            os.remove(self.auth_file)
-        else:
-            # currently only keep one backup and which is overwritten if it already exists
-            self.log('Moving old auth token to {!r}'.format(self.auth_file + '.old'))
-            os.rename(self.auth_file, self.auth_file + '.old')
-        self.service.auth_token = None
-
     def cache_config(self, update=False, remove=False, *args, **kw):
         if update:
-            self.log('Updating cached data: {}'.format(self.connection))
-            data = self.service.cache_updates()
-            if data is not None:
-                try:
-                    os.makedirs(os.path.dirname(self.cached_config))
-                except FileExistsError:
-                    pass
-                update_config(self.cached_config, self.connection, data)
+            self.log('Updating cached data: {}'.format(self.service.connection))
+            self.service.cache_update()
         elif remove:
-            self.log('Removing cached data: {}'.format(self.connection))
-            if os.path.exists(self.cached_config):
-                os.remove(self.cached_config)
+            self.log('Removing cached data: {}'.format(self.service.connection))
+            if os.path.exists(self.service.cached_config):
+                os.remove(self.service.cached_config)
 
     def _attach_params(self):
         raise NotImplementedError
