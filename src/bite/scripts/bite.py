@@ -24,13 +24,6 @@ options.add_argument('-i', '--input',
     type=argparse.FileType('r'),
     action=parse_file,
     help='read data from an input file')
-options.add_argument('-k', '--insecure',
-    action='store_false',
-    dest='verify',
-    help='skip SSL certificate verification')
-options.add_argument('-n', '--dry-run',
-    action='store_true',
-    help='do everything except requesting or sending data')
 options.add_argument('--config-file',
     help='read an alternate configuration file')
 options.add_argument('--columns',
@@ -42,7 +35,16 @@ options.add_argument('--encoding',
 options.add_argument('--suffix',
     help='domain suffix to strip or add when displaying or searching '
          '(e.g. "@domain.com")')
-options.add_argument('--timeout',
+
+connect = argparser.add_argument_group('Connection')
+connect.add_argument('-k', '--insecure',
+    action='store_false',
+    dest='verify',
+    help='skip SSL certificate verification')
+connect.add_argument('-n', '--dry-run',
+    action='store_true',
+    help='do everything except requesting or sending data')
+connect.add_argument('--timeout',
     type=int,
     metavar='SECONDS',
     help='amount of time to wait before timing out requests (defaults to 30 seconds)')
@@ -63,12 +65,12 @@ single_auth.add_argument('--auth-file',
 auth.add_argument('--passwordcmd',
     help='password command to evaluate authentication (overrides -p/--password)')
 
-connect = argparser.add_argument_group('Connection')
-connect.add_argument('-b', '--base',
+service = argparser.add_argument_group('Service')
+service.add_argument('-b', '--base',
     help='base URL of service')
-connect.add_argument('-s', '--service',
+service.add_argument('-s', '--service',
     help='supported services: {}'.format(', '.join(SERVICES)))
-connect.add_argument('-c', '--connection',
+service.add_argument('-c', '--connection',
     help='use a configured connection')
 
 # stub for service specific arguments
