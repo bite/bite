@@ -35,4 +35,4 @@ class BugzillaAttachmentXml(BugzillaAttachment):
 
     @decompress
     def read(self):
-        return self.data.data.decode()
+        return self.data.data
