@@ -48,29 +48,14 @@ def loginrequired(func):
 class Cli(object):
     """Generic commandline interface for a service."""
 
-    def __init__(self, service, quiet=False, verbose=False, encoding=None,
+    def __init__(self, service, quiet=False, verbose=False,
                  passwordcmd=None, auth_file=None, skip_auth=True, **kw):
         self.service = service
         self.quiet = quiet
         self.verbose = verbose
         self.passwordcmd = passwordcmd
         self.skip_auth = skip_auth
-
-        self.wrapper = textwrap.TextWrapper(width = const.COLUMNS)
-
-        if encoding:
-            self.enc = encoding
-        else:
-            try:
-                self.enc = locale.getpreferredencoding()
-            except:
-                self.enc = 'utf-8'
-
-        # set preferred stdin/stdout encodings when redirecting
-        if sys.stdout.encoding is None:
-            sys.stdout = codecs.getwriter(self.enc)(sys.stdout)
-        if sys.stdin.encoding is None:
-            sys.stdin = codecs.getreader(self.enc)(sys.stdin)
+        self.wrapper = textwrap.TextWrapper(width=const.COLUMNS)
 
         auth_requested = any(
             ((auth_file or os.path.exists(self.service.auth_file)), self.service.auth_token, self.passwordcmd,

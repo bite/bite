@@ -30,8 +30,6 @@ options.add_argument('--columns',
     type=int,
     action=partial(override_attr, 'bite.const.COLUMNS'),
     help='maximum number of columns output should use')
-options.add_argument('--encoding',
-    help='output encoding (default: utf-8)')
 options.add_argument('--suffix',
     help='domain suffix to strip or add when displaying or searching '
          '(e.g. "@domain.com")')

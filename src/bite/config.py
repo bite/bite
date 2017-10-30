@@ -177,8 +177,6 @@ def fill_config(args, parser, section):
     fill_config_option(args, parser, parser.getboolean, section, 'skip_auth')
     fill_config_option(args, parser, parser.getint, section, 'columns')
     fill_config_option(args, parser, parser.getint, section, 'timeout')
-    fill_config_option(args, parser, parser.getint, section, 'jobs')
-    fill_config_option(args, parser, parser.get, section, 'encoding')
     fill_config_option(args, parser, parser.getboolean, section, 'verify')
     fill_config_option(args, parser, parser.getboolean, section, 'quiet')
     fill_config_option(args, parser, parser.get, section, 'suffix')
