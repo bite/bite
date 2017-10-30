@@ -10,6 +10,8 @@ import tarfile
 import textwrap
 from urllib.parse import urlparse
 
+from snakeoil.strings import pluralism
+
 from .. import const
 from ..exceptions import AuthError, CliError
 from ..objects import TarAttachment
@@ -131,7 +133,8 @@ class Cli(object):
                     raise CliError('failed running browser {!r}: {}'.format(const.BROWSER, e.strerror))
         else:
             request = self.service.get(ids, **kw)
-            self.log(self._truncate('Getting {}(s): {}'.format(self.service.item_type, ', '.join(map(str, ids)))))
+            self.log(self._truncate('Getting {}{}: {}'.format(
+                self.service.item_type, pluralism(ids), ', '.join(map(str, ids)))))
 
             if dry_run: return
             data = request.send()
@@ -147,7 +150,8 @@ class Cli(object):
         params = self._attach_params(**kw)
         if dry_run: return
         data = self.service.add_attachment(ids, **params)
-        self.log(self._truncate('{!r} attached to {}(s): {}'.format(filename, self.service.item_type, ', '.join(map(str, ids)))))
+        self.log(self._truncate('{!r} attached to {}{}: {}'.format(
+            filename, self.service.item_type, pluralism(ids), ', '.join(map(str, ids)))))
 
     @loginretry
     def attachments(self, dry_run, ids, view, metadata, url, **kw):
@@ -218,12 +222,13 @@ class Cli(object):
         kw = self._modify_params(**kw)
         request = self.service.modify(ids, **kw)
 
-        self.log(self._truncate('Modifying {}(s): {}'.format(self.service.item_type,
-                               ', '.join(map(str, ids)))))
+        self.log(self._truncate('Modifying {}{}: {}'.format(
+            self.service.item_type, pluralism(ids), ', '.join(map(str, ids)))))
         self.log(request.options, prefix='')
 
         if ask:
-            if not confirm(prompt='Modify {}(s)?'.format(self.service.item_type), default=True):
+            if not confirm(prompt='Modify {}{}?'.format(
+                    self.service.item_type, pluralism(ids)), default=True):
                 self.log('Modification aborted')
                 return
 
