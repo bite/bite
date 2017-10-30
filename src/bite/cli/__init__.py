@@ -154,12 +154,15 @@ class Cli(object):
             filename, self.service.item.type, pluralism(ids), ', '.join(map(str, ids)))))
 
     @loginretry
-    def attachments(self, dry_run, ids, view, metadata, url, browser=False, **kw):
+    def attachments(self, dry_run, ids, view, metadata, output_url=False, browser=False, **kw):
         request = self.service.attachments(attachment_ids=ids, get_data=True)
         self.log(self._truncate('Getting attachment{}: {}'.format(
             pluralism(ids), ', '.join(map(str, ids)))))
 
-        if browser:
+        if output_url:
+            for id in ids:
+                print(self.service.base.rstrip('/') + self.service.attachment.endpoint + str(id))
+        elif browser:
             if self.service.attachment.endpoint is None:
                 raise CliError("no web endpoint defined for attachments")
 

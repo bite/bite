@@ -49,6 +49,7 @@ def get(parser):
 
 def attachments(parser):
     parser.add_argument('-U', '--url',
+        dest='output_url',
         action='store_true',
         help='output the URL of the attachment')
     parser.add_argument('-V', '--view',
