@@ -16,6 +16,13 @@ from ..exceptions import AuthError, RequestError, ParsingError
 from ..objects import Item, Attachment
 
 
+class RoundupError(RequestError):
+
+    def __init__(self, msg, code=None, text=None):
+        msg = 'Roundup error: ' + msg
+        super().__init__(msg, code, text)
+
+
 class Roundup(Xmlrpc):
     """Support Roundup's XML-RPC interface."""
 
@@ -127,8 +134,8 @@ class Roundup(Xmlrpc):
         except RequestError as e:
             # XXX: Hacky method of splitting off exception class from error string,
             # should probably move to using a regex or similar.
-            msg = e.msg.split('>', 1)[1]
-            raise RequestError(msg=msg, code=e.code, text=e.text)
+            code, msg = re.match(r"^<type '(.+)'>:(.+)$", e.msg).groups()
+            raise RequestError(msg=msg, code=code, text=e.text)
 
         return data
 
