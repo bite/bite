@@ -91,12 +91,12 @@ def subcmds(subparsers):
         metavar='ID',
         help='attachment ID(s) (or bug ID(s) when --bugid is used)')
     # optional args
-    attachment = base_options(parser, 'attachment')
-    attachment.add_argument('-l', '--list',
+    attachments = base_options(parser, 'attachments')
+    attachments.add_argument('-l', '--list',
         action='store_true',
         dest='metadata',
         help='list attachment metadata')
-    attachment.add_argument('--bugid',
+    attachments.add_argument('--bugid',
         action='store_true',
         help='search by bug ID(s) rather than attachment ID(s)')
 

@@ -1,7 +1,7 @@
 [DEFAULT]
 	s: search
 	g: get
-	a: attachment
+	a: attachments
 	m: modify
 	c: create
 	at: attach
