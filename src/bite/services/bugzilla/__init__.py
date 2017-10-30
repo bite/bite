@@ -824,6 +824,9 @@ class BugzillaEvent(Change):
         return '\n'.join(lines)
 
 class BugzillaAttachment(Attachment):
+
+    endpoint = '/attachment.cgi?id='
+
     def __init__(self, id, file_name, size=None, content_type=None,
                  data=None, creation_time=None, last_change_time=None, **kw):
 

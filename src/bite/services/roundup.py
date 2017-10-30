@@ -322,6 +322,9 @@ class RoundupIssue(Item):
 
 
 class RoundupAttachment(Attachment):
+
+    endpoint = '/file'
+
     def __init__(self, id, file_name, size=None, content_type=None,
                  data=None, creation_time=None, last_change_time=None, **kw):
 

@@ -154,24 +154,40 @@ class Cli(object):
             filename, self.service.item.type, pluralism(ids), ', '.join(map(str, ids)))))
 
     @loginretry
-    def attachments(self, dry_run, ids, view, metadata, url, **kw):
+    def attachments(self, dry_run, ids, view, metadata, url, browser=False, **kw):
         request = self.service.attachments(attachment_ids=ids, get_data=True)
         self.log(self._truncate('Getting attachment{}: {}'.format(
             pluralism(ids), ', '.join(map(str, ids)))))
 
-        if dry_run: return
-        attachments = request.send()
+        if browser:
+            if self.service.attachment.endpoint is None:
+                raise CliError("no web endpoint defined for attachments")
 
-        try:
-            for f in attachments:
-                if url:
-                    print(f.url)
-                elif view:
-                    self.view_file(f, metadata)
-                else:
-                    self.save_file(f)
-        except ValueError as e:
-            raise CliError(e)
+            for id in ids:
+                url = self.service.base.rstrip('/') + self.service.attachment.endpoint + str(id)
+                self.log(self._truncate('Launching attachment in browser: {} {!r}'.format(
+                    const.BROWSER, url)))
+
+                try:
+                    subprocess.Popen(
+                        [const.BROWSER, "{}".format(url)],
+                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                except (PermissionError, FileNotFoundError) as e:
+                    raise CliError('failed running browser {!r}: {}'.format(const.BROWSER, e.strerror))
+        else:
+            if dry_run: return
+            attachments = request.send()
+
+            try:
+                for f in attachments:
+                    if url:
+                        print(f.url)
+                    elif view:
+                        self.view_file(f, metadata)
+                    else:
+                        self.save_file(f)
+            except ValueError as e:
+                raise CliError(e)
 
     def view_file(self, f, metadata):
         compressed = ['x-bzip2', 'x-bzip', 'x-gzip', 'gzip', 'x-tar', 'x-xz']

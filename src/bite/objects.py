@@ -93,6 +93,10 @@ class Comment(Change):
         return '\n'.join(lines)
 
 class Attachment(PrintableObject):
+
+    # endpoint to navigate to the item in a browser
+    endpoint = None
+
     def __init__(self, id=None, filename=None, url=None, size=None,
                  mimetype=None, data=None, created=None, modified=None):
         self.id = id

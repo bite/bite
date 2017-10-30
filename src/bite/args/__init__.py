@@ -54,6 +54,9 @@ def attachments(parser):
     parser.add_argument('-V', '--view',
         action='store_true',
         help='print attachment data')
+    parser.add_argument('-B', '--browser',
+        action='store_true',
+        help="open item page in a browser")
 
 def attach(parser):
     parser.add_argument('-d', '--description',
