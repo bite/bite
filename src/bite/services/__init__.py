@@ -13,13 +13,14 @@ from ..config import update_config
 from ..const import USER_CACHE_PATH
 
 
-def command(name):
+def command(cmd_name, service_cls):
     """Register a service command."""
     def wrapped(cls, *args, **kwds):
         func = lambda self, *args, **kw: cls(self, *args, **kw)
-        setattr(Service, name, func)
+        setattr(service_cls, cmd_name, func)
         return cls
     return wrapped
+
 
 class Request(object):
     errors = {

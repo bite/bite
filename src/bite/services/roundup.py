@@ -132,54 +132,96 @@ class Roundup(Xmlrpc):
 
         return data
 
-    @command('get')
-    class GetRequest(Request):
+@command('get', Roundup)
+class GetRequest(Request):
 
-        def __init__(self, service, ids, fields=None, get_comments=False,
-                    get_attachments=False, **kw):
-            """Construct a get request."""
-            super().__init__(service)
-            if not ids:
-                raise ValueError('No {} ID(s) specified'.format(self.service.item_name))
+    def __init__(self, service, ids, fields=None, get_comments=False,
+                get_attachments=False, **kw):
+        """Construct a get request."""
+        super().__init__(service)
+        if not ids:
+            raise ValueError('No {} ID(s) specified'.format(self.service.item_name))
 
-            for i in ids:
-                params = ['issue' + str(i)]
-                if fields is not None:
-                    params.extend(fields)
-                else:
-                    params.extend(self.service.item.attributes.keys())
-                self.requests.append(self.service.create_request(method='display', params=params))
-
-        def send(self):
-            return self.parse(self.service.parallel_send(self.requests))
-
-        def parse(self, data):
-            issues = []
-            files = {}
-            messages = {}
+        for i in ids:
             reqs = []
-            for i, issue in enumerate(data):
-                files[i] = issue.get('files', [])
-                messages[i] = issue.get('messages', [])
-                issues.append(issue)
+            params = ['issue' + str(i)]
+            if fields is not None:
+                params.extend(fields)
+            else:
+                params.extend(self.service.item.attributes.keys())
+            reqs.append(self.service.create_request(method='display', params=params))
+            #
+            # for call in ('attachments', 'comments'):
+            #     if locals()['get_' + call]:
+            #         reqs.append(getattr(Service, call)(self.service, ids))
+            #     else:
+            #         reqs.append(NullRequest(self.service))
+            #
+            self.requests.append(reqs[0])
 
-            # TODO: get file/message content
-            for v in set(chain.from_iterable(files.values())):
-                reqs.append(self.service.create_request(method='display', params=['file' + v]))
-            for v in set(chain.from_iterable(messages.values())):
-                reqs.append(self.service.create_request(method='display', params=['msg' + v]))
 
-            return (self.service.item(self.service, **issue) for issue in issues)
+    def send(self):
+        try:
+            return self.parse(self.service.parallel_send(self.requests))
+        except RequestError as e:
+            if e.code == 'exceptions.IndexError':
+                # issue doesn't exist
+                raise RoundupError(msg=e.msg)
+            elif e.code == 'exceptions.KeyError':
+                # field doesn't exist
+                raise RoundupError(msg="field doesn't exist: {}".format(e.msg))
+            raise
 
-    class AttachmentsRequest(Request):
-        def __init__(self, service, ids, fields=None, *args, **kw):
-            """Construct a attachments request."""
-            super().__init__(service, *args, **kw)
+    def parse(self, data):
+        issues = []
+        files = {}
+        messages = {}
+        reqs = []
+        for i, issue in enumerate(data):
+            # files[i] = issue.get('files', [])
+            # messages[i] = issue.get('messages', [])
+            issues.append(issue)
 
-    class CommentsRequest(Request):
-        def __init__(self, service, ids, comment_ids=None, created=None, fields=None, *args, **kw):
-            """Construct a comments request."""
-            super().__init__(service, *args, **kw)
+        # TODO: get file/message content
+        for v in set(chain.from_iterable(files.values())):
+            reqs.append(self.service.create_request(method='display', params=['file' + v]))
+        for v in set(chain.from_iterable(messages.values())):
+            reqs.append(self.service.create_request(method='display', params=['msg' + v]))
+
+        return (self.service.item(self.service, **issue) for issue in issues)
+
+@command('attachments', Roundup)
+class AttachmentsRequest(Request):
+    def __init__(self, service, ids, attachment_ids=None, fields=None, *args, **kw):
+        """Construct a attachments request."""
+        super().__init__(service)
+        if not ids:
+            raise ValueError('No {} ID(s) specified'.format(self.service.item_name))
+
+        for i in ids:
+            params = ['file' + str(i)]
+            if fields is not None:
+                params.extend(fields)
+            else:
+                params.extend(self.service.attachment.attributes.keys())
+            self.requests.append(self.service.create_request(method='display', params=params))
+
+
+@command('comments', Roundup)
+class CommentsRequest(Request):
+    def __init__(self, service, ids, comment_ids=None, created=None, fields=None, *args, **kw):
+        """Construct a comments request."""
+        super().__init__(service)
+        if not ids:
+            raise ValueError('No {} ID(s) specified'.format(self.service.item_name))
+
+        for i in ids:
+            params = ['msg' + str(i)]
+            if fields is not None:
+                params.extend(fields)
+            else:
+                params.extend(self.service.item.attributes.keys())
+            self.requests.append(self.service.create_request(method='display', params=params))
 
 
 class RoundupIssue(Item):

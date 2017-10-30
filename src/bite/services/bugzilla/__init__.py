@@ -294,288 +294,295 @@ class Bugzilla(Service):
         data = self.send(req)
         return data
 
-    @command('get')
-    class GetRequest(Request):
-        def __init__(self, service, ids, fields=None, get_comments=False,
-                     get_attachments=False, get_history=False, **kw):
-            """Construct a get request."""
-            super().__init__(service)
-            if not ids:
-                raise ValueError('No bug ID(s) specified')
 
-            method = 'Bug.get'
-            params = {}
-            params['permissive'] = True
-            params['ids'] = ids
-            if fields is not None:
-                params['include_fields'] = fields
-            self.requests.append(self.service.create_request(method=method, params=params))
+@command('get', Bugzilla)
+class GetRequest(Request):
+    def __init__(self, service, ids, fields=None, get_comments=False,
+                    get_attachments=False, get_history=False, **kw):
+        """Construct a get request."""
+        super().__init__(service)
+        if not ids:
+            raise ValueError('No bug ID(s) specified')
 
-            for call in ('attachments', 'comments', 'history'):
-                if locals()['get_' + call]:
-                    self.requests.append(getattr(Service, call)(self.service, ids))
-                else:
-                    self.requests.append(NullRequest(self.service))
+        method = 'Bug.get'
+        params = {}
+        params['permissive'] = True
+        params['ids'] = ids
+        if fields is not None:
+            params['include_fields'] = fields
+        self.requests.append(self.service.create_request(method=method, params=params))
 
-        def parse(self, data):
-            data, attachments, comments, history = data
-            bugs = data['bugs']
-            return (self.service.item(self.service, bug, comments, attachments, history) for bug in bugs)
-
-    @command('search')
-    class SearchRequest(Request):
-        def __init__(self, service, *args, **kw):
-            """Construct a search request."""
-            super().__init__(service)
-            method = 'Bug.search'
-
-            params = {}
-            options_log = []
-            for k, v in ((k, v) for (k, v) in kw.items() if v):
-                if k in BugzillaBug.attributes:
-                    if k in ['creation_time', 'last_change_time']:
-                        params[k] = v[1]
-                        options_log.append('{}: {} (since {} UTC)'.format(BugzillaBug.attributes[k], v[0], parsetime(v[1])))
-                    elif k in ['assigned_to', 'creator']:
-                        params[k] = list(map(self.service._resuffix, v))
-                        options_log.append('{}: {}'.format(BugzillaBug.attributes[k], ', '.join(map(str, v))))
-                    elif k == 'status':
-                        status_alias = []
-                        status_map = {
-                            'open': self.service.cache['open_status'],
-                            'closed': self.service.cache['closed_status'],
-                            'all': self.service.cache['open_status'] + self.service.cache['closed_status'],
-                        }
-                        for status in v:
-                            if status_map.get(status.lower(), False):
-                                status_alias.append(status)
-                                params.setdefault(k, []).extend(status_map[status.lower()])
-                            else:
-                                params.setdefault(k, []).append(status)
-                        if status_alias:
-                            options_log.append('{}: {} ({})'.format(BugzillaBug.attributes[k], ', '.join(status_alias), ', '.join(params[k])))
-                        else:
-                            options_log.append('{}: {}'.format(BugzillaBug.attributes[k], ', '.join(params[k])))
-                    else:
-                        params[k] = v
-                        options_log.append('{}: {}'.format(BugzillaBug.attributes[k], ', '.join(map(str, v))))
-                else:
-                    if k == 'terms':
-                        params['summary'] = v
-                        options_log.append('{}: {}'.format('Summary', ', '.join(map(str, v))))
-                    elif k == 'commenter':
-                        # XXX: probably fragile since it uses custom search URL params
-                        # only works with >=bugzilla-5, previous versions return invalid parameter errors
-                        for i, val in enumerate(v):
-                            i = str(i + 1)
-                            params['f' + i] = 'commenter'
-                            params['o' + i] = 'substring'
-                            params['v' + i] = val
-                        options_log.append('{}: {}'.format('Commenter', ', '.join(map(str, v))))
-                    elif k in ['limit', 'offset', 'votes']:
-                        params[k] = v
-
-            if not params:
-                raise BiteError('no supported search terms or options specified')
-
-            # only return open bugs by default
-            if not 'status' in params:
-                params['status'] = self.service.cache['open_status']
-
-            if not 'fields' in kw or kw['fields'] is None:
-                fields = ['id', 'assigned_to', 'summary']
+        for call in ('attachments', 'comments', 'history'):
+            if locals()['get_' + call]:
+                self.requests.append(getattr(
+                    sys.modules[__name__], call.capitalize() + 'Request')(self.service, ids))
             else:
-                fields = kw['fields']
-                unknown_fields = set(fields).difference(BugzillaBug.attributes.keys())
-                if unknown_fields:
-                    raise BiteError('unknown fields: {}'.format(', '.join(unknown_fields)))
-                options_log.append('{}: {}'.format('Fields', ' '.join(fields)))
+                self.requests.append(NullRequest(self.service))
 
+    def parse(self, data):
+        data, attachments, comments, history = data
+        bugs = data['bugs']
+        return (self.service.item(self.service, bug, comments, attachments, history) for bug in bugs)
+
+
+@command('search', Bugzilla)
+class SearchRequest(Request):
+    def __init__(self, service, *args, **kw):
+        """Construct a search request."""
+        super().__init__(service)
+        method = 'Bug.search'
+
+        params = {}
+        options_log = []
+        for k, v in ((k, v) for (k, v) in kw.items() if v):
+            if k in BugzillaBug.attributes:
+                if k in ['creation_time', 'last_change_time']:
+                    params[k] = v[1]
+                    options_log.append('{}: {} (since {} UTC)'.format(BugzillaBug.attributes[k], v[0], parsetime(v[1])))
+                elif k in ['assigned_to', 'creator']:
+                    params[k] = list(map(self.service._resuffix, v))
+                    options_log.append('{}: {}'.format(BugzillaBug.attributes[k], ', '.join(map(str, v))))
+                elif k == 'status':
+                    status_alias = []
+                    status_map = {
+                        'open': self.service.cache['open_status'],
+                        'closed': self.service.cache['closed_status'],
+                        'all': self.service.cache['open_status'] + self.service.cache['closed_status'],
+                    }
+                    for status in v:
+                        if status_map.get(status.lower(), False):
+                            status_alias.append(status)
+                            params.setdefault(k, []).extend(status_map[status.lower()])
+                        else:
+                            params.setdefault(k, []).append(status)
+                    if status_alias:
+                        options_log.append('{}: {} ({})'.format(BugzillaBug.attributes[k], ', '.join(status_alias), ', '.join(params[k])))
+                    else:
+                        options_log.append('{}: {}'.format(BugzillaBug.attributes[k], ', '.join(params[k])))
+                else:
+                    params[k] = v
+                    options_log.append('{}: {}'.format(BugzillaBug.attributes[k], ', '.join(map(str, v))))
+            else:
+                if k == 'terms':
+                    params['summary'] = v
+                    options_log.append('{}: {}'.format('Summary', ', '.join(map(str, v))))
+                elif k == 'commenter':
+                    # XXX: probably fragile since it uses custom search URL params
+                    # only works with >=bugzilla-5, previous versions return invalid parameter errors
+                    for i, val in enumerate(v):
+                        i = str(i + 1)
+                        params['f' + i] = 'commenter'
+                        params['o' + i] = 'substring'
+                        params['v' + i] = val
+                    options_log.append('{}: {}'.format('Commenter', ', '.join(map(str, v))))
+                elif k in ['limit', 'offset', 'votes']:
+                    params[k] = v
+
+        if not params:
+            raise BiteError('no supported search terms or options specified')
+
+        # only return open bugs by default
+        if not 'status' in params:
+            params['status'] = self.service.cache['open_status']
+
+        if not 'fields' in kw or kw['fields'] is None:
+            fields = ['id', 'assigned_to', 'summary']
+        else:
+            fields = kw['fields']
+            unknown_fields = set(fields).difference(BugzillaBug.attributes.keys())
+            if unknown_fields:
+                raise BiteError('unknown fields: {}'.format(', '.join(unknown_fields)))
+            options_log.append('{}: {}'.format('Fields', ' '.join(fields)))
+
+        params['include_fields'] = fields
+
+        self.fields = fields
+        self.options = options_log
+
+        self.requests.append(self.service.create_request(method=method, params=params))
+
+    def parse(self, data, *args, **kw):
+        bugs = data['bugs']
+        return (self.service.item(service=self.service, bug=bug) for bug in bugs)
+
+
+@command('comments', Bugzilla)
+class CommentsRequest(Request):
+    def __init__(self, service, ids, comment_ids=None, created=None, fields=None, *args, **kw):
+        """Construct a comments request."""
+        super().__init__(service, *args, **kw)
+        method = 'Bug.comments'
+
+        self.ids = ids
+        if self.ids is None:
+            raise ValueError('No bug ID(s) specified')
+        params = {'ids': self.ids}
+        if comment_ids is not None:
+            params['comment_ids'] = comment_ids
+        if created is not None:
+            params['new_since'] = created
+        if fields is not None:
             params['include_fields'] = fields
 
-            self.fields = fields
-            self.options = options_log
+        # TODO: this
+        self.options = ['REPLACE ME']
 
-            self.requests.append(self.service.create_request(method=method, params=params))
+        self.requests.append(self.service.create_request(method=method, params=params))
 
-        def parse(self, data, *args, **kw):
-            bugs = data['bugs']
-            return (self.service.item(service=self.service, bug=bug) for bug in bugs)
+    def parse(self, data, *args, **kw):
+        bugs = data['bugs']
+        for i in self.ids:
+            yield [BugzillaComment(comment=comment, id=i, count=j) for j, comment in enumerate(bugs[str(i)]['comments'])]
 
-    @command('comments')
-    class CommentsRequest(Request):
-        def __init__(self, service, ids, comment_ids=None, created=None, fields=None, *args, **kw):
-            """Construct a comments request."""
-            super().__init__(service, *args, **kw)
-            method = 'Bug.comments'
+class ChangesRequest(Request):
+    pass
 
-            self.ids = ids
-            if self.ids is None:
-                raise ValueError('No bug ID(s) specified')
-            params = {'ids': self.ids}
-            if comment_ids is not None:
-                params['comment_ids'] = comment_ids
-            if created is not None:
-                params['new_since'] = created
-            if fields is not None:
-                params['include_fields'] = fields
 
-            # TODO: this
-            self.options = ['REPLACE ME']
+@command('modify', Bugzilla)
+class ModifyRequest(Request):
+    def __init__(self, service, ids, *args, **kw):
+        """Construct a modify request."""
+        super().__init__(service)
 
-            self.requests.append(self.service.create_request(method=method, params=params))
-
-        def parse(self, data, *args, **kw):
-            bugs = data['bugs']
-            for i in self.ids:
-                yield [BugzillaComment(comment=comment, id=i, count=j) for j, comment in enumerate(bugs[str(i)]['comments'])]
-
-    class ChangesRequest(Request):
-        pass
-
-    @command('modify')
-    class ModifyRequest(Request):
-        def __init__(self, service, ids, *args, **kw):
-            """Construct a modify request."""
-            super().__init__(service)
-
-            options_log = []
-            params = {}
-            for k, v in ((k, v) for (k, v) in kw.items() if v):
-                if k in BugzillaBug.attributes:
-                    if k == 'assigned_to':
-                        v = self.service._resuffix(v)
-                    params[k] = v
-                    options_log.append('{:<10}: {}'.format(BugzillaBug.attributes[k], v))
-                elif '-' in k:
-                    keys = k.split('-')
-                    if len(keys) != 2:
-                        raise RuntimeError('Argument parsing error')
-                    else:
-                        if keys[0] == 'cc':
-                            v = list(map(self.service._resuffix, v))
-                        if k == 'comment-body':
-                            v = codecs.getdecoder('unicode_escape')(v)[0]
-
-                        if keys[0] not in kw:
-                            params[keys[0]] = {}
-
-                        params[keys[0]][keys[1]] = v
-
-                        if keys[1] in ['add', 'remove', 'set']:
-                            options_log.append((keys[0], keys[1], v))
-                        elif keys[0] == 'comment':
-                            pass
-                        else:
-                            try:
-                                options_log.append('{:<10}: {}'.format(BugzillaBug.attributes[keys[0]], v))
-                            except KeyError:
-                                options_log.append('{:<10}: {}'.format(keys[0].capitalize(), v))
+        options_log = []
+        params = {}
+        for k, v in ((k, v) for (k, v) in kw.items() if v):
+            if k in BugzillaBug.attributes:
+                if k == 'assigned_to':
+                    v = self.service._resuffix(v)
+                params[k] = v
+                options_log.append('{:<10}: {}'.format(BugzillaBug.attributes[k], v))
+            elif '-' in k:
+                keys = k.split('-')
+                if len(keys) != 2:
+                    raise RuntimeError('Argument parsing error')
                 else:
-                    if k == 'fixed':
-                        params['status'] = 'RESOLVED'
-                        params['resolution'] = 'FIXED'
-                        options_log.append('Status    : RESOLVED')
-                        options_log.append('Resolution: FIXED')
-                    elif k == 'invalid':
-                        params['status'] = 'RESOLVED'
-                        params['resolution'] = 'INVALID'
-                        options_log.append('Status    : RESOLVED')
-                        options_log.append('Resolution: INVALID')
+                    if keys[0] == 'cc':
+                        v = list(map(self.service._resuffix, v))
+                    if k == 'comment-body':
+                        v = codecs.getdecoder('unicode_escape')(v)[0]
 
-            merge_targets = ((i, x) for i, x in enumerate(options_log) if isinstance(x, tuple))
-            merge_targets = sorted(merge_targets, key=lambda x: x[1][0])
-            old_indices = [i for (i, x) in merge_targets]
-            for key, group in groupby(merge_targets, lambda x: x[1][0]):
-                value = []
-                for (_, (key, action, values)) in group:
-                    if action == 'add':
-                        value.extend(['+' + str(x) for x in values])
-                    elif action == 'remove':
-                        value.extend(['-' + str(x) for x in values])
-                    elif action == 'set':
-                        value = values
-                        break
-                try:
-                    options_log.append('{:<10}: {}'.format(BugzillaBug.attributes[key], ', '.join(value)))
-                except KeyError:
-                    options_log.append('{:<10}: {}'.format(key.capitalize(), ', '.join(value)))
+                    if keys[0] not in kw:
+                        params[keys[0]] = {}
 
-            # remove old entries
-            options_log = [x for i, x in enumerate(options_log) if i not in old_indices]
+                    params[keys[0]][keys[1]] = v
 
-            if not params:
-                raise ValueError('No changes specified')
+                    if keys[1] in ['add', 'remove', 'set']:
+                        options_log.append((keys[0], keys[1], v))
+                    elif keys[0] == 'comment':
+                        pass
+                    else:
+                        try:
+                            options_log.append('{:<10}: {}'.format(BugzillaBug.attributes[keys[0]], v))
+                        except KeyError:
+                            options_log.append('{:<10}: {}'.format(keys[0].capitalize(), v))
+            else:
+                if k == 'fixed':
+                    params['status'] = 'RESOLVED'
+                    params['resolution'] = 'FIXED'
+                    options_log.append('Status    : RESOLVED')
+                    options_log.append('Resolution: FIXED')
+                elif k == 'invalid':
+                    params['status'] = 'RESOLVED'
+                    params['resolution'] = 'INVALID'
+                    options_log.append('Status    : RESOLVED')
+                    options_log.append('Resolution: INVALID')
 
-            if options_log:
-                prefix = '--- Modifying fields '
-                options_log.insert(0, prefix + '-' * (const.COLUMNS - len(prefix)))
+        merge_targets = ((i, x) for i, x in enumerate(options_log) if isinstance(x, tuple))
+        merge_targets = sorted(merge_targets, key=lambda x: x[1][0])
+        old_indices = [i for (i, x) in merge_targets]
+        for key, group in groupby(merge_targets, lambda x: x[1][0]):
+            value = []
+            for (_, (key, action, values)) in group:
+                if action == 'add':
+                    value.extend(['+' + str(x) for x in values])
+                elif action == 'remove':
+                    value.extend(['-' + str(x) for x in values])
+                elif action == 'set':
+                    value = values
+                    break
+            try:
+                options_log.append('{:<10}: {}'.format(BugzillaBug.attributes[key], ', '.join(value)))
+            except KeyError:
+                options_log.append('{:<10}: {}'.format(key.capitalize(), ', '.join(value)))
 
-            if 'comment' in params:
-                prefix = '--- Adding comment '
-                options_log.append(prefix + '-' * (const.COLUMNS - len(prefix)))
-                options_log.append(params['comment']['body'])
+        # remove old entries
+        options_log = [x for i, x in enumerate(options_log) if i not in old_indices]
 
-            options_log.append('-' * const.COLUMNS)
+        if not params:
+            raise ValueError('No changes specified')
 
-            self.options = options_log
+        if options_log:
+            prefix = '--- Modifying fields '
+            options_log.insert(0, prefix + '-' * (const.COLUMNS - len(prefix)))
 
-            if not ids:
-                raise ValueError('No bug ID(s) specified')
-            params['ids'] = ids
-            method = 'Bug.update'
-            self.requests.append(self.service.create_request(method=method, params=params))
+        if 'comment' in params:
+            prefix = '--- Adding comment '
+            options_log.append(prefix + '-' * (const.COLUMNS - len(prefix)))
+            options_log.append(params['comment']['body'])
 
-        def parse(self, data, *args, **kw):
-            return data['bugs']
+        options_log.append('-' * const.COLUMNS)
 
-    class CreateRequest(Request):
-        pass
+        self.options = options_log
 
-    class AttachRequest(Request):
-        pass
+        if not ids:
+            raise ValueError('No bug ID(s) specified')
+        params['ids'] = ids
+        method = 'Bug.update'
+        self.requests.append(self.service.create_request(method=method, params=params))
 
-    @command('attachments')
-    class AttachmentsRequest(Request):
-        def __init__(self, service, ids, attachment_ids=None, fields=None, *args, **kw):
-            """Construct a attachments request."""
-            super().__init__(service, *args, **kw)
+    def parse(self, data, *args, **kw):
+        return data['bugs']
 
-            method = 'Bug.attachments'
-            if not ids:
-                raise ValueError('No bug ID(s) specified')
-            params = {'ids': ids, 'exclude_fields': ['data']}
-            if fields is not None:
-                params['include_fields'] = fields
-            self.requests.append(self.service.create_request(method=method, params=params))
+class CreateRequest(Request):
+    pass
 
-            # TODO: this
-            self.options = ['REPLACE ME']
+class AttachRequest(Request):
+    pass
 
-            self.ids = ids
 
-        def parse(self, data, *args, **kw):
-            bugs = data['bugs']
-            for i in self.ids:
-                yield [self.service.attachment(**attachment) for attachment in bugs[str(i)]]
+@command('attachments', Bugzilla)
+class AttachmentsRequest(Request):
+    def __init__(self, service, ids, attachment_ids=None, fields=None, *args, **kw):
+        """Construct a attachments request."""
+        super().__init__(service, *args, **kw)
 
-    @command('history')
-    class HistoryRequest(Request):
-        def __init__(self, service, ids, *args, **kw):
-            super().__init__(service, *args, **kw)
-            method = 'Bug.history'
-            if not ids:
-                raise ValueError('No bug ID(s) specified')
-            params = {'ids': ids}
-            self.requests.append(self.service.create_request(method=method, params=params))
+        method = 'Bug.attachments'
+        if not ids:
+            raise ValueError('No bug ID(s) specified')
+        params = {'ids': ids, 'exclude_fields': ['data']}
+        if fields is not None:
+            params['include_fields'] = fields
+        self.requests.append(self.service.create_request(method=method, params=params))
 
-            # TODO: this
-            self.options = ['REPLACE ME']
+        # TODO: this
+        self.options = ['REPLACE ME']
 
-        def parse(self, data, *args, **kw):
-            bugs = data['bugs']
-            for b in bugs:
-                yield [BugzillaEvent(change=x, id=b['id'], alias=b['alias'], count=i) for i, x in enumerate(b['history'], start=1)]
+        self.ids = ids
+
+    def parse(self, data, *args, **kw):
+        bugs = data['bugs']
+        for i in self.ids:
+            yield [self.service.attachment(**attachment) for attachment in bugs[str(i)]]
+
+
+@command('history', Bugzilla)
+class HistoryRequest(Request):
+    def __init__(self, service, ids, *args, **kw):
+        super().__init__(service, *args, **kw)
+        method = 'Bug.history'
+        if not ids:
+            raise ValueError('No bug ID(s) specified')
+        params = {'ids': ids}
+        self.requests.append(self.service.create_request(method=method, params=params))
+
+        # TODO: this
+        self.options = ['REPLACE ME']
+
+    def parse(self, data, *args, **kw):
+        bugs = data['bugs']
+        for b in bugs:
+            yield [BugzillaEvent(change=x, id=b['id'], alias=b['alias'], count=i) for i, x in enumerate(b['history'], start=1)]
 
 
 class BugzillaBug(Item):

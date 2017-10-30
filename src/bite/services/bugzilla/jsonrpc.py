@@ -1,7 +1,7 @@
 try: import simplejson as json
 except ImportError: import json
 
-from . import Bugzilla, BugzillaError
+from . import Bugzilla, BugzillaError, SearchRequest as BugzillaSearchRequest
 from .._jsonrpc import Jsonrpc
 from ...exceptions import AuthError
 
@@ -40,7 +40,7 @@ class _StreamingBugzillaJsonrpc(BugzillaJsonrpc):
     def parse_response(self, response):
         return self._IterContent(response)
 
-    class SearchRequest(BugzillaJsonrpc.SearchRequest):
+    class SearchRequest(BugzillaSearchRequest):
 
         def __init__(self, *args, **kw):
             """Construct a search request."""
