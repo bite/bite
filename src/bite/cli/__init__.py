@@ -151,7 +151,7 @@ class Cli(object):
         self.log(self._truncate('{!r} attached to {}(s): {}'.format(filename, self.service.item_type, ', '.join(map(str, ids)))))
 
     @loginretry
-    def attachment(self, dry_run, ids, view, metadata, url, **kw):
+    def attachments(self, dry_run, ids, view, metadata, url, **kw):
         if dry_run: return
         self.attachment_download(ids, view, metadata, url, **kw)
 

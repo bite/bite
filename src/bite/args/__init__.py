@@ -47,7 +47,7 @@ def get(parser):
         action='store_true',
         help="open item page in a browser")
 
-def attachment(parser):
+def attachments(parser):
     parser.add_argument('-U', '--url',
         action='store_true',
         help='output the URL of the attachment')

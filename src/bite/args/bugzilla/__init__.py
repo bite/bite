@@ -78,12 +78,12 @@ def subcmds(subparsers):
         help='attachment is a patch',
         dest='is_patch')
 
-    # attachment arguments
+    # attachments arguments
     parser = subparsers.add_parser(
-        'attachment', verbose=False,
+        'attachments', verbose=False,
         description='get attachment(s)',
         help='get attachment(s)')
-    parser.set_defaults(fcn='attachment')
+    parser.set_defaults(fcn='attachments')
     # positional args
     parser.add_argument('ids',
         type=id_list,
