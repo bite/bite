@@ -9,11 +9,11 @@ import re
 from datetime import datetime
 import requests
 
-from . import Request, command
+from . import NullRequest, Request, command
 from ._xmlrpc import Xmlrpc
 from ..objects import decompress
 from ..exceptions import AuthError, RequestError, ParsingError
-from ..objects import Item, Attachment
+from ..objects import Item, Attachment, Comment
 
 
 class RoundupError(RequestError):
@@ -319,6 +319,15 @@ class RoundupIssue(Item):
             lines.append('{:<12}: {}'.format(title, value))
 
         return '\n'.join(lines)
+
+
+class RoundupComment(Comment):
+    def __init__(self, comment, id, count, rest=False, **kw):
+        self.comment_id = comment['id']
+
+        super().__init__(
+            id=id, creator=creator, date=date,
+            count=count, changes=changes, text=text)
 
 
 class RoundupAttachment(Attachment):
