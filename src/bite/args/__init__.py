@@ -48,14 +48,15 @@ def get(parser):
         help="open item page in a browser")
 
 def attachments(parser):
-    parser.add_argument('-U', '--url',
+    single_action = parser.add_mutually_exclusive_group()
+    single_action.add_argument('-U', '--url',
         dest='output_url',
         action='store_true',
         help='output the URL of the attachment')
-    parser.add_argument('-V', '--view',
+    single_action.add_argument('-V', '--view',
         action='store_true',
         help='output attachment data')
-    parser.add_argument('-B', '--browser',
+    single_action.add_argument('-B', '--browser',
         action='store_true',
         help="open item page in a browser")
     parser.add_argument('-I', '--item-id',
