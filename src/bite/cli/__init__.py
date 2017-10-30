@@ -155,11 +155,12 @@ class Cli(object):
 
     @loginretry
     def attachments(self, dry_run, ids, view, metadata, url, **kw):
-        if dry_run: return
-        self.attachment_download(ids, view, metadata, url, **kw)
+        request = self.service.attachments(attachment_ids=ids, get_data=True)
+        self.log(self._truncate('Getting attachment{}: {}'.format(
+            pluralism(ids), ', '.join(map(str, ids)))))
 
-    def attachment_download(self, ids, view, metadata, url, **kw):
-        attachments = self.service.get_attachment(ids)
+        if dry_run: return
+        attachments = request.send()
 
         try:
             for f in attachments:

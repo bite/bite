@@ -189,26 +189,6 @@ class Bugzilla(Service):
         fields = data['fields']
         return fields
 
-    def get_attachment(self, ids):
-        """Get attachments from specified attachment IDs
-
-        :raises ValueError: if no attachment IDs are specified
-        :rtype: list of :class:`bite.services.bugzilla.BugzillaAttachment` objects
-        """
-        if not ids:
-            raise ValueError('No attachment ID(s) specified')
-
-        method = 'Bug.attachments'
-        params = {'attachment_ids': ids}
-        req = self.create_request(method=method, params=params)
-        data = self.send(req)
-        attachments = data['attachments']
-        for i in ids:
-            try:
-                yield self.attachment(**attachments[str(i)])
-            except KeyError:
-                raise ValueError('No such attachment ID: {}'.format(i))
-
     def create(self, product, component, version, summary, description=None, op_sys=None,
                platform=None, priority=None, severity=None, alias=None, assigned_to=None,
                cc=None, target_milestone=None, groups=None, status=None, **kw):
@@ -530,27 +510,43 @@ class AttachRequest(Request):
 
 @command('attachments', Bugzilla)
 class AttachmentsRequest(Request):
-    def __init__(self, service, ids, attachment_ids=None, fields=None, *args, **kw):
+    def __init__(self, service, ids=None, attachment_ids=None, fields=None,
+                 get_data=False, *args, **kw):
         """Construct a attachments request."""
         super().__init__(service, *args, **kw)
 
-        method = 'Bug.attachments'
-        if not ids:
-            raise ValueError('No bug ID(s) specified')
-        params = {'ids': ids, 'exclude_fields': ['data']}
+        if ids is None and attachment_ids is None:
+            raise ValueError('No {} or attachment ID(s) specified'.format(self.service.item_name))
+
+        params = {}
+
+        if ids is not None:
+            params['ids'] = ids
+        if attachment_ids is not None:
+            params['attachment_ids'] = attachment_ids
         if fields is not None:
             params['include_fields'] = fields
-        self.requests.append(self.service.create_request(method=method, params=params))
+        # attachment data doesn't get pulled by default
+        if not get_data:
+            params['exclude_fields'] = ['data']
+        self.requests.append(self.service.create_request(method='Bug.attachments', params=params))
 
         # TODO: this
         self.options = ['REPLACE ME']
 
         self.ids = ids
+        self.attachment_ids = attachment_ids
 
     def parse(self, data, *args, **kw):
-        bugs = data['bugs']
-        for i in self.ids:
-            yield [self.service.attachment(**attachment) for attachment in bugs[str(i)]]
+        if self.ids:
+            bugs = data['bugs']
+            for i in self.ids:
+                yield [self.service.attachment(**attachment) for attachment in bugs[str(i)]]
+
+        if self.attachment_ids:
+            attachments = data['attachments']
+            for i in self.attachment_ids:
+                yield self.service.attachment(**attachments[str(i)])
 
 
 @command('history', Bugzilla)
