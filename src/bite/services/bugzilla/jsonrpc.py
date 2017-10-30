@@ -1,7 +1,7 @@
 try: import simplejson as json
 except ImportError: import json
 
-from . import Bugzilla, SearchRequest, BugzillaError
+from . import Bugzilla, BugzillaError
 from .._jsonrpc import Jsonrpc
 from ...exceptions import AuthError
 
@@ -37,41 +37,36 @@ class BugzillaJsonrpc(Bugzilla, Jsonrpc):
 
 class _StreamingBugzillaJsonrpc(BugzillaJsonrpc):
 
-    def search(self, *args, **kw):
-       return _IterSearchRequest(self, *args, **kw)
-
     def parse_response(self, response):
-        return _IterContent(response)
+        return self._IterContent(response)
 
+    class SearchRequest(BugzillaJsonrpc.SearchRequest):
 
-class _IterSearchRequest(SearchRequest):
+        def __init__(self, *args, **kw):
+            """Construct a search request."""
+            super().__init__(*args, **kw)
 
-    def __init__(self, *args, **kw):
-        """Construct a search request."""
-        super().__init__(*args, **kw)
+        def parse(self, data, *args, **kw):
+            import ijson.backends.yajl2 as ijson
+            bugs = ijson.items(data, 'result.bugs.item')
+            return (self.service.item(service=self.service, bug=bug) for bug in bugs)
 
-    def parse(self, data, *args, **kw):
-        import ijson.backends.yajl2 as ijson
-        bugs = ijson.items(data, 'result.bugs.item')
-        return (self.service.item(service=self.service, bug=bug) for bug in bugs)
+    class _IterContent(object):
 
+        def __init__(self, file, size=64*1024):
+            self.initial = True
+            self.chunks = file.iter_content(chunk_size=size)
 
-class _IterContent(object):
-
-    def __init__(self, file, size=64*1024):
-        self.initial = True
-        self.chunks = file.iter_content(chunk_size=size)
-
-    def read(self, size=64*1024):
-        chunk = next(self.chunks)
-        # check the initial chunk for errors
-        if self.initial:
-            self.initial = False
-            try:
-                error = json.loads(chunk)['error']
-            except json.decoder.JSONDecodeError as e:
-                # if we can't load it, assume it's a valid json doc chunk
-                return chunk
-            if error is not None:
-                BugzillaJsonrpc.handle_error(error)
-        return chunk
+        def read(self, size=64*1024):
+            chunk = next(self.chunks)
+            # check the initial chunk for errors
+            if self.initial:
+                self.initial = False
+                try:
+                    error = json.loads(chunk)['error']
+                except json.decoder.JSONDecodeError as e:
+                    # if we can't load it, assume it's a valid json doc chunk
+                    return chunk
+                if error is not None:
+                    super().handle_error(error)
+            return chunk

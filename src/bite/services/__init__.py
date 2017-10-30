@@ -13,13 +13,13 @@ from ..config import update_config
 from ..const import USER_CACHE_PATH
 
 
-def command(function):
-    def wrapper(self, *args, **kw):
-        request = getattr(self, function.__name__ + '_request')(*args, **kw)
-        data = self.send(request)
-        parse_fcn = getattr(self, function.__name__ + '_parse')
-        return parse_fcn(data, *args, **kw)
-    return wrapper
+def command(name):
+    """Register a service command."""
+    def wrapped(cls, *args, **kwds):
+        func = lambda self, *args, **kw: cls(self, *args, **kw)
+        setattr(Service, name, func)
+        return cls
+    return wrapped
 
 class Request(object):
     errors = {
