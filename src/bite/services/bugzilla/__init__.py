@@ -85,9 +85,8 @@ class Bugzilla(Service):
         """Authenticate a session."""
         super().login(user, password)
 
-        method = 'User.login'
         params = {'login': user, 'password': password}
-        req = self.create_request(method=method, params=params)
+        req = self.create_request(method='User.login', params=params)
 
         content = self.send(req)
         self.auth_token = content['token']
@@ -167,8 +166,7 @@ class Bugzilla(Service):
         params['comment'] = comment
         params['is_patch'] = is_patch
 
-        method = 'Bug.add_attachment'
-        req = self.create_request(method=method, params=params)
+        req = self.create_request(method='Bug.add_attachment', params=params)
         result = self.send(req)
         return result['attachments']
 
@@ -181,13 +179,12 @@ class Bugzilla(Service):
         :type names: list of strings
 
         """
-        method = 'Bug.fields'
         params = {}
         if ids is not None:
             params['ids'] = ids
         if names is not None:
             params['names'] = names
-        req = self.create_request(method=method, params=params)
+        req = self.create_request(method='Bug.fields', params=params)
         data = self.send(req)
         fields = data['fields']
         return fields
@@ -248,43 +245,37 @@ class Bugzilla(Service):
         if status is not None:
             params['status'] = status
 
-        method = 'Bug.create'
-        req = self.create_request(method=method, params=params)
+        req = self.create_request(method='Bug.create', params=params)
         data = self.send(req)
         return data['id']
 
     def products(self, params):
         """Query bugzilla for product data."""
-        method = 'Product.get'
-        req = self.create_request(method=method, params=params)
+        req = self.create_request(method='Product.get', params=params)
         data = self.send(req)
         return data['products']
 
     def fields(self, params):
         """Query bugzilla for field data."""
-        method = 'Bug.fields'
-        req = self.create_request(method=method, params=params)
+        req = self.create_request(method='Bug.fields', params=params)
         data = self.send(req)
         return data['fields']
 
     def users(self, params):
         """Query bugzilla for user data."""
-        method = 'User.get'
-        req = self.create_request(method=method, params=params)
+        req = self.create_request(method='User.get', params=params)
         data = self.send(req)
         return data['users']
 
     def version(self):
         """Get bugzilla version."""
-        method = 'Bugzilla.version'
-        req = self.create_request(method=method)
+        req = self.create_request(method='Bugzilla.version')
         data = self.send(req)
         return data['version']
 
     def extensions(self):
         """Get bugzilla extensions."""
-        method = 'Bugzilla.extensions'
-        req = self.create_request(method=method)
+        req = self.create_request(method='Bugzilla.extensions')
         data = self.send(req)
         return data['extensions']
 
@@ -304,13 +295,12 @@ class GetRequest(Request):
         if not ids:
             raise ValueError('No bug ID(s) specified')
 
-        method = 'Bug.get'
         params = {}
         params['permissive'] = True
         params['ids'] = ids
         if fields is not None:
             params['include_fields'] = fields
-        self.requests.append(self.service.create_request(method=method, params=params))
+        self.requests.append(self.service.create_request(method='Bug.get', params=params))
 
         for call in ('attachments', 'comments', 'history'):
             if locals()['get_' + call]:
@@ -330,7 +320,6 @@ class SearchRequest(Request):
     def __init__(self, service, *args, **kw):
         """Construct a search request."""
         super().__init__(service)
-        method = 'Bug.search'
 
         params = {}
         options_log = []
@@ -399,7 +388,7 @@ class SearchRequest(Request):
         self.fields = fields
         self.options = options_log
 
-        self.requests.append(self.service.create_request(method=method, params=params))
+        self.requests.append(self.service.create_request(method='Bug.search', params=params))
 
     def parse(self, data, *args, **kw):
         bugs = data['bugs']
@@ -411,7 +400,6 @@ class CommentsRequest(Request):
     def __init__(self, service, ids, comment_ids=None, created=None, fields=None, *args, **kw):
         """Construct a comments request."""
         super().__init__(service, *args, **kw)
-        method = 'Bug.comments'
 
         self.ids = ids
         if self.ids is None:
@@ -427,7 +415,7 @@ class CommentsRequest(Request):
         # TODO: this
         self.options = ['REPLACE ME']
 
-        self.requests.append(self.service.create_request(method=method, params=params))
+        self.requests.append(self.service.create_request(method='Bug.comments', params=params))
 
     def parse(self, data, *args, **kw):
         bugs = data['bugs']
@@ -528,8 +516,7 @@ class ModifyRequest(Request):
         if not ids:
             raise ValueError('No bug ID(s) specified')
         params['ids'] = ids
-        method = 'Bug.update'
-        self.requests.append(self.service.create_request(method=method, params=params))
+        self.requests.append(self.service.create_request(method='Bug.update', params=params))
 
     def parse(self, data, *args, **kw):
         return data['bugs']
@@ -570,11 +557,10 @@ class AttachmentsRequest(Request):
 class HistoryRequest(Request):
     def __init__(self, service, ids, *args, **kw):
         super().__init__(service, *args, **kw)
-        method = 'Bug.history'
         if not ids:
             raise ValueError('No bug ID(s) specified')
         params = {'ids': ids}
-        self.requests.append(self.service.create_request(method=method, params=params))
+        self.requests.append(self.service.create_request(method='Bug.history', params=params))
 
         # TODO: this
         self.options = ['REPLACE ME']
