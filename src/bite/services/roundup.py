@@ -3,41 +3,17 @@
 http://www.roundup-tracker.org/docs/xmlrpc.html
 """
 
+from itertools import chain
 import re
 
 from datetime import datetime
 import requests
 
-from . import Request
+from . import Request, command
 from ._xmlrpc import Xmlrpc
 from ..objects import decompress
 from ..exceptions import AuthError, RequestError, ParsingError
 from ..objects import Item, Attachment
-
-
-class GetRequest(Request):
-
-    def __init__(self, service, ids, fields=None, *args, **kw):
-        """Construct a get request."""
-        super().__init__(service)
-        if not ids:
-            raise ValueError('No {} ID(s) specified'.format(self.service.item_name))
-
-        self.requests = []
-        for i in ids:
-            params = ['issue' + str(i)]
-            if fields is not None:
-                params.extend(fields)
-            else:
-                params.extend(self.service.item.attributes.keys())
-            self.requests.append(self.service.create_request(method='display', params=params))
-
-    def send(self):
-        for data in self.service.parallel_send(self.requests):
-            yield self.parse(data)
-
-    def parse(self, data):
-        return self.service.item(self.service, **data)
 
 
 class Roundup(Xmlrpc):
@@ -120,9 +96,6 @@ class Roundup(Xmlrpc):
         data = self.send(req)
         return data
 
-    def get(self, ids, fields=None, get_comments=False, get_attachments=False, **kw):
-        return GetRequest(self, ids, fields)
-
     def modify(self, id, **kw):
         params = ['issue' + str(id[0])]
         for k, v in self.item.attributes.items():
@@ -158,6 +131,55 @@ class Roundup(Xmlrpc):
             raise RequestError(msg=msg, code=e.code, text=e.text)
 
         return data
+
+    @command('get')
+    class GetRequest(Request):
+
+        def __init__(self, service, ids, fields=None, get_comments=False,
+                    get_attachments=False, **kw):
+            """Construct a get request."""
+            super().__init__(service)
+            if not ids:
+                raise ValueError('No {} ID(s) specified'.format(self.service.item_name))
+
+            for i in ids:
+                params = ['issue' + str(i)]
+                if fields is not None:
+                    params.extend(fields)
+                else:
+                    params.extend(self.service.item.attributes.keys())
+                self.requests.append(self.service.create_request(method='display', params=params))
+
+        def send(self):
+            return self.parse(self.service.parallel_send(self.requests))
+
+        def parse(self, data):
+            issues = []
+            files = {}
+            messages = {}
+            reqs = []
+            for i, issue in enumerate(data):
+                files[i] = issue.get('files', [])
+                messages[i] = issue.get('messages', [])
+                issues.append(issue)
+
+            # TODO: get file/message content
+            for v in set(chain.from_iterable(files.values())):
+                reqs.append(self.service.create_request(method='display', params=['file' + v]))
+            for v in set(chain.from_iterable(messages.values())):
+                reqs.append(self.service.create_request(method='display', params=['msg' + v]))
+
+            return (self.service.item(self.service, **issue) for issue in issues)
+
+    class AttachmentsRequest(Request):
+        def __init__(self, service, ids, fields=None, *args, **kw):
+            """Construct a attachments request."""
+            super().__init__(service, *args, **kw)
+
+    class CommentsRequest(Request):
+        def __init__(self, service, ids, comment_ids=None, created=None, fields=None, *args, **kw):
+            """Construct a comments request."""
+            super().__init__(service, *args, **kw)
 
 
 class RoundupIssue(Item):
