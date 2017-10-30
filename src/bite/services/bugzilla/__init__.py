@@ -32,8 +32,10 @@ class Bugzilla(Service):
 
     def __init__(self, **kw):
         # default to bugzilla-5 open/closed statuses, cache overrides if it exists
-        self.open_status = ('CONFIRMED', 'IN_PROGRESS', 'UNCONFIRMED')
-        self.closed_status = ('RESOLVED', 'VERIFIED')
+        kw['cache'] = {
+            'open_status': ('CONFIRMED', 'IN_PROGRESS', 'UNCONFIRMED'),
+            'closed_status': ('RESOLVED', 'VERIFIED'),
+        }
 
         super().__init__(**kw)
 
@@ -89,14 +91,6 @@ class Bugzilla(Service):
 
         content = self.send(req)
         self.auth_token = content['token']
-
-    def _load_cache(self, settings):
-        """Set attrs from cached data."""
-        for k, v in settings:
-            if k in ('open_status', 'closed_status'):
-                setattr(self, k, tuple(x.strip() for x in v.split(',')))
-            else:
-                setattr(self, k, v)
 
     def add_attachment(self, ids, data=None, filepath=None, filename=None, mimetype=None,
                        is_patch=False, is_private=False, comment=None, summary=None, **kw):
@@ -348,9 +342,9 @@ class Bugzilla(Service):
                     elif k == 'status':
                         status_alias = []
                         status_map = {
-                            'open': self.service.open_status,
-                            'closed': self.service.closed_status,
-                            'all': self.service.open_status + self.service.closed_status,
+                            'open': self.service.cache['open_status'],
+                            'closed': self.service.cache['closed_status'],
+                            'all': self.service.cache['open_status'] + self.service.cache['closed_status'],
                         }
                         for status in v:
                             if status_map.get(status.lower(), False):
@@ -386,7 +380,7 @@ class Bugzilla(Service):
 
             # only return open bugs by default
             if not 'status' in params:
-                params['status'] = self.service.open_status
+                params['status'] = self.service.cache['open_status']
 
             if not 'fields' in kw or kw['fields'] is None:
                 fields = ['id', 'assigned_to', 'summary']

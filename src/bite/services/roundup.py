@@ -45,10 +45,12 @@ class Roundup(Xmlrpc):
 
     def __init__(self, **kw):
         # cached value mappings
-        self.status = ()
-        self.priority = ()
-        self.keyword = ()
-        self.users = ()
+        kw['cache'] = {
+            'status': (),
+            'priority': (),
+            'keyword': (),
+            'users': (),
+        }
 
         kw['endpoint'] = '/xmlrpc'
         super().__init__(**kw)
@@ -101,14 +103,6 @@ class Roundup(Xmlrpc):
             config_updates['users'] = ', '.join(users)
 
         return config_updates
-
-    def _load_cache(self, settings):
-        """Set attrs from cached data."""
-        for k, v in settings:
-            if k in ('status', 'priority', 'keyword', 'users'):
-                setattr(self, k, tuple(x.strip() for x in v.split(',')))
-            else:
-                setattr(self, k, v)
 
     def create(self, title, **kw):
         """Create a new issue given a list of parameters
@@ -190,21 +184,21 @@ class RoundupIssue(Item):
                 setattr(self, k, datetime.strptime(v, '<Date %Y-%m-%d.%X.%f>'))
             elif k in ('creator', 'actor'):
                 try:
-                    username = self.service.users[int(v)-1]
+                    username = self.service.cache['users'][int(v)-1]
                 except IndexError:
                     # cache needs update
                     username = v
                 setattr(self, k, username)
             elif k == 'status':
                 try:
-                    status = self.service.status[int(v)-1]
+                    status = self.service.cache['status'][int(v)-1]
                 except IndexError:
                     # cache needs update
                     status = v
                 setattr(self, k, status)
             elif k == 'priority' and v is not None:
                 try:
-                    priority = self.service.priority[int(v)-1]
+                    priority = self.service.cache['priority'][int(v)-1]
                 except IndexError:
                     # cache needs update
                     priority = v
@@ -213,7 +207,7 @@ class RoundupIssue(Item):
                 keywords = []
                 for keyword in v:
                     try:
-                        keywords.append(self.service.keyword[int(keyword)-1])
+                        keywords.append(self.service.cache['keyword'][int(keyword)-1])
                     except IndexError:
                         # cache needs update
                         keywords.append(keyword)

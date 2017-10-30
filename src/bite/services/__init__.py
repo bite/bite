@@ -71,12 +71,13 @@ class NullRequest(Request):
 class Service(object):
 
     def __init__(self, base, connection=None, verify=True, user=None, password=None, skip_auth=True,
-                 auth_token=None, suffix=None, timeout=None, auth_file=None, **kw):
+                 auth_token=None, suffix=None, timeout=None, auth_file=None, cache=None, **kw):
         self.connection = connection
         self.base = base
         self.user = user
         self.password = password
         self.suffix = suffix
+        self.cache = cache if cache is not None else {}
         self.verify = verify
         self.timeout = timeout if timeout is not None else 30
 
@@ -169,11 +170,6 @@ class Service(object):
                 pass
             update_config(self.cached_config, self.connection, data)
 
-    def _load_cache(self, settings):
-        """Set attrs from cached data."""
-        for k, v in settings:
-            setattr(self, k, v)
-
     def load_cache(self):
         """Load cached data from config."""
         try:
@@ -183,7 +179,10 @@ class Service(object):
                 settings = config.items(self.connection)
         except IOError:
             settings = ()
-        self._load_cache(settings)
+        # XXX: currently assumes all cached data is CSV
+        self.cache.update(
+            (k, tuple(x.strip() for x in v.split(',')))
+            for k, v in config.items(self.connection))
 
     def encode_request(self, method, params=None):
         """Encode the data body for a request."""
