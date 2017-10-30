@@ -41,7 +41,12 @@ class PrintableObject(object):
     def __str__(self):
         return str(self).encode('utf-8')
 
+
 class Item(PrintableObject):
+
+    # endpoint to navigate to the item in a browser
+    endpoint = None
+
     def __init__(self, id=None, title=None, creator=None, owner=None, created=None,
                  modified=None, status=None, url=None, blocks=None,
                  depends=None, cc=None, comments=None, attachments=None, changes=None, **kw):
@@ -59,6 +64,7 @@ class Item(PrintableObject):
         self.comments = comments # list of Comment objects
         self.attachments = attachments # dict of lists of Attachment objects
         self.changes = changes # list of Change objects
+
 
 class Change(PrintableObject):
     def __init__(self, creator, date, changes, id=None, count=None):

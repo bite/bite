@@ -40,8 +40,6 @@ class Bugzilla(Service):
         super().__init__(**kw)
 
         self.item = BugzillaBug
-        self.item_type = 'bug'
-        self.item_web_endpoint = '/show_bug.cgi?id='
         self.attachment = BugzillaAttachment
 
         # TODO: temporary compat
@@ -568,6 +566,7 @@ class HistoryRequest(Request):
 
 
 class BugzillaBug(Item):
+
     attributes = {
         'actual_time': 'Actual time',
         'alias': 'Alias',
@@ -618,6 +617,9 @@ class BugzillaBug(Item):
         'depends': 'depends_on',
         'title': 'summary'
     }
+
+    endpoint = '/show_bug.cgi?id='
+    type = 'bug'
 
     def __init__(self, service, bug, comments=None, attachments=None, history=None, **kw):
         self.service = service

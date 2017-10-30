@@ -114,16 +114,16 @@ class Cli(object):
     @loginretry
     def get(self, dry_run, ids, filters, browser=False, **kw):
         if not ids:
-            raise RuntimeError('No {} ID(s) specified'.format(self.service.item_type))
+            raise RuntimeError('No {} ID(s) specified'.format(self.service.item.type))
 
         if browser:
-            if self.service.item_web_endpoint is None:
-                raise CliError("service doesn't define a web endpoint")
+            if self.service.item.endpoint is None:
+                raise CliError("no web endpoint defined for {}s".format(self.service.item.type))
 
             for id in ids:
-                url = self.service.base.rstrip('/') + self.service.item_web_endpoint + str(id)
+                url = self.service.base.rstrip('/') + self.service.item.endpoint + str(id)
                 self.log(self._truncate('Launching {} in browser: {} {!r}'.format(
-                    self.service.item_type, const.BROWSER, url)))
+                    self.service.item.type, const.BROWSER, url)))
 
                 try:
                     subprocess.Popen(
@@ -134,7 +134,7 @@ class Cli(object):
         else:
             request = self.service.get(ids, **kw)
             self.log(self._truncate('Getting {}{}: {}'.format(
-                self.service.item_type, pluralism(ids), ', '.join(map(str, ids)))))
+                self.service.item.type, pluralism(ids), ', '.join(map(str, ids)))))
 
             if dry_run: return
             data = request.send()
@@ -151,7 +151,7 @@ class Cli(object):
         if dry_run: return
         data = self.service.add_attachment(ids, **params)
         self.log(self._truncate('{!r} attached to {}{}: {}'.format(
-            filename, self.service.item_type, pluralism(ids), ', '.join(map(str, ids)))))
+            filename, self.service.item.type, pluralism(ids), ', '.join(map(str, ids)))))
 
     @loginretry
     def attachments(self, dry_run, ids, view, metadata, url, **kw):
@@ -224,12 +224,12 @@ class Cli(object):
         request = self.service.modify(ids, **kw)
 
         self.log(self._truncate('Modifying {}{}: {}'.format(
-            self.service.item_type, pluralism(ids), ', '.join(map(str, ids)))))
+            self.service.item.type, pluralism(ids), ', '.join(map(str, ids)))))
         self.log(request.options, prefix='')
 
         if ask:
             if not confirm(prompt='Modify {}{}?'.format(
-                    self.service.item_type, pluralism(ids)), default=True):
+                    self.service.item.type, pluralism(ids)), default=True):
                 self.log('Modification aborted')
                 return
 
@@ -246,7 +246,7 @@ class Cli(object):
             self.log(line, prefix='')
 
         if ask or not batch:
-            if not confirm(prompt='Submit {}?'.format(self.service.item_type), default=True):
+            if not confirm(prompt='Submit {}?'.format(self.service.item.type), default=True):
                 self.log('Submission aborted')
                 return
 
@@ -258,7 +258,7 @@ class Cli(object):
             raise CliError(e)
 
         if sys.stdout.isatty():
-            self.log('Submitted {} {}'.format(self.service.item_type, data))
+            self.log('Submitted {} {}'.format(self.service.item.type, data))
         else:
             sys.stdout.write(str(data))
 
@@ -269,7 +269,7 @@ class Cli(object):
         if kw['fields'] is None:
             kw['fields'] = request.fields
 
-        self.log('Searching for {}s with the following options:'.format(self.service.item_type))
+        self.log('Searching for {}s with the following options:'.format(self.service.item.type))
         self.log(request.options, prefix='   - ')
 
         if dry_run: return
@@ -279,7 +279,7 @@ class Cli(object):
                 data = fcn(data)
         count = self.print_search(data, **kw)
         if sys.stdout.isatty():
-            self.log('{} {}{} found.'.format(count, self.service.item_type, 's'[count == 1:]))
+            self.log('{} {}{} found.'.format(count, self.service.item.type, 's'[count == 1:]))
 
     def _header(self, char, msg):
         return '{} {} {}'.format(char * 3, msg, char * (const.COLUMNS - len(msg) - 5))

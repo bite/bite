@@ -39,8 +39,6 @@ class Roundup(Xmlrpc):
         super().__init__(**kw)
 
         self.item = RoundupIssue
-        self.item_type = 'issue'
-        self.item_web_endpoint = '/issue'
         self.attachment = RoundupAttachment
 
     def inject_auth(self, request, params):
@@ -232,6 +230,7 @@ class CommentsRequest(Request):
 
 
 class RoundupIssue(Item):
+
     attributes = {
         'creator': 'Reporter',
         'creation': 'Created',
@@ -247,6 +246,9 @@ class RoundupIssue(Item):
         'messages': 'Comments',
         'files': 'Attachments',
     }
+
+    endpoint = '/issue'
+    type = 'issue'
 
     def __init__(self, service, **kw):
         self.service = service
