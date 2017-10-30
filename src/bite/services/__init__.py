@@ -94,7 +94,7 @@ class Service(object):
 
         file_name = self.connection
         if file_name is None:
-            url = urlparse(self.service.base)
+            url = urlparse(self.base)
             if len(url.path) <= 1:
                 file_name = url.netloc
             else:
@@ -183,7 +183,7 @@ class Service(object):
         # XXX: currently assumes all cached data is CSV
         self.cache.update(
             (k, tuple(x.strip() for x in v.split(',')))
-            for k, v in config.items(self.connection))
+            for k, v in settings)
 
     def encode_request(self, method, params=None):
         """Encode the data body for a request."""
