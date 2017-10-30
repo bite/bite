@@ -2,3 +2,4 @@ cython
 https://github.com/pkgcore/snakeoil/archive/master.tar.gz#egg=snakeoil
 requests>=2
 python-dateutil>=2.1
+lxml

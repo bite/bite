@@ -10,7 +10,7 @@ from datetime import datetime
 import requests
 
 from . import NullRequest, Request, command
-from ._xmlrpc import Xmlrpc
+from ._xmlrpc import LxmlXmlrpc
 from ..objects import decompress
 from ..exceptions import AuthError, RequestError, ParsingError
 from ..objects import Item, Attachment, Comment
@@ -23,7 +23,7 @@ class RoundupError(RequestError):
         super().__init__(msg, code, text)
 
 
-class Roundup(Xmlrpc):
+class Roundup(LxmlXmlrpc):
     """Support Roundup's XML-RPC interface."""
 
     def __init__(self, **kw):
