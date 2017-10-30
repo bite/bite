@@ -1,6 +1,7 @@
 import codecs
 import getpass
-from io import StringIO
+from io import BytesIO
+from itertools import chain
 import locale
 import os
 import stat
@@ -13,7 +14,7 @@ from urllib.parse import urlparse
 from snakeoil.strings import pluralism
 
 from .. import const
-from ..exceptions import AuthError, CliError
+from ..exceptions import AuthError, CliError, BiteError
 from ..objects import TarAttachment
 from ..utils import confirm, get_input
 
@@ -154,15 +155,28 @@ class Cli(object):
             filename, self.service.item.type, pluralism(ids), ', '.join(map(str, ids)))))
 
     @loginretry
-    def attachments(self, dry_run, ids, view, metadata, output_url=False, browser=False, **kw):
-        request = self.service.attachments(attachment_ids=ids, get_data=True)
-        self.log(self._truncate('Getting attachment{}: {}'.format(
-            pluralism(ids), ', '.join(map(str, ids)))))
+    def attachments(self, dry_run, ids, view, metadata,
+                    item_id=False, output_url=False, browser=False, **kw):
+        # skip pulling data if we don't need it
+        get_data = (not output_url and not browser)
 
-        if output_url:
+        if item_id:
+            request = self.service.attachments(ids=ids, get_data=get_data)
+            item_str = ' from {}'.format(self.service.item.type)
+            plural = '(s)'
+        else:
+            request = self.service.attachments(attachment_ids=ids, get_data=get_data)
+            item_str = ''
+            plural = pluralism(ids)
+
+        self.log(self._truncate('Getting attachment{}{}: {}'.format(
+            plural, item_str, ', '.join(map(str, ids)))))
+
+        def _output_urls(ids):
             for id in ids:
                 print(self.service.base.rstrip('/') + self.service.attachment.endpoint + str(id))
-        elif browser:
+
+        def _launch_browser(ids):
             if self.service.attachment.endpoint is None:
                 raise CliError("no web endpoint defined for attachments")
 
@@ -177,20 +191,31 @@ class Cli(object):
                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 except (PermissionError, FileNotFoundError) as e:
                     raise CliError('failed running browser {!r}: {}'.format(const.BROWSER, e.strerror))
+
+        if not item_id and (output_url or browser):
+            if output_url:
+                _output_urls(ids)
+            elif browser:
+                _launch_browser(ids)
         else:
             if dry_run: return
             attachments = request.send()
 
-            try:
+            # item attachment requests yield lists of attachments -- each list
+            # corresponds to the attachments for given item ID
+            if item_id:
+                attachments = chain.from_iterable(attachments)
+
+            if output_url:
+                _output_urls(x.id for x in attachments)
+            elif browser:
+                _launch_browser(x.id for x in attachments)
+            else:
                 for f in attachments:
-                    if url:
-                        print(f.url)
-                    elif view:
+                    if view:
                         self.view_file(f, metadata)
                     else:
                         self.save_file(f)
-            except ValueError as e:
-                raise CliError(e)
 
     def view_file(self, f, metadata):
         compressed = ['x-bzip2', 'x-bzip', 'x-gzip', 'gzip', 'x-tar', 'x-xz']
@@ -203,7 +228,7 @@ class Cli(object):
         self.log('Viewing file: {}'.format(f.filename))
 
         if mime_subtype == 'x-tar':
-            tar_file = tarfile.open(fileobj=StringIO.StringIO(f.read()))
+            tar_file = tarfile.open(fileobj=BytesIO(f.read()))
             if metadata:
                 # show listing of tarfile elements
                 tar_file.list()
@@ -220,7 +245,7 @@ class Cli(object):
                         print(prefix + '=' * (const.COLUMNS - len(prefix)))
                         sys.stdout.write(TarAttachment(tarfile=tar_file, cfile=tarinfo_file).data())
         else:
-            sys.stdout.write(f.read())
+            sys.stdout.write(f.read().decode())
 
     def save_file(self, f):
         if os.path.exists(f.filename):
@@ -230,7 +255,7 @@ class Cli(object):
 
         self.log('Saving file: {}'.format(f.filename))
         try:
-            with open(f.filename, 'w+') as save_file:
+            with open(f.filename, 'wb+') as save_file:
                 os.chmod(f.filename, stat.S_IREAD | stat.S_IWRITE)
                 save_file.write(f.read(raw=True))
         except IOError as e:

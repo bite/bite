@@ -89,16 +89,13 @@ def subcmds(subparsers):
         type=id_list,
         action=partial(parse_stdin, ids),
         metavar='ID',
-        help='attachment ID(s) (or bug ID(s) when --bugid is used)')
+        help='attachment ID(s) (or bug ID(s) when --item-id is used)')
     # optional args
     attachments = base_options(parser, 'attachments')
     attachments.add_argument('-l', '--list',
         action='store_true',
         dest='metadata',
         help='list attachment metadata')
-    attachments.add_argument('--bugid',
-        action='store_true',
-        help='search by bug ID(s) rather than attachment ID(s)')
 
     # changes arguments
     parser = subparsers.add_parser('changes',

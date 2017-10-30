@@ -544,7 +544,10 @@ class AttachmentsRequest(Request):
         if self.attachment_ids:
             attachments = data['attachments']
             for i in self.attachment_ids:
-                yield self.service.attachment(**attachments[str(i)])
+                try:
+                    yield self.service.attachment(**attachments[str(i)])
+                except KeyError:
+                    raise BiteError('invalid attachment ID: {}'.format(i))
 
 
 @command('history', Bugzilla)
@@ -855,4 +858,4 @@ class BugzillaAttachment(Attachment):
 
     @decompress
     def read(self):
-        return base64.b64decode(self.data).decode()
+        return base64.b64decode(self.data)

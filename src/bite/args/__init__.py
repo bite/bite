@@ -54,10 +54,13 @@ def attachments(parser):
         help='output the URL of the attachment')
     parser.add_argument('-V', '--view',
         action='store_true',
-        help='print attachment data')
+        help='output attachment data')
     parser.add_argument('-B', '--browser',
         action='store_true',
         help="open item page in a browser")
+    parser.add_argument('-I', '--item-id',
+        action='store_true',
+        help='search by item ID(s) rather than attachment ID(s)')
 
 def attach(parser):
     parser.add_argument('-d', '--description',
