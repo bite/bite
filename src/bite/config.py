@@ -3,7 +3,7 @@ import os
 import re
 
 from . import const
-from .exceptions import CliError
+from .exceptions import BiteError
 
 
 class BiteInterpolation(configparser.ExtendedInterpolation):
@@ -200,7 +200,7 @@ def get_config(args, parser):
             config.read_file(f)
         config.read(user_config)
     except IOError as e:
-        raise CliError('cannot load config file {!r}: {}'.format(e.filename, e.strerror))
+        raise BiteError('cannot load config file {!r}: {}'.format(e.filename, e.strerror))
 
     aliases = configparser.ConfigParser(interpolation=BiteInterpolation())
     system_aliases = os.path.join(const.CONFIG_PATH, 'aliases')
@@ -210,7 +210,9 @@ def get_config(args, parser):
             aliases.read_file(f)
         aliases.read(user_aliases)
     except IOError as e:
-        raise CliError('cannot load aliases file {!r}: {}'.format(e.filename, e.strerror))
+        raise BiteError('cannot load aliases file {!r}: {}'.format(e.filename, e.strerror))
+    except (configparser.DuplicateSectionError, configparser.DuplicateOptionError) as e:
+        raise BiteError(e)
 
     args.config = config
     args.aliases = aliases
