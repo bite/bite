@@ -1,4 +1,5 @@
 from . import Cli
+from .. import const
 
 class Roundup(Cli):
     """CLI for Roundup service."""
@@ -12,5 +13,5 @@ class Roundup(Cli):
 
     def _print_item(self, issues, **kw):
         for issue in issues:
-            print('=' * self.columns)
+            print('=' * const.COLUMNS)
             print(issue)

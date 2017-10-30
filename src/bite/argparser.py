@@ -13,10 +13,9 @@ import sys
 from snakeoil.cli import arghparse
 from snakeoil.sequences import iflatten_instance
 
-from . import SERVICES
+from . import SERVICES, const
 from .alias import substitute_alias
 from .config import get_config
-from .const import CONFIG_PATH
 
 
 def string_list(s):
@@ -94,6 +93,22 @@ class parse_stdin(Action):
                     sys.stdin = open('/dev/tty')
         setattr(namespace, self.dest, values)
 
+class override_attr(Action):
+    """Override or set the value of a module's attribute."""
+
+    def __init__(self, attr, *args, **kwargs):
+        try:
+            self.module, self.attr = attr.rsplit('.', 1)
+        except ValueError:
+            raise ArgumentTypeError('full path to attribute required')
+        super().__init__(*args, **kwargs)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        try:
+            setattr(import_module(self.module), self.attr, values)
+        except ImportError:
+            raise ArgumentTypeError("couldn't import module: {!r}".format(self.module))
+
 class parse_filters(Action):
     def __call__(self, parser, namespace, values, option_string=None):
         filters = []
@@ -105,7 +120,7 @@ class parse_filters(Action):
                 module_name = namespace.connection
 
             spec = importlib.util.spec_from_file_location(
-                module_name, os.path.join(CONFIG_PATH, 'python'))
+                module_name, os.path.join(const.CONFIG_PATH, 'python'))
             if spec is None:
                 parser.error('filter module not found: {}'.format(module_name))
             module = importlib.util.module_from_spec(spec)

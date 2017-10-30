@@ -10,6 +10,7 @@ from itertools import chain, groupby
 from dateutil.parser import parse as parsetime
 
 from .. import Cli
+from ... import const
 from ...utils import block_edit, confirm, get_input
 from ...exceptions import CliError
 from ...utc import utc
@@ -179,7 +180,7 @@ class Bugzilla(Cli):
             kw['description'] = kw['description'] + '\n\n' + '$ ' + kw['append_command'] + '\n' + append_command_output
 
         options_log = []
-        options_log.append('=' * self.columns)
+        options_log.append('=' * const.COLUMNS)
         options_log.append('{:<12}: {}'.format('Product', kw['product']))
         options_log.append('{:<12}: {}'.format('Component', kw['component']))
         options_log.append('{:<12}: {}'.format('Version', kw['version']))
@@ -211,7 +212,7 @@ class Bugzilla(Cli):
             # interpret backslash escapes
             kw['description'] = kw['description'].decode('string_escape')
             options_log.append('{}'.format(kw['description']))
-        options_log.append('=' * self.columns)
+        options_log.append('=' * const.COLUMNS)
 
         return (options_log, kw)
 
@@ -346,29 +347,29 @@ class Bugzilla(Cli):
                 print('{:<12}: {}'.format('Class', p['classification']))
                 print('{:<12}: {}'.format('Description', p['description']))
                 print('{:<12}: {}'.format('Active', p['is_active']))
-                print('-' * self.columns)
+                print('-' * const.COLUMNS)
                 print('Components')
-                print('=' * self.columns)
+                print('=' * const.COLUMNS)
                 for c in p['components']:
                     print('  Name: {}'.format(c['name']))
                     print('  Description: {}'.format(c['description']))
                     print('  Default assigned: {}'.format(c['default_assigned_to']))
                     print('  Active: {}'.format(c['is_active']))
-                    print('-' * self.columns)
+                    print('-' * const.COLUMNS)
                 print('Versions')
-                print('=' * self.columns)
+                print('=' * const.COLUMNS)
                 for v in p['versions']:
                     print('  Name: {}'.format(v['name']))
                     print('  ID: {}'.format(v['id']))
                     print('  Active: {}'.format(v['is_active']))
-                    print('-' * self.columns)
+                    print('-' * const.COLUMNS)
                 print('Milestones')
-                print('=' * self.columns)
+                print('=' * const.COLUMNS)
                 for m in p['milestones']:
                     print('  Name: {}'.format(m['name']))
                     print('  ID: {}'.format(m['id']))
                     print('  Active: {}'.format(m['is_active']))
-                    print('-' * self.columns)
+                    print('-' * const.COLUMNS)
         else:
             self.log('No matching products found')
 
@@ -386,7 +387,7 @@ class Bugzilla(Cli):
                 for k, v in print_fields.items():
                     if k in u:
                         print('{}: {}'.format(v, u[k]))
-                print('-' * self.columns)
+                print('-' * const.COLUMNS)
         else:
             self.log('No matching users found')
 
@@ -602,9 +603,9 @@ class Bugzilla(Cli):
 
     def _print_item(self, bugs, get_comments, get_attachments, get_history, show_obsolete, **kw):
         for bug in bugs:
-            print('=' * self.columns)
+            print('=' * const.COLUMNS)
             for line in str(bug).splitlines():
-                if len(line) <= self.columns:
+                if len(line) <= const.COLUMNS:
                     print(line)
                 else:
                     print(self.wrapper.fill(line))

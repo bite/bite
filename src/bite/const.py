@@ -1,4 +1,5 @@
 import os
+from shutil import get_terminal_size
 import sys
 
 from snakeoil import mappings
@@ -32,6 +33,7 @@ def _GET_CONST(attr, default_value):
     return result
 
 BROWSER = os.environ.get('BROWSER', 'xdg-open')
+COLUMNS = get_terminal_size()[0]
 
 # determine XDG compatible paths
 for xdg_var, var_name, fallback_dir in (

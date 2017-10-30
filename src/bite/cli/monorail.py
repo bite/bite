@@ -13,6 +13,7 @@ import dateutil.parser
 from dateutil.relativedelta import *
 
 from . import Cli
+from .. import const
 from ..argparser import parse_stdin
 from ..rfc3339 import datetimetostr
 
@@ -231,7 +232,7 @@ class Monorail(Cli):
     def _print_item(self, issues, get_comments, get_attachments, get_updates, **kw):
         """ Format and print the Issue object in a command line environment. """
         for issue in issues:
-            print('=' * self.columns)
+            print('=' * const.COLUMNS)
             print(str(issue))
 
             if get_attachments and issue.attachments:
@@ -293,4 +294,4 @@ class Monorail(Cli):
             else:
                 values = [self.output(issue, field) for field in fields]
                 line = output.format(*values)
-                print(line[:self.columns])
+                print(line[:const.COLUMNS])

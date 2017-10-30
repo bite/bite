@@ -6,12 +6,13 @@ trackers in different manners.
 
 import argparse
 import concurrent.futures
+from functools import partial
 from importlib import import_module
 import os
 import sys
 
 from .. import SERVICES
-from ..argparser import ArgumentParser, parse_file
+from ..argparser import ArgumentParser, parse_file, override_attr
 from ..exceptions import BiteError, CliError, RequestError
 
 
@@ -34,6 +35,7 @@ options.add_argument('--config-file',
     help='read an alternate configuration file')
 options.add_argument('--columns',
     type=int,
+    action=partial(override_attr, 'bite.const.COLUMNS'),
     help='maximum number of columns output should use')
 options.add_argument('--encoding',
     help='output encoding (default: utf-8)')

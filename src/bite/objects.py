@@ -7,7 +7,7 @@ import sys
 import tarfile
 import zlib
 
-from . import magic
+from . import magic, const
 
 
 def decompress(fcn):
@@ -81,7 +81,7 @@ class Comment(Change):
             lines = ['Description by {}, {}'.format(self.creator, self.date)]
         else:
             lines = ['Comment #{} by {}, {}'.format(self.count, self.creator, self.date)]
-        lines.append('-' * 10)
+        lines.append('-' * const.COLUMNS)
         if self.text:
             lines.append(self.text)
         return '\n'.join(lines)

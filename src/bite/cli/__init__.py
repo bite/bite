@@ -3,7 +3,6 @@ import getpass
 from io import StringIO
 import locale
 import os
-from shutil import get_terminal_size
 import stat
 import subprocess
 import sys
@@ -11,7 +10,7 @@ import tarfile
 import textwrap
 from urllib.parse import urlparse
 
-from ..const import USER_CACHE_PATH, BROWSER
+from .. import const
 from ..exceptions import AuthError, CliError
 from ..objects import TarAttachment
 from ..utils import confirm, get_input
@@ -46,15 +45,15 @@ def loginrequired(func):
 class Cli(object):
     """Generic commandline interface for a service."""
 
-    def __init__(self, service, quiet=False, verbose=False, columns=None,
-                 encoding=None, passwordcmd=None, auth_file=None, skip_auth=True, **kw):
+    def __init__(self, service, quiet=False, verbose=False, encoding=None,
+                 passwordcmd=None, auth_file=None, skip_auth=True, **kw):
         self.service = service
         self.quiet = quiet
         self.verbose = verbose
         self.passwordcmd = passwordcmd
-        self.columns = columns or get_terminal_size()[0]
-        self.wrapper = textwrap.TextWrapper(width = self.columns)
         self.skip_auth = skip_auth
+
+        self.wrapper = textwrap.TextWrapper(width = const.COLUMNS)
 
         if encoding:
             self.enc = encoding
@@ -122,14 +121,14 @@ class Cli(object):
             for id in ids:
                 url = self.service.base.rstrip('/') + self.service.item_web_endpoint + str(id)
                 self.log(self._truncate('Launching {} in browser: {} {!r}'.format(
-                    self.service.item_type, BROWSER, url)))
+                    self.service.item_type, const.BROWSER, url)))
 
                 try:
                     subprocess.Popen(
-                        [BROWSER, "{}".format(url)],
+                        [const.BROWSER, "{}".format(url)],
                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 except (PermissionError, FileNotFoundError) as e:
-                    raise CliError('failed running browser {!r}: {}'.format(BROWSER, e.strerror))
+                    raise CliError('failed running browser {!r}: {}'.format(const.BROWSER, e.strerror))
         else:
             request = self.service.get(ids, **kw)
             self.log(self._truncate('Getting {}(s): {}'.format(self.service.item_type, ', '.join(map(str, ids)))))
@@ -194,7 +193,7 @@ class Cli(object):
 
                     if temp is not None:
                         prefix = '=== {} '.format(temp.name)
-                        print(prefix + '=' * (self.columns - len(prefix)))
+                        print(prefix + '=' * (const.COLUMNS - len(prefix)))
                         sys.stdout.write(TarAttachment(tarfile=tar_file, cfile=tarinfo_file).data())
         else:
             sys.stdout.write(f.read())
@@ -277,15 +276,13 @@ class Cli(object):
             self.log('{} {}{} found.'.format(count, self.service.item_type, 's'[count == 1:]))
 
     def _header(self, char, msg):
-        return '{} {} {}'.format(char * 3, msg, char * (self.columns - len(msg) - 5))
+        return '{} {} {}'.format(char * 3, msg, char * (const.COLUMNS - len(msg) - 5))
 
     def log(self, msg, newline=True, prefix=' * '):
         if isinstance(msg, list):
             for i, line in enumerate(msg):
                 if i > 0:
                     msg[i] = prefix + msg[i]
-                if line.endswith('-' * 10):
-                    msg[i] = line + '-' * (self.columns - len(line))
             msg = '\n'.join(msg)
 
         if sys.stdout.isatty():
@@ -301,7 +298,7 @@ class Cli(object):
                 print(msg, end='', file=output)
 
     def _truncate(self, stuff):
-        if len(stuff) <= self.columns:
+        if len(stuff) <= const.COLUMNS:
             return stuff
         else:
             line = self.wrapper.wrap(stuff)[0].split()
@@ -316,14 +313,14 @@ class Cli(object):
             sep = '\n\n'
 
         for line in sep.join(stuff).splitlines():
-            if line == '-' * 10:
-                print('-' * self.columns)
-            elif len(line) <= self.columns or not sys.stdout.isatty():
+            if line == '-' * const.COLUMNS:
+                print('-' * const.COLUMNS)
+            elif len(line) <= const.COLUMNS or not sys.stdout.isatty():
                 print(line)
             elif wrap:
                 print(self.wrapper.fill(line))
             else:
-                print(line[:self.columns])
+                print(line[:const.COLUMNS])
 
     def cache_config(self, update=False, remove=False, *args, **kw):
         if update:

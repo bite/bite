@@ -11,7 +11,7 @@ import sys
 from dateutil.parser import parse as dateparse
 
 from .. import Service, Request, NullRequest, command
-from ... import magic, utc
+from ... import const, magic, utc
 from ...exceptions import RequestError, BiteError
 from ...objects import Item, Change, Comment, Attachment, decompress
 
@@ -509,14 +509,14 @@ class Bugzilla(Service):
 
             if options_log:
                 prefix = '--- Modifying fields '
-                options_log.insert(0, prefix + '-' * 10)
+                options_log.insert(0, prefix + '-' * (const.COLUMNS - len(prefix)))
 
             if 'comment' in params:
                 prefix = '--- Adding comment '
-                options_log.append(prefix + '-' * 10)
+                options_log.append(prefix + '-' * (const.COLUMNS - len(prefix)))
                 options_log.append(params['comment']['body'])
 
-            options_log.append('-' * 10)
+            options_log.append('-' * const.COLUMNS)
 
             self.options = options_log
 
@@ -809,7 +809,7 @@ class BugzillaEvent(Change):
         change_fields.update(BugzillaBug.attributes)
 
         lines = ['Change #{} by {}, {}'.format(self.count, self.creator, self.date)]
-        lines.append('-' * 10)
+        lines.append('-' * const.COLUMNS)
         for change in self.changes:
             try:
                 field = change_fields[change['field_name']]
