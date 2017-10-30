@@ -241,7 +241,7 @@ class Cli(object):
                         return
 
                     if temp is not None:
-                        prefix = '=== {} '.format(temp.name)
+                        prefix = '=== {} '.format(tarinfo_file.path)
                         print(prefix + '=' * (const.COLUMNS - len(prefix)))
                         sys.stdout.write(TarAttachment(tarfile=tar_file, cfile=tarinfo_file).data())
         else:
