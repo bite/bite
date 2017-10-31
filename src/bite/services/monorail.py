@@ -13,7 +13,6 @@ except ImportError: import json
 from lxml import etree
 import lxml.html
 import requests
-import xdg.Mime
 
 from ._jsonrpc import Jsonrpc
 from ..objects import decompress, Item, Comment, Attachment
@@ -201,6 +200,8 @@ class Monorail(Jsonrpc):
                 yield label['$t']
 
     def _parse_webpage(self, id, get_data=False):
+        import xdg.Mime
+
         if isinstance(id, str):
             id, i = id.split('-')
 

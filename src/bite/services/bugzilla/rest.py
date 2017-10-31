@@ -1,10 +1,10 @@
 try: import simplejson as json
 except ImportError: import json
-import ijson
 import requests
 
 from . import Bugzilla, BugzillaAttachment, BugzillaComment, BugzillaEvent
 from ...exceptions import RequestError
+from ...objects import Item
 
 class BugzillaRest(Bugzilla):
     def __init__(self, **kw):
@@ -33,6 +33,7 @@ class BugzillaRest(Bugzilla):
             self.auth = {'username': self.user, 'password': self.password}
 
     def search(self, params):
+        import ijson
         url = '{}/bug'.format(self.base)
         data = self.request(url, params, iter_content=True)
         bugs = ijson.items(data, 'bugs.item')

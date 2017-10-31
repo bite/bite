@@ -11,7 +11,7 @@ from importlib import import_module
 import os
 import sys
 
-from .. import SERVICES
+from .. import const
 from ..argparser import ArgumentParser, parse_file, override_attr
 from ..exceptions import BiteError, CliError, RequestError
 
@@ -67,7 +67,7 @@ service = argparser.add_argument_group('Service')
 service.add_argument('-b', '--base',
     help='base URL of service')
 service.add_argument('-s', '--service',
-    help='supported services: {}'.format(', '.join(SERVICES)))
+    help='service type')
 service.add_argument('-c', '--connection',
     help='use a configured connection')
 
@@ -90,20 +90,16 @@ cache_opts.add_argument(
     '--remove', action='store_true', help='remove various data caches')
 
 
-def get_module(service_name, module_name, **kw):
-    module_name = '{}.{}'.format(module_name, service_name.replace('-', '.'))
-    klass_name = ''.join([s.capitalize() for s in service_name.split('-')])
-    klass = getattr(import_module(module_name), klass_name)
-    return klass(**kw)
-
 def get_client(args):
     if not isinstance(args, dict):
         args = vars(args)
     fcn_args = args.pop('fcn_args')
     service_name = args['service']
-    service = get_module(service_name, module_name='bite.services', **args)
+    mod_name, cls_name = const.SERVICES[service_name].rsplit('.', 1)
+    service = getattr(import_module(mod_name), cls_name)(**args)
     args['service'] = service
-    client = get_module(service_name, module_name='bite.cli', **args)
+    mod_name, cls_name = const.CLIENTS[service_name].rsplit('.', 1)
+    client = getattr(import_module(mod_name), cls_name)(**args)
     return client, fcn_args
 
 
@@ -125,7 +121,7 @@ def _ls(options, out, err):
             else:
                 out.write(connection)
     elif options.item == 'services':
-        out.write('\n'.join(sorted(SERVICES)))
+        out.write('\n'.join(sorted(const.SERVICES)))
 
     return 0
 

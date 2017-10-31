@@ -14,7 +14,6 @@ from dateutil.relativedelta import *
 
 from . import Cli
 from .. import const
-from ..argparser import parse_stdin
 from ..rfc3339 import datetimetostr
 
 class Monorail(Cli):

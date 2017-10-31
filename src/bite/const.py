@@ -3,8 +3,14 @@ from shutil import get_terminal_size
 import sys
 
 from snakeoil import mappings
+from snakeoil.demandload import demandload
 
 from . import __title__
+
+demandload(
+    'inspect',
+    'pkgutil',
+)
 
 _reporoot = os.path.realpath(__file__).rsplit(os.path.sep, 3)[0]
 _module = sys.modules[__name__]
@@ -23,7 +29,10 @@ def _GET_CONST(attr, default_value):
     consts = mappings.ProxiedAttrs(_module)
     is_tuple = not isinstance(default_value, str)
     if is_tuple:
-        default_value = tuple(x % consts for x in default_value)
+        try:
+            default_value = tuple(x % consts for x in default_value)
+        except TypeError:
+            default_value = tuple(default_value)
     else:
         default_value %= consts
 
@@ -46,3 +55,29 @@ for xdg_var, var_name, fallback_dir in (
 DATA_PATH = _GET_CONST('DATA_PATH', _reporoot)
 if CONFIG_PATH is None:
     CONFIG_PATH = _GET_CONST('CONFIG_PATH', '%(DATA_PATH)s/config')
+
+def _service_cls(x):
+    if inspect.isclass(x) and getattr(x, 'service_name', None) is not None:
+        return True
+    return False
+
+def _services():
+    from . import services as services_mod
+    services = []
+    for imp, name, _ in pkgutil.walk_packages(services_mod.__path__, services_mod.__name__ + '.'):
+        module = imp.find_module(name).load_module()
+        for name, cls in inspect.getmembers(module, _service_cls):
+            services.append((cls.service_name, '.'.join([module.__name__, cls.__name__])))
+    return services
+
+def _clients():
+    from . import cli
+    clients = []
+    for imp, name, _ in pkgutil.walk_packages(cli.__path__, cli.__name__ + '.'):
+        module = imp.find_module(name).load_module()
+        for name, cls in inspect.getmembers(module, _service_cls):
+            clients.append((cls.service_name, '.'.join([module.__name__, cls.__name__])))
+    return clients
+
+SERVICES = mappings.ImmutableDict(_GET_CONST('SERVICES', _services()))
+CLIENTS = mappings.ImmutableDict(_GET_CONST('CLIENTS', _clients()))

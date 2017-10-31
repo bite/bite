@@ -13,7 +13,7 @@ import sys
 from snakeoil.cli import arghparse, tool
 from snakeoil.sequences import iflatten_instance
 
-from . import SERVICES, const
+from . import const
 from .alias import substitute_alias
 from .config import get_config
 from .exceptions import BiteError
@@ -474,9 +474,9 @@ class ArgumentParser(arghparse.ArgumentParser):
                        'or must be specified in the config file for a connection')
 
         service_name = initial_args.service
-        if service_name not in SERVICES:
-            self.error('{!r} service is unknown (available services: {})'.format(
-                service_name, ', '.join(SERVICES)))
+        if service_name not in const.SERVICES:
+            self.error('invalid service: {!r} (available services: {})'.format(
+                service_name, ', '.join(const.SERVICES)))
 
         try:
             service_args = import_module('bite.args.' + service_name.replace('-', '.'))

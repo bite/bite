@@ -13,6 +13,7 @@ Specifically, this module is only meant to be imported in setup.py scripts.
 from contextlib import contextmanager
 import copy
 import errno
+from importlib import import_module
 import io
 import math
 from multiprocessing import cpu_count
@@ -99,6 +100,12 @@ def find_moduledir(searchdir=TOPDIR):
 MODULEDIR = find_moduledir()
 PACKAGEDIR = os.path.dirname(MODULEDIR)
 MODULE = os.path.basename(MODULEDIR)
+
+
+def get_pkg_module():
+    """Return the imported main module for the package."""
+    with syspath(PACKAGEDIR):
+        return import_module(MODULE)
 
 
 def version(moduledir=MODULEDIR):

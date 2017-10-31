@@ -43,11 +43,16 @@ def write_lookup_config(python_base, install_prefix):
             raise
     log.info("writing lookup config to %r" % path)
 
+    bite = pkgdist.get_pkg_module()
+    from bite import const
+    services = tuple(sorted(const.SERVICES.items()))
+    clients = tuple(sorted(const.CLIENTS.items()))
+
+    import textwrap
     with open(path, "w") as f:
         os.chmod(path, 0o644)
         # write more dynamic file for wheel installs
         if install_prefix != os.path.abspath(sys.prefix):
-            import textwrap
             f.write(textwrap.dedent("""\
                 import os.path as osp
                 import sys
@@ -55,14 +60,25 @@ def write_lookup_config(python_base, install_prefix):
                 INSTALL_PREFIX = osp.abspath(sys.prefix)
                 DATA_PATH = osp.join(INSTALL_PREFIX, {!r})
                 CONFIG_PATH = osp.join(INSTALL_PREFIX, {!r})
+
+                SERVICES = {}
+                CLIENTS = {}
             """.format(
-                DATA_INSTALL_OFFSET, CONFIG_INSTALL_OFFSET)))
+                DATA_INSTALL_OFFSET, CONFIG_INSTALL_OFFSET,
+                services, clients)))
         else:
-            f.write("INSTALL_PREFIX=%r\n" % install_prefix)
-            f.write("DATA_PATH=%r\n" %
-                    os.path.join(install_prefix, DATA_INSTALL_OFFSET))
-            f.write("CONFIG_PATH=%r\n" %
-                    os.path.join(install_prefix, CONFIG_INSTALL_OFFSET))
+            f.write(textwrap.dedent("""\
+                INSTALL_PREFIX = {!r}
+                DATA_PATH = {!r}
+                CONFIG_PATH = {!r}
+
+                SERVICES = {!r}
+                CLIENTS = {!r}
+            """.format(
+                install_prefix,
+                os.path.join(install_prefix, DATA_INSTALL_OFFSET),
+                os.path.join(install_prefix, CONFIG_INSTALL_OFFSET),
+                services, clients)))
 
             f.close()
             byte_compile([path], prefix=python_base)

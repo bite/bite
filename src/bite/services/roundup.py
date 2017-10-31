@@ -26,6 +26,8 @@ class RoundupError(RequestError):
 class Roundup(LxmlXmlrpc):
     """Support Roundup's XML-RPC interface."""
 
+    service_name = 'roundup'
+
     def __init__(self, **kw):
         # cached value mappings
         kw['cache'] = {
