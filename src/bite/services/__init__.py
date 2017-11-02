@@ -21,10 +21,6 @@ def command(cmd_name, service_cls):
 
 
 class Request(object):
-    errors = {
-        403: AuthError,
-        404: NotFound,
-    }
 
     def __init__(self, service):
         self.service = service

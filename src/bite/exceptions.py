@@ -50,6 +50,3 @@ class BadAuthToken(RequestError):
 class CliError(BiteError):
     """Exception used to display graceful failures to users."""
     pass
-
-class NotFound(RequestError):
-    pass
