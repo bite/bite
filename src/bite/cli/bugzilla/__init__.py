@@ -539,7 +539,8 @@ class Bugzilla(Cli):
                     print(self._header('=', 'Bug: {}'.format(str(i))))
                     self._print_lines(changes)
 
-    def comments(self, ids, dry_run, creation_time, comment_num, fields, output, creator, attachment, **kw):
+    def comments(self, ids, creation_time, comment_num, fields, output, creator,
+                 attachment, dry_run=False, **kw):
         request = self.service.comments(ids, created=creation_time)
 
         self.log('Getting comments matching the following options:')

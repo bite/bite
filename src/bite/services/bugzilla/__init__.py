@@ -360,14 +360,17 @@ class SearchRequest(Request):
 
 @command('comments', Bugzilla)
 class CommentsRequest(Request):
-    def __init__(self, service, ids, comment_ids=None, created=None, fields=None, *args, **kw):
+    def __init__(self, service, ids=None, comment_ids=None, created=None, fields=None, *args, **kw):
         """Construct a comments request."""
         super().__init__(service, *args, **kw)
 
-        self.ids = ids
-        if self.ids is None:
-            raise ValueError('No bug ID(s) specified')
-        params = {'ids': self.ids}
+        if ids is None and comment_ids is None:
+            raise ValueError('No {} or comment ID(s) specified'.format(self.service.item_name))
+
+        params = {}
+
+        if ids is not None:
+            params['ids'] = ids
         if comment_ids is not None:
             params['comment_ids'] = comment_ids
         if created is not None:
@@ -377,6 +380,8 @@ class CommentsRequest(Request):
 
         # TODO: this
         self.options = ['REPLACE ME']
+
+        self.ids = ids
 
         self.requests.append(self.service.create_request(method='Bug.comments', params=params))
 
