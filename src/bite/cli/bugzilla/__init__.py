@@ -479,7 +479,8 @@ class Bugzilla(Cli):
                         change['removed'] == value
                     )
 
-    def changes(self, ids, dry_run, creation_time, change_num, fields, output, creator, match, **kw):
+    def changes(self, ids, creation_time, change_num, fields, output, creator,
+                match, dry_run=False, **kw):
         request = self.service.history(ids)
 
         self.log('Getting changes matching the following options:')
