@@ -67,7 +67,9 @@ class Request(object):
 
 
 class NullRequest(Request):
-    pass
+
+    def __init__(self):
+        super().__init__(service=None)
 
 
 class Service(object):

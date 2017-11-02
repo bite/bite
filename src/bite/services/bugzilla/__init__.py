@@ -282,7 +282,7 @@ class GetRequest(Request):
                 self.requests.append(getattr(
                     sys.modules[__name__], call.capitalize() + 'Request')(self.service, ids))
             else:
-                self.requests.append(NullRequest(self.service))
+                self.requests.append(NullRequest())
 
     def parse(self, data):
         data, attachments, comments, history = data
