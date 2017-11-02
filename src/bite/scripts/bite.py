@@ -85,9 +85,9 @@ cache.add_argument(
     'connections', nargs='*', help='connection cache(s) to update')
 cache_opts = cache.add_argument_group('Cache options')
 cache_opts.add_argument(
-    '--update', action='store_true', help='update various data caches')
+    '-u', '--update', action='store_true', help='update various data caches')
 cache_opts.add_argument(
-    '--remove', action='store_true', help='remove various data caches')
+    '-r', '--remove', action='store_true', help='remove various data caches')
 
 
 def get_client(args):
@@ -124,6 +124,12 @@ def _ls(options, out, err):
         out.write('\n'.join(sorted(const.SERVICES)))
 
     return 0
+
+
+@cache.bind_final_check
+def _validate_args(parser, namespace):
+    if not namespace.update and not namespace.remove:
+        cache.error('either -u/--update or -r/--remove must be specified')
 
 
 @cache.bind_main_func
