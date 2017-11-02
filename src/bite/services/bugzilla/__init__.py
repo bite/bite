@@ -5,7 +5,6 @@ from itertools import groupby
 import os
 import re
 import string
-import sys
 
 from dateutil.parser import parse as dateparse
 
@@ -279,8 +278,8 @@ class GetRequest(Request):
 
         for call in ('attachments', 'comments', 'history'):
             if locals()['get_' + call]:
-                self.requests.append(getattr(
-                    sys.modules[__name__], call.capitalize() + 'Request')(self.service, ids))
+                self.requests.append(
+                    getattr(self.service, call.capitalize() + 'Request')(ids))
             else:
                 self.requests.append(NullRequest())
 
