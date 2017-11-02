@@ -15,15 +15,11 @@ def command(cmd_name, service_cls):
     """Register a service command."""
 
     def wrapped(cls, *args, **kwds):
-        def _cmd(self, *args, **kw):
-            if kw.pop('send', True):
-                send = getattr(service_cls, 'send')
-                return send(self, reqs=cls(self, *args, **kw))
-            else:
-                return cls(self, *args, **kw)
-
-        func = lambda self, *args, **kw: _cmd(self, *args, **kw)
-        setattr(service_cls, cmd_name, func)
+        send = getattr(service_cls, 'send')
+        send_func = lambda self, *args, **kw: send(self, reqs=cls(self, *args, **kw))
+        req_func = lambda self, *args, **kw: cls(self, *args, **kw)
+        setattr(service_cls, cmd_name, send_func)
+        setattr(service_cls, cls.__name__, req_func)
         return cls
     return wrapped
 
