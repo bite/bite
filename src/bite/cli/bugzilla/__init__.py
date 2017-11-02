@@ -298,7 +298,7 @@ class Bugzilla(Cli):
                     params.setdefault('ids', []).append(field)
                 else:
                     params.setdefault('names', []).append(field)
-        request = self.service.fields(**params)
+        request = self.service.fields(send=False, **params)
 
         self.log('Getting fields matching the following options:')
         self.log(request.options, prefix='   - ')
