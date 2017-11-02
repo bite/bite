@@ -510,7 +510,7 @@ class ArgumentParser(arghparse.ArgumentParser):
         fcn_args = super().parse_args(unparsed_args, initial_args)
         args = vars(args)
         fcn_args = {k:v for k,v in vars(fcn_args).items() if k not in args}
-        for i in ['dry_run', 'jobs']:
+        for i in ('dry_run', 'concurrent'):
             if i in args:
                 fcn_args[i] = args[i]
         initial_args.fcn_args = fcn_args

@@ -42,6 +42,9 @@ connect.add_argument('-k', '--insecure',
 connect.add_argument('-n', '--dry-run',
     action='store_true',
     help='do everything except requesting or sending data')
+connect.add_argument('-C', '--concurrent',
+    type=int,
+    help='maximum number of allowed concurrent requests to a service')
 connect.add_argument('--timeout',
     type=int,
     metavar='SECONDS',
