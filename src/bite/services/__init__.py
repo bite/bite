@@ -1,9 +1,8 @@
-from functools import partial
+from concurrent.futures import ThreadPoolExecutor
 import os
 import stat
 from urllib.parse import urlparse, urlunparse
 
-from concurrent.futures import ThreadPoolExecutor
 import requests
 
 from .. import __version__, const
@@ -12,8 +11,7 @@ from ..exceptions import RequestError, AuthError, BiteError
 
 
 def command(cmd_name, service_cls):
-    """Register a service command."""
-
+    """Register related service command and request creation functions."""
     def wrapped(cls, *args, **kwds):
         send = getattr(service_cls, 'send')
         send_func = lambda self, *args, **kw: send(self, reqs=cls(self, *args, **kw))
