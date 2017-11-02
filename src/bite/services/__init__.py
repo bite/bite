@@ -3,7 +3,7 @@ import os
 import stat
 from urllib.parse import urlparse, urlunparse
 
-import concurrent.futures
+from concurrent.futures import ThreadPoolExecutor
 import requests
 
 from .. import __version__, const
@@ -26,12 +26,6 @@ class Request(object):
         self.service = service
         self.requests = []
         self.options = []
-
-    def send(self):
-        if len(self.requests) > 1:
-            return self.parse(self.service.parallel_send(self.requests))
-        else:
-            return self.parse(self.service.send(self.requests[0]))
 
     @staticmethod
     def http_req_str(req):
@@ -58,6 +52,15 @@ class Request(object):
     def parse(self, data):
         return data
 
+    def handle_exception(self, e):
+        raise e
+
+    def __len__(self):
+        return len(self.requests)
+
+    def __iter__(self):
+        return iter(self.requests)
+
 class NullRequest(Request):
 
     def send(self):
@@ -69,12 +72,14 @@ class Service(object):
     service_name = None 
 
     def __init__(self, base, connection=None, verify=True, user=None, password=None, skip_auth=True,
-                 auth_token=None, suffix=None, timeout=None, auth_file=None, cache_cls=None, **kw):
+                 auth_token=None, suffix=None, timeout=None, auth_file=None, concurrent=None,
+                 cache_cls=None, **kw):
         self.base = base
         self.user = user
         self.password = password
         self.suffix = suffix
         self.verify = verify
+        self.concurrent = concurrent if concurrent is not None else 8
         self.timeout = timeout if timeout is not None else 30
 
         if cache_cls is None:
@@ -179,8 +184,38 @@ class Service(object):
         """Parse the returned response."""
         raise NotImplementedError()
 
-    def send(self, req, raw=False):
-        """Send raw request and return a response."""
+    def send(self, reqs, raw=False):
+        """Send request(s) and return a response."""
+        if not raw and isinstance(reqs, Request):
+            parse = reqs.parse
+        else:
+            parse = lambda x: x
+
+        try:
+            if len(reqs) == 0:
+                return
+            elif len(reqs) > 1:
+                return parse(self._parallel_send(reqs))
+        except TypeError:
+            pass
+
+        if isinstance(reqs, Request):
+            req = reqs.requests[0]
+            handle_exception = reqs.handle_exception
+        else:
+            req = reqs
+            def _raise(e): raise
+            handle_exception = _raise
+
+        try:
+            data = self._http_send(req)
+        except RequestError as e:
+            handle_exception(e)
+
+        return parse(data)
+
+    def _http_send(self, req, raw=False):
+        """Send an HTTP request and return the parsed response."""
         try:
             response = self.session.send(
                 req, stream=True, timeout=self.timeout, verify=self.verify, allow_redirects=False)
@@ -212,19 +247,15 @@ class Service(object):
                     raise RequestError('HTTP Error {}: {}'.format(
                         response.status_code, response.reason.lower()), text=response.text)
 
-    def parallel_send(self, reqs, size=8, block=True):
+    def _parallel_send(self, reqs, block=True):
         """Run parallel requests at once."""
         jobs = []
-        with concurrent.futures.ThreadPoolExecutor(max_workers=size) as executor:
+        with ThreadPoolExecutor(max_workers=self.concurrent) as executor:
             for req in reqs:
                 if isinstance(req, tuple) or isinstance(req, list):
-                    yield self.parallel_send(req)
+                    yield self._parallel_send(req)
                 else:
-                    # XXX: hack to support both internal request format and HTTP requests
-                    if isinstance(req, Request):
-                        jobs.append(executor.submit(lambda x: x.send(), req))
-                    else:
-                        jobs.append(executor.submit(self.send, req))
+                    jobs.append(executor.submit(self.send, req))
 
         for job in jobs:
             yield job.result()

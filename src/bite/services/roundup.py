@@ -59,7 +59,7 @@ class RoundupCache(Cache):
         self.service.load_auth_token()
         reqs.append(self.service.create_request(method='list', params=['user']))
 
-        status, priority, keyword, users = self.service.parallel_send(reqs, size=len(reqs))
+        status, priority, keyword, users = self.service.send(reqs)
 
         # don't sort, ordering is important for the mapping to work properly
         config_updates['status'] = ', '.join(status)
@@ -177,27 +177,25 @@ class GetRequest(Request):
             self.requests.append(reqs[0])
 
 
-    def send(self):
-        try:
-            return self.parse(self.service.parallel_send(self.requests))
-        except RequestError as e:
-            if e.code == 'exceptions.IndexError':
-                # issue doesn't exist
-                raise RoundupError(msg=e.msg)
-            elif e.code == 'exceptions.KeyError':
-                # field doesn't exist
-                raise RoundupError(msg="field doesn't exist: {}".format(e.msg))
-            raise
+    def handle_exception(self, e):
+        if e.code == 'exceptions.IndexError':
+            # issue doesn't exist
+            raise RoundupError(msg=e.msg)
+        elif e.code == 'exceptions.KeyError':
+            # field doesn't exist
+            raise RoundupError(msg="field doesn't exist: {}".format(e.msg))
+        raise
 
     def parse(self, data):
         issues = []
         files = {}
         messages = {}
         reqs = []
-        for i, issue in enumerate(data):
-            # files[i] = issue.get('files', [])
-            # messages[i] = issue.get('messages', [])
-            issues.append(issue)
+        issues = [data]
+        # for i, issue in enumerate(data):
+        #     # files[i] = issue.get('files', [])
+        #     # messages[i] = issue.get('messages', [])
+        #     issues.append(issue)
 
         # TODO: get file/message content
         for v in set(chain.from_iterable(files.values())):

@@ -304,11 +304,11 @@ class Bugzilla(Cli):
         self.log(request.options, prefix='   - ')
 
         if dry_run: return
-        data = request.send()
+        data = self.service.send(request)
 
         for field in data:
             print('{} ({})'.format(field['display_name'], field['name']))
-            if self.verbose or len(fields) == 1:
+            if self.verbose or fields and len(fields) == 1:
                 for value in field.get('values', []):
                     if value.get('name', False):
                         print('  {}'.format(value['name']))
@@ -489,7 +489,7 @@ class Bugzilla(Cli):
             creator = list(map(self.service._resuffix, creator))
 
         if dry_run: return
-        history = request.send()
+        history = self.service.send(request)
 
         for i in ids:
             changes = next(history)
@@ -552,7 +552,7 @@ class Bugzilla(Cli):
             creator = list(map(self.service._resuffix, creator))
 
         if dry_run: return
-        comment_list = request.send()
+        comment_list = self.service.send(request)
 
         for i in ids:
             comments = next(comment_list)

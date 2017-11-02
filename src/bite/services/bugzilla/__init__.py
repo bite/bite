@@ -50,7 +50,7 @@ class BugzillaCache(Cache):
 
         # get open/closed status values
         req = self.service.fields(names=['bug_status'])
-        statuses = req.send()[0]
+        statuses = self.service.send(req)[0]
 
         open_status = []
         closed_status = []

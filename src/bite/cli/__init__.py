@@ -125,7 +125,7 @@ class Cli(object):
                 self.service.item.type, pluralism(ids), ', '.join(map(str, ids)))))
 
             if dry_run: return
-            data = request.send()
+            data = self.service.send(request)
             if filters is not None:
                 for fcn in filters:
                     data = fcn(data)
@@ -186,7 +186,7 @@ class Cli(object):
                 _launch_browser(ids)
         else:
             if dry_run: return
-            attachments = request.send()
+            attachments = self.service.send(request)
 
             # item attachment requests yield lists of attachments -- each list
             # corresponds to the attachments for given item ID
@@ -265,7 +265,7 @@ class Cli(object):
                 return
 
         if dry_run: return
-        data = request.send()
+        data = self.service.send(request)
         self.print_changes(data, params=kw)
 
     @loginretry
@@ -304,7 +304,7 @@ class Cli(object):
         self.log(request.options, prefix='   - ')
 
         if dry_run: return
-        data = request.send()
+        data = self.service.send(request)
         if filters is not None:
             for fcn in filters:
                 data = fcn(data)
