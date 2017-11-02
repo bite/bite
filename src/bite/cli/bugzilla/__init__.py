@@ -290,16 +290,23 @@ class Bugzilla(Cli):
         users = self.service.users(params)
         self.print_users(users)
 
-    def fields(self, **kw):
+    def fields(self, fields=None, dry_run=False, **kw):
         params = {}
-        if not kw['fields'] == [None]:
-            for field in kw['fields']:
+        if fields is not None:
+            for field in fields:
                 if re.match(r'^\d+$', field):
                     params.setdefault('ids', []).append(field)
                 else:
                     params.setdefault('names', []).append(field)
-        fields = self.service.fields(params)
-        for field in fields:
+        request = self.service.fields(**params)
+
+        self.log('Getting fields matching the following options:')
+        self.log(request.options, prefix='   - ')
+
+        if dry_run: return
+        data = request.send()
+
+        for field in data:
             print('{} ({})'.format(field['display_name'], field['name']))
             if self.verbose or len(fields) == 1:
                 for value in field.get('values', []):

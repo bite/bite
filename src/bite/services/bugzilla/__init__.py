@@ -178,25 +178,6 @@ class Bugzilla(Service):
         result = self.send(req)
         return result['attachments']
 
-    def get_fields(self, ids=None, names=None, **kw):
-        """Get information about valid bug fields
-
-        :param ids: fields IDs
-        :type ids: list of ints
-        :param names: field names
-        :type names: list of strings
-
-        """
-        params = {}
-        if ids is not None:
-            params['ids'] = ids
-        if names is not None:
-            params['names'] = names
-        req = self.create_request(method='Bug.fields', params=params)
-        data = self.send(req)
-        fields = data['fields']
-        return fields
-
     def create(self, product, component, version, summary, description=None, op_sys=None,
                platform=None, priority=None, severity=None, alias=None, assigned_to=None,
                cc=None, target_milestone=None, groups=None, status=None, **kw):
@@ -242,12 +223,6 @@ class Bugzilla(Service):
         req = self.create_request(method='Product.get', params=params)
         data = self.send(req)
         return data['products']
-
-    def fields(self, params):
-        """Query bugzilla for field data."""
-        req = self.create_request(method='Bug.fields', params=params)
-        data = self.send(req)
-        return data['fields']
 
     def users(self, params):
         """Query bugzilla for user data."""
@@ -576,6 +551,35 @@ class HistoryRequest(Request):
         bugs = data['bugs']
         for b in bugs:
             yield [BugzillaEvent(change=x, id=b['id'], alias=b['alias'], count=i) for i, x in enumerate(b['history'], start=1)]
+
+
+@command('fields', Bugzilla)
+class FieldsRequest(Request):
+    def __init__(self, service, ids=None, names=None, *args, **kw):
+        """Get information about valid bug fields.
+
+        :param ids: fields IDs
+        :type ids: list of ints
+        :param names: field names
+        :type names: list of strings
+
+        """
+        super().__init__(service, *args, **kw)
+        params = {}
+
+        if ids is None and names is None:
+            self.options.append('all non-obsolete fields')
+
+        if ids is not None:
+            params['ids'] = ids
+            self.options.append('IDs: {}'.format(', '.join(ids)))
+        if names is not None:
+            params['names'] = names
+            self.options.append('Field names: {}'.format(', '.join(names)))
+        self.requests.append(self.service.create_request(method='Bug.fields', params=params))
+
+    def parse(self, data, *args, **kw):
+        return data['fields']
 
 
 class BugzillaBug(Item):

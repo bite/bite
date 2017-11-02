@@ -29,6 +29,7 @@ class Request(object):
     def __init__(self, service):
         self.service = service
         self.requests = []
+        self.options = []
 
     def send(self):
         if len(self.requests) > 1:
