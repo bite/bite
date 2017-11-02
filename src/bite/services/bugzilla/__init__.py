@@ -232,17 +232,22 @@ class Bugzilla(Service):
         data = self.send(req)
         return data['users']
 
-    def extensions(self):
-        """Get bugzilla extensions."""
-        req = self.create_request(method='Bugzilla.extensions')
-        data = self.send(req)
-        return data['extensions']
-
     def query(self, method, params=None):
         """Query bugzilla for various data."""
         req = self.create_request(method=method, params=params)
         data = self.send(req)
         return data
+
+
+@command('extensions', Bugzilla)
+class ExtensionsRequest(Request):
+    def __init__(self, service):
+        """Construct an extensions request."""
+        super().__init__(service)
+        self.requests.append(self.service.create_request(method='Bugzilla.extensions'))
+
+    def parse(self, data):
+        return data['extensions']
 
 
 @command('version', Bugzilla)
