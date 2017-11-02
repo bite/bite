@@ -120,7 +120,7 @@ class Cli(object):
                 except (PermissionError, FileNotFoundError) as e:
                     raise CliError('failed running browser {!r}: {}'.format(const.BROWSER, e.strerror))
         else:
-            request = self.service.get(ids, **kw)
+            request = self.service.get(ids, send=False, **kw)
             self.log(self._truncate('Getting {}{}: {}'.format(
                 self.service.item.type, pluralism(ids), ', '.join(map(str, ids)))))
 
@@ -148,11 +148,11 @@ class Cli(object):
         get_data = (not output_url and not browser)
 
         if item_id:
-            request = self.service.attachments(ids=ids, get_data=get_data)
+            request = self.service.attachments(ids=ids, get_data=get_data, send=False)
             item_str = ' from {}'.format(self.service.item.type)
             plural = '(s)'
         else:
-            request = self.service.attachments(attachment_ids=ids, get_data=get_data)
+            request = self.service.attachments(attachment_ids=ids, get_data=get_data, send=False)
             item_str = ''
             plural = pluralism(ids)
 
@@ -252,7 +252,7 @@ class Cli(object):
     @loginrequired
     def modify(self, ask, dry_run, ids, **kw):
         kw = self._modify_params(**kw)
-        request = self.service.modify(ids, **kw)
+        request = self.service.modify(ids, send=False, **kw)
 
         self.log(self._truncate('Modifying {}{}: {}'.format(
             self.service.item.type, pluralism(ids), ', '.join(map(str, ids)))))
@@ -295,7 +295,7 @@ class Cli(object):
 
     def search(self, dry_run, filters, **kw):
         kw = self._search_params(**kw)
-        request = self.service.search(**kw)
+        request = self.service.search(send=False, **kw)
 
         if kw['fields'] is None:
             kw['fields'] = request.fields

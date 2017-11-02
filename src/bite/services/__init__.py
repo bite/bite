@@ -13,8 +13,16 @@ from ..exceptions import RequestError, AuthError, BiteError
 
 def command(cmd_name, service_cls):
     """Register a service command."""
+
     def wrapped(cls, *args, **kwds):
-        func = lambda self, *args, **kw: cls(self, *args, **kw)
+        def _cmd(self, *args, **kw):
+            if kw.pop('send', True):
+                send = getattr(service_cls, 'send')
+                return send(self, reqs=cls(self, *args, **kw))
+            else:
+                return cls(self, *args, **kw)
+
+        func = lambda self, *args, **kw: _cmd(self, *args, **kw)
         setattr(service_cls, cmd_name, func)
         return cls
     return wrapped
@@ -61,10 +69,9 @@ class Request(object):
     def __iter__(self):
         return iter(self.requests)
 
-class NullRequest(Request):
 
-    def send(self):
-        pass
+class NullRequest(Request):
+    pass
 
 
 class Service(object):

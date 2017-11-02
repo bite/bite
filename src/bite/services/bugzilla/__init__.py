@@ -59,8 +59,7 @@ class Bugzilla(Service):
         config_updates = {}
 
         # get open/closed status values
-        req = self.fields(names=['bug_status'])
-        statuses = self.send(req)[0]
+        statuses = self.fields(names=['bug_status'])[0]
 
         open_status = []
         closed_status = []
