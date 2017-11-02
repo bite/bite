@@ -1,16 +1,14 @@
-import configparser
+from functools import partial
 import os
 import stat
-import sys
 from urllib.parse import urlparse, urlunparse
 
 import concurrent.futures
 import requests
 
-from .. import __version__
-from ..exceptions import RequestError, AuthError, NotFound
-from ..config import update_config
-from ..const import USER_CACHE_PATH
+from .. import __version__, const
+from ..cache import Cache
+from ..exceptions import RequestError, AuthError, BiteError
 
 
 def command(cmd_name, service_cls):
@@ -74,15 +72,16 @@ class Service(object):
     service_name = None 
 
     def __init__(self, base, connection=None, verify=True, user=None, password=None, skip_auth=True,
-                 auth_token=None, suffix=None, timeout=None, auth_file=None, cache=None, **kw):
-        self.connection = connection
+                 auth_token=None, suffix=None, timeout=None, auth_file=None, cache_cls=None, **kw):
         self.base = base
         self.user = user
         self.password = password
         self.suffix = suffix
-        self.cache = cache if cache is not None else {}
         self.verify = verify
         self.timeout = timeout if timeout is not None else 30
+
+        if cache_cls is None:
+            cache_cls = Cache
 
         url = urlparse(self.base)
         self._base = urlunparse((
@@ -94,22 +93,21 @@ class Service(object):
         self.item = 'issue'
         self.item_web_endpoint = None
 
-        file_name = self.connection
-        if file_name is None:
+        cache_name = connection
+        if cache_name is None:
             url = urlparse(self.base)
             if len(url.path) <= 1:
-                file_name = url.netloc
+                cache_name = url.netloc
             else:
-                file_name = '{}{}'.format(url.netloc, url.path.rstrip('/').replace('/', '-'))
+                cache_name = '{}{}'.format(url.netloc, url.path.rstrip('/').replace('/', '-'))
             if url.username is not None or url.password is not None:
-                file_name = file_name.split('@', 1)[1]
-        self.cached_config = os.path.join(USER_CACHE_PATH, 'config', file_name)
-        self.load_cache()
+                cache_name = cache_name.split('@', 1)[1]
+        self.cache = cache_cls(cache_name)
 
         self.skip_auth = skip_auth
         self.auth_token = auth_token
         if auth_file is None:
-            self.auth_file = os.path.join(USER_CACHE_PATH, 'auth', file_name)
+            self.auth_file = os.path.join(const.USER_CACHE_PATH, 'auth', cache_name)
         else:
             self.auth_file = auth_file
 
@@ -158,34 +156,6 @@ class Service(object):
 
     def __str__(self):
         return str(self.base)
-
-    def _cache_update(self):
-        """Pull latest data from service for cache update."""
-        return None
-
-    def cache_update(self):
-        """Update cached data for the service."""
-        data = self._cache_update()
-        if data is not None:
-            try:
-                os.makedirs(os.path.dirname(self.cached_config))
-            except FileExistsError:
-                pass
-            update_config(self.cached_config, self.connection, data)
-
-    def load_cache(self):
-        """Load cached data from config."""
-        try:
-            with open(self.cached_config, 'r') as f:
-                config = configparser.ConfigParser()
-                config.read(self.cached_config)
-                settings = config.items(self.connection)
-        except IOError:
-            settings = ()
-        # XXX: currently assumes all cached data is CSV
-        self.cache.update(
-            (k, tuple(x.strip() for x in v.split(',')))
-            for k, v in settings)
 
     def encode_request(self, method, params=None):
         """Encode the data body for a request."""

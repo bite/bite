@@ -12,6 +12,7 @@ from dateutil.parser import parse as dateparse
 
 from .. import Service, Request, NullRequest, command
 from ... import const, magic, utc
+from ...cache import Cache
 from ...exceptions import RequestError, BiteError
 from ...objects import Item, Change, Comment, Attachment, decompress
 
@@ -28,32 +29,28 @@ def parsetime(time):
     else:
         return time.replace(tzinfo=utc.utc)
 
-class Bugzilla(Service):
 
-    def __init__(self, **kw):
-        # default to bugzilla-5 open/closed statuses, cache overrides if it exists
-        kw['cache'] = {
+class BugzillaCache(Cache):
+
+    def __init__(self, service, *args, **kw):
+        self.service = service
+
+        # default to bugzilla-5 open/closed statuses
+        defaults = {
             'open_status': ('CONFIRMED', 'IN_PROGRESS', 'UNCONFIRMED'),
             'closed_status': ('RESOLVED', 'VERIFIED'),
         }
 
-        super().__init__(**kw)
+        super().__init__(defaults=defaults, *args, **kw)
 
-        self.item = BugzillaBug
-        self.attachment = BugzillaAttachment
-
-        # TODO: temporary compat
-        self.attributes = self.item.attributes
-        self.attribute_aliases = self.item.attribute_aliases
-
-    def _cache_update(self):
+    @property
+    def _updates(self):
         """Pull latest data from service for cache update."""
         config_updates = {}
 
         # get open/closed status values
-        params = {}
-        params['names'] = 'bug_status'
-        statuses = self.fields(params)[0]
+        req = self.service.fields(names=['bug_status'])
+        statuses = req.send()[0]
 
         open_status = []
         closed_status = []
@@ -67,6 +64,19 @@ class Bugzilla(Service):
         config_updates['closed_status'] = ', '.join(sorted(closed_status))
 
         return config_updates
+
+
+class Bugzilla(Service):
+
+    def __init__(self, **kw):
+        super().__init__(cache_cls=partial(BugzillaCache, self), **kw)
+
+        self.item = BugzillaBug
+        self.attachment = BugzillaAttachment
+
+        # TODO: temporary compat
+        self.attributes = self.item.attributes
+        self.attribute_aliases = self.item.attribute_aliases
 
     def inject_auth(self, request, params):
         if params is None:

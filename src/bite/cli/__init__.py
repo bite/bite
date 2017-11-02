@@ -361,12 +361,9 @@ class Cli(object):
 
     def cache_config(self, update=False, remove=False, *args, **kw):
         if update:
-            self.log('Updating cached data: {}'.format(self.service.connection))
-            self.service.cache_update()
+            self.service.cache.update(pull=True, write=True)
         elif remove:
-            self.log('Removing cached data: {}'.format(self.service.connection))
-            if os.path.exists(self.service.cached_config):
-                os.remove(self.service.cached_config)
+            self.service.cache.remove()
 
     def _attach_params(self):
         raise NotImplementedError

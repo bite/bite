@@ -19,6 +19,8 @@ from ..rfc3339 import datetimetostr
 class Monorail(Cli):
     """CLI for Monorail service."""
 
+    service_name = 'monorail'
+
     def _search_params(self, **kw):
         query = {}
         query_list = []

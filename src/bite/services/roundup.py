@@ -3,6 +3,7 @@
 http://www.roundup-tracker.org/docs/xmlrpc.html
 """
 
+from functools import partial
 from itertools import chain
 import re
 
@@ -11,9 +12,9 @@ import requests
 
 from . import NullRequest, Request, command
 from ._xmlrpc import LxmlXmlrpc
-from ..objects import decompress
+from ..cache import Cache
 from ..exceptions import AuthError, RequestError, ParsingError
-from ..objects import Item, Attachment, Comment
+from ..objects import decompress, Item, Attachment, Comment
 
 
 class RoundupError(RequestError):
@@ -23,22 +24,61 @@ class RoundupError(RequestError):
         super().__init__(msg, code, text)
 
 
-class Roundup(LxmlXmlrpc):
-    """Support Roundup's XML-RPC interface."""
+class RoundupCache(Cache):
 
-    service_name = 'roundup'
+    def __init__(self, service, *args, **kw):
+        self.service = service
 
-    def __init__(self, **kw):
-        # cached value mappings
-        kw['cache'] = {
+        # default to empty values
+        defaults = {
             'status': (),
             'priority': (),
             'keyword': (),
             'users': (),
         }
 
+        super().__init__(defaults=defaults, *args, **kw)
+
+    @property
+    def _updates(self):
+        """Pull latest data from service for cache update."""
+        config_updates = {}
+        reqs = []
+
+        # get possible status values
+        reqs.append(self.service.create_request(method='list', params=['status']))
+
+        # get possible priority values
+        reqs.append(self.service.create_request(method='list', params=['priority']))
+
+        # get possible keyword values
+        reqs.append(self.service.create_request(method='list', params=['keyword']))
+
+        # get possible user values requires login, otherwise returns empty list
+        self.service.skip_auth = False
+        self.service.load_auth_token()
+        reqs.append(self.service.create_request(method='list', params=['user']))
+
+        status, priority, keyword, users = self.service.parallel_send(reqs, size=len(reqs))
+
+        # don't sort, ordering is important for the mapping to work properly
+        config_updates['status'] = ', '.join(status)
+        config_updates['priority'] = ', '.join(priority)
+        config_updates['keyword'] = ', '.join(keyword)
+        if users:
+            config_updates['users'] = ', '.join(users)
+
+        return config_updates
+
+
+class Roundup(LxmlXmlrpc):
+    """Support Roundup's XML-RPC interface."""
+
+    service_name = 'roundup'
+
+    def __init__(self, **kw):
         kw['endpoint'] = '/xmlrpc'
-        super().__init__(**kw)
+        super().__init__(cache_cls=partial(RoundupCache, self), **kw)
 
         self.item = RoundupIssue
         self.attachment = RoundupAttachment
@@ -56,36 +96,6 @@ class Roundup(LxmlXmlrpc):
         request = requests.Request(method='POST')
         requests.auth.HTTPBasicAuth(user, password)(request)
         self.auth_token = request.headers['Authorization']
-
-    def _cache_update(self):
-        """Pull latest data from service for cache update."""
-        config_updates = {}
-        reqs = []
-
-        # get possible status values
-        reqs.append(self.create_request(method='list', params=['status']))
-
-        # get possible priority values
-        reqs.append(self.create_request(method='list', params=['priority']))
-
-        # get possible keyword values
-        reqs.append(self.create_request(method='list', params=['keyword']))
-
-        # get possible user values requires login, otherwise returns empty list
-        self.skip_auth = False
-        self.load_auth_token()
-        reqs.append(self.create_request(method='list', params=['user']))
-
-        status, priority, keyword, users = self.parallel_send(reqs, size=3)
-
-        # don't sort, ordering is important for the mapping to work properly
-        config_updates['status'] = ', '.join(status)
-        config_updates['priority'] = ', '.join(priority)
-        config_updates['keyword'] = ', '.join(keyword)
-        if users:
-            config_updates['users'] = ', '.join(users)
-
-        return config_updates
 
     def create(self, title, **kw):
         """Create a new issue given a list of parameters

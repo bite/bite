@@ -154,12 +154,6 @@ def get_config_option(config_file, section, option):
         raise ValueError('No section {!r}'.format(section))
     return value
 
-def update_config(config_file, section, data):
-    config = configparser.ConfigParser()
-    config[section] = data
-    with open(config_file, 'w') as f:
-        config.write(f)
-
 def fill_config_option(args, parser, get, section, option, func=None):
     func = func if func is not None else lambda x: x
     value = config_option(parser, get, section, option)
