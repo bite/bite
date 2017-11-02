@@ -3,7 +3,6 @@
 http://www.roundup-tracker.org/docs/xmlrpc.html
 """
 
-from functools import partial
 from itertools import chain
 import re
 
@@ -26,9 +25,7 @@ class RoundupError(RequestError):
 
 class RoundupCache(Cache):
 
-    def __init__(self, service, *args, **kw):
-        self.service = service
-
+    def __init__(self, *args, **kw):
         # default to empty values
         defaults = {
             'status': (),
@@ -39,27 +36,40 @@ class RoundupCache(Cache):
 
         super().__init__(defaults=defaults, *args, **kw)
 
+
+class Roundup(LxmlXmlrpc):
+    """Support Roundup's XML-RPC interface."""
+
+    service_name = 'roundup'
+
+    def __init__(self, **kw):
+        kw['endpoint'] = '/xmlrpc'
+        super().__init__(cache_cls=RoundupCache, **kw)
+
+        self.item = RoundupIssue
+        self.attachment = RoundupAttachment
+
     @property
-    def _updates(self):
+    def _cache_updates(self):
         """Pull latest data from service for cache update."""
         config_updates = {}
         reqs = []
 
         # get possible status values
-        reqs.append(self.service.create_request(method='list', params=['status']))
+        reqs.append(self.create_request(method='list', params=['status']))
 
         # get possible priority values
-        reqs.append(self.service.create_request(method='list', params=['priority']))
+        reqs.append(self.create_request(method='list', params=['priority']))
 
         # get possible keyword values
-        reqs.append(self.service.create_request(method='list', params=['keyword']))
+        reqs.append(self.create_request(method='list', params=['keyword']))
 
         # get possible user values requires login, otherwise returns empty list
-        self.service.skip_auth = False
-        self.service.load_auth_token()
-        reqs.append(self.service.create_request(method='list', params=['user']))
+        self.skip_auth = False
+        self.load_auth_token()
+        reqs.append(self.create_request(method='list', params=['user']))
 
-        status, priority, keyword, users = self.service.send(reqs)
+        status, priority, keyword, users = self.send(reqs)
 
         # don't sort, ordering is important for the mapping to work properly
         config_updates['status'] = ', '.join(status)
@@ -69,19 +79,6 @@ class RoundupCache(Cache):
             config_updates['users'] = ', '.join(users)
 
         return config_updates
-
-
-class Roundup(LxmlXmlrpc):
-    """Support Roundup's XML-RPC interface."""
-
-    service_name = 'roundup'
-
-    def __init__(self, **kw):
-        kw['endpoint'] = '/xmlrpc'
-        super().__init__(cache_cls=partial(RoundupCache, self), **kw)
-
-        self.item = RoundupIssue
-        self.attachment = RoundupAttachment
 
     def inject_auth(self, request, params):
         request.headers['Authorization'] = self.auth_token

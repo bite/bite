@@ -150,7 +150,7 @@ def _cache(options, out, err):
         options.base = base
         client, fcn_args = get_client(dict(vars(options)))
         try:
-            client.cache_config(**fcn_args)
+            client.cache(**fcn_args)
         except RequestError as e:
             err.write('failed updating cached data: {}: {}'.format(connection, str(e)))
             return 1

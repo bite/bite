@@ -359,9 +359,10 @@ class Cli(object):
             else:
                 print(line[:const.COLUMNS])
 
-    def cache_config(self, update=False, remove=False, *args, **kw):
+    def cache(self, update=False, remove=False, *args, **kw):
         if update:
-            self.service.cache.update(pull=True, write=True)
+            self.service.cache.update(self.service._cache_updates)
+            self.service.cache.write()
         elif remove:
             self.service.cache.remove()
 

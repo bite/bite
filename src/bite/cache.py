@@ -48,18 +48,9 @@ class Cache(object):
             with open(self.path, 'w') as f:
                 config.write(f)
 
-    @property
-    def _updates(self):
-        """Latest data updates for the cache."""
-        return {}
-
-    def update(self, pull=False, write=False, *args, **kwargs):
+    def update(self, *args, **kwargs):
         """Update cached data for the service."""
         self._settings.update(*args, **kwargs)
-        if pull:
-            self._settings.update(self._updates)
-        if write:
-            self.write()
 
     def remove(self):
         """Remove cache file if it exists."""

@@ -117,6 +117,11 @@ class Service(object):
         self.session.headers['User-Agent'] = '{}-{}'.format('bite', __version__)
         self.session.headers['Accept-Encoding'] = ', '.join(('gzip', 'deflate', 'compress'))
 
+    @property
+    def _cache_updates(self):
+        """Pull latest data from service for cache update."""
+        return {}
+
     def login(self, user=None, password=None):
         """Authenticate a session."""
         if user is None:

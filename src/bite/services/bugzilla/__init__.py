@@ -1,7 +1,6 @@
 import base64
 import codecs
 import datetime
-from functools import partial
 from itertools import groupby
 import os
 import re
@@ -32,9 +31,7 @@ def parsetime(time):
 
 class BugzillaCache(Cache):
 
-    def __init__(self, service, *args, **kw):
-        self.service = service
-
+    def __init__(self, *args, **kw):
         # default to bugzilla-5 open/closed statuses
         defaults = {
             'open_status': ('CONFIRMED', 'IN_PROGRESS', 'UNCONFIRMED'),
@@ -43,14 +40,27 @@ class BugzillaCache(Cache):
 
         super().__init__(defaults=defaults, *args, **kw)
 
+
+class Bugzilla(Service):
+
+    def __init__(self, **kw):
+        super().__init__(cache_cls=BugzillaCache, **kw)
+
+        self.item = BugzillaBug
+        self.attachment = BugzillaAttachment
+
+        # TODO: temporary compat
+        self.attributes = self.item.attributes
+        self.attribute_aliases = self.item.attribute_aliases
+
     @property
-    def _updates(self):
+    def _cache_updates(self):
         """Pull latest data from service for cache update."""
         config_updates = {}
 
         # get open/closed status values
-        req = self.service.fields(names=['bug_status'])
-        statuses = self.service.send(req)[0]
+        req = self.fields(names=['bug_status'])
+        statuses = self.send(req)[0]
 
         open_status = []
         closed_status = []
@@ -64,19 +74,6 @@ class BugzillaCache(Cache):
         config_updates['closed_status'] = ', '.join(sorted(closed_status))
 
         return config_updates
-
-
-class Bugzilla(Service):
-
-    def __init__(self, **kw):
-        super().__init__(cache_cls=partial(BugzillaCache, self), **kw)
-
-        self.item = BugzillaBug
-        self.attachment = BugzillaAttachment
-
-        # TODO: temporary compat
-        self.attributes = self.item.attributes
-        self.attribute_aliases = self.item.attribute_aliases
 
     def inject_auth(self, request, params):
         if params is None:
