@@ -226,12 +226,6 @@ class Bugzilla(Service):
         data = self.send(req)
         return data['users']
 
-    def version(self):
-        """Get bugzilla version."""
-        req = self.create_request(method='Bugzilla.version')
-        data = self.send(req)
-        return data['version']
-
     def extensions(self):
         """Get bugzilla extensions."""
         req = self.create_request(method='Bugzilla.extensions')
@@ -243,6 +237,17 @@ class Bugzilla(Service):
         req = self.create_request(method=method, params=params)
         data = self.send(req)
         return data
+
+
+@command('version', Bugzilla)
+class VersionRequest(Request):
+    def __init__(self, service):
+        """Construct a version request."""
+        super().__init__(service)
+        self.requests.append(self.service.create_request(method='Bugzilla.version'))
+
+    def parse(self, data):
+        return data['version']
 
 
 @command('get', Bugzilla)
