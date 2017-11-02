@@ -29,10 +29,7 @@ def _GET_CONST(attr, default_value):
     consts = mappings.ProxiedAttrs(_module)
     is_tuple = not isinstance(default_value, str)
     if is_tuple:
-        try:
-            default_value = tuple(x % consts for x in default_value)
-        except TypeError:
-            default_value = tuple(default_value)
+        default_value = tuple(x % consts for x in default_value)
     else:
         default_value %= consts
 
@@ -79,5 +76,12 @@ def _clients():
             clients.append((cls.service_name, '.'.join([module.__name__, cls.__name__])))
     return clients
 
-SERVICES = mappings.ImmutableDict(_GET_CONST('SERVICES', _services()))
-CLIENTS = mappings.ImmutableDict(_GET_CONST('CLIENTS', _clients()))
+def _GET_SERVICES(attr, func):
+    try:
+        result = getattr(_defaults, attr)
+    except AttributeError:
+        result = func()
+    return result
+
+SERVICES = mappings.ImmutableDict(_GET_SERVICES('SERVICES', _services))
+CLIENTS = mappings.ImmutableDict(_GET_SERVICES('CLIENTS', _clients))
