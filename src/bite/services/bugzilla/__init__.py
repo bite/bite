@@ -57,13 +57,18 @@ class Bugzilla(Service):
     def _cache_updates(self):
         """Pull latest data from service for cache update."""
         config_updates = {}
+        reqs = []
 
         # get open/closed status values
-        statuses = self.fields(names=['bug_status'])[0]
+        reqs.append(self.FieldsRequest(names=['bug_status']))
+        # get server bugzilla version
+        reqs.append(self.VersionRequest())
+
+        statuses, version = self.send(reqs)
 
         open_status = []
         closed_status = []
-        for status in statuses.get('values', []):
+        for status in statuses[0].get('values', []):
             if status.get('name', None) is not None:
                 if status.get('is_open', False):
                     open_status.append(status['name'])
@@ -71,6 +76,7 @@ class Bugzilla(Service):
                     closed_status.append(status['name'])
         config_updates['open_status'] = ', '.join(sorted(open_status))
         config_updates['closed_status'] = ', '.join(sorted(closed_status))
+        config_updates['version'] = version
 
         return config_updates
 
