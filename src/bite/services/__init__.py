@@ -86,8 +86,10 @@ class Service(object):
         self.password = password
         self.suffix = suffix
         self.verify = verify
-        self.concurrent = concurrent if concurrent is not None else 8
         self.timeout = timeout if timeout is not None else 30
+
+        # max workers defaults to system CPU count * 5 if concurrent is None
+        self.executor = ThreadPoolExecutor(max_workers=concurrent)
 
         if cache_cls is None:
             cache_cls = Cache
@@ -260,12 +262,11 @@ class Service(object):
     def _parallel_send(self, reqs, block=True):
         """Run parallel requests at once."""
         jobs = []
-        with ThreadPoolExecutor(max_workers=self.concurrent) as executor:
-            for req in reqs:
-                if isinstance(req, tuple) or isinstance(req, list):
-                    yield self._parallel_send(req)
-                else:
-                    jobs.append(executor.submit(self.send, req))
+        for req in reqs:
+            if isinstance(req, tuple) or isinstance(req, list):
+                yield self._parallel_send(req)
+            else:
+                jobs.append(self.executor.submit(self.send, req))
 
         for job in jobs:
             yield job.result()
