@@ -219,7 +219,7 @@ class Service(object):
 
         return parse(data)
 
-    def _http_send(self, req, raw=False):
+    def _http_send(self, req):
         """Send an HTTP request and return the parsed response."""
         try:
             response = self.session.send(
@@ -231,7 +231,7 @@ class Service(object):
         except requests.exceptions.ReadTimeout as e:
             raise RequestError('request timed out')
 
-        if response.status_code in (301,):
+        if response.status_code == 301:
             old = self.base
             new = response.headers['Location']
             if new.endswith(self.endpoint):
@@ -239,8 +239,6 @@ class Service(object):
             raise RequestError('service moved permanently: {} -> {}'.format(old, new))
 
         if response.ok:
-            if raw:
-                return response
             return self.parse_response(response)
         else:
             if response.status_code in (401, 403):
