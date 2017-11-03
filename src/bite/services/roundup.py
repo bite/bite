@@ -50,7 +50,7 @@ class Roundup(LxmlXmlrpc):
         self.attachment = RoundupAttachment
 
     @property
-    def _cache_updates(self):
+    def cache_updates(self):
         """Pull latest data from service for cache update."""
         config_updates = {}
         reqs = []

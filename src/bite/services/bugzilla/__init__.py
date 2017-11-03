@@ -53,7 +53,7 @@ class Bugzilla(Service):
         self.attribute_aliases = self.item.attribute_aliases
 
     @property
-    def _cache_updates(self):
+    def cache_updates(self):
         """Pull latest data from service for cache update."""
         config_updates = {}
         reqs = []

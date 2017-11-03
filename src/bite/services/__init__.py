@@ -123,7 +123,7 @@ class Service(object):
         self.session.headers['Accept-Encoding'] = ', '.join(('gzip', 'deflate', 'compress'))
 
     @property
-    def _cache_updates(self):
+    def cache_updates(self):
         """Pull latest data from service for cache update."""
         return {}
 
