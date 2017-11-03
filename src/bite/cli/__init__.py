@@ -361,8 +361,9 @@ class Cli(object):
 
     def cache(self, update=False, remove=False, *args, **kw):
         if update:
-            self.service.cache.update(self.service.cache_updates)
-            self.service.cache.write()
+            updates = self.service.cache_updates
+            if updates != self.service.cache:
+                self.service.cache.write(updates=updates)
         elif remove:
             self.service.cache.remove()
 
