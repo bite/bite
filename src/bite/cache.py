@@ -48,10 +48,6 @@ class Cache(object):
             with open(self.path, 'w') as f:
                 config.write(f)
 
-    def update(self, *args, **kwargs):
-        """Update cached data for the service."""
-        self._settings.update(*args, **kwargs)
-
     def remove(self):
         """Remove cache file if it exists."""
         try:
@@ -60,6 +56,11 @@ class Cache(object):
             pass
         except IOError as e:
             raise BiteError('unable to remove cache: {!r}: {}'.format(self.path, e.strerror))
+
+    ## support dictionary access methods
+
+    def update(self, *args, **kwargs):
+        self._settings.update(*args, **kwargs)
 
     def __setitem__(self, key, item):
         self._settings[key] = item
@@ -75,6 +76,9 @@ class Cache(object):
 
     def __delitem__(self, key):
         del self._settings[key]
+
+    def __eq__(self, x):
+        return x == self._settings
 
     def clear(self):
         return self._settings.clear()
