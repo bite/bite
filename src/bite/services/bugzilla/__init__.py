@@ -10,7 +10,7 @@ from dateutil.parser import parse as dateparse
 
 from .. import Service, Request, NullRequest, command
 from ... import const, magic, utc
-from ...cache import Cache
+from ...cache import Cache, csv2tuple
 from ...exceptions import RequestError, BiteError
 from ...objects import Item, Change, Comment, Attachment, decompress
 
@@ -37,7 +37,12 @@ class BugzillaCache(Cache):
             'closed_status': ('RESOLVED', 'VERIFIED'),
         }
 
-        super().__init__(defaults=defaults, *args, **kw)
+        converters = {
+            'open_status': csv2tuple,
+            'closed_status': csv2tuple,
+        }
+
+        super().__init__(defaults=defaults, converters=converters, *args, **kw)
 
 
 class Bugzilla(Service):
@@ -73,8 +78,8 @@ class Bugzilla(Service):
                     open_status.append(status['name'])
                 else:
                     closed_status.append(status['name'])
-        config_updates['open_status'] = ', '.join(sorted(open_status))
-        config_updates['closed_status'] = ', '.join(sorted(closed_status))
+        config_updates['open_status'] = tuple(sorted(open_status))
+        config_updates['closed_status'] = tuple(sorted(closed_status))
         config_updates['version'] = version
 
         return config_updates

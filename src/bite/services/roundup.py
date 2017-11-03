@@ -11,7 +11,7 @@ import requests
 
 from . import NullRequest, Request, command
 from ._xmlrpc import LxmlXmlrpc
-from ..cache import Cache
+from ..cache import Cache, csv2tuple
 from ..exceptions import AuthError, RequestError, ParsingError
 from ..objects import decompress, Item, Attachment, Comment
 
@@ -34,7 +34,14 @@ class RoundupCache(Cache):
             'users': (),
         }
 
-        super().__init__(defaults=defaults, *args, **kw)
+        converters = {
+            'status': csv2tuple,
+            'priority': csv2tuple,
+            'keyword': csv2tuple,
+            'users': csv2tuple,
+        }
+
+        super().__init__(defaults=defaults, converters=converters, *args, **kw)
 
 
 class Roundup(LxmlXmlrpc):
@@ -72,11 +79,11 @@ class Roundup(LxmlXmlrpc):
         status, priority, keyword, users = self.send(reqs)
 
         # don't sort, ordering is important for the mapping to work properly
-        config_updates['status'] = ', '.join(status)
-        config_updates['priority'] = ', '.join(priority)
-        config_updates['keyword'] = ', '.join(keyword)
+        config_updates['status'] = tuple(status)
+        config_updates['priority'] = tuple(priority)
+        config_updates['keyword'] = tuple(keyword)
         if users:
-            config_updates['users'] = ', '.join(users)
+            config_updates['users'] = tuple(users)
 
         return config_updates
 
