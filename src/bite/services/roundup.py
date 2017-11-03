@@ -50,8 +50,8 @@ class Roundup(LxmlXmlrpc):
     service_name = 'roundup'
 
     def __init__(self, **kw):
-        kw['endpoint'] = '/xmlrpc'
-        super().__init__(cache_cls=RoundupCache, **kw)
+        endpoint = '/xmlrpc'
+        super().__init__(cache_cls=RoundupCache, endpoint=endpoint, **kw)
 
         self.item = RoundupIssue
         self.attachment = RoundupAttachment

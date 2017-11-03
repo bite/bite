@@ -76,7 +76,7 @@ class Service(object):
 
     def __init__(self, base, connection=None, verify=True, user=None, password=None, skip_auth=True,
                  auth_token=None, suffix=None, timeout=None, auth_file=None, concurrent=None,
-                 cache_cls=None, **kw):
+                 cache_cls=None, endpoint='', **kw):
         self.base = base
         self.user = user
         self.password = password
@@ -94,7 +94,7 @@ class Service(object):
         self._base = urlunparse((
             url.scheme,
             url.netloc,
-            url.path.rstrip('/') + kw.get('endpoint', ''),
+            url.path.rstrip('/') + endpoint,
             None, None, None))
 
         self.item = 'issue'
@@ -239,8 +239,6 @@ class Service(object):
         if response.status_code == 301:
             old = self.base
             new = response.headers['Location']
-            if new.endswith(self.endpoint):
-                new = new[:-len(self.endpoint)]
             raise RequestError('service moved permanently: {} -> {}'.format(old, new))
 
         if response.ok:

@@ -12,8 +12,8 @@ class BugzillaJsonrpc(Bugzilla, Jsonrpc):
     service_name = 'bugzilla-jsonrpc'
 
     def __init__(self, **kw):
-        kw['endpoint'] = '/jsonrpc.cgi'
-        super().__init__(**kw)
+        endpoint = '/jsonrpc.cgi'
+        super().__init__(endpoint=endpoint, **kw)
 
     def encode_request(self, method, params):
         """Encode the data body for a JSON-RPC request."""
