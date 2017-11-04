@@ -47,7 +47,8 @@ class BugzillaCache(Cache):
 
 class Bugzilla(Service):
 
-    def __init__(self, **kw):
+    def __init__(self, restrict_login=False, **kw):
+        self.restrict_login = restrict_login
         super().__init__(cache_cls=BugzillaCache, **kw)
 
         self.item = BugzillaBug
@@ -99,7 +100,11 @@ class Bugzilla(Service):
         """Authenticate a session."""
         super().login(user, password)
 
-        params = {'login': user, 'password': password}
+        params = {
+            'login': user,
+            'password': password,
+            'restrict_login': self.restrict_login,
+        }
         req = self.create_request(method='User.login', params=params)
 
         content = self.send(req)
