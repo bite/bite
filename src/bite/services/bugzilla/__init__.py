@@ -230,17 +230,35 @@ class Bugzilla(Service):
         data = self.send(req)
         return data['products']
 
-    def users(self, params):
-        """Query bugzilla for user data."""
-        req = self.create_request(method='User.get', params=params)
-        data = self.send(req)
-        return data['users']
-
     def query(self, method, params=None):
         """Query bugzilla for various data."""
         req = self.create_request(method=method, params=params)
         data = self.send(req)
         return data
+
+
+@command('users', Bugzilla)
+class UsersRequest(Request):
+    def __init__(self, service, ids=None, names=None, match=None):
+        """Query bugzilla for user data."""
+        super().__init__(service)
+
+        if not any((ids, names, match)):
+            raise ValueError('No user ID(s), name(s), or match(es) specified')
+
+        params = {}
+
+        if ids is not None:
+            params['ids'] = ids
+        if names is not None:
+            params['names'] = names
+        if match is not None:
+            params['match'] = match
+
+        self.requests.append(self.service.create_request(method='User.get', params=params))
+
+    def parse(self, data):
+        return data['users']
 
 
 @command('extensions', Bugzilla)

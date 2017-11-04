@@ -287,7 +287,7 @@ class Bugzilla(Cli):
                 params.setdefault('ids', []).append(user)
             else:
                 params.setdefault('match', []).append(user)
-        users = self.service.users(params)
+        users = self.service.users(**params)
         self.print_users(users)
 
     def fields(self, fields=None, dry_run=False, **kw):
