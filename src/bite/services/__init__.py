@@ -246,13 +246,23 @@ class Service(object):
         reqs = getattr(req, '_requests', req)
         req_parse = getattr(req, 'parse', lambda x: x)
 
+        def _raise(e): raise
+        handle_exception = getattr(req, 'handle_exception', _raise)
+
         jobs = []
         for req in iflatten_instance(reqs, Request):
             parse = getattr(req, 'parse', lambda x: x)
             for r in iflatten_instance(req, requests.Request):
                 jobs.append((parse, self.executor.submit(self._http_send, r)))
 
-        data = (parse(job.result()) for parse, job in jobs)
+        def _f(jobs):
+            for parse, job in jobs:
+                try:
+                    yield parse(job.result())
+                except RequestError as e:
+                    handle_exception(e)
+
+        data = _f(jobs)
 
         if len(jobs) == 1:
             return req_parse(next(data))
