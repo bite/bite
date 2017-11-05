@@ -70,7 +70,7 @@ class Cli(object):
         if sys.stdin.isatty():
             self.log('Service: {}'.format(self.service))
 
-    def login(self):
+    def login(self, **kw):
         """Login to a service and try to cache the authentication token."""
         if self.skip_auth:
             return
@@ -80,7 +80,7 @@ class Cli(object):
         # fallback to manual user/pass login
         if self.service.auth_token is None:
             user, password = self.get_login_data(self.service.user, self.service.password)
-            self.service.login(user, password)
+            self.service.login(user, password, **kw)
             self.service.cache_auth_token()
 
     def get_login_data(self, user=None, password=None):

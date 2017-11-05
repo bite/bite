@@ -18,6 +18,14 @@ from ...utc import utc
 class Bugzilla(Cli):
     """CLI for Bugzilla service."""
 
+    def __init__(self, restrict_login=False, **kw):
+        self.restrict_login = restrict_login
+        super().__init__(**kw)
+
+    def login(self):
+        """Login to a service and try to cache the authentication token."""
+        super().login(restrict_login=self.restrict_login)
+
     def _attach_params(self, **kw):
         if kw['comment'] is None:
             kw['comment'] = block_edit('Enter optional long description of attachment')
