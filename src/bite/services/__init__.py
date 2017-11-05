@@ -174,6 +174,11 @@ class Service(object):
         """Encode the data body for a request."""
         raise NotImplementedError()
 
+    @staticmethod
+    def decode_request(request):
+        """Decode the data body of a request."""
+        raise NotImplementedError()
+
     def inject_auth(self, request, params):
         """Add authentication data to a request."""
         return request, params

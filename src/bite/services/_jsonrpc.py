@@ -20,6 +20,14 @@ class Jsonrpc(Service):
         """Encode the data body for a JSON-RPC request."""
         return json.dumps({'method': method, 'params': [params], **kw})
 
+    @staticmethod
+    def decode_request(request):
+        """Decode the data body of a request."""
+        data = json.loads(request.data)
+        params = data['params']
+        method = data['method']
+        return method, params
+
     def parse_response(self, response):
         try:
             return response.json()

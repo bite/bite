@@ -1,4 +1,4 @@
-from xmlrpc.client import dumps, getparser, Fault, Unmarshaller
+from xmlrpc.client import dumps, loads, getparser, Fault, Unmarshaller
 from xml.parsers.expat import ExpatError
 
 from lxml.etree import XMLPullParser
@@ -27,6 +27,16 @@ class Xmlrpc(Service):
             params = (params,) if params is not None else ()
         return dumps(params, method, encoding=encoding,
                      allow_none=True).encode(encoding, 'xmlcharrefreplace')
+
+    @staticmethod
+    def decode_request(request):
+        """Decode the data body of a request."""
+        params, method = loads(request.data)
+        if not params:
+            params = None
+        else:
+            params = params[0]
+        return method, params
 
     def parse_response(self, response):
         """Send request object and perform checks on the response."""
