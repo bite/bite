@@ -8,6 +8,7 @@ import re
 
 from datetime import datetime
 import requests
+from snakeoil.sequences import iflatten_instance
 
 from . import NullRequest, Request, command, request
 from ._xmlrpc import LxmlXmlrpc
@@ -160,27 +161,26 @@ class GetRequest(Request):
     def __init__(self, service, ids, fields=None, get_comments=False,
                 get_attachments=False, **kw):
         """Construct a get request."""
-        super().__init__(service)
         if not ids:
-            raise ValueError('No {} ID(s) specified'.format(self.service.item_name))
+            raise ValueError('No {} ID(s) specified'.format(service.item_name))
 
+        reqs = []
         for i in ids:
-            reqs = []
             params = ['issue' + str(i)]
             if fields is not None:
                 params.extend(fields)
             else:
-                params.extend(self.service.item.attributes.keys())
-            reqs.append(self.service.create_request(method='display', params=params))
+                params.extend(service.item.attributes.keys())
+            reqs.append(Request(service=service, method='display', params=params))
             #
             # for call in ('attachments', 'comments'):
             #     if locals()['get_' + call]:
             #         reqs.append(getattr(Service, call)(self.service, ids))
             #     else:
             #         reqs.append(NullRequest(self.service))
-            #
-            self.requests.append(reqs[0])
 
+        super().__init__(service=service, reqs=reqs)
+        self.ids = ids
 
     def handle_exception(self, e):
         if e.code == 'exceptions.IndexError':
@@ -196,19 +196,19 @@ class GetRequest(Request):
         files = {}
         messages = {}
         reqs = []
-        issues = [data]
+        issues = iflatten_instance(data, dict)
         # for i, issue in enumerate(data):
         #     # files[i] = issue.get('files', [])
         #     # messages[i] = issue.get('messages', [])
         #     issues.append(issue)
 
-        # TODO: get file/message content
-        for v in set(chain.from_iterable(files.values())):
-            reqs.append(self.service.create_request(method='display', params=['file' + v]))
-        for v in set(chain.from_iterable(messages.values())):
-            reqs.append(self.service.create_request(method='display', params=['msg' + v]))
+        # # TODO: get file/message content
+        # for v in set(chain.from_iterable(files.values())):
+        #     reqs.append(self.service.create_request(method='display', params=['file' + v]))
+        # for v in set(chain.from_iterable(messages.values())):
+        #     reqs.append(self.service.create_request(method='display', params=['msg' + v]))
 
-        return (self.service.item(self.service, **issue) for issue in issues)
+        return (self.service.item(self.service, id=self.ids[i], **issue) for i, issue in enumerate(issues))
 
 @command('attachments', Roundup)
 @request(Roundup)

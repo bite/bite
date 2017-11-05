@@ -246,8 +246,6 @@ class Bugzilla(Service):
 class UsersRequest(Request):
     def __init__(self, service, ids=None, names=None, match=None):
         """Query bugzilla for user data."""
-        super().__init__(service)
-
         if not any((ids, names, match)):
             raise ValueError('No user ID(s), name(s), or match(es) specified')
 
@@ -260,7 +258,7 @@ class UsersRequest(Request):
         if match is not None:
             params['match'] = match
 
-        self.requests.append(self.service.create_request(method='User.get', params=params))
+        super().__init__(service=service, method='User.get', params=params)
 
     def parse(self, data):
         return data['users']
@@ -271,8 +269,7 @@ class UsersRequest(Request):
 class ExtensionsRequest(Request):
     def __init__(self, service):
         """Construct an extensions request."""
-        super().__init__(service)
-        self.requests.append(self.service.create_request(method='Bugzilla.extensions'))
+        super().__init__(service=service, method='Bugzilla.extensions')
 
     def parse(self, data):
         return data['extensions']
@@ -283,8 +280,7 @@ class ExtensionsRequest(Request):
 class VersionRequest(Request):
     def __init__(self, service):
         """Construct a version request."""
-        super().__init__(service)
-        self.requests.append(self.service.create_request(method='Bugzilla.version'))
+        super().__init__(service=service, method='Bugzilla.version')
 
     def parse(self, data):
         return data['version']
@@ -294,9 +290,8 @@ class VersionRequest(Request):
 @request(Bugzilla)
 class GetRequest(Request):
     def __init__(self, service, ids, fields=None, get_comments=False,
-                    get_attachments=False, get_history=False, **kw):
+                 get_attachments=False, get_history=False, **kw):
         """Construct a get request."""
-        super().__init__(service)
         if not ids:
             raise ValueError('No bug ID(s) specified')
 
@@ -305,14 +300,15 @@ class GetRequest(Request):
         params['ids'] = ids
         if fields is not None:
             params['include_fields'] = fields
-        self.requests.append(self.service.create_request(method='Bug.get', params=params))
 
+        reqs = []
         for call in ('attachments', 'comments', 'history'):
             if locals()['get_' + call]:
-                self.requests.append(
-                    getattr(self.service, call.capitalize() + 'Request')(ids))
+                reqs.append(getattr(service, call.capitalize() + 'Request')(ids=ids))
             else:
-                self.requests.append(NullRequest())
+                reqs.append(NullRequest())
+
+        super().__init__(service=service, method='Bug.get', params=params, reqs=reqs)
 
     def parse(self, data):
         data, attachments, comments, history = data
@@ -325,8 +321,6 @@ class GetRequest(Request):
 class SearchRequest(Request):
     def __init__(self, service, *args, **kw):
         """Construct a search request."""
-        super().__init__(service)
-
         params = {}
         options_log = []
         for k, v in ((k, v) for (k, v) in kw.items() if v):
@@ -335,14 +329,14 @@ class SearchRequest(Request):
                     params[k] = v[1]
                     options_log.append('{}: {} (since {} UTC)'.format(BugzillaBug.attributes[k], v[0], parsetime(v[1])))
                 elif k in ['assigned_to', 'creator']:
-                    params[k] = list(map(self.service._resuffix, v))
+                    params[k] = list(map(service._resuffix, v))
                     options_log.append('{}: {}'.format(BugzillaBug.attributes[k], ', '.join(map(str, v))))
                 elif k == 'status':
                     status_alias = []
                     status_map = {
-                        'open': self.service.cache['open_status'],
-                        'closed': self.service.cache['closed_status'],
-                        'all': self.service.cache['open_status'] + self.service.cache['closed_status'],
+                        'open': service.cache['open_status'],
+                        'closed': service.cache['closed_status'],
+                        'all': service.cache['open_status'] + service.cache['closed_status'],
                     }
                     for status in v:
                         if status_map.get(status.lower(), False):
@@ -378,7 +372,7 @@ class SearchRequest(Request):
 
         # only return open bugs by default
         if not 'status' in params:
-            params['status'] = self.service.cache['open_status']
+            params['status'] = service.cache['open_status']
 
         if not 'fields' in kw or kw['fields'] is None:
             fields = ['id', 'assigned_to', 'summary']
@@ -391,10 +385,9 @@ class SearchRequest(Request):
 
         params['include_fields'] = fields
 
+        super().__init__(service=service, method='Bug.search', params=params)
         self.fields = fields
         self.options = options_log
-
-        self.requests.append(self.service.create_request(method='Bug.search', params=params))
 
     def parse(self, data, *args, **kw):
         bugs = data['bugs']
@@ -406,8 +399,6 @@ class SearchRequest(Request):
 class CommentsRequest(Request):
     def __init__(self, service, ids=None, comment_ids=None, created=None, fields=None, *args, **kw):
         """Construct a comments request."""
-        super().__init__(service, *args, **kw)
-
         if ids is None and comment_ids is None:
             raise ValueError('No {} or comment ID(s) specified'.format(self.service.item_name))
 
@@ -422,12 +413,11 @@ class CommentsRequest(Request):
         if fields is not None:
             params['include_fields'] = fields
 
-        # TODO: this
-        self.options = ['REPLACE ME']
-
         self.ids = ids
 
-        self.requests.append(self.service.create_request(method='Bug.comments', params=params))
+        super().__init__(service=service, method='Bug.comments', params=params)
+        # TODO: this
+        self.options = ['REPLACE ME']
 
     def parse(self, data, *args, **kw):
         bugs = data['bugs']
@@ -444,8 +434,6 @@ class ChangesRequest(Request):
 class ModifyRequest(Request):
     def __init__(self, service, ids, *args, **kw):
         """Construct a modify request."""
-        super().__init__(service)
-
         options_log = []
         params = {}
         for k, v in ((k, v) for (k, v) in kw.items() if v):
@@ -525,12 +513,12 @@ class ModifyRequest(Request):
 
         options_log.append('-' * const.COLUMNS)
 
-        self.options = options_log
-
         if not ids:
             raise ValueError('No bug ID(s) specified')
         params['ids'] = ids
-        self.requests.append(self.service.create_request(method='Bug.update', params=params))
+
+        super().__init__(service=service, method='Bug.update', params=params)
+        self.options = options_log
 
     def parse(self, data, *args, **kw):
         return data['bugs']
@@ -550,8 +538,6 @@ class AttachmentsRequest(Request):
     def __init__(self, service, ids=None, attachment_ids=None, fields=None,
                  get_data=False, *args, **kw):
         """Construct a attachments request."""
-        super().__init__(service, *args, **kw)
-
         if ids is None and attachment_ids is None:
             raise ValueError('No {} or attachment ID(s) specified'.format(self.service.item_name))
 
@@ -566,7 +552,7 @@ class AttachmentsRequest(Request):
         # attachment data doesn't get pulled by default
         if not get_data:
             params['exclude_fields'] = ['data']
-        self.requests.append(self.service.create_request(method='Bug.attachments', params=params))
+        super().__init__(service=service, method='Bug.attachments', params=params)
 
         # TODO: this
         self.options = ['REPLACE ME']
@@ -593,11 +579,10 @@ class AttachmentsRequest(Request):
 @request(Bugzilla)
 class HistoryRequest(Request):
     def __init__(self, service, ids, *args, **kw):
-        super().__init__(service, *args, **kw)
         if not ids:
             raise ValueError('No bug ID(s) specified')
         params = {'ids': ids}
-        self.requests.append(self.service.create_request(method='Bug.history', params=params))
+        super().__init__(service=service, method='Bug.history', params=params)
 
         # TODO: this
         self.options = ['REPLACE ME']
@@ -620,19 +605,21 @@ class FieldsRequest(Request):
         :type names: list of strings
 
         """
-        super().__init__(service, *args, **kw)
         params = {}
+        options_log = []
 
         if ids is None and names is None:
-            self.options.append('all non-obsolete fields')
+            options_log.append('all non-obsolete fields')
 
         if ids is not None:
             params['ids'] = ids
-            self.options.append('IDs: {}'.format(', '.join(ids)))
+            options_log.append('IDs: {}'.format(', '.join(ids)))
         if names is not None:
             params['names'] = names
-            self.options.append('Field names: {}'.format(', '.join(names)))
-        self.requests.append(self.service.create_request(method='Bug.fields', params=params))
+            options_log.append('Field names: {}'.format(', '.join(names)))
+
+        super().__init__(service=service, method='Bug.fields', params=params)
+        self.options = options_log
 
     def parse(self, data, *args, **kw):
         return data['fields']

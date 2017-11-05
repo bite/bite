@@ -4,6 +4,7 @@ import stat
 from urllib.parse import urlparse, urlunparse
 
 import requests
+from snakeoil.sequences import iflatten_instance
 
 from .. import __version__, const
 from ..cache import Cache
@@ -30,14 +31,42 @@ def request(service_cls):
 
 
 class Request(object):
+    """Construct a request."""
 
-    def __init__(self, service):
+    def __init__(self, service, url=None, method=None, params=None, reqs=None):
         self.service = service
-        self.requests = []
         self.options = []
 
+        if url is None:
+            url = self.service._base
+        _requests = []
+
+        if method is not None:
+            req = requests.Request(method='POST', url=url)
+
+            if not self.service.skip_auth and self.service.auth_token is not None:
+                req, params = self.service.inject_auth(req, params)
+            req.data = self.service._encode_request(method, params)
+            _requests.append(req)
+
+        if reqs is not None:
+            _requests.extend(reqs)
+
+        self._requests = tuple(_requests)
+
+    def prepare(self):
+        reqs = []
+        for r in self._requests:
+            if isinstance(r, Request):
+                reqs.extend(r.prepare())
+            elif r is None:
+                reqs.append(r)
+            else:
+                reqs.append(self.service.prepare_request(r))
+        return tuple(reqs)
+
     @staticmethod
-    def http_req_str(req):
+    def _http_req_str(req):
         return '{}\n{}\n\n{}'.format(
             req.method + ' ' + req.url,
             '\n'.join('{}: {}'.format(k, v) for k, v in req.headers.items()),
@@ -45,18 +74,11 @@ class Request(object):
         )
 
     def __str__(self):
-        requests = []
-        for req in self.requests:
-            if isinstance(req, Request):
-                requests.extend(req.requests)
-            else:
-                requests.append(req)
-
-        raw_requests = []
-        for req in requests:
-            raw_requests.append(self.http_req_str(req))
-
-        return '\n\n'.join(raw_requests)
+        reqs = []
+        for r in self.prepare():
+            if r is not None:
+                reqs.append(self._http_req_str(r))
+        return '\n\n'.join(reqs)
 
     def parse(self, data):
         return data
@@ -65,16 +87,19 @@ class Request(object):
         raise e
 
     def __len__(self):
-        return len(self.requests)
+        return len(self._requests)
 
     def __iter__(self):
-        return iter(self.requests)
+        return iter(self._requests)
 
 
 class NullRequest(Request):
 
     def __init__(self):
-        super().__init__(service=None)
+        self._requests = (None,)
+
+    def __bool__(self):
+        return False
 
 
 class Service(object):
@@ -213,41 +238,34 @@ class Service(object):
         """Parse the returned response."""
         raise NotImplementedError()
 
-    def send(self, reqs, raw=False):
+    def prepare_request(self, req):
+        return self.session.prepare_request(req)
+
+    def send(self, req):
         """Send request(s) and return a response."""
-        if not raw and isinstance(reqs, Request):
-            parse = reqs.parse
-        else:
-            parse = lambda x: x
+        reqs = getattr(req, '_requests', req)
+        req_parse = getattr(req, 'parse', lambda x: x)
 
-        try:
-            if len(reqs) == 0:
-                return
-            elif len(reqs) > 1:
-                return parse(self._parallel_send(reqs))
-        except TypeError:
-            pass
+        jobs = []
+        for req in iflatten_instance(reqs, Request):
+            parse = getattr(req, 'parse', lambda x: x)
+            for r in iflatten_instance(req, requests.Request):
+                jobs.append((parse, self.executor.submit(self._http_send, r)))
 
-        if isinstance(reqs, Request):
-            req = reqs.requests[0]
-            handle_exception = reqs.handle_exception
-        else:
-            req = reqs
-            def _raise(e): raise
-            handle_exception = _raise
+        data = (parse(job.result()) for parse, job in jobs)
 
-        try:
-            data = self._http_send(req)
-        except RequestError as e:
-            handle_exception(e)
-
-        return parse(data)
+        if len(jobs) == 1:
+            return req_parse(next(data))
+        return req_parse(data)
 
     def _http_send(self, req):
         """Send an HTTP request and return the parsed response."""
+        if req is None:
+            return
+
         try:
             response = self.session.send(
-                req, stream=True, timeout=self.timeout, verify=self.verify, allow_redirects=False)
+                self.prepare_request(req), stream=True, timeout=self.timeout, verify=self.verify, allow_redirects=False)
         except requests.exceptions.SSLError as e:
             raise RequestError('SSL certificate verification failed')
         except requests.exceptions.ConnectionError as e:
@@ -271,18 +289,6 @@ class Service(object):
                 except requests.exceptions.HTTPError:
                     raise RequestError('HTTP Error {}: {}'.format(
                         response.status_code, response.reason.lower()), text=response.text)
-
-    def _parallel_send(self, reqs, block=True):
-        """Run parallel requests at once."""
-        jobs = []
-        for req in reqs:
-            if isinstance(req, tuple) or isinstance(req, list):
-                yield self._parallel_send(req)
-            else:
-                jobs.append(self.executor.submit(self.send, req))
-
-        for job in jobs:
-            yield job.result()
 
     def _desuffix(self, s):
         if self.suffix is not None:
