@@ -8,7 +8,7 @@ import string
 
 from dateutil.parser import parse as dateparse
 
-from .. import Service, Request, NullRequest, command
+from .. import Service, Request, NullRequest, command, request
 from ... import const, magic, utc
 from ...cache import Cache, csv2tuple
 from ...exceptions import RequestError, BiteError
@@ -242,6 +242,7 @@ class Bugzilla(Service):
 
 
 @command('users', Bugzilla)
+@request(Bugzilla)
 class UsersRequest(Request):
     def __init__(self, service, ids=None, names=None, match=None):
         """Query bugzilla for user data."""
@@ -266,6 +267,7 @@ class UsersRequest(Request):
 
 
 @command('extensions', Bugzilla)
+@request(Bugzilla)
 class ExtensionsRequest(Request):
     def __init__(self, service):
         """Construct an extensions request."""
@@ -277,6 +279,7 @@ class ExtensionsRequest(Request):
 
 
 @command('version', Bugzilla)
+@request(Bugzilla)
 class VersionRequest(Request):
     def __init__(self, service):
         """Construct a version request."""
@@ -288,6 +291,7 @@ class VersionRequest(Request):
 
 
 @command('get', Bugzilla)
+@request(Bugzilla)
 class GetRequest(Request):
     def __init__(self, service, ids, fields=None, get_comments=False,
                     get_attachments=False, get_history=False, **kw):
@@ -317,6 +321,7 @@ class GetRequest(Request):
 
 
 @command('search', Bugzilla)
+@request(Bugzilla)
 class SearchRequest(Request):
     def __init__(self, service, *args, **kw):
         """Construct a search request."""
@@ -397,6 +402,7 @@ class SearchRequest(Request):
 
 
 @command('comments', Bugzilla)
+@request(Bugzilla)
 class CommentsRequest(Request):
     def __init__(self, service, ids=None, comment_ids=None, created=None, fields=None, *args, **kw):
         """Construct a comments request."""
@@ -428,11 +434,13 @@ class CommentsRequest(Request):
         for i in self.ids:
             yield [BugzillaComment(comment=comment, id=i, count=j) for j, comment in enumerate(bugs[str(i)]['comments'])]
 
+
 class ChangesRequest(Request):
     pass
 
 
 @command('modify', Bugzilla)
+@request(Bugzilla)
 class ModifyRequest(Request):
     def __init__(self, service, ids, *args, **kw):
         """Construct a modify request."""
@@ -527,14 +535,17 @@ class ModifyRequest(Request):
     def parse(self, data, *args, **kw):
         return data['bugs']
 
+
 class CreateRequest(Request):
     pass
+
 
 class AttachRequest(Request):
     pass
 
 
 @command('attachments', Bugzilla)
+@request(Bugzilla)
 class AttachmentsRequest(Request):
     def __init__(self, service, ids=None, attachment_ids=None, fields=None,
                  get_data=False, *args, **kw):
@@ -579,6 +590,7 @@ class AttachmentsRequest(Request):
 
 
 @command('history', Bugzilla)
+@request(Bugzilla)
 class HistoryRequest(Request):
     def __init__(self, service, ids, *args, **kw):
         super().__init__(service, *args, **kw)
@@ -597,6 +609,7 @@ class HistoryRequest(Request):
 
 
 @command('fields', Bugzilla)
+@request(Bugzilla)
 class FieldsRequest(Request):
     def __init__(self, service, ids=None, names=None, *args, **kw):
         """Get information about valid bug fields.

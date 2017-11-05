@@ -11,12 +11,19 @@ from ..exceptions import RequestError, AuthError, BiteError
 
 
 def command(cmd_name, service_cls):
-    """Register related service command and request creation functions."""
+    """Register service command function."""
     def wrapped(cls, *args, **kwds):
         send = getattr(service_cls, 'send')
         send_func = lambda self, *args, **kw: send(self, reqs=cls(self, *args, **kw))
-        req_func = lambda self, *args, **kw: cls(self, *args, **kw)
         setattr(service_cls, cmd_name, send_func)
+        return cls
+    return wrapped
+
+
+def request(service_cls):
+    """Register request creation function."""
+    def wrapped(cls, *args, **kwds):
+        req_func = lambda self, *args, **kw: cls(self, *args, **kw)
         setattr(service_cls, cls.__name__, req_func)
         return cls
     return wrapped

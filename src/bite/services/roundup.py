@@ -9,7 +9,7 @@ import re
 from datetime import datetime
 import requests
 
-from . import NullRequest, Request, command
+from . import NullRequest, Request, command, request
 from ._xmlrpc import LxmlXmlrpc
 from ..cache import Cache, csv2tuple
 from ..exceptions import AuthError, RequestError, ParsingError
@@ -154,6 +154,7 @@ class Roundup(LxmlXmlrpc):
         return data
 
 @command('get', Roundup)
+@request(Roundup)
 class GetRequest(Request):
 
     def __init__(self, service, ids, fields=None, get_comments=False,
@@ -210,6 +211,7 @@ class GetRequest(Request):
         return (self.service.item(self.service, **issue) for issue in issues)
 
 @command('attachments', Roundup)
+@request(Roundup)
 class AttachmentsRequest(Request):
     def __init__(self, service, ids, attachment_ids=None, fields=None, *args, **kw):
         """Construct a attachments request."""
@@ -227,6 +229,7 @@ class AttachmentsRequest(Request):
 
 
 @command('comments', Roundup)
+@request(Roundup)
 class CommentsRequest(Request):
     def __init__(self, service, ids, comment_ids=None, created=None, fields=None, *args, **kw):
         """Construct a comments request."""
