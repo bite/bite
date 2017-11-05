@@ -169,7 +169,8 @@ class Service(object):
     def __str__(self):
         return str(self.base)
 
-    def encode_request(self, method, params=None):
+    @staticmethod
+    def encode_request(method, params=None):
         """Encode the data body for a request."""
         raise NotImplementedError()
 

@@ -15,7 +15,8 @@ class Jsonrpc(Service):
             'Content-Type': 'application/json'
         })
 
-    def encode_request(self, method, params, **kw):
+    @staticmethod
+    def encode_request(method, params, **kw):
         """Encode the data body for a JSON-RPC request."""
         return json.dumps({'method': method, 'params': [params], **kw})
 

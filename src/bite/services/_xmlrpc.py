@@ -17,7 +17,8 @@ class Xmlrpc(Service):
             'Content-Type': 'text/xml'
         })
 
-    def encode_request(self, method, params=None):
+    @staticmethod
+    def encode_request(method, params=None):
         """Encode the data body for an XML-RPC request."""
         encoding = 'utf-8'
         if isinstance(params, list):
