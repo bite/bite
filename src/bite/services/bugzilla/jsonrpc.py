@@ -15,9 +15,9 @@ class BugzillaJsonrpc(Bugzilla, Jsonrpc):
         endpoint = '/jsonrpc.cgi'
         super().__init__(endpoint=endpoint, **kw)
 
-    def encode_request(self, method, params):
+    def _encode_request(self, method, params):
         """Encode the data body for a JSON-RPC request."""
-        return super().encode_request(method=method, params=params, id=0)
+        return super()._encode_request(method=method, params=params, id=0)
 
     def parse_response(self, response):
         data = super().parse_response(response)

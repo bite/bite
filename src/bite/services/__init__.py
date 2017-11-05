@@ -176,12 +176,12 @@ class Service(object):
         return str(self.base)
 
     @staticmethod
-    def encode_request(method, params=None):
+    def _encode_request(method, params=None):
         """Encode the data body for a request."""
         raise NotImplementedError()
 
     @staticmethod
-    def decode_request(request):
+    def _decode_request(request):
         """Decode the data body of a request."""
         raise NotImplementedError()
 
@@ -199,7 +199,7 @@ class Service(object):
         if not self.skip_auth and self.auth_token is not None:
             request, params = self.inject_auth(request, params)
 
-        request.data = self.encode_request(method, params)
+        request.data = self._encode_request(method, params)
         return self.session.prepare_request(request)
 
     def parse_response(self, response):

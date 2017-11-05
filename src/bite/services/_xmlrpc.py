@@ -18,7 +18,7 @@ class Xmlrpc(Service):
         })
 
     @staticmethod
-    def encode_request(method, params=None):
+    def _encode_request(method, params=None):
         """Encode the data body for an XML-RPC request."""
         encoding = 'utf-8'
         if isinstance(params, list):
@@ -29,7 +29,7 @@ class Xmlrpc(Service):
                      allow_none=True).encode(encoding, 'xmlcharrefreplace')
 
     @staticmethod
-    def decode_request(request):
+    def _decode_request(request):
         """Decode the data body of a request."""
         params, method = loads(request.data)
         if not params:
