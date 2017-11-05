@@ -47,7 +47,8 @@ class BugzillaCache(Cache):
 
 class Bugzilla(Service):
 
-    def __init__(self, **kw):
+    def __init__(self, restrict_login=False, **kw):
+        self.restrict_login = restrict_login
         super().__init__(cache_cls=BugzillaCache, **kw)
 
         self.item = BugzillaBug
@@ -89,25 +90,11 @@ class Bugzilla(Service):
             params = {}
         # TODO: Is there a better way to determine the difference between
         # tokens and API keys?
-        if len(self.auth_token) > 16:
-            params['Bugzilla_api_key'] = self.auth_token
+        if len(self.auth) > 16:
+            params['Bugzilla_api_key'] = str(self.auth)
         else:
-            params['Bugzilla_token'] = self.auth_token
+            params['Bugzilla_token'] = str(self.auth)
         return request, params
-
-    def login(self, user=None, password=None, restrict_login=False):
-        """Authenticate a session."""
-        super().login(user, password)
-
-        params = {
-            'login': user,
-            'password': password,
-            'restrict_login': restrict_login,
-        }
-        req = self.create_request(method='User.login', params=params)
-
-        content = self.send(req)
-        self.auth_token = content['token']
 
     def add_attachment(self, ids, data=None, filepath=None, filename=None, mimetype=None,
                        is_patch=False, is_private=False, comment=None, summary=None, **kw):
@@ -239,6 +226,24 @@ class Bugzilla(Service):
         req = self.create_request(method=method, params=params)
         data = self.send(req)
         return data
+
+
+@request(Bugzilla)
+class LoginRequest(Request):
+    def __init__(self, service, user, password, restrict_login=None):
+        """Log in as a user and get an auth token."""
+        if restrict_login is None:
+            restrict_login = service.restrict_login
+
+        params = {
+            'login': user,
+            'password': password,
+            'restrict_login': restrict_login,
+        }
+        super().__init__(service=service, method='User.login', params=params)
+
+    def parse(self, data):
+        return data['token']
 
 
 @command('users', Bugzilla)

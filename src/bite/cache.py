@@ -122,3 +122,62 @@ class Cache(object):
 
     def items(self):
         return self._settings.items()
+
+
+class Auth(object):
+
+    def __init__(self, connection, path=None, token=None, autoload=True):
+        self.connection = connection
+        self.token = token
+
+        if path is None:
+            self.path = os.path.join(const.USER_CACHE_PATH, 'auth', connection)
+        else:
+            self.path = path
+
+        if autoload and self.token is None:
+            self.read()
+
+    def write(self, token):
+        try:
+            os.makedirs(os.path.dirname(self.path))
+        except FileExistsError:
+            pass
+
+        try:
+            with open(self.path, 'w+') as f:
+                os.chmod(self.path, stat.S_IREAD | stat.S_IWRITE)
+                f.write(token)
+        except (PermissionError, IsADirectoryError) as e:
+            raise BiteError('failed writing auth token to {!r}: {}'.format(
+                self.path, e.strerror))
+
+    def read(self):
+        try:
+            with open(self.path, 'r') as f:
+                self.token = f.read()
+        except IOError:
+            self.token = None
+
+    def update(self, token):
+        self.token = token
+        self.write(token)
+
+    def remove(self):
+        """Remove an authentication token."""
+        try:
+            os.remove(self.path)
+        except FileExistsError:
+            pass
+        self.token = None
+
+    def __str__(self):
+        if self.token is None:
+            return ''
+        return self.token
+
+    def __bool__(self):
+        return bool(self.token)
+
+    def __len__(self):
+        return len(self.token)

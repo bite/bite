@@ -3,27 +3,26 @@ except ImportError: import json
 import requests
 
 from . import Bugzilla, BugzillaAttachment, BugzillaComment, BugzillaEvent
+from .._jsonrpc import Jsonrpc
 from ...exceptions import RequestError
 from ...objects import Item
 
-class BugzillaRest(Bugzilla):
+class BugzillaRest(Bugzilla, Jsonrpc):
+    """Support Bugzilla's REST interface.
+
+    API docs: http://bugzilla.readthedocs.io/en/latest/api/index.html#apis
+    """
+    service_name = 'bugzilla-rest'
+
     def __init__(self, **kw):
-        base = kw['base']
-        if base.split('/')[-1] == '':
-            kw['base'] = base[:-1]
+        endpoint = '/rest'
+        super().__init__(endpoint=endpoint, **kw)
 
-        self.auth = None
-        self.headers = {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-        }
-
-        super().__init__(**kw)
         self.item = RestBug
 
     def login(self):
-        if self.auth_token:
-            for cookie in self.auth_token:
+        if self.auth:
+            for cookie in self.auth:
                 if cookie.name == 'Bugzilla_login':
                     login = cookie.value
                 elif cookie.name == 'Bugzilla_logincookie':

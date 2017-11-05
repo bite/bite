@@ -34,7 +34,7 @@ class Monorail(Jsonrpc):
         super().login(user, password)
 
         # https://developers.google.com/accounts/docs/AuthForInstalledApps#Request
-        if self.auth_token is None:
+        if not self.auth:
             params = {}
             params['Email'] = self.user
             params['Passwd'] = self.password
@@ -48,9 +48,10 @@ class Monorail(Jsonrpc):
 
             for line in content.splitlines():
                 if line.startswith('Auth='):
-                    auth_token = 'GoogleLogin auth=' + line[5:]
+                    token = 'GoogleLogin auth=' + line[5:]
+                    break
 
-        self.auth_token = auth_token
+        self.auth.update(token)
 
     def search(self, params=None, url=None):
         if url is None:
@@ -167,7 +168,7 @@ class Monorail(Jsonrpc):
 
     def request(self, url, headers=None, params=None, data=None):
         """Attempt to call method with params. Log in if authentication is required."""
-        self.headers['Authorization'] = self.auth_token
+        self.headers['Authorization'] = str(self.auth)
         if headers is not None:
             headers = dict(self.headers.items() + headers.items())
         else:

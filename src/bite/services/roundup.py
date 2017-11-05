@@ -74,7 +74,7 @@ class Roundup(LxmlXmlrpc):
 
         # get possible user values requires login, otherwise returns empty list
         self.skip_auth = False
-        self.load_auth_token()
+        self.auth.read()
         reqs.append(self.create_request(method='list', params=['user']))
 
         status, priority, keyword, users = self.send(reqs)
@@ -89,18 +89,26 @@ class Roundup(LxmlXmlrpc):
         return config_updates
 
     def inject_auth(self, request, params):
-        request.headers['Authorization'] = self.auth_token
+        request.headers['Authorization'] = str(self.auth)
         return request, params
 
     def login(self, user=None, password=None):
         """Authenticate a session."""
-        super().login(user, password)
-        # XXX: Hacky method of saving the HTTP basic auth token, probably
-        # should auth token usage to support setting session.auth or
-        # session.headers as well so it doesn't have to be injected every time.
-        request = requests.Request(method='POST')
-        requests.auth.HTTPBasicAuth(user, password)(request)
-        self.auth_token = request.headers['Authorization']
+        if not self.auth:
+            if user is None:
+                user = self.user
+            if password is None:
+                password = self.password
+
+            if user is None or password is None:
+                raise BiteError('Both user and password parameters must be specified')
+
+            # XXX: Hacky method of saving the HTTP basic auth token, probably
+            # should auth token usage to support setting session.auth or
+            # session.headers as well so it doesn't have to be injected every time.
+            request = requests.Request(method='POST')
+            requests.auth.HTTPBasicAuth(user, password)(request)
+            self.auth.update(request.headers['Authorization'])
 
     def create(self, title, **kw):
         """Create a new issue given a list of parameters

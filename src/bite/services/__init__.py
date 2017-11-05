@@ -6,8 +6,8 @@ from urllib.parse import urlparse, urlunparse
 import requests
 from snakeoil.sequences import iflatten_instance
 
-from .. import __version__, const
-from ..cache import Cache
+from .. import __version__
+from ..cache import Cache, Auth
 from ..exceptions import RequestError, AuthError, BiteError
 
 
@@ -44,7 +44,7 @@ class Request(object):
         if method is not None:
             req = requests.Request(method='POST', url=url)
 
-            if not self.service.skip_auth and self.service.auth_token is not None:
+            if not self.service.skip_auth and self.service.auth:
                 req, params = self.service.inject_auth(req, params)
             req.data = self.service._encode_request(method, params)
             _requests.append(req)
@@ -145,11 +145,7 @@ class Service(object):
         self.cache = cache_cls(cache_name)
 
         self.skip_auth = skip_auth
-        self.auth_token = auth_token
-        if auth_file is None:
-            self.auth_file = os.path.join(const.USER_CACHE_PATH, 'auth', cache_name)
-        else:
-            self.auth_file = auth_file
+        self.auth = Auth(cache_name, path=auth_file, token=auth_token, autoload=(not skip_auth))
 
         # block when urllib3 connection pool is full
         s = requests.Session()
@@ -166,44 +162,19 @@ class Service(object):
         """Pull latest data from service for cache update."""
         return {}
 
-    def login(self, user=None, password=None):
+    def login(self, user=None, password=None, **kw):
         """Authenticate a session."""
-        if user is None:
-            user = self.user
-        if password is None:
-            password = self.password
+        if not self.auth:
+            if user is None:
+                user = self.user
+            if password is None:
+                password = self.password
 
-        if user is None or password is None:
-            raise ValueError('Both user and password parameters must be specified')
+            if user is None or password is None:
+                raise BiteError('Both user and password parameters must be specified')
 
-    def cache_auth_token(self):
-        try:
-            os.makedirs(os.path.dirname(self.auth_file))
-        except FileExistsError:
-            pass
-
-        try:
-            with open(self.auth_file, 'w+') as f:
-                os.chmod(self.auth_file, stat.S_IREAD | stat.S_IWRITE)
-                f.write(self.auth_token)
-        except (PermissionError, IsADirectoryError) as e:
-            raise BiteError('failed caching auth token to {!r}: {}'.format(
-                self.auth_file, e.strerror))
-
-    def load_auth_token(self):
-        try:
-            with open(self.auth_file, 'r') as f:
-                self.auth_token = f.read()
-        except IOError:
-            return None
-
-    def remove_auth_token(self):
-        """Remove an authentication token."""
-        try:
-            os.remove(self.auth_file)
-        except FileExistsError:
-            pass
-        self.auth_token = None
+            token = self.send(self.LoginRequest(user=user, password=password, **kw))
+            self.auth.update(token)
 
     def __str__(self):
         return str(self.base)
@@ -229,7 +200,7 @@ class Service(object):
 
         request = requests.Request(method='POST', url=url)
 
-        if not self.skip_auth and self.auth_token is not None:
+        if not self.skip_auth and self.auth:
             request, params = self.inject_auth(request, params)
 
         request.data = self._encode_request(method, params)

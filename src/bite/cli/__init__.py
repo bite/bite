@@ -28,12 +28,11 @@ def loginretry(func):
                 raise e
             # don't show redundant output from retried commands
             self.quiet = True
-            if e.expired and self.service.auth_token is not None:
+            if e.expired and self.service.auth:
                 self.log('Warning: your auth token has expired', prefix=' ! ')
-                self.service.remove_auth_token()
+                self.service.auth.remove()
                 self.log('Generating new auth token')
             self.login()
-            self.service.load_auth_token()
             return func(self, *args, **kw)
     return wrapper
 
@@ -51,7 +50,7 @@ class Cli(object):
     service_name = None
 
     def __init__(self, service, quiet=False, verbose=False,
-                 passwordcmd=None, auth_file=None, skip_auth=True, **kw):
+                 user=None, password=None, passwordcmd=None, skip_auth=True, **kw):
         self.service = service
         self.quiet = quiet
         self.verbose = verbose
@@ -59,45 +58,36 @@ class Cli(object):
         self.skip_auth = skip_auth
         self.wrapper = textwrap.TextWrapper(width=const.COLUMNS)
 
-        auth_requested = any(
-            ((auth_file or os.path.exists(self.service.auth_file)), self.service.auth_token, self.passwordcmd,
-             self.service.user, self.service.password))
-
         # login if requested; otherwise, login will be required when necessary
+        auth_requested = any((passwordcmd, user, password))
         if auth_requested:
             self.login()
 
         if sys.stdin.isatty():
             self.log('Service: {}'.format(self.service))
 
-    def login(self, **kw):
+    def login(self):
         """Login to a service and try to cache the authentication token."""
         if self.skip_auth:
             return
 
-        self.service.load_auth_token()
-
         # fallback to manual user/pass login
-        if self.service.auth_token is None:
-            user, password = self.get_login_data(self.service.user, self.service.password)
-            self.service.login(user, password, **kw)
-            self.service.cache_auth_token()
+        if not self.service.auth:
+            user = self.service.user
+            password = self.service.password
+            if user is None:
+                self.log('No username given.')
+                user = get_input('Username: ')
+            if password is None:
+                if not self.passwordcmd:
+                    self.log('No password given.')
+                    password = getpass.getpass()
+                else:
+                    process = subprocess.Popen(
+                        self.passwordcmd.split(), shell=False, stdout=subprocess.PIPE)
+                    password, _ = process.communicate()
 
-    def get_login_data(self, user=None, password=None):
-        """Request user and password info from the user."""
-        if user is None:
-            self.log('No username given.')
-            user = get_input('Username: ')
-
-        if password is None:
-            if not self.passwordcmd:
-                self.log('No password given.')
-                password = getpass.getpass()
-            else:
-                process = subprocess.Popen(
-                    self.passwordcmd.split(), shell=False, stdout=subprocess.PIPE)
-                password, _ = process.communicate()
-        return user, password
+            self.service.login(user, password)
 
     @loginretry
     def get(self, dry_run, ids, filters, browser=False, **kw):
