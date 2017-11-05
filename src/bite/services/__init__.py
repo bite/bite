@@ -118,7 +118,13 @@ class Service(object):
         else:
             self.auth_file = auth_file
 
-        self.session = requests.Session()
+        # block when urllib3 connection pool is full
+        s = requests.Session()
+        a = requests.adapters.HTTPAdapter(pool_block=True)
+        s.mount('https://', a)
+        s.mount('http://', a)
+        self.session = s
+
         self.session.headers['User-Agent'] = '{}-{}'.format('bite', __version__)
         self.session.headers['Accept-Encoding'] = ', '.join(('gzip', 'deflate', 'compress'))
 
