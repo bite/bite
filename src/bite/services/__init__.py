@@ -118,6 +118,7 @@ class Service(object):
 
         # max workers defaults to system CPU count * 5 if concurrent is None
         self.executor = ThreadPoolExecutor(max_workers=concurrent)
+        self.concurrent = self.executor._max_workers
 
         if cache_cls is None:
             cache_cls = Cache
@@ -152,7 +153,7 @@ class Service(object):
 
         # block when urllib3 connection pool is full
         s = requests.Session()
-        a = requests.adapters.HTTPAdapter(pool_block=True)
+        a = requests.adapters.HTTPAdapter(pool_maxsize=self.concurrent, pool_block=True)
         s.mount('https://', a)
         s.mount('http://', a)
         self.session = s
