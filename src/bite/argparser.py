@@ -488,6 +488,8 @@ class ArgumentParser(arghparse.ArgumentParser):
             # import arg group from script so help is placed before subcmds defined in the script
             from .scripts.bite import service as service_opts
             service_args.maincmds(service_opts)
+            # parse any additional optional args that were just added
+            initial_args, unparsed_args = self.parse_optionals(unparsed_args, initial_args)
         except AttributeError:
             pass
 
