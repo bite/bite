@@ -94,13 +94,17 @@ class Request(object):
 
 class NullRequest(Request):
 
-    def __init__(self):
+    def __init__(self, generator=False):
         self._requests = (None,)
+        self._generator = generator
 
     def __bool__(self):
         return False
 
     def parse(self, data):
+        if not self._generator:
+            return None
+
         while True:
             yield None
 
