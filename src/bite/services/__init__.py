@@ -5,7 +5,7 @@ from urllib.parse import urlparse, urlunparse
 import requests
 from snakeoil.sequences import iflatten_instance
 
-from .. import __version__
+from .. import __title__, __version__
 from ..cache import Cache, Auth
 from ..exceptions import RequestError, AuthError, BiteError
 
@@ -157,7 +157,7 @@ class Service(object):
         s.mount('http://', a)
         self.session = s
 
-        self.session.headers['User-Agent'] = '{}-{}'.format('bite', __version__)
+        self.session.headers['User-Agent'] = '{}-{}'.format(__title__, __version__)
         self.session.headers['Accept-Encoding'] = ', '.join(('gzip', 'deflate', 'compress'))
 
     @property
