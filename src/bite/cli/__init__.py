@@ -13,6 +13,7 @@ from urllib.parse import urlparse
 from snakeoil.strings import pluralism
 
 from .. import const
+from ..cache import Completion
 from ..exceptions import AuthError, CliError, BiteError
 from ..objects import TarAttachment
 from ..utils import confirm, get_input
@@ -48,7 +49,7 @@ class Cli(object):
 
     service_name = None
 
-    def __init__(self, service, quiet=False, verbose=False,
+    def __init__(self, service, quiet=False, verbose=False, completion_cache=False,
                  user=None, password=None, passwordcmd=None, skip_auth=True, **kw):
         self.service = service
         self.quiet = quiet
@@ -64,6 +65,8 @@ class Cli(object):
 
         if sys.stdin.isatty():
             self.log('Service: {}'.format(self.service))
+
+        self.completion_cache = Completion(self.service.cache.name) if completion_cache else False
 
     def login(self):
         """Login to a service and try to cache the authentication token."""
@@ -281,19 +284,24 @@ class Cli(object):
         else:
             sys.stdout.write(str(data))
 
-    def search(self, dry_run, **kw):
+    def search(self, dry_run, fields=None, **kw):
         kw = self._search_params(**kw)
         request = self.service.SearchRequest(**kw)
-
-        if kw['fields'] is None:
-            kw['fields'] = request.fields
 
         self.log('Searching for {}s with the following options:'.format(self.service.item.type))
         self.log(request.options, prefix='   - ')
 
         if dry_run: return
         data = self.service.send(request)
-        count = self.print_search(data, **kw)
+
+        # cache results for completion usage if requested fields are sane
+        if self.completion_cache and fields is None:
+            data = list(data)
+            self.completion_cache.write('\n'.join('{} {}'.format(x.id, x.summary) for x in data))
+
+        if fields is None:
+            fields = request.fields
+        count = self.print_search(data, fields=fields, **kw)
         if sys.stdout.isatty():
             self.log('{} {}{} found.'.format(count, self.service.item.type, 's'[count == 1:]))
 

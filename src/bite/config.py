@@ -169,6 +169,7 @@ def fill_config(args, parser, section):
     fill_config_option(args, parser, parser.get, section, 'auth_token')
     fill_config_option(args, parser, parser.get, section, 'auth_file')
     fill_config_option(args, parser, parser.getboolean, section, 'skip_auth')
+    fill_config_option(args, parser, parser.getboolean, section, 'completion_cache')
     fill_config_option(args, parser, parser.getint, section, 'columns')
     fill_config_option(args, parser, parser.getint, section, 'concurrent')
     fill_config_option(args, parser, parser.getint, section, 'timeout')
