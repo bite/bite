@@ -17,6 +17,10 @@ from ..exceptions import AuthError, RequestError, ParsingError
 from ..objects import decompress, Item, Attachment, Comment
 
 
+def parsetime(time):
+    return datetime.strptime(time, '<Date %Y-%m-%d.%X.%f>')
+
+
 class RoundupError(RequestError):
 
     def __init__(self, msg, code=None, text=None):
@@ -165,21 +169,18 @@ class _GetRequest(Request):
 
         reqs = []
         for i in ids:
+            issue_reqs = []
             params = ['issue' + str(i)]
             if fields is not None:
                 params.extend(fields)
             else:
                 params.extend(service.item.attributes.keys())
             reqs.append(Request(service=service, method='display', params=params))
-            #
-            # for call in ('attachments', 'comments'):
-            #     if locals()['get_' + call]:
-            #         reqs.append(getattr(Service, call)(self.service, ids))
-            #     else:
-            #         reqs.append(NullRequest(self.service))
 
         super().__init__(service=service, reqs=reqs)
         self.ids = ids
+        self.get_comments = get_comments
+        self.get_attachments = get_attachments
 
     def handle_exception(self, e):
         if e.code == 'exceptions.IndexError':
@@ -196,35 +197,62 @@ class _GetRequest(Request):
         messages = {}
         reqs = []
         issues = iflatten_instance(data, dict)
-        # for i, issue in enumerate(data):
-        #     # files[i] = issue.get('files', [])
-        #     # messages[i] = issue.get('messages', [])
-        #     issues.append(issue)
 
-        # # TODO: get file/message content
-        # for v in set(chain.from_iterable(files.values())):
-        #     reqs.append(self.service.create_request(method='display', params=['file' + v]))
-        # for v in set(chain.from_iterable(messages.values())):
-        #     reqs.append(self.service.create_request(method='display', params=['msg' + v]))
+        issues = list(issues)
+        file_reqs = []
+        msg_reqs = []
+        for issue in issues:
+            file_ids = issue.get('files', [])
+            issue_files = []
+            if file_ids and self.get_attachments:
+                issue_files.append(self.service.AttachmentsRequest(ids=file_ids))
+            else:
+                issue_files.append(NullRequest())
 
-        return (self.service.item(self.service, id=self.ids[i], **issue) for i, issue in enumerate(issues))
+            msg_ids = issue.get('messages', [])
+            issue_msgs = []
+            if msg_ids and self.get_comments:
+                issue_msgs.append(self.service.CommentsRequest(ids=msg_ids))
+            else:
+                issue_msgs.append(NullRequest())
+
+            file_reqs.append(issue_files)
+            msg_reqs.append(issue_msgs)
+
+        attachments = self.service.send(file_reqs)
+        comments = self.service.send(msg_reqs)
+
+        return (self.service.item(self.service, comments=next(comments),
+                                  attachments=next(attachments), id=self.ids[i], **issue)
+                for i, issue in enumerate(issues))
+
 
 @command('attachments', Roundup)
 @request(Roundup)
 class _AttachmentsRequest(Request):
-    def __init__(self, service, ids, attachment_ids=None, fields=None, *args, **kw):
+    def __init__(self, service, ids, attachment_ids=None, get_data=False, *args, **kw):
         """Construct a attachments request."""
         super().__init__(service)
         if not ids:
             raise ValueError('No {} ID(s) specified'.format(self.service.item_name))
 
+        reqs = []
         for i in ids:
             params = ['file' + str(i)]
-            if fields is not None:
-                params.extend(fields)
-            else:
-                params.extend(self.service.attachment.attributes.keys())
-            self.requests.append(self.service.create_request(method='display', params=params))
+            fields = ['name', 'type', 'creator', 'creation']
+            if get_data:
+                fields.append('content')
+            params.extend(fields)
+            reqs.append(Request(service=service, method='display', params=params))
+
+        super().__init__(service=service, reqs=reqs)
+        self.ids = ids
+
+    def parse(self, data):
+        yield [RoundupAttachment(id=self.ids[i], filename=d['name'], data=d.get('content', None),
+                                creator=self.service.cache['users'][int(d['creator'])-1],
+                                created=parsetime(d['creation']), mimetype=d['type'])
+                for i, d in enumerate(data)]
 
 
 @command('comments', Roundup)
@@ -236,13 +264,21 @@ class _CommentsRequest(Request):
         if not ids:
             raise ValueError('No {} ID(s) specified'.format(self.service.item_name))
 
+        reqs = []
         for i in ids:
             params = ['msg' + str(i)]
             if fields is not None:
                 params.extend(fields)
-            else:
-                params.extend(self.service.item.attributes.keys())
-            self.requests.append(self.service.create_request(method='display', params=params))
+            reqs.append(Request(service=service, method='display', params=params))
+
+        super().__init__(service=service, reqs=reqs)
+        self.ids = ids
+
+    def parse(self, data):
+        for i in self.ids:
+            yield [RoundupComment(id=i, count=j, text=d['content'], date=parsetime(d['date']),
+                                  creator=self.service.cache['users'][int(d['author'])-1])
+                   for j, d in enumerate(data)]
 
 
 class RoundupIssue(Item):
@@ -266,11 +302,11 @@ class RoundupIssue(Item):
     endpoint = '/issue'
     type = 'issue'
 
-    def __init__(self, service, **kw):
+    def __init__(self, service, comments=None, attachments=None, **kw):
         self.service = service
         for k, v in kw.items():
             if k in ('creation', 'activity'):
-                setattr(self, k, datetime.strptime(v, '<Date %Y-%m-%d.%X.%f>'))
+                setattr(self, k, parsetime(v))
             elif k in ('creator', 'actor'):
                 try:
                     username = self.service.cache['users'][int(v)-1]
@@ -304,6 +340,9 @@ class RoundupIssue(Item):
             else:
                 setattr(self, k, v)
 
+        self.attachments = attachments if attachments is not None else []
+        self.comments = comments if comments is not None else []
+
     def __str__(self):
         lines = []
         print_fields = [
@@ -313,6 +352,7 @@ class RoundupIssue(Item):
             ('creator', 'Reporter'),
             ('activity', 'Modified'),
             ('actor', 'Modified by'),
+            ('id', 'ID'),
             ('status', 'Status'),
             ('priority', 'Priority'),
             ('superseder', 'Duplicate'),
@@ -338,21 +378,9 @@ class RoundupIssue(Item):
 
 
 class RoundupComment(Comment):
-    def __init__(self, comment, id, count, rest=False, **kw):
-        self.comment_id = comment['id']
-
-        super().__init__(
-            id=id, creator=creator, date=date,
-            count=count, changes=changes, text=text)
+    pass
 
 
 class RoundupAttachment(Attachment):
 
     endpoint = '/file'
-
-    def __init__(self, id, file_name, size=None, content_type=None,
-                 data=None, creation_time=None, last_change_time=None, **kw):
-
-        super().__init__(
-            id=id, filename=file_name, size=size, mimetype=content_type,
-            data=data, created=creation_time, modified=last_change_time)

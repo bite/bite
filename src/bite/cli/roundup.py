@@ -17,3 +17,14 @@ class Roundup(Cli):
         for issue in issues:
             print('=' * const.COLUMNS)
             print(issue)
+
+            if issue.attachments:
+                attachments = [str(a) for a in issue.attachments]
+                if attachments:
+                    if str(issue):
+                        print()
+                    print('\n'.join(attachments))
+
+            if issue.comments and (str(issue) or issue.attachments):
+                print()
+            self._print_lines((str(x) for x in issue.comments))
