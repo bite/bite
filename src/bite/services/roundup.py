@@ -257,8 +257,8 @@ class _AttachmentsRequest(Request):
             ids = self.ids
 
         return [RoundupAttachment(id=ids[i], filename=d['name'], data=d.get('content', None),
-                                creator=self.service.cache['users'][int(d['creator'])-1],
-                                created=parsetime(d['creation']), mimetype=d['type'])
+                                  creator=self.service.cache['users'][int(d['creator'])-1],
+                                  created=parsetime(d['creation']), mimetype=d['type'])
                 for i, d in enumerate(data)]
 
 
@@ -290,7 +290,7 @@ class _CommentsRequest(Request):
             ids = self.ids
 
         return [RoundupComment(id=ids[i], count=i, text=d['content'], date=parsetime(d['date']),
-                                creator=self.service.cache['users'][int(d['author'])-1])
+                               creator=self.service.cache['users'][int(d['author'])-1])
                 for i, d in enumerate(data)]
 
 

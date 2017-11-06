@@ -207,7 +207,9 @@ class _GetRequest(Request):
 
     def parse(self, data):
         bugs, attachments, comments, history = data
-        return (self.service.item(self.service, bug, next(comments), next(attachments), next(history)) for bug in bugs)
+        return (self.service.item(self.service, bug, next(comments),
+                                  next(attachments), next(history))
+                for bug in bugs)
 
 
 @request(Bugzilla)
@@ -233,8 +235,8 @@ class _GetItemRequest(Request):
 @request(Bugzilla)
 class _CreateRequest(Request):
     def __init__(self, service, product, component, version, summary, description=None, op_sys=None,
-               platform=None, priority=None, severity=None, alias=None, assigned_to=None,
-               cc=None, target_milestone=None, groups=None, status=None, **kw):
+                 platform=None, priority=None, severity=None, alias=None, assigned_to=None,
+                 cc=None, target_milestone=None, groups=None, status=None, **kw):
         """Create a new bug given a list of parameters
 
         :returns: ID of the newly created bug
@@ -285,10 +287,12 @@ class _SearchRequest(Request):
             if k in BugzillaBug.attributes:
                 if k in ['creation_time', 'last_change_time']:
                     params[k] = v[1]
-                    options_log.append('{}: {} (since {} UTC)'.format(BugzillaBug.attributes[k], v[0], parsetime(v[1])))
+                    options_log.append('{}: {} (since {} UTC)'.format(
+                        BugzillaBug.attributes[k], v[0], parsetime(v[1])))
                 elif k in ['assigned_to', 'creator']:
                     params[k] = list(map(service._resuffix, v))
-                    options_log.append('{}: {}'.format(BugzillaBug.attributes[k], ', '.join(map(str, v))))
+                    options_log.append('{}: {}'.format(
+                        BugzillaBug.attributes[k], ', '.join(map(str, v))))
                 elif k == 'status':
                     status_alias = []
                     status_map = {
@@ -303,12 +307,15 @@ class _SearchRequest(Request):
                         else:
                             params.setdefault(k, []).append(status)
                     if status_alias:
-                        options_log.append('{}: {} ({})'.format(BugzillaBug.attributes[k], ', '.join(status_alias), ', '.join(params[k])))
+                        options_log.append('{}: {} ({})'.format(
+                            BugzillaBug.attributes[k], ', '.join(status_alias), ', '.join(params[k])))
                     else:
-                        options_log.append('{}: {}'.format(BugzillaBug.attributes[k], ', '.join(params[k])))
+                        options_log.append('{}: {}'.format(
+                            BugzillaBug.attributes[k], ', '.join(params[k])))
                 else:
                     params[k] = v
-                    options_log.append('{}: {}'.format(BugzillaBug.attributes[k], ', '.join(map(str, v))))
+                    options_log.append('{}: {}'.format(
+                        BugzillaBug.attributes[k], ', '.join(map(str, v))))
             else:
                 if k == 'terms':
                     params['summary'] = v
@@ -380,7 +387,8 @@ class _CommentsRequest(Request):
     def parse(self, data, *args, **kw):
         bugs = next(data)['bugs']
         for i in self.ids:
-            yield [BugzillaComment(comment=comment, id=i, count=j) for j, comment in enumerate(bugs[str(i)]['comments'])]
+            yield [BugzillaComment(comment=comment, id=i, count=j)
+                   for j, comment in enumerate(bugs[str(i)]['comments'])]
 
 
 class ChangesRequest(Request):
@@ -628,7 +636,8 @@ class _HistoryRequest(Request):
     def parse(self, data, *args, **kw):
         bugs = next(data)['bugs']
         for b in bugs:
-            yield [BugzillaEvent(change=x, id=b['id'], alias=b['alias'], count=i) for i, x in enumerate(b['history'], start=1)]
+            yield [BugzillaEvent(change=x, id=b['id'], alias=b['alias'], count=i)
+                   for i, x in enumerate(b['history'], start=1)]
 
 
 @command('fields', Bugzilla)

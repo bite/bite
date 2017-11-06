@@ -260,7 +260,8 @@ class Service(object):
 
         try:
             response = self.session.send(
-                self.prepare_request(req), stream=True, timeout=self.timeout, verify=self.verify, allow_redirects=False)
+                self.prepare_request(req), stream=True, timeout=self.timeout,
+                verify=self.verify, allow_redirects=False)
         except requests.exceptions.SSLError as e:
             raise RequestError('SSL certificate verification failed')
         except requests.exceptions.ConnectionError as e:
