@@ -131,6 +131,8 @@ class Attachment(PrintableObject):
 
     @decompress
     def read(self):
+        if isinstance(self.data, str):
+            return self.data.encode()
         return self.data
 
     def write(self, path):
