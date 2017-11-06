@@ -1,6 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor
 import os
-import stat
 from urllib.parse import urlparse, urlunparse
 
 import requests
@@ -173,8 +172,12 @@ class Service(object):
             if user is None or password is None:
                 raise BiteError('Both user and password parameters must be specified')
 
-            token = self.send(self.LoginRequest(user=user, password=password, **kw))
+            token = self._get_auth_token(user, password, **kw)
             self.auth.update(token)
+
+    def _get_auth_token(self, user=None, password=None, **kw):
+        """Get an authentication token from the service."""
+        return self.send(self.LoginRequest(user=user, password=password, **kw))
 
     def __str__(self):
         return str(self.base)

@@ -92,23 +92,14 @@ class Roundup(LxmlXmlrpc):
         request.headers['Authorization'] = str(self.auth)
         return request, params
 
-    def login(self, user=None, password=None):
-        """Authenticate a session."""
-        if not self.auth:
-            if user is None:
-                user = self.user
-            if password is None:
-                password = self.password
-
-            if user is None or password is None:
-                raise BiteError('Both user and password parameters must be specified')
-
-            # XXX: Hacky method of saving the HTTP basic auth token, probably
-            # should auth token usage to support setting session.auth or
-            # session.headers as well so it doesn't have to be injected every time.
-            request = requests.Request(method='POST')
-            requests.auth.HTTPBasicAuth(user, password)(request)
-            self.auth.update(request.headers['Authorization'])
+    def _get_auth_token(self, user=None, password=None, **kw):
+        """Get an authentication token from the service."""
+        # XXX: Hacky method of saving the HTTP basic auth token, probably
+        # should auth token usage to support setting session.auth or
+        # session.headers as well so it doesn't have to be injected every time.
+        request = requests.Request(method='POST')
+        requests.auth.HTTPBasicAuth(user, password)(request)
+        return request.headers['Authorization']
 
     def create(self, title, **kw):
         """Create a new issue given a list of parameters
