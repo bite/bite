@@ -212,7 +212,7 @@ class _GetRequest(Request):
             msg_ids = issue.get('messages', [])
             issue_msgs = []
             if msg_ids and self.get_comments:
-                issue_msgs.append(self.service.CommentsRequest(ids=msg_ids))
+                issue_msgs.append(self.service.CommentsRequest(comment_ids=msg_ids))
             else:
                 issue_msgs.append(NullRequest())
 
@@ -233,10 +233,10 @@ class _AttachmentsRequest(Request):
     def __init__(self, service, ids=None, attachment_ids=None, get_data=False, *args, **kw):
         """Construct a attachments request."""
         super().__init__(service)
-        if ids is None and attachment_ids is None:
-            raise ValueError('No {} or attachment ID(s) specified'.format(self.service.item_name))
-
         # TODO: add support for specifying issue IDs
+        if attachment_ids is None:
+            raise ValueError('No attachment ID(s) specified')
+
         reqs = []
         for i in attachment_ids:
             params = ['file' + str(i)]
@@ -256,23 +256,24 @@ class _AttachmentsRequest(Request):
         else:
             ids = self.ids
 
-        yield [RoundupAttachment(id=ids[i], filename=d['name'], data=d.get('content', None),
+        return [RoundupAttachment(id=ids[i], filename=d['name'], data=d.get('content', None),
                                 creator=self.service.cache['users'][int(d['creator'])-1],
                                 created=parsetime(d['creation']), mimetype=d['type'])
-               for i, d in enumerate(data)]
+                for i, d in enumerate(data)]
 
 
 @command('comments', Roundup)
 @request(Roundup)
 class _CommentsRequest(Request):
-    def __init__(self, service, ids, comment_ids=None, created=None, fields=None, *args, **kw):
+    def __init__(self, service, ids=None, comment_ids=None, created=None, fields=None, *args, **kw):
         """Construct a comments request."""
         super().__init__(service)
-        if not ids:
-            raise ValueError('No {} ID(s) specified'.format(self.service.item_name))
+        # TODO: add support for specifying issue IDs
+        if comment_ids is None:
+            raise ValueError('No comment ID(s) specified')
 
         reqs = []
-        for i in ids:
+        for i in comment_ids:
             params = ['msg' + str(i)]
             if fields is not None:
                 params.extend(fields)
@@ -280,12 +281,17 @@ class _CommentsRequest(Request):
 
         super().__init__(service=service, reqs=reqs)
         self.ids = ids
+        self.comment_ids = comment_ids
 
     def parse(self, data):
-        for i in self.ids:
-            yield [RoundupComment(id=i, count=j, text=d['content'], date=parsetime(d['date']),
-                                  creator=self.service.cache['users'][int(d['author'])-1])
-                   for j, d in enumerate(data)]
+        if self.comment_ids:
+            ids = self.comment_ids
+        else:
+            ids = self.ids
+
+        return [RoundupComment(id=ids[i], count=i, text=d['content'], date=parsetime(d['date']),
+                                creator=self.service.cache['users'][int(d['author'])-1])
+                for i, d in enumerate(data)]
 
 
 class RoundupIssue(Item):
