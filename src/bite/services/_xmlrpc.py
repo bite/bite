@@ -1,7 +1,7 @@
 from xmlrpc.client import dumps, loads, getparser, Fault, Unmarshaller
 from xml.parsers.expat import ExpatError
 
-from lxml.etree import XMLPullParser
+from lxml.etree import XMLPullParser, XMLSyntaxError
 
 from . import Service
 from ..exceptions import RequestError, ParsingError
@@ -54,18 +54,18 @@ class Xmlrpc(Service):
 
         p, u = self._getparser(use_datetime=True)
 
-        while 1:
-            data = stream.read(64*1024)
-            if not data:
-                break
-            try:
+        try:
+            while 1:
+                data = stream.read(64*1024)
+                if not data:
+                    break
                 p.feed(data)
-            except ExpatError as e:
-                if not response.headers['Content-Type'].startswith('text/xml'):
-                    raise RequestError('XML-RPC interface likely disabled on server')
-                raise ParsingError(msg='failed parsing XML', text=str(e))
+            p.close()
+        except (ExpatError, XMLSyntaxError) as e:
+            if not response.headers['Content-Type'].startswith('text/xml'):
+                raise RequestError('XML-RPC interface likely disabled on server')
+            raise ParsingError(msg='failed parsing XML', text=str(e)) from e
 
-        p.close()
         return u.close()
 
 
