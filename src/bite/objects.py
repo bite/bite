@@ -98,7 +98,7 @@ class Attachment(PrintableObject):
     endpoint = None
 
     def __init__(self, id=None, filename=None, url=None, size=None,
-                 mimetype=None, data=None, created=None, modified=None):
+                 mimetype=None, data=None, creator=None, created=None, modified=None):
         self.id = id
         # make sure the file name is valid
         # TODO: fix this to remove all os.path.sep chars
@@ -109,6 +109,7 @@ class Attachment(PrintableObject):
         self.size = size
         self.mimetype = mimetype
         self.data = data
+        self.creator = creator
         self.created = created
         self.modified = modified
 
