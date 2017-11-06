@@ -118,7 +118,7 @@ class _LoginRequest(Request):
         super().__init__(service=service, method='User.login', params=params)
 
     def parse(self, data):
-        return data['token']
+        return next(data)['token']
 
 
 @command('users', Bugzilla)
@@ -141,7 +141,7 @@ class _UsersRequest(Request):
         super().__init__(service=service, method='User.get', params=params)
 
     def parse(self, data):
-        return data['users']
+        return next(data)['users']
 
 
 @command('products', Bugzilla)
@@ -162,7 +162,7 @@ class _ProductsRequest(Request):
         super().__init__(service=service, method='Product.get', params=params)
 
     def parse(self, data):
-        return data['products']
+        return next(data)['products']
 
 
 @command('extensions', Bugzilla)
@@ -173,7 +173,7 @@ class _ExtensionsRequest(Request):
         super().__init__(service=service, method='Bugzilla.extensions')
 
     def parse(self, data):
-        return data['extensions']
+        return next(data)['extensions']
 
 
 @command('version', Bugzilla)
@@ -184,7 +184,7 @@ class _VersionRequest(Request):
         super().__init__(service=service, method='Bugzilla.version')
 
     def parse(self, data):
-        return data['version']
+        return next(data)['version']
 
 
 @command('get', Bugzilla)
@@ -213,8 +213,8 @@ class _GetRequest(Request):
 
     def parse(self, data):
         data, attachments, comments, history = data
-        bugs = data['bugs']
-        return (self.service.item(self.service, bug, comments, attachments, history) for bug in bugs)
+        bugs = next(data)['bugs']
+        return (self.service.item(self.service, bug, next(comments), next(attachments), next(history)) for bug in bugs)
 
 
 @command('create', Bugzilla)
@@ -259,7 +259,7 @@ class _CreateRequest(Request):
         super().__init__(service=service, method='Bug.create', params=params)
 
     def parse(self, data, *args, **kw):
-        return data['id']
+        return next(data)['id']
 
 
 @command('search', Bugzilla)
@@ -336,7 +336,7 @@ class _SearchRequest(Request):
         self.options = options_log
 
     def parse(self, data, *args, **kw):
-        bugs = data['bugs']
+        bugs = next(data)['bugs']
         return (self.service.item(service=self.service, bug=bug) for bug in bugs)
 
 
@@ -366,7 +366,7 @@ class _CommentsRequest(Request):
         self.options = ['REPLACE ME']
 
     def parse(self, data, *args, **kw):
-        bugs = data['bugs']
+        bugs = next(data)['bugs']
         for i in self.ids:
             yield [BugzillaComment(comment=comment, id=i, count=j) for j, comment in enumerate(bugs[str(i)]['comments'])]
 
@@ -467,7 +467,7 @@ class _ModifyRequest(Request):
         self.options = options_log
 
     def parse(self, data, *args, **kw):
-        return data['bugs']
+        return next(data)['bugs']
 
 
 @command('attach', Bugzilla)
@@ -552,7 +552,7 @@ class _AttachRequest(Request):
         super().__init__(service=service, method='Bug.add_attachment', params=params)
 
     def parse(self, data, *args, **kw):
-        return data['attachments']
+        return next(data)['attachments']
 
 
 @command('attachments', Bugzilla)
@@ -584,6 +584,7 @@ class _AttachmentsRequest(Request):
         self.attachment_ids = attachment_ids
 
     def parse(self, data, *args, **kw):
+        data = next(data)
         if self.ids:
             bugs = data['bugs']
             for i in self.ids:
@@ -611,7 +612,7 @@ class _HistoryRequest(Request):
         self.options = ['REPLACE ME']
 
     def parse(self, data, *args, **kw):
-        bugs = data['bugs']
+        bugs = next(data)['bugs']
         for b in bugs:
             yield [BugzillaEvent(change=x, id=b['id'], alias=b['alias'], count=i) for i, x in enumerate(b['history'], start=1)]
 
@@ -645,7 +646,7 @@ class _FieldsRequest(Request):
         self.options = options_log
 
     def parse(self, data, *args, **kw):
-        return data['fields']
+        return next(data)['fields']
 
 
 class BugzillaBug(Item):
@@ -721,11 +722,11 @@ class BugzillaBug(Item):
                     setattr(self, k, v)
 
         if attachments:
-            self.attachments = next(attachments)
+            self.attachments = attachments
         if comments:
-            self.comments = next(comments)
+            self.comments = comments
         if history:
-            self.history = next(history)
+            self.history = history
 
     def __str__(self):
         lines = []
