@@ -322,7 +322,7 @@ class Bugzilla(Cli):
                 params.setdefault('ids', []).append(product)
             else:
                 params.setdefault('names', []).append(product)
-        products = self.service.products(params)
+        products = self.service.products(**params)
         self.print_products(products)
 
     def query(self, raw, **kw):

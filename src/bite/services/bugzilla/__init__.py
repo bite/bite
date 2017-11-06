@@ -96,131 +96,6 @@ class Bugzilla(Service):
             params['Bugzilla_token'] = str(self.auth)
         return request, params
 
-    def add_attachment(self, ids, data=None, filepath=None, filename=None, mimetype=None,
-                       is_patch=False, is_private=False, comment=None, summary=None, **kw):
-        """Add an attachment to a bug
-
-        :param ids: The ids or aliases of bugs that you want to add the attachment to.
-        :type ids: list of ints and/or strings
-        :param data: Raw attachment data
-        :type data: binary data
-        :param filepath: Path to the file.
-        :type filepath: string
-        :param filename: The file name that will be displayed in the UI for the attachment.
-        :type filename: string
-        :param mimetype: The MIME type of the attachment, like text/plain or image/png.
-        :type mimetype: string
-        :param comment: A comment to add along with the attachment.
-        :type comment: string
-        :param summary: A short string describing the attachment.
-        :type summary: string
-        :param is_patch: True if Bugzilla should treat this attachment as a patch.
-            If specified, a content_type doesn't need to be specified as it is forced to text/plain.
-            Defaults to false if unspecified.
-        :type is_patch: boolean
-        :param is_private: True if the attachment should be private, False if public.
-            Defaults to false if unspecified.
-        :type is_private: boolean
-
-        :raises ValueError: if no bug IDs are specified
-        :raises ValueError: if data or filepath arguments aren't specified
-        :raises ValueError: if data isn't defined and filepath points to a nonexistent file
-        :raises ValueError: if filepath isn't defined and summary or filename isn't specified
-
-        :returns: attachment IDs created
-        :rtype: list of attachment IDs
-        """
-        if not ids:
-            raise ValueError('No bug ID(s) specified')
-
-        if data is not None:
-            params['data'] = base64.b64encode(data)
-        else:
-            if filepath is None:
-                raise ValueError('Either data or a filepath must be passed as an argument')
-            else:
-                if not os.path.exists(filepath):
-                    raise ValueError('File not found: {}'.format(filepath))
-                else:
-                    with open(filepath, 'rb') as f:
-                        params['data'] = base64.b64encode(f.read())
-
-        if filename is None:
-            if filepath is not None:
-                filename = os.path.basename(filepath)
-            else:
-                raise ValueError('A valid filename must be specified')
-
-        if mimetype is None and not is_patch:
-            if data is not None:
-                mimetype = magic.from_buffer(data, mime=True)
-            else:
-                mimetype = magic.from_file(filepath, mime=True)
-
-        if summary is None:
-            if filepath is not None:
-                summary = filename
-            else:
-                raise ValueError('A valid summary must be specified')
-
-        params = {'ids': ids}
-        params['file_name'] = filename
-        params['summary'] = summary
-        if not is_patch:
-            params['content_type'] = mimetype
-        params['comment'] = comment
-        params['is_patch'] = is_patch
-
-        req = self.create_request(method='Bug.add_attachment', params=params)
-        result = self.send(req)
-        return result['attachments']
-
-    def create(self, product, component, version, summary, description=None, op_sys=None,
-               platform=None, priority=None, severity=None, alias=None, assigned_to=None,
-               cc=None, target_milestone=None, groups=None, status=None, **kw):
-        """Create a new bug given a list of parameters
-
-        :returns: ID of the newly created bug
-        :rtype: int
-        """
-        params = {}
-        params['product'] = product
-        params['component'] = component
-        params['version'] = version
-        params['summary'] = summary
-        if description is not None:
-            params['description'] = description
-        if op_sys is not None:
-            params['op_sys'] = op_sys
-        if platform is not None:
-            params['platform'] = platform
-        if priority is not None:
-            params['priority'] = priority
-        if severity is not None:
-            params['severity'] = severity
-        if alias is not None:
-            params['alias'] = alias
-        if assigned_to is not None:
-            params['assigned_to'] = assigned_to
-        if cc is not None:
-            params['cc'] = cc
-        if target_milestone is not None:
-            params['target_milestone'] = target_milestone
-        if groups is not None:
-            params['groups'] = groups
-        if status is not None:
-            params['status'] = status
-
-        req = self.create_request(method='Bug.create', params=params)
-        data = self.send(req)
-        return data['id']
-
-    def products(self, params):
-        """Query bugzilla for product data."""
-        req = self.create_request(method='Product.get', params=params)
-        data = self.send(req)
-        return data['products']
-
     def query(self, method, params=None):
         """Query bugzilla for various data."""
         req = self.create_request(method=method, params=params)
@@ -267,6 +142,27 @@ class _UsersRequest(Request):
 
     def parse(self, data):
         return data['users']
+
+
+@command('products', Bugzilla)
+@request(Bugzilla)
+class _ProductsRequest(Request):
+    def __init__(self, service, ids=None, names=None, match=None):
+        """Query bugzilla for product data."""
+        if not any((ids, names)):
+            raise ValueError('No user ID(s) or name(s) specified')
+
+        params = {}
+
+        if ids is not None:
+            params['ids'] = ids
+        if names is not None:
+            params['names'] = names
+
+        super().__init__(service=service, method='Product.get', params=params)
+
+    def parse(self, data):
+        return data['products']
 
 
 @command('extensions', Bugzilla)
@@ -319,6 +215,51 @@ class _GetRequest(Request):
         data, attachments, comments, history = data
         bugs = data['bugs']
         return (self.service.item(self.service, bug, comments, attachments, history) for bug in bugs)
+
+
+@command('create', Bugzilla)
+@request(Bugzilla)
+class _CreateRequest(Request):
+    def __init__(self, service, product, component, version, summary, description=None, op_sys=None,
+               platform=None, priority=None, severity=None, alias=None, assigned_to=None,
+               cc=None, target_milestone=None, groups=None, status=None, **kw):
+        """Create a new bug given a list of parameters
+
+        :returns: ID of the newly created bug
+        :rtype: int
+        """
+        params = {}
+        params['product'] = product
+        params['component'] = component
+        params['version'] = version
+        params['summary'] = summary
+        if description is not None:
+            params['description'] = description
+        if op_sys is not None:
+            params['op_sys'] = op_sys
+        if platform is not None:
+            params['platform'] = platform
+        if priority is not None:
+            params['priority'] = priority
+        if severity is not None:
+            params['severity'] = severity
+        if alias is not None:
+            params['alias'] = alias
+        if assigned_to is not None:
+            params['assigned_to'] = assigned_to
+        if cc is not None:
+            params['cc'] = cc
+        if target_milestone is not None:
+            params['target_milestone'] = target_milestone
+        if groups is not None:
+            params['groups'] = groups
+        if status is not None:
+            params['status'] = status
+
+        super().__init__(service=service, method='Bug.create', params=params)
+
+    def parse(self, data, *args, **kw):
+        return data['id']
 
 
 @command('search', Bugzilla)
@@ -529,12 +470,89 @@ class _ModifyRequest(Request):
         return data['bugs']
 
 
-class CreateRequest(Request):
-    pass
+@command('attach', Bugzilla)
+@request(Bugzilla)
+class _AttachRequest(Request):
+    def __init__(self, ids, data=None, filepath=None, filename=None, mimetype=None,
+                 is_patch=False, is_private=False, comment=None, summary=None, **kw):
+        """Add an attachment to a bug
 
+        :param ids: The ids or aliases of bugs that you want to add the attachment to.
+        :type ids: list of ints and/or strings
+        :param data: Raw attachment data
+        :type data: binary data
+        :param filepath: Path to the file.
+        :type filepath: string
+        :param filename: The file name that will be displayed in the UI for the attachment.
+        :type filename: string
+        :param mimetype: The MIME type of the attachment, like text/plain or image/png.
+        :type mimetype: string
+        :param comment: A comment to add along with the attachment.
+        :type comment: string
+        :param summary: A short string describing the attachment.
+        :type summary: string
+        :param is_patch: True if Bugzilla should treat this attachment as a patch.
+            If specified, a content_type doesn't need to be specified as it is forced to text/plain.
+            Defaults to false if unspecified.
+        :type is_patch: boolean
+        :param is_private: True if the attachment should be private, False if public.
+            Defaults to false if unspecified.
+        :type is_private: boolean
 
-class AttachRequest(Request):
-    pass
+        :raises ValueError: if no bug IDs are specified
+        :raises ValueError: if data or filepath arguments aren't specified
+        :raises ValueError: if data isn't defined and filepath points to a nonexistent file
+        :raises ValueError: if filepath isn't defined and summary or filename isn't specified
+
+        :returns: attachment IDs created
+        :rtype: list of attachment IDs
+        """
+        if not ids:
+            raise ValueError('No bug ID(s) or aliases specified')
+
+        params = {'ids': ids}
+
+        if data is not None:
+            params['data'] = base64.b64encode(data)
+        else:
+            if filepath is None:
+                raise ValueError('Either data or a filepath must be passed as an argument')
+            else:
+                if not os.path.exists(filepath):
+                    raise ValueError('File not found: {}'.format(filepath))
+                else:
+                    with open(filepath, 'rb') as f:
+                        params['data'] = base64.b64encode(f.read())
+
+        if filename is None:
+            if filepath is not None:
+                filename = os.path.basename(filepath)
+            else:
+                raise ValueError('A valid filename must be specified')
+
+        if mimetype is None and not is_patch:
+            if data is not None:
+                mimetype = magic.from_buffer(data, mime=True)
+            else:
+                mimetype = magic.from_file(filepath, mime=True)
+
+        if summary is None:
+            if filepath is not None:
+                summary = filename
+            else:
+                raise ValueError('A valid summary must be specified')
+
+        params['file_name'] = filename
+        params['summary'] = summary
+        if not is_patch:
+            params['content_type'] = mimetype
+        params['comment'] = comment
+        params['is_patch'] = is_patch
+
+        super().__init__(service=service, method='Bug.add_attachment', params=params)
+
+    def parse(self, data, *args, **kw):
+        return data['attachments']
 
 
 @command('attachments', Bugzilla)
