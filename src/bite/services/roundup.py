@@ -236,7 +236,7 @@ class _AttachmentsRequest(Request):
         if ids is None and attachment_ids is None:
             raise ValueError('No {} or attachment ID(s) specified'.format(self.service.item_name))
 
-        # TODO: add issue id support
+        # TODO: add support for specifying issue IDs
         reqs = []
         for i in attachment_ids:
             params = ['file' + str(i)]
@@ -251,16 +251,15 @@ class _AttachmentsRequest(Request):
         self.attachment_ids = attachment_ids
 
     def parse(self, data):
-        if self.ids:
-            yield [RoundupAttachment(id=self.ids[i], filename=d['name'], data=d.get('content', None),
-                                    creator=self.service.cache['users'][int(d['creator'])-1],
-                                    created=parsetime(d['creation']), mimetype=d['type'])
-                    for i, d in enumerate(data)]
-        elif self.attachment_ids:
-            for i, d in enumerate(data):
-                yield RoundupAttachment(id=self.attachment_ids[i], filename=d['name'], data=d.get('content', None),
-                                        creator=self.service.cache['users'][int(d['creator'])-1],
-                                        created=parsetime(d['creation']), mimetype=d['type'])
+        if self.attachment_ids:
+            ids = self.attachment_ids
+        else:
+            ids = self.ids
+
+        yield [RoundupAttachment(id=ids[i], filename=d['name'], data=d.get('content', None),
+                                creator=self.service.cache['users'][int(d['creator'])-1],
+                                created=parsetime(d['creation']), mimetype=d['type'])
+               for i, d in enumerate(data)]
 
 
 @command('comments', Roundup)

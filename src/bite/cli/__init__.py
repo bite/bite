@@ -177,10 +177,10 @@ class Cli(object):
             if dry_run: return
             attachments = self.service.send(request)
 
-            # item attachment requests yield lists of attachments -- each list
-            # corresponds to the attachments for given item ID
-            if item_id:
-                attachments = chain.from_iterable(attachments)
+            # Attachment requests yield lists of attachments -- each list
+            # corresponds to the attachments for given item ID or a single list
+            # of all attachments requested.
+            attachments = chain.from_iterable(attachments)
 
             if output_url:
                 _output_urls(x.id for x in attachments)

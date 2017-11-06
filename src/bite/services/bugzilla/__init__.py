@@ -592,11 +592,13 @@ class _AttachmentsRequest(Request):
 
         if self.attachment_ids:
             attachments = data['attachments']
-            for i in self.attachment_ids:
-                try:
-                    yield self.service.attachment(**attachments[str(i)])
-                except KeyError:
-                    raise BiteError('invalid attachment ID: {}'.format(i))
+            files = []
+            try:
+                for i in self.attachment_ids:
+                    files.append(self.service.attachment(**attachments[str(i)]))
+            except KeyError:
+                raise BiteError('invalid attachment ID: {}'.format(i))
+            yield files
 
 
 @command('history', Bugzilla)
