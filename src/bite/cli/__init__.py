@@ -89,7 +89,7 @@ class Cli(object):
             self.service.login(user, password)
 
     @loginretry
-    def get(self, dry_run, ids, filters, browser=False, **kw):
+    def get(self, dry_run, ids, browser=False, **kw):
         if not ids:
             raise RuntimeError('No {} ID(s) specified'.format(self.service.item.type))
 
@@ -115,9 +115,6 @@ class Cli(object):
 
             if dry_run: return
             data = self.service.send(request)
-            if filters is not None:
-                for fcn in filters:
-                    data = fcn(data)
             self._print_item(data, **kw)
 
     @loginretry
@@ -284,7 +281,7 @@ class Cli(object):
         else:
             sys.stdout.write(str(data))
 
-    def search(self, dry_run, filters, **kw):
+    def search(self, dry_run, **kw):
         kw = self._search_params(**kw)
         request = self.service.SearchRequest(**kw)
 
@@ -296,9 +293,6 @@ class Cli(object):
 
         if dry_run: return
         data = self.service.send(request)
-        if filters is not None:
-            for fcn in filters:
-                data = fcn(data)
         count = self.print_search(data, **kw)
         if sys.stdout.isatty():
             self.log('{} {}{} found.'.format(count, self.service.item.type, 's'[count == 1:]))

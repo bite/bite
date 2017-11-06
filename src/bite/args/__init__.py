@@ -1,6 +1,6 @@
 import sys
 
-from ..argparser import string_list, parse_filters
+from ..argparser import string_list
 
 def base_options(parser, method):
     group = parser.add_argument_group('{} options'.format(method.capitalize()))
@@ -15,11 +15,6 @@ def generic_receive(parser):
         type=string_list,
         metavar='FIELD | FIELD,FIELD,...',
         help='fields to output')
-    parser.add_argument('--filter',
-        action=parse_filters,
-        dest='filters',
-        metavar='FILTER | FILTER,FILTER,...',
-        help='Only show items matching a given filter')
 
 def generic_send(parser):
     parser.add_argument('--ask',

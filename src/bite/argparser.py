@@ -110,30 +110,6 @@ class override_attr(Action):
         except ImportError:
             raise ArgumentTypeError("couldn't import module: {!r}".format(self.module))
 
-class parse_filters(Action):
-    def __call__(self, parser, namespace, values, option_string=None):
-        filters = []
-
-        for filter_name in values.split(','):
-            module_name, _, fcn_name = filter_name.partition(':')
-            if fcn_name == "":
-                fcn_name = module_name
-                module_name = namespace.connection
-
-            spec = importlib.util.spec_from_file_location(
-                module_name, os.path.join(const.CONFIG_PATH, 'python'))
-            if spec is None:
-                parser.error('filter module not found: {}'.format(module_name))
-            module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(module)
-
-            try:
-                filters.append(getattr(module, fcn_name))
-            except AttributeError as e:
-                parser.error('No function "{}" in module "{}"'.format(fcn_name, module_name))
-
-        setattr(namespace, self.dest, filters)
-
 class parse_append(Action):
     def __call__(self, parser, namespace, values, option_string=None):
         if not isinstance(values, list):
