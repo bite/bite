@@ -16,7 +16,7 @@ from snakeoil.sequences import iflatten_instance
 from . import const
 from .alias import substitute_alias
 from .config import get_config
-from .exceptions import BiteError
+from .exceptions import CliError, BiteError, RequestError
 
 
 def string_list(s):
@@ -524,8 +524,12 @@ class Tool(tool.Tool):
 
     def handle_exec_exception(self, e):
         """Handle bite-specific errors."""
-        if isinstance(e, BiteError):
-            self.parser.error(e.msg)
+        if isinstance(e, (CliError, BiteError, RequestError)):
+            if self.parser.debug:
+                raise e
+            else:
+                msg = e.message if self.options.verbose else str(e)
+                self.parser.error(e.msg)
             return 1
         else:
             # exception is unhandled here, fallback to generic handling

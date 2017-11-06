@@ -13,7 +13,7 @@ import sys
 
 from .. import const
 from ..argparser import ArgumentParser, parse_file, override_attr
-from ..exceptions import BiteError, CliError, RequestError
+from ..exceptions import RequestError
 
 
 argparser = ArgumentParser(
@@ -157,10 +157,6 @@ def _cache(options, out, err):
         except RequestError as e:
             err.write('failed updating cached data: {}: {}'.format(connection, str(e)))
             return 1
-        except (CliError, BiteError) as e:
-            msg = e.message if options.verbose else str(e)
-            err.write('bite cache: error: {}'.format(msg))
-            return 1
         return 0
 
     # run all cache updates in parallel
@@ -183,13 +179,7 @@ def _validate_args(parser, namespace):
 
 @argparser.bind_main_func
 def main(options, out, err):
-    try:
-        client, fcn_args = get_client(options)
-        cmd = getattr(client, fcn_args.pop('fcn'))
-        cmd(**fcn_args)
-    except (CliError, BiteError, RequestError) as e:
-        msg = e.message if options.verbose else str(e)
-        err.write('bite: error: {}'.format(msg))
-        return 1
-
+    client, fcn_args = get_client(options)
+    cmd = getattr(client, fcn_args.pop('fcn'))
+    cmd(**fcn_args)
     return 0
