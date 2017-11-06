@@ -339,7 +339,7 @@ class _SearchRequest(Request):
         if not 'status' in params:
             params['status'] = service.cache['open_status']
 
-        if not 'fields' in kw or kw['fields'] is None:
+        if kw.get('fields', None) is None:
             fields = ['id', 'assigned_to', 'summary']
         else:
             fields = kw['fields']
