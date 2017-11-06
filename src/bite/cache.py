@@ -20,9 +20,9 @@ def ident(x):
 
 class Cache(object):
 
-    def __init__(self, connection, defaults=None, converters=None):
-        self.connection = connection
-        self.path = os.path.join(const.USER_CACHE_PATH, 'config', connection)
+    def __init__(self, name, defaults=None, converters=None):
+        self.name = name
+        self.path = os.path.join(const.USER_CACHE_PATH, 'config', name)
 
         self._settings = {}
         if defaults is not None:
@@ -48,7 +48,7 @@ class Cache(object):
         try:
             with open(path, 'r') as f:
                 config.read_file(f)
-            settings = config.items(self.connection)
+            settings = config.items(self.name)
         except IOError:
             settings = ()
         self._settings.update(
@@ -70,7 +70,7 @@ class Cache(object):
             except FileExistsError:
                 pass
             config = configparser.ConfigParser()
-            config[self.connection] = d
+            config[self.name] = d
             with open(self.path, 'w') as f:
                 config.write(f)
 
@@ -127,12 +127,11 @@ class Cache(object):
 
 class Auth(object):
 
-    def __init__(self, connection, path=None, token=None, autoload=True):
-        self.connection = connection
+    def __init__(self, name, path=None, token=None, autoload=True):
         self.token = token
 
         if path is None:
-            self.path = os.path.join(const.USER_CACHE_PATH, 'auth', connection)
+            self.path = os.path.join(const.USER_CACHE_PATH, 'auth', name)
         else:
             self.path = path
 
