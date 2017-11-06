@@ -190,8 +190,29 @@ class _VersionRequest(Request):
 @command('get', Bugzilla)
 @request(Bugzilla)
 class _GetRequest(Request):
-    def __init__(self, service, ids, fields=None, get_comments=False,
-                 get_attachments=False, get_history=False, **kw):
+    def __init__(self, service, ids, get_comments=False, get_attachments=False,
+                 get_history=False, **kw):
+        """Construct requests to retrieve all known data for given bug IDs."""
+        if not ids:
+            raise ValueError('No bug ID(s) specified')
+
+        reqs = [service.GetItemRequest(ids=ids, **kw)]
+        for call in ('attachments', 'comments', 'history'):
+            if locals()['get_' + call]:
+                reqs.append(getattr(service, call.capitalize() + 'Request')(ids=ids))
+            else:
+                reqs.append(NullRequest(generator=True))
+
+        super().__init__(service=service, reqs=reqs)
+
+    def parse(self, data):
+        bugs, attachments, comments, history = data
+        return (self.service.item(self.service, bug, next(comments), next(attachments), next(history)) for bug in bugs)
+
+
+@request(Bugzilla)
+class _GetItemRequest(Request):
+    def __init__(self, service, ids, fields=None, **kw):
         """Construct a get request."""
         if not ids:
             raise ValueError('No bug ID(s) specified')
@@ -202,19 +223,10 @@ class _GetRequest(Request):
         if fields is not None:
             params['include_fields'] = fields
 
-        reqs = []
-        for call in ('attachments', 'comments', 'history'):
-            if locals()['get_' + call]:
-                reqs.append(getattr(service, call.capitalize() + 'Request')(ids=ids))
-            else:
-                reqs.append(NullRequest())
-
-        super().__init__(service=service, method='Bug.get', params=params, reqs=reqs)
+        super().__init__(service=service, method='Bug.get', params=params)
 
     def parse(self, data):
-        data, attachments, comments, history = data
-        bugs = next(data)['bugs']
-        return (self.service.item(self.service, bug, next(comments), next(attachments), next(history)) for bug in bugs)
+        return next(data)['bugs']
 
 
 @command('create', Bugzilla)

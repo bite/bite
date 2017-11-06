@@ -157,6 +157,7 @@ class Roundup(LxmlXmlrpc):
 
         return data
 
+
 @command('get', Roundup)
 @request(Roundup)
 class _GetRequest(Request):
@@ -196,9 +197,8 @@ class _GetRequest(Request):
         files = {}
         messages = {}
         reqs = []
-        issues = iflatten_instance(data, dict)
+        issues = list(iflatten_instance(data, dict))
 
-        issues = list(issues)
         file_reqs = []
         msg_reqs = []
         for issue in issues:
