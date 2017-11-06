@@ -189,15 +189,15 @@ class Cli(object):
             else:
                 for f in attachments:
                     if view:
-                        self.view_file(f, metadata)
+                        self._view_attachment(f, metadata)
                     else:
                         if save_to is not None:
                             path = os.path.join(save_to, f.filename)
                         else:
                             path = os.path.join(os.getcwd(), f.filename)
-                        self.save_file(f, path=path)
+                        self._save_attachment(f, path=path)
 
-    def view_file(self, f, metadata):
+    def _view_attachment(self, f, metadata):
         compressed = ['x-bzip2', 'x-bzip', 'x-gzip', 'gzip', 'x-tar', 'x-xz']
         mime_type, mime_subtype = f.mimetype.split('/')
         if sys.stdout.isatty() and not (mime_type == 'text' or mime_subtype in compressed):
@@ -227,13 +227,13 @@ class Cli(object):
         else:
             sys.stdout.write(f.read().decode())
 
-    def save_file(self, f, path):
+    def _save_attachment(self, f, path):
         if os.path.exists(path):
             print(' ! Warning: existing file: {!r}'.format(path))
             if not confirm('Do you want to overwrite it?'):
                 return
 
-        self.log('Saving file: {!r}'.format(path))
+        self.log('Saving attachment: {!r}'.format(path))
         try:
             f.write(path)
         except IOError as e:
