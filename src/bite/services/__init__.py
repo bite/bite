@@ -100,6 +100,10 @@ class NullRequest(Request):
     def __bool__(self):
         return False
 
+    def parse(self, data):
+        while True:
+            yield None
+
 
 class Service(object):
 
