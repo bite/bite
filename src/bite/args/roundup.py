@@ -83,6 +83,20 @@ def subcmds(subparsers):
     attr.add_argument('-s', '--status',
         help='restrict by status')
 
+    # attachments arguments
+    parser = subparsers.add_parser(
+        'attachments', verbose=False,
+        description='get attachment(s)',
+        help='get attachment(s)')
+    parser.set_defaults(fcn='attachments')
+    # positional args
+    parser.add_argument('ids',
+        type=id_list,
+        action=partial(parse_stdin, ids),
+        metavar='ID',
+        help='attachment ID(s) (or issue ID(s) when --item-id is used)')
+    attachments = base_options(parser, 'attachments')
+
     # add generic options for subcommands
     get_actions = [get, search]
     send_actions = [modify, create]

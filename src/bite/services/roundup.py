@@ -205,7 +205,7 @@ class _GetRequest(Request):
             file_ids = issue.get('files', [])
             issue_files = []
             if file_ids and self.get_attachments:
-                issue_files.append(self.service.AttachmentsRequest(ids=file_ids))
+                issue_files.append(self.service.AttachmentsRequest(attachment_ids=file_ids))
             else:
                 issue_files.append(NullRequest())
 
@@ -230,14 +230,15 @@ class _GetRequest(Request):
 @command('attachments', Roundup)
 @request(Roundup)
 class _AttachmentsRequest(Request):
-    def __init__(self, service, ids, attachment_ids=None, get_data=False, *args, **kw):
+    def __init__(self, service, ids=None, attachment_ids=None, get_data=False, *args, **kw):
         """Construct a attachments request."""
         super().__init__(service)
-        if not ids:
-            raise ValueError('No {} ID(s) specified'.format(self.service.item_name))
+        if ids is None and attachment_ids is None:
+            raise ValueError('No {} or attachment ID(s) specified'.format(self.service.item_name))
 
+        # TODO: add issue id support
         reqs = []
-        for i in ids:
+        for i in attachment_ids:
             params = ['file' + str(i)]
             fields = ['name', 'type', 'creator', 'creation']
             if get_data:
@@ -247,12 +248,19 @@ class _AttachmentsRequest(Request):
 
         super().__init__(service=service, reqs=reqs)
         self.ids = ids
+        self.attachment_ids = attachment_ids
 
     def parse(self, data):
-        yield [RoundupAttachment(id=self.ids[i], filename=d['name'], data=d.get('content', None),
-                                creator=self.service.cache['users'][int(d['creator'])-1],
-                                created=parsetime(d['creation']), mimetype=d['type'])
-                for i, d in enumerate(data)]
+        if self.ids:
+            yield [RoundupAttachment(id=self.ids[i], filename=d['name'], data=d.get('content', None),
+                                    creator=self.service.cache['users'][int(d['creator'])-1],
+                                    created=parsetime(d['creation']), mimetype=d['type'])
+                    for i, d in enumerate(data)]
+        elif self.attachment_ids:
+            for i, d in enumerate(data):
+                yield RoundupAttachment(id=self.attachment_ids[i], filename=d['name'], data=d.get('content', None),
+                                        creator=self.service.cache['users'][int(d['creator'])-1],
+                                        created=parsetime(d['creation']), mimetype=d['type'])
 
 
 @command('comments', Roundup)
