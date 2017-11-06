@@ -62,6 +62,8 @@ def attachments(parser):
     parser.add_argument('-I', '--item-id',
         action='store_true',
         help='search by item ID(s) rather than attachment ID(s)')
+    parser.add_argument('--save-to',
+        help='save attachments into a specified dir')
 
 def attach(parser):
     parser.add_argument('-d', '--description',

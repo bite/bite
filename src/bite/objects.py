@@ -4,6 +4,7 @@ import lzma
 import os
 import re
 import sys
+import stat
 import tarfile
 import zlib
 
@@ -131,6 +132,12 @@ class Attachment(PrintableObject):
     @decompress
     def read(self):
         return self.data
+
+    def write(self, path):
+        with open(path, 'wb+') as f:
+            os.chmod(path, stat.S_IREAD | stat.S_IWRITE)
+            f.write(self.read(raw=True))
+
 
 class TarAttachment(object):
     def __init__(self, tarfile, cfile):

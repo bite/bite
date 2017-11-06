@@ -4,7 +4,6 @@ from io import BytesIO
 from itertools import chain
 import locale
 import os
-import stat
 import subprocess
 import sys
 import tarfile
@@ -132,8 +131,8 @@ class Cli(object):
             filename, self.service.item.type, pluralism(ids), ', '.join(map(str, ids)))))
 
     @loginretry
-    def attachments(self, dry_run, ids, view, metadata,
-                    item_id=False, output_url=False, browser=False, **kw):
+    def attachments(self, dry_run, ids, view, metadata=False,
+                    item_id=False, output_url=False, browser=False, save_to=None, **kw):
         # skip pulling data if we don't need it
         get_data = (not output_url and not browser)
 
@@ -192,7 +191,11 @@ class Cli(object):
                     if view:
                         self.view_file(f, metadata)
                     else:
-                        self.save_file(f)
+                        if save_to is not None:
+                            path = os.path.join(save_to, f.filename)
+                        else:
+                            path = os.path.join(os.getcwd(), f.filename)
+                        self.save_file(f, path=path)
 
     def view_file(self, f, metadata):
         compressed = ['x-bzip2', 'x-bzip', 'x-gzip', 'gzip', 'x-tar', 'x-xz']
@@ -224,19 +227,17 @@ class Cli(object):
         else:
             sys.stdout.write(f.read().decode())
 
-    def save_file(self, f):
-        if os.path.exists(f.filename):
-            print(' ! Warning: The file {!r} already exists'.format(f.filename))
+    def save_file(self, f, path):
+        if os.path.exists(path):
+            print(' ! Warning: existing file: {!r}'.format(path))
             if not confirm('Do you want to overwrite it?'):
                 return
 
-        self.log('Saving file: {}'.format(f.filename))
+        self.log('Saving file: {!r}'.format(path))
         try:
-            with open(f.filename, 'wb+') as save_file:
-                os.chmod(f.filename, stat.S_IREAD | stat.S_IWRITE)
-                save_file.write(f.read(raw=True))
+            f.write(path)
         except IOError as e:
-            raise CliError('Cannot create file {!r}: {}'.format(f.filename, e.strerror))
+            raise CliError('error creating file: {!r}: {}'.format(path, e.strerror))
 
     @loginretry
     @loginrequired
