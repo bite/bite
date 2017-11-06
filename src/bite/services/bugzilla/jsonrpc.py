@@ -1,7 +1,7 @@
 try: import simplejson as json
 except ImportError: import json
 
-from . import Bugzilla, BugzillaError, SearchRequest as BugzillaSearchRequest
+from . import Bugzilla, BugzillaError, _SearchRequest as BugzillaSearchRequest
 from .._jsonrpc import Jsonrpc
 from ...exceptions import AuthError
 

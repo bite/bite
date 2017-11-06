@@ -229,7 +229,7 @@ class Bugzilla(Service):
 
 
 @request(Bugzilla)
-class LoginRequest(Request):
+class _LoginRequest(Request):
     def __init__(self, service, user, password, restrict_login=None):
         """Log in as a user and get an auth token."""
         if restrict_login is None:
@@ -248,7 +248,7 @@ class LoginRequest(Request):
 
 @command('users', Bugzilla)
 @request(Bugzilla)
-class UsersRequest(Request):
+class _UsersRequest(Request):
     def __init__(self, service, ids=None, names=None, match=None):
         """Query bugzilla for user data."""
         if not any((ids, names, match)):
@@ -271,7 +271,7 @@ class UsersRequest(Request):
 
 @command('extensions', Bugzilla)
 @request(Bugzilla)
-class ExtensionsRequest(Request):
+class _ExtensionsRequest(Request):
     def __init__(self, service):
         """Construct an extensions request."""
         super().__init__(service=service, method='Bugzilla.extensions')
@@ -282,7 +282,7 @@ class ExtensionsRequest(Request):
 
 @command('version', Bugzilla)
 @request(Bugzilla)
-class VersionRequest(Request):
+class _VersionRequest(Request):
     def __init__(self, service):
         """Construct a version request."""
         super().__init__(service=service, method='Bugzilla.version')
@@ -293,7 +293,7 @@ class VersionRequest(Request):
 
 @command('get', Bugzilla)
 @request(Bugzilla)
-class GetRequest(Request):
+class _GetRequest(Request):
     def __init__(self, service, ids, fields=None, get_comments=False,
                  get_attachments=False, get_history=False, **kw):
         """Construct a get request."""
@@ -323,7 +323,7 @@ class GetRequest(Request):
 
 @command('search', Bugzilla)
 @request(Bugzilla)
-class SearchRequest(Request):
+class _SearchRequest(Request):
     def __init__(self, service, *args, **kw):
         """Construct a search request."""
         params = {}
@@ -401,7 +401,7 @@ class SearchRequest(Request):
 
 @command('comments', Bugzilla)
 @request(Bugzilla)
-class CommentsRequest(Request):
+class _CommentsRequest(Request):
     def __init__(self, service, ids=None, comment_ids=None, created=None, fields=None, *args, **kw):
         """Construct a comments request."""
         if ids is None and comment_ids is None:
@@ -436,7 +436,7 @@ class ChangesRequest(Request):
 
 @command('modify', Bugzilla)
 @request(Bugzilla)
-class ModifyRequest(Request):
+class _ModifyRequest(Request):
     def __init__(self, service, ids, *args, **kw):
         """Construct a modify request."""
         options_log = []
@@ -539,7 +539,7 @@ class AttachRequest(Request):
 
 @command('attachments', Bugzilla)
 @request(Bugzilla)
-class AttachmentsRequest(Request):
+class _AttachmentsRequest(Request):
     def __init__(self, service, ids=None, attachment_ids=None, fields=None,
                  get_data=False, *args, **kw):
         """Construct a attachments request."""
@@ -582,7 +582,7 @@ class AttachmentsRequest(Request):
 
 @command('history', Bugzilla)
 @request(Bugzilla)
-class HistoryRequest(Request):
+class _HistoryRequest(Request):
     def __init__(self, service, ids, *args, **kw):
         if not ids:
             raise ValueError('No bug ID(s) specified')
@@ -600,7 +600,7 @@ class HistoryRequest(Request):
 
 @command('fields', Bugzilla)
 @request(Bugzilla)
-class FieldsRequest(Request):
+class _FieldsRequest(Request):
     def __init__(self, service, ids=None, names=None, *args, **kw):
         """Get information about valid bug fields.
 

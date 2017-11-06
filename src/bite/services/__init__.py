@@ -25,7 +25,7 @@ def request(service_cls):
     """Register request creation function."""
     def wrapped(cls, *args, **kwds):
         req_func = lambda self, *args, **kw: cls(self, *args, **kw)
-        setattr(service_cls, cls.__name__, req_func)
+        setattr(service_cls, cls.__name__.lstrip('_'), req_func)
         return cls
     return wrapped
 

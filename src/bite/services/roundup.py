@@ -164,7 +164,7 @@ class Roundup(LxmlXmlrpc):
 
 @command('get', Roundup)
 @request(Roundup)
-class GetRequest(Request):
+class _GetRequest(Request):
 
     def __init__(self, service, ids, fields=None, get_comments=False,
                 get_attachments=False, **kw):
@@ -220,7 +220,7 @@ class GetRequest(Request):
 
 @command('attachments', Roundup)
 @request(Roundup)
-class AttachmentsRequest(Request):
+class _AttachmentsRequest(Request):
     def __init__(self, service, ids, attachment_ids=None, fields=None, *args, **kw):
         """Construct a attachments request."""
         super().__init__(service)
@@ -238,7 +238,7 @@ class AttachmentsRequest(Request):
 
 @command('comments', Roundup)
 @request(Roundup)
-class CommentsRequest(Request):
+class _CommentsRequest(Request):
     def __init__(self, service, ids, comment_ids=None, created=None, fields=None, *args, **kw):
         """Construct a comments request."""
         super().__init__(service)
