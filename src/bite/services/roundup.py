@@ -93,14 +93,13 @@ class Roundup(LxmlXmlrpc):
         return config_updates
 
     def inject_auth(self, request, params):
-        request.headers['Authorization'] = str(self.auth)
+        self.session.headers['Authorization'] = str(self.auth)
+        self.authenticated = True
         return request, params
 
     def _get_auth_token(self, user=None, password=None, **kw):
         """Get an authentication token from the service."""
-        # XXX: Hacky method of saving the HTTP basic auth token, probably
-        # should auth token usage to support setting session.auth or
-        # session.headers as well so it doesn't have to be injected every time.
+        # XXX: hacky method of saving the HTTP basic auth token
         request = requests.Request(method='POST')
         requests.auth.HTTPBasicAuth(user, password)(request)
         return request.headers['Authorization']

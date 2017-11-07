@@ -43,7 +43,7 @@ class Request(object):
         if method is not None:
             req = requests.Request(method='POST', url=url)
 
-            if not self.service.skip_auth and self.service.auth:
+            if not (self.service.skip_auth or self.service.authenticated) and self.service.auth:
                 req, params = self.service.inject_auth(req, params)
             req.data = self.service._encode_request(method, params)
             _requests.append(req)
@@ -152,6 +152,7 @@ class Service(object):
         self.cache = cache_cls(cache_name)
 
         self.skip_auth = skip_auth
+        self.authenticated = False
         self.auth = Auth(cache_name, path=auth_file, token=auth_token, autoload=(not skip_auth))
 
         # block when urllib3 connection pool is full
@@ -211,7 +212,7 @@ class Service(object):
 
         request = requests.Request(method='POST', url=url)
 
-        if not self.skip_auth and self.auth:
+        if not (self.skip_auth or self.authenticated) and self.auth:
             request, params = self.inject_auth(request, params)
 
         request.data = self._encode_request(method, params)
