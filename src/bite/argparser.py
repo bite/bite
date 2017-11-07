@@ -454,10 +454,7 @@ class ArgumentParser(arghparse.ArgumentParser):
             self.error('invalid service: {!r} (available services: {})'.format(
                 service_name, ', '.join(const.SERVICES)))
 
-        try:
-            service_args = import_module('bite.args.' + service_name.replace('-', '.'))
-        except ImportError:
-            self.error('failed getting {!r} service options'.format(service_name))
+        service_args = import_module('bite.args.' + service_name.replace('-', '.'))
 
         # add any additional service specific top level commands
         try:
