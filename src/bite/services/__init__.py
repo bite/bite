@@ -1,6 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor
 import os
-from urllib.parse import urlparse, urlunparse
+from urllib.parse import urlparse, urlunparse, urlencode
 
 import requests
 from snakeoil.sequences import iflatten_instance
@@ -35,23 +35,24 @@ class Request(object):
     def __init__(self, service, url=None, method=None, params=None, reqs=None):
         self.service = service
         self.options = []
-
-        if url is None:
-            url = self.service._base
+        self.params = params
         _requests = []
 
         if method is not None:
-            req = requests.Request(method='POST', url=url)
-
-            if not (self.service.skip_auth or self.service.authenticated) and self.service.auth:
-                req, params = self.service.inject_auth(req, params)
-            req.data = self.service._encode_request(method, params)
-            _requests.append(req)
+            if url is None:
+                url = self.service._base
+            req = requests.Request(method=method, url=url)
+            _requests.append(self._finalize(req, params))
 
         if reqs is not None:
             _requests.extend(reqs)
 
         self._requests = tuple(_requests)
+
+    def _finalize(self, req, params):
+        if not (self.service.skip_auth or self.service.authenticated) and self.service.auth:
+            req, self.params = self.service.inject_auth(req, self.params)
+        return req
 
     def prepare(self):
         reqs = []
@@ -90,6 +91,33 @@ class Request(object):
 
     def __iter__(self):
         return iter(self._requests)
+
+
+class RPCRequest(Request):
+    """Construct an RPC request."""
+
+    def __init__(self, command, **kw):
+        self.command = command
+        super().__init__(method='POST', **kw)
+
+    def _finalize(self, req, params):
+        req = super()._finalize(req, params)
+        req.data = self.service._encode_request(self.command, self.params)
+        return req
+
+
+class RESTRequest(object):
+    """Construct a REST request."""
+
+    def __init__(self, endpoint, method='GET', **kw):
+        self.endpoint = endpoint.lstrip('/')
+        super().__init__(method=method, **kw)
+
+    def _finalize(self, req, params):
+        req = super()._finalize(req, params)
+        params = self.params if self.params is not None else []
+        req.url = '{}/{}?{}'.format(req.url, self.endpoint, urlencode(params))
+        return req
 
 
 class NullRequest(Request):
@@ -201,8 +229,8 @@ class Service(object):
         """Decode the data body of a request."""
         raise NotImplementedError()
 
-    def inject_auth(self, request, params):
-        """Add authentication data to a request."""
+    def inject_auth(self, request=None, params=None):
+        """Authenticate a request or session."""
         return request, params
 
     def create_request(self, url=None, method=None, params=None):
