@@ -17,5 +17,5 @@ class Json(Service):
             return response.json()
         except json.decoder.JSONDecodeError as e:
             if not response.headers['Content-Type'].startswith('application/json'):
-                raise RequestError('JSON-RPC interface likely disabled on server')
+                raise RequestError('non-JSON response, service interface likely disabled on server')
             raise ParsingError(msg='failed parsing JSON', text=str(e))
