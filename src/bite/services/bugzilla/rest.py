@@ -16,9 +16,7 @@ class BugzillaRest(Bugzilla, Jsonrpc):
     service_name = 'bugzilla-rest'
 
     def __init__(self, **kw):
-        endpoint = '/rest'
-        super().__init__(endpoint=endpoint, **kw)
-
+        super().__init__(endpoint='/rest', **kw)
         self.item = RestBug
 
     def inject_auth(self, request, params):

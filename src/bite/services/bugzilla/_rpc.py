@@ -78,7 +78,7 @@ class _ProductsRequest(RPCRequest):
 
 @command('extensions', BugzillaRpc)
 @request(BugzillaRpc)
-class _ExtensionsRequest(ExtensionsRequest, RPCRequest):
+class _ExtensionsRequest(RPCRequest, ExtensionsRequest):
     def __init__(self, service):
         """Construct an extensions request."""
         super().__init__(service=service, command='Bugzilla.extensions')
@@ -86,7 +86,7 @@ class _ExtensionsRequest(ExtensionsRequest, RPCRequest):
 
 @command('version', BugzillaRpc)
 @request(BugzillaRpc)
-class _VersionRequest(VersionRequest, RPCRequest):
+class _VersionRequest(RPCRequest, VersionRequest):
     def __init__(self, service):
         """Construct a version request."""
         super().__init__(service=service, command='Bugzilla.version')

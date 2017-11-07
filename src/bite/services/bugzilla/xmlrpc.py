@@ -11,8 +11,7 @@ class BugzillaXmlrpc(BugzillaRpc, LxmlXmlrpc):
     service_name = 'bugzilla-xmlrpc'
 
     def __init__(self, **kw):
-        endpoint = '/xmlrpc.cgi'
-        super().__init__(endpoint=endpoint, **kw)
+        super().__init__(endpoint='/xmlrpc.cgi', **kw)
         self.attachment = BugzillaAttachmentXml
 
     def parse_response(self, response):
