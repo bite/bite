@@ -3,12 +3,15 @@ except ImportError: import json
 
 import requests
 
-from . import Bugzilla, BugzillaAttachment, BugzillaComment, BugzillaEvent
-from .._jsonrpc import Jsonrpc
+from . import (
+    Bugzilla, BugzillaAttachment, BugzillaComment, BugzillaEvent,
+    ExtensionsRequest, VersionRequest)
+from .. import RESTRequest, command, request
+from .._json import Json
 from ...exceptions import RequestError
 from ...objects import Item
 
-class BugzillaRest(Bugzilla, Jsonrpc):
+class BugzillaRest(Bugzilla, Json):
     """Support Bugzilla's REST interface.
 
     API docs: http://bugzilla.readthedocs.io/en/latest/api/index.html#apis
@@ -214,3 +217,19 @@ class RestBug(Item):
             lines.append('{:<12}: {}'.format(title, v))
 
         return '\n'.join(lines)
+
+
+@command('extensions', BugzillaRest)
+@request(BugzillaRest)
+class _ExtensionsRequest(RESTRequest, ExtensionsRequest):
+    def __init__(self, service):
+        """Construct an extensions request."""
+        super().__init__(service=service, endpoint='/extensions')
+
+
+@command('version', BugzillaRest)
+@request(BugzillaRest)
+class _VersionRequest(RESTRequest, VersionRequest):
+    def __init__(self, service):
+        """Construct a version request."""
+        super().__init__(service=service, endpoint='/version')

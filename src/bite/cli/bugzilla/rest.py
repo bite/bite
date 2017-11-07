@@ -2,7 +2,10 @@ from dateutil.parser import parse as parsetime
 
 from . import Bugzilla
 
-class BugzillaBzapi(Bugzilla):
+class BugzillaRest(Bugzilla):
+    """CLI for Bugzilla REST interface."""
+
+    service_name = 'bugzilla-rest'
 
     def parse_search(self, **kw):
         params = {}
