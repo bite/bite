@@ -3,7 +3,8 @@ import codecs
 from itertools import groupby
 import os
 
-from . import Bugzilla, BugzillaBug, BugzillaComment, BugzillaEvent, parsetime
+from . import (Bugzilla, BugzillaBug, BugzillaComment, BugzillaEvent, parsetime,
+    ExtensionsRequest, VersionRequest)
 from .. import Request, RPCRequest, NullRequest, command, request
 from ... import const, magic
 from ...exceptions import BiteError
@@ -77,24 +78,18 @@ class _ProductsRequest(RPCRequest):
 
 @command('extensions', BugzillaRpc)
 @request(BugzillaRpc)
-class _ExtensionsRequest(RPCRequest):
+class _ExtensionsRequest(ExtensionsRequest, RPCRequest):
     def __init__(self, service):
         """Construct an extensions request."""
         super().__init__(service=service, command='Bugzilla.extensions')
 
-    def parse(self, data):
-        return next(data)['extensions']
-
 
 @command('version', BugzillaRpc)
 @request(BugzillaRpc)
-class _VersionRequest(RPCRequest):
+class _VersionRequest(VersionRequest, RPCRequest):
     def __init__(self, service):
         """Construct a version request."""
         super().__init__(service=service, command='Bugzilla.version')
-
-    def parse(self, data):
-        return next(data)['version']
 
 
 @command('get', BugzillaRpc)

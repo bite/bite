@@ -5,7 +5,7 @@ import string
 
 from dateutil.parser import parse as dateparse
 
-from .. import Service
+from .. import Service, Request
 from ... import const, utc
 from ...cache import Cache, csv2tuple
 from ...exceptions import RequestError
@@ -99,6 +99,18 @@ class Bugzilla(Service):
         req = self.create_request(method=method, params=params)
         data = self.send(req)
         return data
+
+
+class ExtensionsRequest(Request):
+
+    def parse(self, data):
+        return next(data)['extensions']
+
+
+class VersionRequest(Request):
+
+    def parse(self, data):
+        return next(data)['version']
 
 
 class BugzillaBug(Item):
