@@ -1,5 +1,6 @@
 try: import simplejson as json
 except ImportError: import json
+
 import requests
 
 from . import Bugzilla, BugzillaAttachment, BugzillaComment, BugzillaEvent
@@ -20,16 +21,13 @@ class BugzillaRest(Bugzilla, Jsonrpc):
 
         self.item = RestBug
 
-    def login(self):
-        if self.auth:
-            for cookie in self.auth:
-                if cookie.name == 'Bugzilla_login':
-                    login = cookie.value
-                elif cookie.name == 'Bugzilla_logincookie':
-                    logincookie = cookie.value
-            self.auth = {'userid': login, 'cookie': logincookie}
+    def inject_auth(self, request, params):
+        if len(self.auth) > 16:
+            self.session.headers['X-Bugzilla-Api-Key'] = str(self.auth)
         else:
-            self.auth = {'username': self.user, 'password': self.password}
+            self.session.headers['X-Bugzilla-Token'] = str(self.auth)
+        self.authenticated = True
+        return request, params
 
     def search(self, params):
         import ijson
