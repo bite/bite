@@ -1,12 +1,13 @@
 try: import simplejson as json
 except ImportError: import json
 
-from . import Bugzilla, BugzillaError, _SearchRequest as BugzillaSearchRequest
+from . import BugzillaError
+from ._rpc import BugzillaRpc, _SearchRequest as BugzillaSearchRequest
 from .._jsonrpc import Jsonrpc
 from ...exceptions import AuthError
 
 
-class BugzillaJsonrpc(Bugzilla, Jsonrpc):
+class BugzillaJsonrpc(BugzillaRpc, Jsonrpc):
     """Support Bugzilla's deprecated JSON-RPC interface."""
 
     service_name = 'bugzilla-jsonrpc'
