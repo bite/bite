@@ -10,7 +10,7 @@ from datetime import datetime
 import requests
 from snakeoil.sequences import iflatten_instance
 
-from . import NullRequest, Request, command, request
+from . import NullRequest, Request, RPCRequest, command, request
 from ._xmlrpc import LxmlXmlrpc
 from ..cache import Cache, csv2tuple
 from ..exceptions import AuthError, RequestError, ParsingError
@@ -175,7 +175,7 @@ class _GetRequest(Request):
                 params.extend(fields)
             else:
                 params.extend(service.item.attributes.keys())
-            reqs.append(Request(service=service, method='display', params=params))
+            reqs.append(RPCRequest(service=service, command='display', params=params))
 
         super().__init__(service=service, reqs=reqs)
         self.ids = ids
@@ -243,7 +243,7 @@ class _AttachmentsRequest(Request):
             if get_data:
                 fields.append('content')
             params.extend(fields)
-            reqs.append(Request(service=service, method='display', params=params))
+            reqs.append(RPCRequest(service=service, command='display', params=params))
 
         super().__init__(service=service, reqs=reqs)
         self.ids = ids
@@ -276,7 +276,7 @@ class _CommentsRequest(Request):
             params = ['msg' + str(i)]
             if fields is not None:
                 params.extend(fields)
-            reqs.append(Request(service=service, method='display', params=params))
+            reqs.append(RPCRequest(service=service, command='display', params=params))
 
         super().__init__(service=service, reqs=reqs)
         self.ids = ids
