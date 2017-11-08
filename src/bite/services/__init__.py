@@ -36,18 +36,20 @@ class Request(object):
         self.service = service
         self.options = []
         self.params = params
-        _requests = []
+        self._req = None
 
         if method is not None:
             if url is None:
                 url = self.service._base
-            req = requests.Request(method=method, url=url)
-            _requests.append(self._finalize(req, params))
+            self._req = requests.Request(method=method, url=url)
 
-        if reqs is not None:
-            _requests.extend(reqs)
+        self._reqs = tuple(reqs) if reqs is not None else ()
 
-        self._requests = tuple(_requests)
+    @property
+    def _requests(self):
+        if self._req is not None:
+            yield self._finalize(self._req, self.params)
+        yield from self._reqs
 
     def _finalize(self, req, params):
         if not (self.service.skip_auth or self.service.authenticated) and self.service.auth:
@@ -86,11 +88,8 @@ class Request(object):
     def handle_exception(self, e):
         raise e
 
-    def __len__(self):
-        return len(self._requests)
-
     def __iter__(self):
-        return iter(self._requests)
+        return self._requests
 
 
 class RPCRequest(Request):
@@ -106,24 +105,24 @@ class RPCRequest(Request):
         return req
 
 
-class RESTRequest(object):
+class RESTRequest(Request):
     """Construct a REST request."""
 
     def __init__(self, endpoint, method='GET', **kw):
-        self.endpoint = endpoint.lstrip('/')
+        self.endpoint = endpoint
         super().__init__(method=method, **kw)
 
     def _finalize(self, req, params):
         req = super()._finalize(req, params)
-        params = self.params if self.params is not None else []
-        req.url = '{}/{}?{}'.format(req.url, self.endpoint, urlencode(params))
+        params = '?' + urlencode(self.params) if self.params else ''
+        req.url = '{}/{}{}'.format(req.url, self.endpoint.lstrip('/'), params)
         return req
 
 
 class NullRequest(Request):
 
     def __init__(self, generator=False):
-        self._requests = (None,)
+        self._requests = ()
         self._generator = generator
 
     def __bool__(self):
