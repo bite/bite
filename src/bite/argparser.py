@@ -91,7 +91,6 @@ class parse_stdin(Action):
                                 values.extend(iflatten_instance([self.convert_type(v)]))
                             except ArgumentTypeError as e:
                                 raise ArgumentError(self, e)
-                    sys.stdin = open('/dev/tty')
         setattr(namespace, self.dest, values)
 
 class override_attr(Action):
@@ -483,6 +482,11 @@ class ArgumentParser(arghparse.ArgumentParser):
 
         args = arghparse.Namespace(**vars(initial_args))
         fcn_args = super().parse_args(unparsed_args, initial_args)
+
+        # reopen stdin if an option was piped in
+        if getattr(fcn_args, 'stdin', False):
+            sys.stdin = open('/dev/tty')
+
         args = vars(args)
         fcn_args = {k:v for k,v in vars(fcn_args).items() if k not in args}
         extra_fcn_args = {'dry_run'}
