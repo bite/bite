@@ -257,21 +257,26 @@ class _CommentsRequest(RPCRequest):
             raise ValueError('No {} or comment ID(s) specified'.format(self.service.item_name))
 
         params = {}
+        options_log = []
 
         if ids is not None:
+            ids = list(map(str, ids))
             params['ids'] = ids
+            options_log.append('IDs: {}'.format(', '.join(ids)))
         if comment_ids is not None:
+            comment_ids = list(map(str, comment_ids))
             params['comment_ids'] = comment_ids
+            options_log.append('Comment IDs: {}'.format(', '.join(comment_ids)))
         if created is not None:
             params['new_since'] = created
+            options_log.append('Created after: {}'.format(created))
         if fields is not None:
             params['include_fields'] = fields
 
         self.ids = ids
 
         super().__init__(service=service, command='Bug.comments', params=params)
-        # TODO: this
-        self.options = ['REPLACE ME']
+        self.options = options_log
 
     def parse(self, data, *args, **kw):
         bugs = next(data)['bugs']

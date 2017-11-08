@@ -8,6 +8,7 @@ import sys
 from itertools import chain, groupby
 
 from dateutil.parser import parse as parsetime
+from snakeoil.strings import pluralism
 
 from .. import Cli
 from ... import const
@@ -489,7 +490,7 @@ class Bugzilla(Cli):
 
     def changes(self, ids, creation_time, change_num, fields, output, creator,
                 match, dry_run=False, **kw):
-        request = self.service.history(ids)
+        request = self.service.HistoryRequest(ids)
 
         self.log('Getting changes matching the following options:')
         self.log(request.options)
@@ -550,10 +551,17 @@ class Bugzilla(Cli):
 
     def comments(self, ids, creation_time, comment_num, fields, output, creator,
                  attachment, dry_run=False, **kw):
-        request = self.service.comments(ids, created=creation_time)
+        request = self.service.CommentsRequest(ids, created=creation_time)
+
+        if creator is not None:
+            request.options.append('Creator{}: {}'.format(pluralism(creator), ', '.join(creator)))
+        if attachment:
+            request.options.append('Attachments: yes')
+        if comment_num:
+            request.options.append('Comment number{}: {}'.format(pluralism(comment_num), ', '.join(map(str, comment_num))))
 
         self.log('Getting comments matching the following options:')
-        self.log(request.options)
+        self.log(request.options, prefix='   - ')
 
         if creation_time is not None:
             creation_time = creation_time[1]
@@ -614,16 +622,6 @@ class Bugzilla(Cli):
                 if comments:
                     print(self._header('=', 'Bug: {}'.format(str(i))))
                     self._print_lines(comments)
-
-    #def history(self, ids, dry_run, creation_time, fields, creator, **kw):
-    #    self.log('Getting all history matching the following options:')
-    #    comment_list = self.service.comments(ids, created=creation_time)
-    #    history = self.service.history(ids)
-
-    #    for i in ids:
-    #        comments = next(comment_list)
-    #        changes = next(history)
-    #        combined = sorted(chain(comments, changes), key=lambda event: event.date)
 
     def _print_item(self, bugs, get_comments, get_attachments, get_history, show_obsolete, **kw):
         for bug in bugs:
