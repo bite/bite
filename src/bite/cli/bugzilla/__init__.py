@@ -572,8 +572,15 @@ class Bugzilla(Cli):
             if attachment:
                 comments = (x for x in comments if x.changes['attachment_id'] is not None)
             if comment_num is not None:
-                if len(comment_num) == 1 and comment_num[0] < 0:
-                    comments = list(comments)[comment_num[0]:]
+                if any(x < 0 for x in comment_num):
+                    comments = list(comments)
+                    selected = []
+                    for x in comment_num:
+                        try:
+                            selected.append(comments[x])
+                        except IndexError:
+                            pass
+                    comments = selected
                 else:
                     comments = (x for x in comments if x.count in comment_num)
 
