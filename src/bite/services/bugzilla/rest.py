@@ -31,94 +31,7 @@ class BugzillaRest(Bugzilla, Json):
         self.authenticated = True
         return request, params
 
-    def search(self, params):
-        import ijson
-        url = '{}/bug'.format(self.base)
-        data = self.request(url, params, iter_content=True)
-        bugs = ijson.items(data, 'bugs.item')
-        return (RestBug(x) for x in bugs)
 
-    def get_comments(self, bug_id):
-        url = '{}/bug/{}/comment'.format(self.base, bug_id)
-        data = self.request(url)
-        return [BugzillaComment(x, i, rest=True) for i, x in enumerate(data['comments'])]
-
-    def get_attachment(self, attachment_id):
-        for a in attachment_id:
-            url = '{}/attachment/{}'.format(self.base, a)
-            args = {'attachmentdata': 1}
-            data = self.request(url, params=args)
-            yield BugzillaAttachment(data)
-
-    def get_attachments(self, bug_id):
-        url = '{}/bug/{}/attachment'.format(self.base, bug_id)
-        data = self.request(url)
-        return [BugzillaAttachment(x) for x in data['attachments']]
-
-    def get_history(self, bug_id):
-        url = '{}/bug/{}/history'.format(self.base, bug_id)
-        data = self.request(url)
-        return [BugzillaEvent(x, i, rest=True) for i, x in enumerate(data['history'], start=1)]
-
-    def get(self, bug_id, get_comments, get_attachments, get_history, **kw):
-        """Return bug object(s) given the bug id(s)"""
-        include_fields = ['_default,blocks,cc,depends_on,dupe_of,flags,groups,see_also']
-
-        if get_attachments:
-            include_fields.append('attachments')
-        if get_comments:
-            include_fields.append('comments')
-        if get_history:
-            include_fields.append('history')
-
-        params = {'id': bug_id, 'include_fields': [','.join(include_fields)]}
-        url = '{}/bug'.format(self.base)
-        data = self.request(url, params)
-
-        if data['bugs']:
-            bugs = data['bugs']
-        else:
-            raise RequestError('You are not authorized to access bug #{}'.format(bug_id))
-
-        for bug in bugs:
-            attachments = []
-            comments = []
-            history = []
-            if get_attachments and bug['attachments']:
-                attachments = [BugzillaAttachment(x) for x in bug['attachments']]
-            if get_comments and bug['comments']:
-                comments = [BugzillaComment(x, i, rest=True) for i, x in enumerate(bug['comments'])]
-            if get_history and bug['history']:
-                history = [BugzillaEvent(x, i, rest=True) for i, x in enumerate(bug['history'], start=1)]
-
-            yield RestBug(bug, comments, attachments, history)
-
-    def request(self, url, params=None, data=None, iter_content=False):
-        """Attempt to call method with args. Log in if authentication is required."""
-
-        if self.auth is not None:
-            params.update(self.auth)
-
-        try:
-            if data is None:
-                r = self.session.get(url=url, params=params, **self.requests_params)
-            else:
-                r = self.session.post(url=url, params=params, data=data, **self.requests_params)
-        except:
-            raise
-
-        # TODO: test for returned API Errors
-        if r.status_code == requests.codes.ok:
-            if iter_content:
-                return IterContent(r)
-            else:
-                return r.json()
-        else:
-            raise RequestError(msg=r.reason, code=r.status_code)
-
-class IterContent(object):
-    def __init__(self, file, size=64*1024):
-        self.chunks = file.iter_content(chunk_size=size)
 @command('extensions', BugzillaRest)
 @request(BugzillaRest)
 class _ExtensionsRequest(ExtensionsRequest, RESTRequest):
@@ -154,8 +67,6 @@ class _UsersRequest(UsersRequest, RESTRequest):
         self.params = [(k, i) for k, v in self.params.items() for i in v]
 
 
-    def read(self, size=64*1024):
-        return next(self.chunks)
 
 class RestBug(Item):
     def __init__(self, bug, comments=None, attachments=None, history=None, **kw):
