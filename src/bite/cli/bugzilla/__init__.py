@@ -264,11 +264,11 @@ class Bugzilla(Cli):
                 print(self._header('-', 'Added comment'))
                 print(params['comment-body'])
 
-    def version(self, **kw):
+    def version(self, dry_run=False):
         version = self.service.version()
         print('Bugzilla version: {}'.format(version))
 
-    def extensions(self, **kw):
+    def extensions(self, dry_run=False):
         extensions = self.service.extensions()
         if extensions:
             print('Bugzilla extensions')
@@ -278,19 +278,26 @@ class Bugzilla(Cli):
         else:
             print('No installed Bugzilla extensions')
 
-    def users(self, **kw):
+    def users(self, users, dry_run=False):
         params = {}
-        for user in kw['users']:
+        for user in users:
             if re.match(r'.+@.+', user):
                 params.setdefault('names', []).append(user)
             elif re.match(r'^\d+$', user):
                 params.setdefault('ids', []).append(user)
             else:
                 params.setdefault('match', []).append(user)
-        users = self.service.users(**params)
-        self.print_users(users)
 
-    def fields(self, fields=None, dry_run=False, **kw):
+        request = self.service.UsersRequest(**params)
+
+        self.log('Getting users matching the following options:')
+        self.log(request.options, prefix='   - ')
+
+        if dry_run: return
+        data = self.service.send(request)
+        self.print_users(data)
+
+    def fields(self, fields=None, dry_run=False):
         params = {}
         if fields is not None:
             for field in fields:
@@ -298,6 +305,7 @@ class Bugzilla(Cli):
                     params.setdefault('ids', []).append(field)
                 else:
                     params.setdefault('names', []).append(field)
+
         request = self.service.FieldsRequest(**params)
 
         self.log('Getting fields matching the following options:')
@@ -315,9 +323,9 @@ class Bugzilla(Cli):
                         if 'is_open' in value:
                             print('    open: {}'.format(value['is_open']))
 
-    def products(self, **kw):
+    def products(self, products, dry_run=False):
         params = {}
-        for product in kw['products']:
+        for product in products:
             if re.match(r'^\d+$', product):
                 params.setdefault('ids', []).append(product)
             else:
