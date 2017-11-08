@@ -31,6 +31,25 @@ def subcmds(subparsers):
     parser = subparsers.add_parser('extensions', help='get bugzilla extensions')
     parser.set_defaults(fcn='extensions')
 
+    # fields cmd
+    parser = subparsers.add_parser('fields', help='get bugzilla fields')
+    parser.set_defaults(fcn='fields')
+    # positional args
+    parser.add_argument('fields',
+        type=string_list,
+        action=parse_stdin,
+        nargs='?',
+        help='either ID or name')
+
+    # users cmd
+    parser = subparsers.add_parser('users', help='get bugzilla users')
+    parser.set_defaults(fcn='users')
+    # positional args
+    parser.add_argument('users',
+        action=parse_stdin,
+        nargs='+',
+        help='either ID, login, or matching string')
+
     #attach_parser(subparsers)
     #attachment_parser(subparsers)
     #get_parser(subparsers)

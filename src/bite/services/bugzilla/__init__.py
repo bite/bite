@@ -113,6 +113,66 @@ class VersionRequest(Request):
         return next(data)['version']
 
 
+class FieldsRequest(Request):
+
+    def __init__(self, ids=None, names=None, **kw):
+        """Get information about valid bug fields.
+
+        :param ids: fields IDs
+        :type ids: list of ints
+        :param names: field names
+        :type names: list of strings
+
+        """
+        params = {}
+        options_log = []
+
+        if ids is None and names is None:
+            options_log.append('all non-obsolete fields')
+
+        if ids is not None:
+            ids = list(map(str, ids))
+            params['ids'] = ids
+            options_log.append('IDs: {}'.format(', '.join(ids)))
+        if names is not None:
+            params['names'] = names
+            options_log.append('Field names: {}'.format(', '.join(names)))
+
+        super().__init__(params=params, **kw)
+        self.options = options_log
+
+    def parse(self, data):
+        return next(data)['fields']
+
+
+class UsersRequest(Request):
+
+    def __init__(self, ids=None, names=None, match=None, **kw):
+        """Query bugzilla for user data."""
+        if not any((ids, names, match)):
+            raise ValueError('No user ID(s), name(s), or match(es) specified')
+
+        params = {}
+        options_log = []
+
+        if ids is not None:
+            ids = list(map(str, ids))
+            params['ids'] = ids
+            options_log.append('IDs: {}'.format(', '.join(ids)))
+        if names is not None:
+            params['names'] = names
+            options_log.append('Login names: {}'.format(', '.join(names)))
+        if match is not None:
+            params['match'] = match
+            options_log.append('Match patterns: {}'.format(', '.join(match)))
+
+        super().__init__(params=params, **kw)
+        self.options = options_log
+
+    def parse(self, data):
+        return next(data)['users']
+
+
 class BugzillaBug(Item):
 
     attributes = {

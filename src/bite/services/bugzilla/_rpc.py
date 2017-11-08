@@ -4,7 +4,7 @@ from itertools import groupby
 import os
 
 from . import (Bugzilla, BugzillaBug, BugzillaComment, BugzillaEvent, parsetime,
-    ExtensionsRequest, VersionRequest)
+    ExtensionsRequest, VersionRequest, FieldsRequest, UsersRequest)
 from .. import Request, RPCRequest, NullRequest, command, request
 from ... import const, magic
 from ...exceptions import BiteError
@@ -34,25 +34,9 @@ class _LoginRequest(RPCRequest):
 
 @command('users', BugzillaRpc)
 @request(BugzillaRpc)
-class _UsersRequest(RPCRequest):
-    def __init__(self, service, ids=None, names=None, match=None):
-        """Query bugzilla for user data."""
-        if not any((ids, names, match)):
-            raise ValueError('No user ID(s), name(s), or match(es) specified')
-
-        params = {}
-
-        if ids is not None:
-            params['ids'] = ids
-        if names is not None:
-            params['names'] = names
-        if match is not None:
-            params['match'] = match
-
-        super().__init__(service=service, command='User.get', params=params)
-
-    def parse(self, data):
-        return next(data)['users']
+class _UsersRequest(UsersRequest, RPCRequest):
+    def __init__(self, *args, **kw):
+        super().__init__(command='User.get', *args, **kw)
 
 
 @command('products', BugzillaRpc)
@@ -78,7 +62,7 @@ class _ProductsRequest(RPCRequest):
 
 @command('extensions', BugzillaRpc)
 @request(BugzillaRpc)
-class _ExtensionsRequest(RPCRequest, ExtensionsRequest):
+class _ExtensionsRequest(ExtensionsRequest, RPCRequest):
     def __init__(self, service):
         """Construct an extensions request."""
         super().__init__(service=service, command='Bugzilla.extensions')
@@ -86,7 +70,7 @@ class _ExtensionsRequest(RPCRequest, ExtensionsRequest):
 
 @command('version', BugzillaRpc)
 @request(BugzillaRpc)
-class _VersionRequest(RPCRequest, VersionRequest):
+class _VersionRequest(VersionRequest, RPCRequest):
     def __init__(self, service):
         """Construct a version request."""
         super().__init__(service=service, command='Bugzilla.version')
@@ -95,8 +79,8 @@ class _VersionRequest(RPCRequest, VersionRequest):
 @command('get', BugzillaRpc)
 @request(BugzillaRpc)
 class _GetRequest(Request):
-    def __init__(self, service, ids, get_comments=False, get_attachments=False,
-                 get_history=False, **kw):
+    def __init__(self, ids, get_comments=False, get_attachments=False,
+                 get_history=False, *args, **kw):
         """Construct requests to retrieve all known data for given bug IDs."""
         if not ids:
             raise ValueError('No bug ID(s) specified')
@@ -546,31 +530,6 @@ class _HistoryRequest(RPCRequest):
 
 @command('fields', BugzillaRpc)
 @request(BugzillaRpc)
-class _FieldsRequest(RPCRequest):
-    def __init__(self, service, ids=None, names=None, *args, **kw):
-        """Get information about valid bug fields.
-
-        :param ids: fields IDs
-        :type ids: list of ints
-        :param names: field names
-        :type names: list of strings
-
-        """
-        params = {}
-        options_log = []
-
-        if ids is None and names is None:
-            options_log.append('all non-obsolete fields')
-
-        if ids is not None:
-            params['ids'] = ids
-            options_log.append('IDs: {}'.format(', '.join(ids)))
-        if names is not None:
-            params['names'] = names
-            options_log.append('Field names: {}'.format(', '.join(names)))
-
-        super().__init__(service=service, command='Bug.fields', params=params)
-        self.options = options_log
-
-    def parse(self, data, *args, **kw):
-        return next(data)['fields']
+class _FieldsRequest(FieldsRequest, RPCRequest):
+    def __init__(self, *args, **kw):
+        super().__init__(command='Bug.fields', *args, **kw)

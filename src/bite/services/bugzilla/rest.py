@@ -5,11 +5,12 @@ import requests
 
 from . import (
     Bugzilla, BugzillaAttachment, BugzillaComment, BugzillaEvent,
-    ExtensionsRequest, VersionRequest)
+    ExtensionsRequest, VersionRequest, FieldsRequest, UsersRequest)
 from .. import RESTRequest, command, request
 from .._json import Json
 from ...exceptions import RequestError
 from ...objects import Item
+
 
 class BugzillaRest(Bugzilla, Json):
     """Support Bugzilla's REST interface.
@@ -118,6 +119,40 @@ class BugzillaRest(Bugzilla, Json):
 class IterContent(object):
     def __init__(self, file, size=64*1024):
         self.chunks = file.iter_content(chunk_size=size)
+@command('extensions', BugzillaRest)
+@request(BugzillaRest)
+class _ExtensionsRequest(ExtensionsRequest, RESTRequest):
+    def __init__(self, service):
+        """Construct an extensions request."""
+        super().__init__(service=service, endpoint='/extensions')
+
+
+@command('version', BugzillaRest)
+@request(BugzillaRest)
+class _VersionRequest(VersionRequest, RESTRequest):
+    def __init__(self, service):
+        """Construct a version request."""
+        super().__init__(service=service, endpoint='/version')
+
+
+@command('fields', BugzillaRest)
+@request(BugzillaRest)
+class _FieldsRequest(FieldsRequest, RESTRequest):
+    def __init__(self, *args, **kw):
+        super().__init__(endpoint='/field/bug', *args, **kw)
+        if self.params:
+            params = [(k, i) for k, v in self.params.items() for i in v]
+            self.endpoint = '{}/{}'.format(self.endpoint, params.pop()[1])
+            self.params = params
+
+
+@command('users', BugzillaRest)
+@request(BugzillaRest)
+class _UsersRequest(UsersRequest, RESTRequest):
+    def __init__(self, *args, **kw):
+        super().__init__(endpoint='/user', *args, **kw)
+        self.params = [(k, i) for k, v in self.params.items() for i in v]
+
 
     def read(self, size=64*1024):
         return next(self.chunks)
@@ -217,19 +252,3 @@ class RestBug(Item):
             lines.append('{:<12}: {}'.format(title, v))
 
         return '\n'.join(lines)
-
-
-@command('extensions', BugzillaRest)
-@request(BugzillaRest)
-class _ExtensionsRequest(RESTRequest, ExtensionsRequest):
-    def __init__(self, service):
-        """Construct an extensions request."""
-        super().__init__(service=service, endpoint='/extensions')
-
-
-@command('version', BugzillaRest)
-@request(BugzillaRest)
-class _VersionRequest(RESTRequest, VersionRequest):
-    def __init__(self, service):
-        """Construct a version request."""
-        super().__init__(service=service, endpoint='/version')
