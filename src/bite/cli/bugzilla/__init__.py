@@ -292,7 +292,7 @@ class Bugzilla(Cli):
         request = self.service.UsersRequest(**params)
 
         self.log('Getting users matching the following options:')
-        self.log(request.options, prefix='   - ')
+        self.log_t(request.options, prefix='   - ')
 
         if dry_run: return
         data = self.service.send(request)
@@ -310,7 +310,7 @@ class Bugzilla(Cli):
         request = self.service.FieldsRequest(**params)
 
         self.log('Getting fields matching the following options:')
-        self.log(request.options, prefix='   - ')
+        self.log_t(request.options, prefix='   - ')
 
         if dry_run: return
         data = self.service.send(request)
@@ -493,7 +493,7 @@ class Bugzilla(Cli):
         request = self.service.HistoryRequest(ids)
 
         self.log('Getting changes matching the following options:')
-        self.log(request.options)
+        self.log_t(request.options, prefix='   - ')
 
         if creator is not None and self.service.suffix is not None:
             creator = list(map(self.service._resuffix, creator))
@@ -561,7 +561,7 @@ class Bugzilla(Cli):
             request.options.append('Comment number{}: {}'.format(pluralism(comment_num), ', '.join(map(str, comment_num))))
 
         self.log('Getting comments matching the following options:')
-        self.log(request.options, prefix='   - ')
+        self.log_t(request.options, prefix='   - ')
 
         if creation_time is not None:
             creation_time = creation_time[1]

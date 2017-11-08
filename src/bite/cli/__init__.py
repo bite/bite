@@ -56,7 +56,7 @@ class Cli(object):
         self.verbose = verbose
         self.passwordcmd = passwordcmd
         self.skip_auth = skip_auth
-        self.wrapper = textwrap.TextWrapper(width=const.COLUMNS)
+        self.wrapper = textwrap.TextWrapper(width=const.COLUMNS-3)
 
         # login if requested; otherwise, login will be required when necessary
         auth_requested = any((passwordcmd, user, password))
@@ -102,8 +102,8 @@ class Cli(object):
 
             for id in ids:
                 url = self.service.base.rstrip('/') + self.service.item.endpoint + str(id)
-                self.log(self._truncate('Launching {} in browser: {} {!r}'.format(
-                    self.service.item.type, const.BROWSER, url)))
+                self.log_t('Launching {} in browser: {} {!r}'.format(
+                    self.service.item.type, const.BROWSER, url))
 
                 try:
                     subprocess.Popen(
@@ -113,8 +113,8 @@ class Cli(object):
                     raise CliError('failed running browser {!r}: {}'.format(const.BROWSER, e.strerror))
         else:
             request = self.service.GetRequest(ids, **kw)
-            self.log(self._truncate('Getting {}{}: {}'.format(
-                self.service.item.type, pluralism(ids), ', '.join(map(str, ids)))))
+            self.log_t('Getting {}{}: {}'.format(
+                self.service.item.type, pluralism(ids), ', '.join(map(str, ids))))
 
             if dry_run: return
             data = self.service.send(request)
@@ -127,8 +127,8 @@ class Cli(object):
         params = self._attach_params(**kw)
         if dry_run: return
         data = self.service.add_attachment(ids, **params)
-        self.log(self._truncate('{!r} attached to {}{}: {}'.format(
-            filename, self.service.item.type, pluralism(ids), ', '.join(map(str, ids)))))
+        self.log_t('{!r} attached to {}{}: {}'.format(
+            filename, self.service.item.type, pluralism(ids), ', '.join(map(str, ids))))
 
     @loginretry
     def attachments(self, dry_run, ids, view, metadata=False,
@@ -145,8 +145,8 @@ class Cli(object):
             item_str = ''
             plural = pluralism(ids)
 
-        self.log(self._truncate('Getting attachment{}{}: {}'.format(
-            plural, item_str, ', '.join(map(str, ids)))))
+        self.log_t('Getting attachment{}{}: {}'.format(
+            plural, item_str, ', '.join(map(str, ids))))
 
         def _output_urls(ids):
             for id in ids:
@@ -158,8 +158,8 @@ class Cli(object):
 
             for id in ids:
                 url = self.service.base.rstrip('/') + self.service.attachment.endpoint + str(id)
-                self.log(self._truncate('Launching attachment in browser: {} {!r}'.format(
-                    const.BROWSER, url)))
+                self.log_t('Launching attachment in browser: {} {!r}'.format(
+                    const.BROWSER, url))
 
                 try:
                     subprocess.Popen(
@@ -245,8 +245,8 @@ class Cli(object):
         kw = self._modify_params(**kw)
         request = self.service.ModifyRequest(ids, **kw)
 
-        self.log(self._truncate('Modifying {}{}: {}'.format(
-            self.service.item.type, pluralism(ids), ', '.join(map(str, ids)))))
+        self.log_t('Modifying {}{}: {}'.format(
+            self.service.item.type, pluralism(ids), ', '.join(map(str, ids))))
         self.log(request.options, prefix='')
 
         if ask:
@@ -308,7 +308,7 @@ class Cli(object):
     def _header(self, char, msg):
         return '{} {} {}'.format(char * 3, msg, char * (const.COLUMNS - len(msg) - 5))
 
-    def log(self, msg, newline=True, prefix=' * '):
+    def log(self, msg, newline=True, truncate=False, prefix=' * '):
         if isinstance(msg, list):
             for i, line in enumerate(msg):
                 if i > 0:
@@ -321,18 +321,23 @@ class Cli(object):
             output=sys.stderr
 
         msg = prefix + msg
+        if truncate:
+            msg = self._truncate(msg)
         if not self.quiet:
             if newline:
                 print(msg, file=output)
             else:
                 print(msg, end='', file=output)
 
+    def log_t(self, *args, **kw):
+        """Wrapper for truncated output."""
+        self.log(*args, truncate=True, **kw)
+
     def _truncate(self, stuff):
         if len(stuff) <= const.COLUMNS:
             return stuff
         else:
-            line = self.wrapper.wrap(stuff)[0].split()
-            line = line[:len(line)-2]
+            line = [self.wrapper.wrap(stuff)[0]]
             line.append('...')
             return ' '.join(line)
 
