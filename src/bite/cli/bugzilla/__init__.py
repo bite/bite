@@ -490,7 +490,7 @@ class Bugzilla(Cli):
 
     def changes(self, ids, creation_time, change_num, fields, output, creator,
                 match, dry_run=False, **kw):
-        request = self.service.HistoryRequest(ids)
+        request = self.service.HistoryRequest(ids, created=creation_time)
 
         self.log('Getting changes matching the following options:')
         self.log_t(request.options, prefix='   - ')

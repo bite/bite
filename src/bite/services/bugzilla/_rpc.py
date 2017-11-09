@@ -269,7 +269,8 @@ class _CommentsRequest(RPCRequest):
             options_log.append('Comment IDs: {}'.format(', '.join(comment_ids)))
         if created is not None:
             params['new_since'] = created
-            options_log.append('Created after: {}'.format(created))
+            options_log.append('Created: {} (since {} UTC)'.format(
+                created[0], parsetime(created[1])))
         if fields is not None:
             params['include_fields'] = fields
 
@@ -479,21 +480,25 @@ class _AttachmentsRequest(RPCRequest):
             raise ValueError('No {} or attachment ID(s) specified'.format(self.service.item_name))
 
         params = {}
+        options_log = []
 
         if ids is not None:
+            ids = list(map(str, ids))
             params['ids'] = ids
+            options_log.append('IDs: {}'.format(', '.join(ids)))
         if attachment_ids is not None:
+            attachment_ids = list(map(str, attachment_ids))
             params['attachment_ids'] = attachment_ids
+            options_log.append('Attachment IDs: {}'.format(', '.join(attachment_ids)))
         if fields is not None:
             params['include_fields'] = fields
         # attachment data doesn't get pulled by default
         if not get_data:
             params['exclude_fields'] = ['data']
+
         super().__init__(service=service, command='Bug.attachments', params=params)
 
-        # TODO: this
-        self.options = ['REPLACE ME']
-
+        self.options = options_log
         self.ids = ids
         self.attachment_ids = attachment_ids
 
@@ -517,14 +522,26 @@ class _AttachmentsRequest(RPCRequest):
 @command('history', BugzillaRpc)
 @request(BugzillaRpc)
 class _HistoryRequest(RPCRequest):
-    def __init__(self, service, ids, *args, **kw):
+    def __init__(self, ids, created=None, fields=None, service=None, **kw):
         if not ids:
             raise ValueError('No bug ID(s) specified')
-        params = {'ids': ids}
-        super().__init__(service=service, command='Bug.history', params=params)
 
-        # TODO: this
-        self.options = ['REPLACE ME']
+        params = {}
+        options_log = []
+
+        if ids is not None:
+            ids = list(map(str, ids))
+            params['ids'] = ids
+            options_log.append('IDs: {}'.format(', '.join(ids)))
+        if created is not None:
+            params['new_since'] = created
+            options_log.append('Created: {} (since {} UTC)'.format(
+                created[0], parsetime(created[1])))
+        if fields is not None:
+            params['include_fields'] = fields
+
+        super().__init__(service=service, command='Bug.history', params=params)
+        self.options = options_log
 
     def parse(self, data, *args, **kw):
         bugs = next(data)['bugs']
