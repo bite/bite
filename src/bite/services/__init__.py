@@ -305,14 +305,17 @@ class Service(object):
         if response.ok:
             return self.parse_response(response)
         else:
-            if response.status_code in (401, 403):
-                raise AuthError('Authentication failed')
-            else:
-                try:
-                    raise response.raise_for_status()
-                except requests.exceptions.HTTPError:
-                    raise RequestError('HTTP Error {}: {}'.format(
-                        response.status_code, response.reason.lower()), text=response.text)
+            self._failed_http_response(response)
+
+    def _failed_http_response(self, response):
+        if response.status_code in (401, 403):
+            raise AuthError('authentication failed')
+        else:
+            try:
+                raise response.raise_for_status()
+            except requests.exceptions.HTTPError:
+                raise RequestError('HTTP Error {}: {}'.format(
+                    response.status_code, response.reason.lower()), text=response.text)
 
     def _desuffix(self, s):
         if self.suffix is not None:

@@ -8,7 +8,7 @@ from dateutil.parser import parse as dateparse
 from .. import Service, Request
 from ... import const, utc
 from ...cache import Cache, csv2tuple
-from ...exceptions import RequestError
+from ...exceptions import RequestError, AuthError
 from ...objects import Item, Change, Comment, Attachment, decompress
 
 
@@ -99,6 +99,13 @@ class Bugzilla(Service):
         req = self.create_request(method=method, params=params)
         data = self.send(req)
         return data
+
+    def _failed_http_response(self, response):
+        if response.status_code in (401, 403):
+            data = self.parse_response(response)
+            raise AuthError('authentication failed: {}'.format(data.get('message', '')))
+        else:
+            super()._failed_http_response(response)
 
 
 class ExtensionsRequest(Request):
