@@ -16,7 +16,7 @@ class BugzillaRpc(Bugzilla):
 
 @request(BugzillaRpc)
 class _LoginRequest(RPCRequest):
-    def __init__(self, service, user, password, restrict_login=None):
+    def __init__(self, user, password, service, restrict_login=None):
         """Log in as a user and get an auth token."""
         if restrict_login is None:
             restrict_login = service.restrict_login
@@ -79,18 +79,18 @@ class _VersionRequest(VersionRequest, RPCRequest):
 @command('get', BugzillaRpc)
 @request(BugzillaRpc)
 class _GetRequest(Request):
-    def __init__(self, ids, get_comments=False, get_attachments=False,
+    def __init__(self, ids, service, get_comments=False, get_attachments=False,
                  get_history=False, *args, **kw):
         """Construct requests to retrieve all known data for given bug IDs."""
         if not ids:
             raise ValueError('No bug ID(s) specified')
 
-        reqs = [service.GetItemRequest(ids=ids, **kw)]
+        reqs = [service.GetItemRequest(ids=ids)]
         for call in ('attachments', 'comments', 'history'):
             if locals()['get_' + call]:
                 reqs.append(getattr(service, call.capitalize() + 'Request')(ids=ids))
             else:
-                reqs.append(NullRequest(generator=True))
+                reqs.append(NullRequest(service=service, generator=True))
 
         super().__init__(service=service, reqs=reqs)
 
@@ -103,7 +103,7 @@ class _GetRequest(Request):
 
 @request(BugzillaRpc)
 class _GetItemRequest(RPCRequest):
-    def __init__(self, service, ids, fields=None, **kw):
+    def __init__(self, ids, service, fields=None, **kw):
         """Construct a get request."""
         if not ids:
             raise ValueError('No bug ID(s) specified')
@@ -251,7 +251,7 @@ class _SearchRequest(RPCRequest):
 @command('comments', BugzillaRpc)
 @request(BugzillaRpc)
 class _CommentsRequest(RPCRequest):
-    def __init__(self, service, ids=None, comment_ids=None, created=None, fields=None, *args, **kw):
+    def __init__(self, ids=None, comment_ids=None, created=None, fields=None, service=None, **kw):
         """Construct a comments request."""
         if ids is None and comment_ids is None:
             raise ValueError('No {} or comment ID(s) specified'.format(self.service.item_name))

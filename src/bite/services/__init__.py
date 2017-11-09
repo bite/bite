@@ -14,7 +14,7 @@ def command(cmd_name, service_cls):
     """Register service command function."""
     def wrapped(cls, *args, **kwds):
         send = getattr(service_cls, 'send')
-        send_func = lambda self, *args, **kw: send(self, req=cls(service=self, *args, **kw))
+        send_func = lambda self, *args, **kw: send(self, req=cls(*args, service=self, **kw))
         setattr(service_cls, cmd_name, send_func)
         return cls
     return wrapped
@@ -23,7 +23,7 @@ def command(cmd_name, service_cls):
 def request(service_cls):
     """Register request creation function."""
     def wrapped(cls, *args, **kwds):
-        req_func = lambda self, *args, **kw: cls(service=self, *args, **kw)
+        req_func = lambda self, *args, **kw: cls(*args, service=self, **kw)
         setattr(service_cls, cls.__name__.lstrip('_'), req_func)
         return cls
     return wrapped
@@ -121,8 +121,8 @@ class RESTRequest(Request):
 
 class NullRequest(Request):
 
-    def __init__(self, generator=False):
-        self._requests = ()
+    def __init__(self, service, generator=False):
+        super().__init__(service=service)
         self._generator = generator
 
     def __bool__(self):

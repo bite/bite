@@ -161,8 +161,8 @@ class Roundup(LxmlXmlrpc):
 @request(Roundup)
 class _GetRequest(Request):
 
-    def __init__(self, service, ids, fields=None, get_comments=False,
-                get_attachments=False, **kw):
+    def __init__(self, ids, service, fields=None, get_comments=False,
+                 get_attachments=False, **kw):
         """Construct a get request."""
         if not ids:
             raise ValueError('No {} ID(s) specified'.format(service.item_name))
@@ -221,7 +221,7 @@ class _GetRequest(Request):
         attachments = self.service.send(file_reqs)
         comments = self.service.send(msg_reqs)
 
-        return (self.service.item(self.service, comments=next(comments),
+        return (self.service.item(service=self.service, comments=next(comments),
                                   attachments=next(attachments), id=self.ids[i], **issue)
                 for i, issue in enumerate(issues))
 
