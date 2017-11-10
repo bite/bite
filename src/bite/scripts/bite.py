@@ -34,51 +34,51 @@ options.add_argument('--suffix',
     help='domain suffix to strip or add when displaying or searching '
          '(e.g. "@domain.com")')
 
-connect = argparser.add_argument_group('Connection')
-connect.add_argument('-k', '--insecure',
+service_opts = argparser.add_argument_group('Service options')
+service_opts.add_argument('-b', '--base',
+    help='base URL of service')
+service_opts.add_argument('-s', '--service',
+    help='service type')
+service_opts.add_argument('-c', '--connection',
+    help='use a configured connection')
+
+connect_opts = argparser.add_argument_group('Connection options')
+connect_opts.add_argument('-k', '--insecure',
     action='store_false',
     dest='verify',
     help='skip SSL certificate verification')
-connect.add_argument('-n', '--dry-run',
+connect_opts.add_argument('-n', '--dry-run',
     action='store_true',
     help='do everything except requesting or sending data')
-connect.add_argument('--completion-cache',
+connect_opts.add_argument('--completion-cache',
     action='store_true',
     help='cache search results to use for command-line completion')
-connect.add_argument('-C', '--concurrent',
+connect_opts.add_argument('-C', '--concurrent',
     type=int,
     help='maximum number of allowed concurrent requests to a service')
-connect.add_argument('--timeout',
+connect_opts.add_argument('--timeout',
     type=int,
     metavar='SECONDS',
     help='amount of time to wait before timing out requests (defaults to 30 seconds)')
 
-auth = argparser.add_argument_group('Authentication')
-single_auth = auth.add_mutually_exclusive_group()
-single_auth.add_argument('-a', '--auth-token',
+auth_opts = argparser.add_argument_group('Authentication options')
+single_auth_opts = auth_opts.add_mutually_exclusive_group()
+single_auth_opts.add_argument('-a', '--auth-token',
     help='use the specified token for authentication')
-single_auth.add_argument('-S', '--skip-auth',
+single_auth_opts.add_argument('-S', '--skip-auth',
     action='store_true',
     help='skip authenticating to the specified service')
-single_auth.add_argument('-u', '--user',
+single_auth_opts.add_argument('-u', '--user',
     help='username for authentication')
-auth.add_argument('-p', '--password',
+auth_opts.add_argument('-p', '--password',
     help='password for authentication')
-single_auth.add_argument('--auth-file',
+single_auth_opts.add_argument('--auth-file',
     help='load/save auth token using specified file')
-auth.add_argument('--passwordcmd',
+auth_opts.add_argument('--passwordcmd',
     help='password command to evaluate authentication (overrides -p/--password)')
 
-service = argparser.add_argument_group('Service')
-service.add_argument('-b', '--base',
-    help='base URL of service')
-service.add_argument('-s', '--service',
-    help='service type')
-service.add_argument('-c', '--connection',
-    help='use a configured connection')
-
 # stub for service specific arguments
-service = argparser.add_argument_group('Service')
+service_specific_opts = argparser.add_argument_group('Service specific options')
 
 subparsers = argparser.add_subparsers(help='help for subcommands')
 ls = subparsers.add_parser('ls', description='list various config info')

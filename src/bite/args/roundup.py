@@ -3,7 +3,7 @@ from functools import partial
 from . import base_options, generic_receive, generic_send
 from ..argparser import parse_stdin, id_list, ids, string_list
 
-def maincmds(opts):
+def main_opts(opts):
     """Add service specific arguments."""
     pass
 

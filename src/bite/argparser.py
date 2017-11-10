@@ -458,8 +458,10 @@ class ArgumentParser(arghparse.ArgumentParser):
         # add any additional service specific top level commands
         try:
             # import arg group from script so help is placed before subcmds defined in the script
-            from .scripts.bite import service as service_opts
-            service_args.maincmds(service_opts)
+            from .scripts.bite import service_specific_opts
+            service_args.main_opts(service_specific_opts)
+            # rename service specific args group to match selected service
+            service_specific_opts.title = service_name.split('-')[0].capitalize() + ' specific options'
             # parse any additional optional args that were just added
             initial_args, unparsed_args = self.parse_optionals(unparsed_args, initial_args)
         except AttributeError:

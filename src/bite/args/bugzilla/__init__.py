@@ -10,7 +10,7 @@ from dateutil.relativedelta import *
 from .. import base_options, generic_receive, generic_send
 from ...argparser import parse_stdin, string_list, id_list, ids
 from ...utc import utc
-from ...scripts.bite import auth
+from ...scripts.bite import auth_opts
 
 def parse_bug_list(s):
     try:
@@ -51,9 +51,9 @@ def parse_date(s):
     else:
         return s
 
-def maincmds(opts):
+def main_opts(opts):
     """Add service specific arguments."""
-    auth.add_argument(
+    auth_opts.add_argument(
         '--restrict', action='store_true', dest='restrict_login',
         help='restrict the login to your IP address')
 
