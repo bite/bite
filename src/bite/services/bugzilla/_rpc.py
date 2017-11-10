@@ -29,7 +29,7 @@ class _LoginRequest(RPCRequest):
         super().__init__(service=service, command='User.login', params=params)
 
     def parse(self, data):
-        return next(data)['token']
+        return data['token']
 
 
 @command('users', BugzillaRpc)
@@ -57,7 +57,7 @@ class _ProductsRequest(RPCRequest):
         super().__init__(service=service, command='Product.get', params=params)
 
     def parse(self, data):
-        return next(data)['products']
+        return data['products']
 
 
 @command('extensions', BugzillaRpc)
@@ -117,7 +117,7 @@ class _GetItemRequest(RPCRequest):
         super().__init__(service=service, command='Bug.get', params=params)
 
     def parse(self, data):
-        return next(data)['bugs']
+        return data['bugs']
 
 
 @command('create', BugzillaRpc)
@@ -162,7 +162,7 @@ class _CreateRequest(RPCRequest):
         super().__init__(service=service, command='Bug.create', params=params)
 
     def parse(self, data, *args, **kw):
-        return next(data)['id']
+        return data['id']
 
 
 @command('search', BugzillaRpc)
@@ -244,7 +244,7 @@ class _SearchRequest(RPCRequest):
         self.options = options_log
 
     def parse(self, data, *args, **kw):
-        bugs = next(data)['bugs']
+        bugs = data['bugs']
         return (self.service.item(service=self.service, bug=bug) for bug in bugs)
 
 
@@ -280,7 +280,7 @@ class _CommentsRequest(RPCRequest):
         self.options = options_log
 
     def parse(self, data, *args, **kw):
-        bugs = next(data)['bugs']
+        bugs = data['bugs']
         for i in self.ids:
             yield [BugzillaComment(comment=comment, id=i, count=j)
                    for j, comment in enumerate(bugs[str(i)]['comments'])]
@@ -382,7 +382,7 @@ class _ModifyRequest(RPCRequest):
         self.options = options_log
 
     def parse(self, data, *args, **kw):
-        return next(data)['bugs']
+        return data['bugs']
 
 
 @command('attach', BugzillaRpc)
@@ -467,7 +467,7 @@ class _AttachRequest(RPCRequest):
         super().__init__(service=service, command='Bug.add_attachment', params=params)
 
     def parse(self, data, *args, **kw):
-        return next(data)['attachments']
+        return data['attachments']
 
 
 @command('attachments', BugzillaRpc)
@@ -504,12 +504,12 @@ class _AttachmentsRequest(RPCRequest):
 
     def parse(self, data, *args, **kw):
         if self.ids:
-            bugs = next(data)['bugs']
+            bugs = data['bugs']
             for i in self.ids:
                 yield [self.service.attachment(**attachment) for attachment in bugs[str(i)]]
 
         if self.attachment_ids:
-            attachments = next(data)['attachments']
+            attachments = data['attachments']
             files = []
             try:
                 for i in self.attachment_ids:
@@ -544,7 +544,7 @@ class _HistoryRequest(RPCRequest):
         self.options = options_log
 
     def parse(self, data, *args, **kw):
-        bugs = next(data)['bugs']
+        bugs = data['bugs']
         for b in bugs:
             yield [BugzillaEvent(change=x, id=b['id'], alias=b['alias'], count=i)
                    for i, x in enumerate(b['history'], start=1)]

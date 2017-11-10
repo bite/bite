@@ -1,5 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor
 import os
+import types
 from urllib.parse import urlparse, urlunparse, urlencode
 
 import requests
@@ -253,39 +254,40 @@ class Service(object):
         return self.session.prepare_request(req)
 
     def send(self, req):
-        """Send request(s) and return a response."""
-        reqs = getattr(req, '_requests', req)
-        req_parse = getattr(req, 'parse', lambda x: x)
-
+        """Send request(s) and return parsed response data."""
         def _raise(e): raise
-        handle_exception = getattr(req, 'handle_exception', _raise)
+        ident = lambda x: x
+        req_parse = getattr(req, 'parse', ident)
 
         jobs = []
-        for req in iflatten_instance(reqs, Request):
-            parse = getattr(req, 'parse', lambda x: x)
+        for subreq in iflatten_instance(iter(req), Request):
+            parse = getattr(subreq, 'parse', ident)
+            handle_exception = getattr(subreq, 'handle_exception', _raise)
             http_reqs = [
-                self.executor.submit(self._http_send, r) for r in
-                iflatten_instance(req, requests.Request)]
-            jobs.append((parse, http_reqs))
+                self.executor.submit(self._http_send, x) for x in
+                iflatten_instance(subreq, requests.Request)]
+            jobs.append((parse, handle_exception, http_reqs))
 
-        def _f(jobs):
-            for parse, http_reqs in jobs:
+        def _send_subreqs(jobs):
+            for parse, handle_exception, http_reqs in jobs:
                 try:
-                    yield parse(r.result() for r in http_reqs)
+                    results = None
+                    if len(http_reqs) > 1 or isinstance(req, (tuple, list)):
+                        results = (x.result() for x in http_reqs)
+                    elif len(http_reqs) == 1:
+                        results = http_reqs[0].result()
+                    yield parse(results)
                 except RequestError as e:
                     handle_exception(e)
 
-        data = _f(jobs)
-
-        if len(jobs) == 1:
-            return req_parse(next(data))
+        data = _send_subreqs(jobs)
+        if len(jobs) == 1 and isinstance(req, Request):
+            while isinstance(data, types.GeneratorType):
+                data = next(data)
         return req_parse(data)
 
     def _http_send(self, req):
         """Send an HTTP request and return the parsed response."""
-        if req is None:
-            return
-
         try:
             response = self.session.send(
                 self.prepare_request(req), stream=True, timeout=self.timeout,

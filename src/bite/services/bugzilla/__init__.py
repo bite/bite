@@ -111,13 +111,13 @@ class Bugzilla(Service):
 class ExtensionsRequest(Request):
 
     def parse(self, data):
-        return next(data)['extensions']
+        return data['extensions']
 
 
 class VersionRequest(Request):
 
     def parse(self, data):
-        return next(data)['version']
+        return data['version']
 
 
 class FieldsRequest(Request):
@@ -149,7 +149,7 @@ class FieldsRequest(Request):
         self.options = options_log
 
     def parse(self, data):
-        return next(data)['fields']
+        return data['fields']
 
 
 class UsersRequest(Request):
@@ -177,7 +177,7 @@ class UsersRequest(Request):
         self.options = options_log
 
     def parse(self, data):
-        return next(data)['users']
+        return data['users']
 
 
 class BugzillaBug(Item):
