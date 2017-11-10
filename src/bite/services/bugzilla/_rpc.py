@@ -90,7 +90,7 @@ class _GetRequest(Request):
             if locals()['get_' + call]:
                 reqs.append(getattr(service, call.capitalize() + 'Request')(ids=ids))
             else:
-                reqs.append(NullRequest(service=service, generator=True))
+                reqs.append(NullRequest(generator=True))
 
         super().__init__(service=service, reqs=reqs)
 

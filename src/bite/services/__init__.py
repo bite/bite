@@ -121,8 +121,8 @@ class RESTRequest(Request):
 
 class NullRequest(Request):
 
-    def __init__(self, service, generator=False):
-        super().__init__(service=service)
+    def __init__(self, generator=False):
+        super().__init__(service=None)
         self._generator = generator
 
     def __bool__(self):
