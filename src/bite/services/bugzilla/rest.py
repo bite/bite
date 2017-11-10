@@ -5,7 +5,7 @@ import requests
 
 from . import (
     Bugzilla, BugzillaAttachment, BugzillaComment, BugzillaEvent,
-    ExtensionsRequest, VersionRequest, FieldsRequest, UsersRequest)
+    ExtensionsRequest, VersionRequest, FieldsRequest, ProductsRequest, UsersRequest)
 from .. import RESTRequest, command, request
 from .._json import Json
 from ...exceptions import RequestError
@@ -57,6 +57,14 @@ class _FieldsRequest(FieldsRequest, RESTRequest):
             params = [(k, i) for k, v in self.params.items() for i in v]
             self.endpoint = '{}/{}'.format(self.endpoint, params.pop()[1])
             self.params = params
+
+
+@command('products', BugzillaRest)
+@request(BugzillaRest)
+class _ProductsRequest(ProductsRequest, RESTRequest):
+    def __init__(self, *args, **kw):
+        super().__init__(endpoint='/product', *args, **kw)
+        self.params = [(k, i) for k, v in self.params.items() for i in v]
 
 
 @command('users', BugzillaRest)

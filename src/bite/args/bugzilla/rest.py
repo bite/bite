@@ -41,6 +41,16 @@ def subcmds(subparsers):
         nargs='?',
         help='either ID or name')
 
+    # products cmd
+    parser = subparsers.add_parser('products', help='get bugzilla products')
+    parser.set_defaults(fcn='products')
+    # positional args
+    parser.add_argument('products',
+        type=string_list,
+        action=parse_stdin,
+        nargs='?',
+        help='either ID or name')
+
     # users cmd
     parser = subparsers.add_parser('users', help='get bugzilla users')
     parser.set_defaults(fcn='users')

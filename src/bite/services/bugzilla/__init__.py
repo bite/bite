@@ -152,6 +152,33 @@ class FieldsRequest(Request):
         return data['fields']
 
 
+class ProductsRequest(Request):
+
+    def __init__(self, ids=None, names=None, match=None, **kw):
+        """Query bugzilla for product data."""
+        params = {}
+        options_log = []
+
+        if ids is None and names is None:
+            # TODO: not supported in bugzilla-4.4 -- must call get_accessible_products to get IDs
+            params['type'] = ['accessible']
+            options_log.append('all user-accessible products')
+
+        if ids is not None:
+            ids = list(map(str, ids))
+            params['ids'] = ids
+            options_log.append('IDs: {}'.format(', '.join(ids)))
+        if names is not None:
+            params['names'] = names
+            options_log.append('Product names: {}'.format(', '.join(names)))
+
+        super().__init__(params=params, **kw)
+        self.options = options_log
+
+    def parse(self, data):
+        return data['products']
+
+
 class UsersRequest(Request):
 
     def __init__(self, ids=None, names=None, match=None, **kw):

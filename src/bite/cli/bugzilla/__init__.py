@@ -326,13 +326,22 @@ class Bugzilla(Cli):
 
     def products(self, products, dry_run=False):
         params = {}
-        for product in products:
-            if re.match(r'^\d+$', product):
-                params.setdefault('ids', []).append(product)
-            else:
-                params.setdefault('names', []).append(product)
-        products = self.service.products(**params)
-        self.print_products(products)
+        if products is not None:
+            for product in products:
+                if re.match(r'^\d+$', product):
+                    params.setdefault('ids', []).append(product)
+                else:
+                    params.setdefault('names', []).append(product)
+
+        request = self.service.ProductsRequest(**params)
+
+        self.log('Getting products matching the following options:')
+        self.log_t(request.options, prefix='   - ')
+
+        if dry_run: return
+        data = self.service.send(request)
+
+        self.print_products(data)
 
     def query(self, raw, **kw):
         if kw['queries']:

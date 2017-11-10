@@ -532,8 +532,9 @@ def subcmds(subparsers):
     parser.set_defaults(fcn='products')
     # positional args
     parser.add_argument('products',
+        type=string_list,
         action=parse_stdin,
-        nargs='+',
+        nargs='?',
         help='either ID or name')
 
     # users cmd

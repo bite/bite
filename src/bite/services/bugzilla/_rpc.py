@@ -4,7 +4,7 @@ from itertools import groupby
 import os
 
 from . import (Bugzilla, BugzillaBug, BugzillaComment, BugzillaEvent, parsetime,
-    ExtensionsRequest, VersionRequest, FieldsRequest, UsersRequest)
+    ExtensionsRequest, VersionRequest, FieldsRequest, ProductsRequest, UsersRequest)
 from .. import Request, RPCRequest, NullRequest, command, request
 from ... import const, magic
 from ...exceptions import BiteError
@@ -39,25 +39,18 @@ class _UsersRequest(UsersRequest, RPCRequest):
         super().__init__(command='User.get', *args, **kw)
 
 
+@command('fields', BugzillaRpc)
+@request(BugzillaRpc)
+class _FieldsRequest(FieldsRequest, RPCRequest):
+    def __init__(self, *args, **kw):
+        super().__init__(command='Bug.fields', *args, **kw)
+
+
 @command('products', BugzillaRpc)
 @request(BugzillaRpc)
-class _ProductsRequest(RPCRequest):
-    def __init__(self, service, ids=None, names=None, match=None):
-        """Query bugzilla for product data."""
-        if not any((ids, names)):
-            raise ValueError('No user ID(s) or name(s) specified')
-
-        params = {}
-
-        if ids is not None:
-            params['ids'] = ids
-        if names is not None:
-            params['names'] = names
-
-        super().__init__(service=service, command='Product.get', params=params)
-
-    def parse(self, data):
-        return data['products']
+class _ProductsRequest(ProductsRequest, RPCRequest):
+    def __init__(self, *args, **kw):
+        super().__init__(command='Product.get', *args, **kw)
 
 
 @command('extensions', BugzillaRpc)
@@ -549,9 +542,3 @@ class _HistoryRequest(RPCRequest):
             yield [BugzillaEvent(change=x, id=b['id'], alias=b['alias'], count=i)
                    for i, x in enumerate(b['history'], start=1)]
 
-
-@command('fields', BugzillaRpc)
-@request(BugzillaRpc)
-class _FieldsRequest(FieldsRequest, RPCRequest):
-    def __init__(self, *args, **kw):
-        super().__init__(command='Bug.fields', *args, **kw)
