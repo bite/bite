@@ -21,7 +21,7 @@ from ..rfc3339 import parse_datetime as parsetime
 
 class Monorail(Jsonrpc):
 
-    service_name = 'monorail'
+    _service = 'monorail'
 
     def __init__(self, **kw):
         super().__init__(**kw)

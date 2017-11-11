@@ -5,7 +5,7 @@ from . import Bugzilla
 class BugzillaRest(Bugzilla):
     """CLI for Bugzilla REST interface."""
 
-    service_name = 'bugzilla-rest'
+    _service = 'bugzilla-rest'
 
     def parse_search(self, **kw):
         params = {}

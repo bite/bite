@@ -18,7 +18,7 @@ class BugzillaRest(Bugzilla, Json):
 
     API docs: http://bugzilla.readthedocs.io/en/latest/api/index.html#apis
     """
-    service_name = 'bugzilla-rest'
+    _service = 'bugzilla-rest'
 
     def __init__(self, **kw):
         super().__init__(endpoint='/rest', **kw)

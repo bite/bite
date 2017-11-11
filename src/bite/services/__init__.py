@@ -139,7 +139,7 @@ class NullRequest(Request):
 
 class Service(object):
 
-    service_name = None 
+    _service = None
 
     def __init__(self, base, connection=None, verify=True, user=None, password=None, skip_auth=True,
                  auth_token=None, suffix=None, timeout=None, auth_file=None, concurrent=None,

@@ -4,7 +4,7 @@ from .. import const
 class Roundup(Cli):
     """CLI for Roundup service."""
 
-    service_name = 'roundup'
+    _service = 'roundup'
 
     def print_search(self, issues, **kw):
         count = 0

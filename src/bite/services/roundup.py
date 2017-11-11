@@ -52,7 +52,7 @@ class RoundupCache(Cache):
 class Roundup(LxmlXmlrpc):
     """Support Roundup's XML-RPC interface."""
 
-    service_name = 'roundup'
+    _service = 'roundup'
 
     def __init__(self, **kw):
         endpoint = '/xmlrpc'

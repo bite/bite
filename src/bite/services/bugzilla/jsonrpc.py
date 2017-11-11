@@ -10,7 +10,7 @@ from ...exceptions import AuthError
 class BugzillaJsonrpc(BugzillaRpc, Jsonrpc):
     """Support Bugzilla's deprecated JSON-RPC interface."""
 
-    service_name = 'bugzilla-jsonrpc'
+    _service = 'bugzilla-jsonrpc'
 
     def __init__(self, **kw):
         super().__init__(endpoint='/jsonrpc.cgi', **kw)
@@ -39,7 +39,7 @@ class BugzillaJsonrpc(BugzillaRpc, Jsonrpc):
 
 class _StreamingBugzillaJsonrpc(BugzillaJsonrpc):
 
-    service_name = None
+    _service = None
 
     def parse_response(self, response):
         return self._IterContent(response)

@@ -47,7 +47,7 @@ def loginrequired(func):
 class Cli(object):
     """Generic commandline interface for a service."""
 
-    service_name = None
+    _service = None
 
     def __init__(self, service, quiet=False, verbose=False, completion_cache=False,
                  user=None, password=None, passwordcmd=None, skip_auth=True, **kw):

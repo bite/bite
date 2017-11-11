@@ -54,7 +54,7 @@ if CONFIG_PATH is None:
     CONFIG_PATH = _GET_CONST('CONFIG_PATH', '%(DATA_PATH)s/config')
 
 def _service_cls(x):
-    if inspect.isclass(x) and getattr(x, 'service_name', None) is not None:
+    if inspect.isclass(x) and getattr(x, '_service', None) is not None:
         return True
     return False
 
@@ -64,7 +64,7 @@ def _services():
     for imp, name, _ in pkgutil.walk_packages(services_mod.__path__, services_mod.__name__ + '.'):
         module = imp.find_module(name).load_module()
         for name, cls in inspect.getmembers(module, _service_cls):
-            services.append((cls.service_name, '.'.join([module.__name__, cls.__name__])))
+            services.append((cls._service, '.'.join([module.__name__, cls.__name__])))
     return services
 
 def _clients():
@@ -73,7 +73,7 @@ def _clients():
     for imp, name, _ in pkgutil.walk_packages(cli.__path__, cli.__name__ + '.'):
         module = imp.find_module(name).load_module()
         for name, cls in inspect.getmembers(module, _service_cls):
-            clients.append((cls.service_name, '.'.join([module.__name__, cls.__name__])))
+            clients.append((cls._service, '.'.join([module.__name__, cls.__name__])))
     return clients
 
 def _GET_SERVICES(attr, func):

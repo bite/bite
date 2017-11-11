@@ -8,7 +8,7 @@ from ...exceptions import AuthError, RequestError, ParsingError
 class BugzillaXmlrpc(BugzillaRpc, LxmlXmlrpc):
     """Support Bugzilla's deprecated XML-RPC interface."""
 
-    service_name = 'bugzilla-xmlrpc'
+    _service = 'bugzilla-xmlrpc'
 
     def __init__(self, **kw):
         super().__init__(endpoint='/xmlrpc.cgi', **kw)
