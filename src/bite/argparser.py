@@ -473,6 +473,12 @@ class ArgumentParser(arghparse.ArgumentParser):
         # add subcommands
         service_args.subcmds(subparsers)
 
+        # add any additional service specific subcommands
+        try:
+            service_args.extra_subcmds(subparsers)
+        except AttributeError:
+            pass
+
         # check if unparsed args match any aliases
         if unparsed_args:
             unparsed_args = substitute_alias(initial_args, unparsed_args)
