@@ -273,10 +273,10 @@ class Service(object):
             for parse, handle_exception, http_reqs in jobs:
                 results = None
                 try:
-                    if len(http_reqs) > 1 or isinstance(req, (tuple, list)):
-                        results = (x.result() for x in http_reqs)
-                    elif len(http_reqs) == 1:
+                    if len(http_reqs) == 1:
                         results = http_reqs[0].result()
+                    elif len(http_reqs) > 1:
+                        results = (x.result() for x in http_reqs)
                     yield parse(results)
                 except RequestError as e:
                     handle_exception(e)
