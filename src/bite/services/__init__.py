@@ -217,7 +217,7 @@ class Service(object):
         return self.send(self.LoginRequest(user=user, password=password, **kw))
 
     def __str__(self):
-        return str(self.base)
+        return str(self._service)
 
     @staticmethod
     def _encode_request(method, params=None):
