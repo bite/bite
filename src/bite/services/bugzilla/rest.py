@@ -4,7 +4,7 @@ except ImportError: import json
 import requests
 
 from . import (
-    Bugzilla, BugzillaAttachment, BugzillaComment, BugzillaEvent,
+    Bugzilla, BugzillaError, BugzillaAttachment, BugzillaComment, BugzillaEvent,
     ExtensionsRequest, VersionRequest, FieldsRequest, ProductsRequest, UsersRequest)
 from .. import RESTRequest, command, request
 from .._json import Json
@@ -30,6 +30,23 @@ class BugzillaRest(Bugzilla, Json):
             self.session.headers['X-Bugzilla-Token'] = str(self.auth)
         self.authenticated = True
         return request, params
+
+    def parse_response(self, response):
+        data = super().parse_response(response)
+        if 'error' not in data:
+            return data
+        else:
+            self.handle_error(data)
+
+    @staticmethod
+    def handle_error(error):
+        raise BugzillaError(msg=error.get('message'), code=error.get('code'))
+
+    def _failed_http_response(self, response):
+        if response.status_code in (404,):
+            self.handle_error(response.json())
+        else:
+            super()._failed_http_response(response)
 
 
 @command('extensions', BugzillaRest)
