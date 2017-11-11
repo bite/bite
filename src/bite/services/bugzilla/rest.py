@@ -1,3 +1,4 @@
+from collections import deque
 try: import simplejson as json
 except ImportError: import json
 
@@ -71,8 +72,9 @@ class _FieldsRequest(FieldsRequest, RESTRequest):
     def __init__(self, *args, **kw):
         super().__init__(endpoint='/field/bug', *args, **kw)
         if self.params:
-            params = [(k, i) for k, v in self.params.items() for i in v]
-            self.endpoint = '{}/{}'.format(self.endpoint, params.pop()[1])
+            self._params = self.params
+            params = deque((k, i) for k, v in self.params.items() for i in v)
+            self.endpoint = '{}/{}'.format(self.endpoint, params.popleft()[1])
             self.params = params
 
 
