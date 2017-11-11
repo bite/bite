@@ -100,11 +100,10 @@ def get_client(args):
     if not isinstance(args, dict):
         args = vars(args)
     fcn_args = args.pop('fcn_args')
-    service_name = args['service']
-    mod_name, cls_name = const.SERVICES[service_name].rsplit('.', 1)
-    service = getattr(import_module(mod_name), cls_name)(**args)
-    args['service'] = service
-    mod_name, cls_name = const.CLIENTS[service_name].rsplit('.', 1)
+    service = args['service']
+    mod_name, cls_name = const.SERVICES[service].rsplit('.', 1)
+    args['service'] = getattr(import_module(mod_name), cls_name)(**args)
+    mod_name, cls_name = const.CLIENTS[service].rsplit('.', 1)
     client = getattr(import_module(mod_name), cls_name)(**args)
     return client, fcn_args
 

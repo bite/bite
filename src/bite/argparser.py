@@ -448,12 +448,12 @@ class ArgumentParser(arghparse.ArgumentParser):
             self.error('both arguments -b/--base and -s/--service are required '
                        'or must be specified in the config file for a connection')
 
-        service_name = initial_args.service
-        if service_name not in const.SERVICES:
+        service = initial_args.service
+        if service not in const.SERVICES:
             self.error('invalid service: {!r} (available services: {})'.format(
-                service_name, ', '.join(const.SERVICES)))
+                service, ', '.join(const.SERVICES)))
 
-        service_args = import_module('bite.args.' + service_name.replace('-', '.'))
+        service_args = import_module('bite.args.' + service.replace('-', '.'))
 
         # add any additional service specific top level commands
         try:
@@ -461,7 +461,7 @@ class ArgumentParser(arghparse.ArgumentParser):
             from .scripts.bite import service_specific_opts
             service_args.main_opts(service_specific_opts)
             # rename service specific args group to match selected service
-            service_specific_opts.title = service_name.split('-')[0].capitalize() + ' specific options'
+            service_specific_opts.title = service.split('-')[0].capitalize() + ' specific options'
             # parse any additional optional args that were just added
             initial_args, unparsed_args = self.parse_optionals(unparsed_args, initial_args)
         except AttributeError:
