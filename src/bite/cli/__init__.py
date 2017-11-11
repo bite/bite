@@ -63,8 +63,7 @@ class Cli(object):
         if auth_requested:
             self.login()
 
-        if sys.stdin.isatty():
-            self.log('Service: {}'.format(self.service))
+        self.log('Service: {} -- {}'.format(self.service, self.service.base))
 
         self.completion_cache = Completion(self.service.cache.name) if completion_cache else False
 
