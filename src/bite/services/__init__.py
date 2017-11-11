@@ -258,6 +258,7 @@ class Service(object):
         def _raise(e): raise
         ident = lambda x: x
         req_parse = getattr(req, 'parse', ident)
+        req_handle_exception = getattr(req, 'handle_exception', _raise)
 
         jobs = []
         for subreq in iflatten_instance(iter(req), Request):
@@ -270,8 +271,8 @@ class Service(object):
 
         def _send_subreqs(jobs):
             for parse, handle_exception, http_reqs in jobs:
+                results = None
                 try:
-                    results = None
                     if len(http_reqs) > 1 or isinstance(req, (tuple, list)):
                         results = (x.result() for x in http_reqs)
                     elif len(http_reqs) == 1:
@@ -282,8 +283,11 @@ class Service(object):
 
         data = _send_subreqs(jobs)
         if len(jobs) == 1 and isinstance(req, Request):
-            while isinstance(data, types.GeneratorType):
-                data = next(data)
+            try:
+                while isinstance(data, types.GeneratorType):
+                    data = next(data)
+            except RequestError as e:
+                req_handle_exception(e)
         return req_parse(data)
 
     def _http_send(self, req):
