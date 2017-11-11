@@ -541,4 +541,3 @@ class _HistoryRequest(RPCRequest):
         for b in bugs:
             yield [BugzillaEvent(change=x, id=b['id'], alias=b['alias'], count=i)
                    for i, x in enumerate(b['history'], start=1)]
-

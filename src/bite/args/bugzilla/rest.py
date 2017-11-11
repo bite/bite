@@ -1,6 +1,6 @@
 import argparse
 
-from . import parse_date
+from . import parse_date, extra_subcmds
 from .. import *
 from ...argparser import parse_stdin, string_list, id_list, ids
 
@@ -23,49 +23,7 @@ def person_search(s):
         return (search_type, name)
 
 def subcmds(subparsers):
-    # version cmd
-    parser = subparsers.add_parser('version', help='get bugzilla version')
-    parser.set_defaults(fcn='version')
-
-    # extensions cmd
-    parser = subparsers.add_parser('extensions', help='get bugzilla extensions')
-    parser.set_defaults(fcn='extensions')
-
-    # fields cmd
-    parser = subparsers.add_parser('fields', help='get bugzilla fields')
-    parser.set_defaults(fcn='fields')
-    # positional args
-    parser.add_argument('fields',
-        type=string_list,
-        action=parse_stdin,
-        nargs='?',
-        help='either ID or name')
-
-    # products cmd
-    parser = subparsers.add_parser('products', help='get bugzilla products')
-    parser.set_defaults(fcn='products')
-    # positional args
-    parser.add_argument('products',
-        type=string_list,
-        action=parse_stdin,
-        nargs='?',
-        help='either ID or name')
-
-    # users cmd
-    parser = subparsers.add_parser('users', help='get bugzilla users')
-    parser.set_defaults(fcn='users')
-    # positional args
-    parser.add_argument('users',
-        action=parse_stdin,
-        nargs='+',
-        help='either ID, login, or matching string')
-
-    #attach_parser(subparsers)
-    #attachment_parser(subparsers)
-    #get_parser(subparsers)
-    #modify_parser(subparsers)
-    #post_parser(subparsers)
-    #search_parser(subparsers)
+    pass
 
     # parser = subparsers.add_parser('search',
     #     help='search for bugs')

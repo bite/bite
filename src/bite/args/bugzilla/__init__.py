@@ -519,43 +519,6 @@ def subcmds(subparsers):
         action=parse_stdin,
         help='restrict by url (one or more)')
 
-    # version cmd
-    parser = subparsers.add_parser('version', help='get bugzilla version')
-    parser.set_defaults(fcn='version')
-
-    # extensions cmd
-    parser = subparsers.add_parser('extensions', help='get bugzilla extensions')
-    parser.set_defaults(fcn='extensions')
-
-    # products cmd
-    parser = subparsers.add_parser('products', help='get bugzilla products')
-    parser.set_defaults(fcn='products')
-    # positional args
-    parser.add_argument('products',
-        type=string_list,
-        action=parse_stdin,
-        nargs='?',
-        help='either ID or name')
-
-    # users cmd
-    parser = subparsers.add_parser('users', help='get bugzilla users')
-    parser.set_defaults(fcn='users')
-    # positional args
-    parser.add_argument('users',
-        action=parse_stdin,
-        nargs='+',
-        help='either ID, login, or matching string')
-
-    # fields cmd
-    parser = subparsers.add_parser('fields', help='get bugzilla fields')
-    parser.set_defaults(fcn='fields')
-    # positional args
-    parser.add_argument('fields',
-        type=string_list,
-        action=parse_stdin,
-        nargs='?',
-        help='either ID or name')
-
     # query arguments
     parser = subparsers.add_parser('query',
         description='query bugzilla for various data',
@@ -581,3 +544,46 @@ def subcmds(subparsers):
         generic_receive(group)
     for group in send_actions:
         generic_send(group)
+
+
+def version(subparsers):
+    parser = subparsers.add_parser('version', help='get bugzilla version')
+    parser.set_defaults(fcn='version')
+
+def extensions(subparsers):
+    parser = subparsers.add_parser('extensions', help='get bugzilla extensions')
+    parser.set_defaults(fcn='extensions')
+
+def products(subparsers):
+    parser = subparsers.add_parser('products', help='get bugzilla products')
+    parser.set_defaults(fcn='products')
+    # positional args
+    parser.add_argument('products',
+        type=string_list,
+        action=parse_stdin,
+        nargs='?',
+        help='either ID or name')
+
+def users(subparsers):
+    parser = subparsers.add_parser('users', help='get bugzilla users')
+    parser.set_defaults(fcn='users')
+    # positional args
+    parser.add_argument('users',
+        action=parse_stdin,
+        nargs='+',
+        help='either ID, login, or matching string')
+
+def fields(subparsers):
+    parser = subparsers.add_parser('fields', help='get bugzilla fields')
+    parser.set_defaults(fcn='fields')
+    # positional args
+    parser.add_argument('fields',
+        type=string_list,
+        action=parse_stdin,
+        nargs='?',
+        help='either ID or name')
+
+def extra_subcmds(subparsers):
+    extras = ('version', 'extensions', 'products', 'users', 'fields')
+    for x in extras:
+        getattr(sys.modules[__name__], x)(subparsers)
