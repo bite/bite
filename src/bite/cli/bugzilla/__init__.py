@@ -389,7 +389,7 @@ class Bugzilla(Cli):
         else:
             self.log('No matching users found')
 
-    def print_search(self, bugs, fields, output, **kw):
+    def print_search(self, bugs, fields, output=None, **kw):
         if output is None:
             if fields == ['id', 'assigned_to', 'summary']:
                 output = '{} {:<20} {}'
@@ -470,8 +470,8 @@ class Bugzilla(Cli):
                         change['removed'] == value
                     )
 
-    def changes(self, ids, creation_time, change_num, fields, output, creator,
-                match, dry_run=False, **kw):
+    def changes(self, ids, dry_run=False, creation_time=None, change_num=None, fields=None, output=None, creator=None,
+                match=None):
         request = self.service.HistoryRequest(ids, created=creation_time)
 
         self.log('Getting changes matching the following options:')
@@ -531,15 +531,15 @@ class Bugzilla(Cli):
                     print(self._header('=', 'Bug: {}'.format(str(i))))
                     self._print_lines(changes)
 
-    def comments(self, ids, creation_time, comment_num, fields, output, creator,
-                 attachment, dry_run=False, **kw):
+    def comments(self, ids, dry_run=False, creation_time=None, comment_num=None, fields=None, output=None, creator=None,
+                 attachment=False):
         request = self.service.CommentsRequest(ids, created=creation_time)
 
         if creator is not None:
             request.options.append('Creator{}: {}'.format(pluralism(creator), ', '.join(creator)))
         if attachment:
             request.options.append('Attachments: yes')
-        if comment_num:
+        if comment_num is not None:
             request.options.append('Comment number{}: {}'.format(pluralism(comment_num), ', '.join(map(str, comment_num))))
 
         self.log('Getting comments matching the following options:')
@@ -605,7 +605,7 @@ class Bugzilla(Cli):
                     print(self._header('=', 'Bug: {}'.format(str(i))))
                     self._print_lines(comments)
 
-    def _print_item(self, bugs, get_comments, get_attachments, get_history, show_obsolete, **kw):
+    def _print_item(self, bugs, get_comments=False, get_history=False, show_obsolete=False, **kw):
         for bug in bugs:
             print('=' * const.COLUMNS)
             for line in str(bug).splitlines():

@@ -500,7 +500,7 @@ class ArgumentParser(arghparse.ArgumentParser):
             sys.stdin = open('/dev/tty')
 
         args = vars(args)
-        fcn_args = {k:v for k,v in vars(fcn_args).items() if k not in args}
+        fcn_args = {k:v for k,v in vars(fcn_args).items() if k not in args and v}
         extra_fcn_args = {'dry_run'}
         for x in extra_fcn_args.intersection(args):
             fcn_args[x] = args[x]
