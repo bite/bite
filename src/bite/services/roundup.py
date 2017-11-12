@@ -68,18 +68,18 @@ class Roundup(LxmlXmlrpc):
         reqs = []
 
         # get possible status values
-        reqs.append(self.create_request(method='list', params=['status']))
+        reqs.append(RPCRequest(command='list', params=['status'], service=self))
 
         # get possible priority values
-        reqs.append(self.create_request(method='list', params=['priority']))
+        reqs.append(RPCRequest(command='list', params=['priority'], service=self))
 
         # get possible keyword values
-        reqs.append(self.create_request(method='list', params=['keyword']))
+        reqs.append(RPCRequest(command='list', params=['keyword'], service=self))
 
         # get possible user values requires login, otherwise returns empty list
         self.skip_auth = False
         self.auth.read()
-        reqs.append(self.create_request(method='list', params=['user']))
+        reqs.append(RPCRequest(command='list', params=['user'], service=self))
 
         status, priority, keyword, users = self.send(reqs)
 
@@ -104,45 +104,45 @@ class Roundup(LxmlXmlrpc):
         requests.auth.HTTPBasicAuth(user, password)(request)
         return request.headers['Authorization']
 
-    def create(self, title, **kw):
-        """Create a new issue given a list of parameters
-
-        :returns: ID of the newly created issue
-        :rtype: int
-        """
-        params = ['issue']
-        params.append('title={}'.format(title))
-        for k, v in self.item.attributes.items():
-            if kw.get(k, None) is not None:
-                params.append("{}={}".format(k, kw[k]))
-
-        req = self.create_request(method='create', params=params)
-        data = self.send(req)
-        return data
-
-    def modify(self, id, **kw):
-        params = ['issue' + str(id[0])]
-        for k, v in self.item.attributes.items():
-            if kw.get(k, None) is not None:
-                params.append("{}={}".format(k, kw[k]))
-
-        req = self.create_request(method='set', params=params)
-        data = self.send(req)
-        return data
-
-    def search(self, ids=None, **kw):
-        params = ['issue', ids]
-        search_params = {}
-        if kw['terms']:
-            search_params['title'] = kw['terms']
-        for k, v in self.item.attributes.items():
-            if kw.get(k, None) is not None:
-                search_params[k] = kw[k]
-        params.append(search_params)
-
-        req = self.create_request(method='filter', params=params)
-        data = self.send(req)
-        return data
+    # def create(self, title, **kw):
+    #     """Create a new issue given a list of parameters
+    #
+    #     :returns: ID of the newly created issue
+    #     :rtype: int
+    #     """
+    #     params = ['issue']
+    #     params.append('title={}'.format(title))
+    #     for k, v in self.item.attributes.items():
+    #         if kw.get(k, None) is not None:
+    #             params.append("{}={}".format(k, kw[k]))
+    #
+    #     req = self.create_request(method='create', params=params)
+    #     data = self.send(req)
+    #     return data
+    #
+    # def modify(self, id, **kw):
+    #     params = ['issue' + str(id[0])]
+    #     for k, v in self.item.attributes.items():
+    #         if kw.get(k, None) is not None:
+    #             params.append("{}={}".format(k, kw[k]))
+    #
+    #     req = self.create_request(method='set', params=params)
+    #     data = self.send(req)
+    #     return data
+    #
+    # def search(self, ids=None, **kw):
+    #     params = ['issue', ids]
+    #     search_params = {}
+    #     if kw['terms']:
+    #         search_params['title'] = kw['terms']
+    #     for k, v in self.item.attributes.items():
+    #         if kw.get(k, None) is not None:
+    #             search_params[k] = kw[k]
+    #     params.append(search_params)
+    #
+    #     req = self.create_request(method='filter', params=params)
+    #     data = self.send(req)
+    #     return data
 
     def parse_response(self, response):
         """Send request object and perform checks on the response."""

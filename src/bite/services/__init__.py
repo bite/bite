@@ -244,19 +244,6 @@ class Service(object):
         """Authenticate a request or session."""
         return request, params
 
-    def create_request(self, url=None, method=None, params=None):
-        """Construct a request."""
-        if url is None:
-            url = self._base
-
-        request = requests.Request(method='POST', url=url)
-
-        if not (self.skip_auth or self.authenticated) and self.auth:
-            request, params = self.inject_auth(request, params)
-
-        request.data = self._encode_request(method, params)
-        return self.session.prepare_request(request)
-
     def parse_response(self, response):
         """Parse the returned response."""
         raise NotImplementedError()
@@ -305,7 +292,7 @@ class Service(object):
         """Send an HTTP request and return the parsed response."""
         try:
             response = self.session.send(
-                self.prepare_request(req), stream=True, timeout=self.timeout,
+                self.session.prepare_request(req), stream=True, timeout=self.timeout,
                 verify=self.verify, allow_redirects=False)
         except requests.exceptions.SSLError as e:
             raise RequestError('SSL certificate verification failed')
