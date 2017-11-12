@@ -519,23 +519,6 @@ def subcmds(subparsers):
         action=parse_stdin,
         help='restrict by url (one or more)')
 
-    # query arguments
-    parser = subparsers.add_parser('query',
-        description='query bugzilla for various data',
-        help='query bugzilla for various data')
-    parser.set_defaults(fcn='query')
-    # positional args
-    parser.add_argument('queries',
-        action=parse_stdin,
-        nargs='*',
-        help='raw queries to perform on bugzilla of the format "method[#params]" '
-            '(e.g. use "Bug.get#{\'ids\': [100]}" to get bug 100)')
-    # optional args
-    query = base_options(parser, 'query')
-    query.add_argument('--raw',
-        action='store_true',
-        help='print raw, unformatted json responses')
-
     # add generic options for subcommands
     get_actions = [get, search, comments, changes]
     send_actions = [attach, modify, create]

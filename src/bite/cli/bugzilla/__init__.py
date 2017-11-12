@@ -51,20 +51,13 @@ class Bugzilla(Cli):
                 self.log('Enter component: {}'.format(kw['component']))
 
             if not kw['version']:
-                # Try to get the default version for the entered product by
-                # naively assuming it has the highest ID
-                params = {'names': [kw['product']], 'include_fields': ['versions']}
-                r = self.service.query('Product.get', params)
-                if r['products']:
-                    default_version = r['products'][0]['versions'][-1]['name']
-                else:
-                    raise CliError('Product {!r} not found'.format(kw['product']))
-
-                line = get_input('Enter version (default: {}): '.format(default_version))
+                # assume default product has the lowest ID
+                default_product = self.service.cache['products'][0]
+                line = get_input('Enter version (default: {}): '.format(default_product))
                 if len(line):
                     kw['version'] = line
                 else:
-                    kw['version'] = default_version
+                    kw['version'] = default_product
             else:
                 self.log('Enter version: {}'.format(kw['version']))
 
@@ -342,26 +335,6 @@ class Bugzilla(Cli):
         data = self.service.send(request)
 
         self.print_products(data)
-
-    def query(self, raw, **kw):
-        if kw['queries']:
-            if len(kw['queries']) == 0:
-                raise CliError('Please specify a query')
-            for query in kw['queries']:
-                q = query.split('#')
-                self.log('Executing query: {}'.format(q[0]))
-                params = None
-                if len(q) > 1:
-                    self.log('Parameters: {}'.format(q[1]))
-                    try:
-                        params = json.loads(q[1])
-                    except SyntaxError as e:
-                        raise
-                result = self.service.query(method=q[0], params=params)
-                if not raw:
-                    print(json.dumps(result, indent=2))
-                else:
-                    print(json.dumps(result))
 
     def print_products(self, products):
         if products:

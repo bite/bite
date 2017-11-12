@@ -64,10 +64,12 @@ class Bugzilla(Service):
 
         # get open/closed status values
         reqs.append(self.FieldsRequest(names=['bug_status']))
+        # get available products
+        reqs.append(self.ProductsRequest())
         # get server bugzilla version
         reqs.append(self.VersionRequest())
 
-        statuses, version = self.send(reqs)
+        statuses, products, version = self.send(reqs)
 
         open_status = []
         closed_status = []
@@ -77,8 +79,10 @@ class Bugzilla(Service):
                     open_status.append(status['name'])
                 else:
                     closed_status.append(status['name'])
+        products = [d['name'] for d in sorted(products, key=lambda x: x['id']) if d['is_active']]
         config_updates['open_status'] = tuple(sorted(open_status))
         config_updates['closed_status'] = tuple(sorted(closed_status))
+        config_updates['products'] = tuple(products)
         config_updates['version'] = version
 
         return config_updates
@@ -93,12 +97,6 @@ class Bugzilla(Service):
         else:
             params['Bugzilla_token'] = str(self.auth)
         return request, params
-
-    def query(self, method, params=None):
-        """Query bugzilla for various data."""
-        req = self.create_request(method=method, params=params)
-        data = self.send(req)
-        return data
 
     def _failed_http_response(self, response):
         if response.status_code in (401, 403):
