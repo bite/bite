@@ -43,10 +43,9 @@ def write_lookup_config(python_base, install_prefix):
             raise
     log.info("writing lookup config to %r" % path)
 
-    bite = pkgdist.get_pkg_module()
-    from bite import const
+    with pkgdist.syspath(pkgdist.PACKAGEDIR):
+        from bite import const
     services = tuple(sorted(const.SERVICES.items()))
-    clients = tuple(sorted(const.CLIENTS.items()))
 
     import textwrap
     with open(path, "w") as f:
@@ -62,10 +61,8 @@ def write_lookup_config(python_base, install_prefix):
                 CONFIG_PATH = osp.join(INSTALL_PREFIX, {!r})
 
                 SERVICES = {}
-                CLIENTS = {}
             """.format(
-                DATA_INSTALL_OFFSET, CONFIG_INSTALL_OFFSET,
-                services, clients)))
+                DATA_INSTALL_OFFSET, CONFIG_INSTALL_OFFSET, services)))
         else:
             f.write(textwrap.dedent("""\
                 INSTALL_PREFIX = {!r}
@@ -73,12 +70,11 @@ def write_lookup_config(python_base, install_prefix):
                 CONFIG_PATH = {!r}
 
                 SERVICES = {!r}
-                CLIENTS = {!r}
             """.format(
                 install_prefix,
                 os.path.join(install_prefix, DATA_INSTALL_OFFSET),
                 os.path.join(install_prefix, CONFIG_INSTALL_OFFSET),
-                services, clients)))
+                services)))
 
             f.close()
             byte_compile([path], prefix=python_base)
@@ -86,7 +82,7 @@ def write_lookup_config(python_base, install_prefix):
 
 
 setup(
-    description='Bug, issue, and ticket extraction tool',
+    description='bug, issue, and ticket extraction tool',
     author='Tim Harder',
     author_email='radhermit@gmail.com',
     url='https://github.com/radhermit/bite/',
@@ -94,7 +90,6 @@ setup(
     platforms=['any'],
     data_files=list(chain(
         pkgdist.data_mapping(CONFIG_INSTALL_OFFSET, 'config'),
-        pkgdist.data_mapping(os.path.join(DATA_INSTALL_OFFSET, 'services'), 'services'),
     )),
     cmdclass=dict(
         pkgdist_cmds,

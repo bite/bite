@@ -1,3 +1,0 @@
-[freedesktop]
-base: https://bugs.freedesktop.org/
-service: bugzilla-jsonrpc

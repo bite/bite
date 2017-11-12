@@ -1,9 +1,9 @@
 import os
-from shutil import get_terminal_size
 import sys
 
 from snakeoil import mappings
 from snakeoil.demandload import demandload
+from bitelib.const import COLUMNS
 
 from . import __title__
 
@@ -39,7 +39,9 @@ def _GET_CONST(attr, default_value):
     return result
 
 BROWSER = os.environ.get('BROWSER', 'xdg-open')
-COLUMNS = get_terminal_size()[0]
+DATA_PATH = _GET_CONST('DATA_PATH', _reporoot)
+if CONFIG_PATH is None:
+    CONFIG_PATH = _GET_CONST('CONFIG_PATH', '%(DATA_PATH)s/config')
 
 # determine XDG compatible paths
 for xdg_var, var_name, fallback_dir in (
@@ -49,32 +51,19 @@ for xdg_var, var_name, fallback_dir in (
     setattr(_module, var_name,
             os.environ.get(xdg_var, os.path.join(os.path.expanduser(fallback_dir), __title__)))
 
-DATA_PATH = _GET_CONST('DATA_PATH', _reporoot)
-if CONFIG_PATH is None:
-    CONFIG_PATH = _GET_CONST('CONFIG_PATH', '%(DATA_PATH)s/config')
-
 def _service_cls(x):
     if inspect.isclass(x) and getattr(x, '_service', None) is not None:
         return True
     return False
 
 def _services():
-    from . import services as services_mod
+    from . import cli
     services = []
-    for imp, name, _ in pkgutil.walk_packages(services_mod.__path__, services_mod.__name__ + '.'):
+    for imp, name, _ in pkgutil.walk_packages(cli.__path__, cli.__name__ + '.'):
         module = imp.find_module(name).load_module()
         for name, cls in inspect.getmembers(module, _service_cls):
             services.append((cls._service, '.'.join([module.__name__, cls.__name__])))
     return services
-
-def _clients():
-    from . import cli
-    clients = []
-    for imp, name, _ in pkgutil.walk_packages(cli.__path__, cli.__name__ + '.'):
-        module = imp.find_module(name).load_module()
-        for name, cls in inspect.getmembers(module, _service_cls):
-            clients.append((cls._service, '.'.join([module.__name__, cls.__name__])))
-    return clients
 
 def _GET_SERVICES(attr, func):
     try:
@@ -84,4 +73,3 @@ def _GET_SERVICES(attr, func):
     return result
 
 SERVICES = mappings.ImmutableDict(_GET_SERVICES('SERVICES', _services))
-CLIENTS = mappings.ImmutableDict(_GET_SERVICES('CLIENTS', _clients))

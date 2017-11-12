@@ -1,3 +1,0 @@
-[busybox]
-base = https://bugs.busybox.net/
-service: bugzilla-jsonrpc

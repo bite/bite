@@ -1,3 +1,0 @@
-[suse]
-base: https://bugzilla.suse.com/
-service: bugzilla-jsonrpc

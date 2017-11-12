@@ -1,3 +1,0 @@
-[xfce]
-base: https://bugzilla.xfce.org/
-service: bugzilla-jsonrpc

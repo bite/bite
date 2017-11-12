@@ -102,12 +102,6 @@ PACKAGEDIR = os.path.dirname(MODULEDIR)
 MODULE = os.path.basename(MODULEDIR)
 
 
-def get_pkg_module():
-    """Return the imported main module for the package."""
-    with syspath(PACKAGEDIR):
-        return import_module(MODULE)
-
-
 def version(moduledir=MODULEDIR):
     """Determine a module's version.
 

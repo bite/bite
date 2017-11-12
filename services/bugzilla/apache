@@ -1,3 +1,0 @@
-[apache]
-base: https://bz.apache.org/bugzilla/
-service: bugzilla-jsonrpc

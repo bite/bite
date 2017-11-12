@@ -1,3 +1,0 @@
-[glibc]
-base: https://sourceware.org/bugzilla/
-service: bugzilla-jsonrpc

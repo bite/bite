@@ -1,3 +1,0 @@
-[wine]
-base: https://bugs.winehq.org/
-service: bugzilla-jsonrpc

@@ -11,9 +11,11 @@ from importlib import import_module
 import os
 import sys
 
+from bitelib.const import SERVICES
+from bitelib.exceptions import RequestError
+
 from .. import const
 from ..argparser import ArgumentParser, parse_file, override_attr
-from ..exceptions import RequestError
 
 
 argparser = ArgumentParser(
@@ -101,9 +103,9 @@ def get_client(args):
         args = vars(args)
     fcn_args = args.pop('fcn_args')
     service = args['service']
-    mod_name, cls_name = const.SERVICES[service].rsplit('.', 1)
+    mod_name, cls_name = SERVICES[service].rsplit('.', 1)
     args['service'] = getattr(import_module(mod_name), cls_name)(**args)
-    mod_name, cls_name = const.CLIENTS[service].rsplit('.', 1)
+    mod_name, cls_name = const.SERVICES[service].rsplit('.', 1)
     client = getattr(import_module(mod_name), cls_name)(**args)
     return client, fcn_args
 

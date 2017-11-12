@@ -1,5 +1,4 @@
 cython
 https://github.com/pkgcore/snakeoil/archive/master.tar.gz#egg=snakeoil
-requests>=2
+https://github.com/radhermit/bitelib/archive/master.tar.gz#egg=bitelib
 python-dateutil>=2.1
-lxml

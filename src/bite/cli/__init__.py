@@ -8,12 +8,13 @@ import sys
 import tarfile
 import textwrap
 
+from bitelib.cache import Completion
+from bitelib.exceptions import AuthError
+from bitelib.objects import TarAttachment
 from snakeoil.strings import pluralism
 
 from .. import const
-from ..cache import Completion
-from ..exceptions import AuthError, CliError, BiteError
-from ..objects import TarAttachment
+from ..exceptions import CliError
 from ..utils import confirm, get_input
 
 def loginretry(func):
@@ -63,7 +64,11 @@ class Cli(object):
 
         self.log('Service: {} -- {}'.format(self.service, self.service.base))
 
-        self.completion_cache = Completion(self.service.cache.name) if completion_cache else False
+        if completion_cache:
+            self.completion_cache = Completion(
+                os.path.join(const.USER_CACHE_PATH, 'completion', self.service.cache.name))
+        else:
+            self.completion_cache = None
 
     def login(self):
         """Login to a service and try to cache the authentication token."""
@@ -298,7 +303,7 @@ class Cli(object):
         data = self.service.send(request)
 
         # cache results for completion usage if requested fields are sane
-        if self.completion_cache and fields is None:
+        if self.completion_cache is not None and fields is None:
             data = list(data)
             self.completion_cache.write('\n'.join('{} {}'.format(x.id, x.summary) for x in data))
 

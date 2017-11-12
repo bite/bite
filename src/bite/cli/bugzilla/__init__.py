@@ -7,6 +7,7 @@ import subprocess
 import sys
 from itertools import chain, groupby
 
+from bitelib.utc import utc
 from dateutil.parser import parse as parsetime
 from snakeoil.strings import pluralism
 
@@ -14,7 +15,6 @@ from .. import Cli
 from ... import const
 from ...utils import block_edit, confirm, get_input
 from ...exceptions import CliError
-from ...utc import utc
 
 class Bugzilla(Cli):
     """CLI for Bugzilla service."""
@@ -317,7 +317,7 @@ class Bugzilla(Cli):
                         if 'is_open' in value:
                             print('    open: {}'.format(value['is_open']))
 
-    def products(self, products, dry_run=False):
+    def products(self, products=None, dry_run=False):
         params = {}
         if products is not None:
             for product in products:
