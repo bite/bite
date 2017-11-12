@@ -1,4 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor
+from functools import wraps
 import os
 import types
 from urllib.parse import urlparse, urlunparse, urlencode
@@ -27,6 +28,15 @@ def request(service_cls):
         req_func = lambda self, *args, **kw: cls(*args, service=self, **kw)
         setattr(service_cls, cls.__name__.lstrip('_'), req_func)
         return cls
+    return wrapped
+
+
+def generator(func):
+    """Register request creation function."""
+    @wraps(func)
+    def wrapped(*args, **kw):
+        return func(*args, **kw)
+    wrapped.generator = True
     return wrapped
 
 

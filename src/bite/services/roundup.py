@@ -10,7 +10,7 @@ from datetime import datetime
 import requests
 from snakeoil.sequences import iflatten_instance
 
-from . import NullRequest, Request, RPCRequest, command, request
+from . import NullRequest, Request, RPCRequest, command, request, generator
 from ._xmlrpc import LxmlXmlrpc
 from ..cache import Cache, csv2tuple
 from ..exceptions import AuthError, RequestError, ParsingError
@@ -249,6 +249,7 @@ class _AttachmentsRequest(Request):
         self.ids = ids
         self.attachment_ids = attachment_ids
 
+    @generator
     def parse(self, data):
         if self.attachment_ids:
             ids = self.attachment_ids
@@ -282,6 +283,7 @@ class _CommentsRequest(Request):
         self.ids = ids
         self.comment_ids = comment_ids
 
+    @generator
     def parse(self, data):
         if self.comment_ids:
             ids = self.comment_ids
