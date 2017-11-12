@@ -236,7 +236,7 @@ class _SearchRequest(RPCRequest):
         self.fields = fields
         self.options = options_log
 
-    def parse(self, data, *args, **kw):
+    def parse(self, data):
         bugs = data['bugs']
         return (self.service.item(service=self.service, bug=bug) for bug in bugs)
 
