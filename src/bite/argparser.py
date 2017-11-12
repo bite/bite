@@ -91,6 +91,10 @@ class parse_stdin(Action):
                                 values.extend(iflatten_instance([self.convert_type(v)]))
                             except ArgumentTypeError as e:
                                 raise ArgumentError(self, e)
+
+                    # make sure values were piped via stdin for required args
+                    if not values and self.required:
+                        raise ArgumentError(self, 'missing required values piped via stdin')
         setattr(namespace, self.dest, values)
 
 class override_attr(Action):
