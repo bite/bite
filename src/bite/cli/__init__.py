@@ -2,13 +2,11 @@ import codecs
 import getpass
 from io import BytesIO
 from itertools import chain
-import locale
 import os
 import subprocess
 import sys
 import tarfile
 import textwrap
-from urllib.parse import urlparse
 
 from snakeoil.strings import pluralism
 
