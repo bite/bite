@@ -48,6 +48,7 @@ class Request(object):
         self.options = []
         self.params = params
         self._req = None
+        self._finalized = False
 
         if method is not None:
             if url is None:
@@ -59,13 +60,15 @@ class Request(object):
     @property
     def _requests(self):
         if self._req is not None:
-            yield self._finalize(self._req, self.params)
+            if not self._finalized:
+                self._finalize()
+            yield self._req
         yield from self._reqs
 
-    def _finalize(self, req, params):
+    def _finalize(self):
+        self._finalized = True
         if not (self.service.skip_auth or self.service.authenticated) and self.service.auth:
-            req, self.params = self.service.inject_auth(req, self.params)
-        return req
+            self._req, self.params = self.service.inject_auth(self._req, self.params)
 
     def prepare(self):
         reqs = []
@@ -110,10 +113,9 @@ class RPCRequest(Request):
         self.command = command
         super().__init__(method='POST', **kw)
 
-    def _finalize(self, req, params):
-        req = super()._finalize(req, params)
-        req.data = self.service._encode_request(self.command, self.params)
-        return req
+    def _finalize(self):
+        super()._finalize()
+        self._req.data = self.service._encode_request(self.command, self.params)
 
 
 class RESTRequest(Request):
@@ -123,11 +125,10 @@ class RESTRequest(Request):
         self.endpoint = endpoint
         super().__init__(method=method, **kw)
 
-    def _finalize(self, req, params):
-        req = super()._finalize(req, params)
+    def _finalize(self):
+        super()._finalize()
         params = '?' + urlencode(self.params) if self.params else ''
-        req.url = '{}/{}{}'.format(req.url, self.endpoint.lstrip('/'), params)
-        return req
+        self._req.url = '{}/{}{}'.format(self._req.url, self.endpoint.lstrip('/'), params)
 
 
 class NullRequest(Request):
