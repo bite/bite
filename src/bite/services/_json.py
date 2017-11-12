@@ -1,3 +1,6 @@
+try: import simplejson as json
+except ImportError: import json
+
 from . import Service
 from ..exceptions import ParsingError, RequestError
 
