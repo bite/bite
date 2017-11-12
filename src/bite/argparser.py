@@ -495,8 +495,9 @@ class ArgumentParser(arghparse.ArgumentParser):
         args = arghparse.Namespace(**vars(initial_args))
         fcn_args = super().parse_args(unparsed_args, initial_args)
 
-        # reopen stdin if an option was piped in
-        if getattr(fcn_args, 'stdin', False):
+        # if an arg was piped in, remove stdin attr from fcn args and reopen stdin
+        stdin = fcn_args.pop('stdin', None)
+        if stdin is not None:
             sys.stdin = open('/dev/tty')
 
         args = vars(args)
