@@ -102,6 +102,9 @@ class Request(object):
     def handle_exception(self, e):
         raise e
 
+    def __len__(self):
+        return len(list(self._requests))
+
     def __iter__(self):
         return self._requests
 
@@ -136,6 +139,7 @@ class NullRequest(Request):
     def __init__(self, generator=False):
         super().__init__(service=None)
         self._generator = generator
+        self._reqs = (None,)
 
     def __bool__(self):
         return False
@@ -248,45 +252,58 @@ class Service(object):
         """Parse the returned response."""
         raise NotImplementedError()
 
-    def prepare_request(self, req):
-        return self.session.prepare_request(req)
+    def send(self, *reqs):
+        """Send requests and return parsed response data."""
+        if not reqs:
+            return None
 
-    def send(self, req):
-        """Send request(s) and return parsed response data."""
         def _raise(e): raise
         ident = lambda x: x
-        req_parse = getattr(req, 'parse', ident)
-        req_handle_exception = getattr(req, 'handle_exception', _raise)
 
-        jobs = []
-        for subreq in iflatten_instance(iter(req), Request):
-            parse = getattr(subreq, 'parse', ident)
-            handle_exception = getattr(subreq, 'handle_exception', _raise)
-            http_reqs = [
-                self.executor.submit(self._http_send, x) for x in
-                iflatten_instance(subreq, requests.Request)]
-            jobs.append((parse, handle_exception, http_reqs))
-
-        def _send_subreqs(jobs):
-            for parse, handle_exception, http_reqs in jobs:
-                results = None
-                try:
-                    if len(http_reqs) == 1:
-                        results = http_reqs[0].result()
-                    elif len(http_reqs) > 1:
-                        results = (x.result() for x in http_reqs)
-                    yield parse(results)
-                except RequestError as e:
-                    handle_exception(e)
-
-        data = _send_subreqs(jobs)
-        if len(jobs) == 1 and isinstance(req, Request):
+        def _parse(parse, handle, reqs):
+            generator = getattr(parse, 'generator', False)
             try:
-                while isinstance(data, types.GeneratorType):
-                    data = next(data)
+                if len(reqs) > 1 or generator:
+                    results = (x.result() for x in reqs)
+                else:
+                    results = reqs[0].result()
+                return parse(results)
             except RequestError as e:
-                req_handle_exception(e)
-        return req_parse(data)
+                handle(e)
+
+        def _send_jobs(reqs):
+            jobs = []
+            for req in iflatten_instance(reqs, Request):
+                parse = getattr(req, 'parse', ident)
+                handle = getattr(req, 'handle_exception', _raise)
+
+                if isinstance(req, Request) and len(req) > 1:
+                    # force subreqs to be sent and parsed in parallel
+                    data = _send_jobs(iter(req))
+                    jobs.append(self.executor.submit(_parse, parse, handle, data))
+                else:
+                    http_reqs = []
+                    if not hasattr(req, '__iter__'):
+                        req = [req]
+
+                    for r in iflatten_instance(req, requests.Request):
+                        if isinstance(r, requests.Request):
+                            func = self._http_send
+                        else:
+                            func = ident
+                        http_reqs.append(self.executor.submit(func, r))
+
+                    if http_reqs:
+                        jobs.append(self.executor.submit(_parse, parse, handle, http_reqs))
+            return jobs
+
+        data = (x.result() for x in _send_jobs(reqs))
+
+        generator = isinstance(reqs[0], (list, tuple))
+        if len(reqs) == 1 and not generator:
+            return next(data)
+        else:
+            return data
 
     def _http_send(self, req):
         """Send an HTTP request and return the parsed response."""
