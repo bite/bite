@@ -128,8 +128,7 @@ class Cli(object):
             filename, self.service.item.type, pluralism(ids), ', '.join(map(str, ids))))
 
     @loginretry
-    def attachments(self, dry_run, ids, view, metadata=False,
-                    item_id=False, output_url=False, browser=False, save_to=None, **kw):
+    def attachments(self, dry_run, ids, item_id=False, output_url=False, browser=False, **kw):
         # skip pulling data if we don't need it
         get_data = (not output_url and not browser)
 
@@ -184,17 +183,23 @@ class Cli(object):
             elif browser:
                 _launch_browser(x.id for x in attachments)
             else:
-                for f in attachments:
-                    if view:
-                        self._view_attachment(f, metadata)
-                    else:
-                        if save_to is not None:
-                            path = os.path.join(save_to, f.filename)
-                        else:
-                            path = os.path.join(os.getcwd(), f.filename)
-                        self._save_attachment(f, path=path)
+                self._process_attachments(attachments, **kw)
 
-    def _view_attachment(self, f, metadata):
+    def _process_attachments(attachments, show_metadata=False, view_attachment=False,
+                             save_to=None, **kw):
+        """Process a list of attachment objects."""
+        for f in attachments:
+            if view_attachment:
+                self._view_attachment(f, show_metadata)
+            else:
+                if save_to is not None:
+                    path = os.path.join(save_to, f.filename)
+                else:
+                    path = os.path.join(os.getcwd(), f.filename)
+                self._save_attachment(f, path=path)
+
+    def _view_attachment(self, f, show_metadata):
+        """Output attachment data."""
         compressed = ['x-bzip2', 'x-bzip', 'x-gzip', 'gzip', 'x-tar', 'x-xz']
         mime_type, mime_subtype = f.mimetype.split('/')
         if sys.stdout.isatty() and not (mime_type == 'text' or mime_subtype in compressed):
@@ -206,7 +211,7 @@ class Cli(object):
 
         if mime_subtype == 'x-tar':
             tar_file = tarfile.open(fileobj=BytesIO(f.read()))
-            if metadata:
+            if show_metadata:
                 # show listing of tarfile elements
                 tar_file.list()
             else:
@@ -225,6 +230,7 @@ class Cli(object):
             sys.stdout.write(f.read().decode())
 
     def _save_attachment(self, f, path):
+        """Save attachment to a specified path."""
         if os.path.exists(path):
             print(' ! Warning: existing file: {!r}'.format(path))
             if not confirm('Do you want to overwrite it?'):

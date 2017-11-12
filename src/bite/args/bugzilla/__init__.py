@@ -97,7 +97,7 @@ def subcmds(subparsers):
     attachments = base_options(parser, 'attachments')
     attachments.add_argument('-l', '--list',
         action='store_true',
-        dest='metadata',
+        dest='show_metadata',
         help='list attachment metadata')
 
     # changes arguments

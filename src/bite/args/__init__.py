@@ -50,6 +50,7 @@ def attachments(parser):
         help='output the URL of the attachment')
     single_action.add_argument('-V', '--view',
         action='store_true',
+        dest='view_attachment',
         help='output attachment data')
     single_action.add_argument('-B', '--browser',
         action='store_true',
