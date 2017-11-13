@@ -11,10 +11,11 @@ from importlib import import_module
 import os
 import sys
 
-from bitelib.const import SERVICES
+from bitelib import get_service
 from bitelib.exceptions import RequestError
 
 from .. import const
+from .. import get_client
 from ..argparser import ArgumentParser, parse_file, override_attr
 
 
@@ -98,15 +99,13 @@ cache_opts.add_argument(
     '-r', '--remove', action='store_true', help='remove various data caches')
 
 
-def get_client(args):
+def get_cli(args):
     if not isinstance(args, dict):
         args = vars(args)
     fcn_args = args.pop('fcn_args')
-    service = args['service']
-    mod_name, cls_name = SERVICES[service].rsplit('.', 1)
-    args['service'] = getattr(import_module(mod_name), cls_name)(**args)
-    mod_name, cls_name = const.SERVICES[service].rsplit('.', 1)
-    client = getattr(import_module(mod_name), cls_name)(**args)
+    service = args.pop('service')
+    args['service'] = get_service(service)(**args)
+    client = get_client(service)(**args)
     return client, fcn_args
 
 
@@ -155,7 +154,7 @@ def _cache(options, out, err):
         options.connection = connection
         options.service = service
         options.base = base
-        client, fcn_args = get_client(dict(vars(options)))
+        client, fcn_args = get_cli(dict(vars(options)))
         try:
             client.cache(**fcn_args)
         except RequestError as e:
@@ -183,7 +182,7 @@ def _validate_args(parser, namespace):
 
 @argparser.bind_main_func
 def main(options, out, err):
-    client, fcn_args = get_client(options)
+    client, fcn_args = get_cli(options)
     cmd = getattr(client, fcn_args.pop('fcn'))
     cmd(**fcn_args)
     return 0
