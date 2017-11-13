@@ -99,11 +99,11 @@ class Cli(object):
             raise RuntimeError('No {} ID(s) specified'.format(self.service.item.type))
 
         if browser:
-            if self.service.item.endpoint is None:
+            if self.service.item_endpoint is None:
                 raise CliError("no web endpoint defined for {}s".format(self.service.item.type))
 
             for id in ids:
-                url = self.service.base.rstrip('/') + self.service.item.endpoint + str(id)
+                url = self.service.base.rstrip('/') + self.service.item_endpoint + str(id)
                 self.log_t('Launching {} in browser: {} {!r}'.format(
                     self.service.item.type, const.BROWSER, url))
 
@@ -151,14 +151,14 @@ class Cli(object):
 
         def _output_urls(ids):
             for id in ids:
-                print(self.service.base.rstrip('/') + self.service.attachment.endpoint + str(id))
+                print(self.service.base.rstrip('/') + self.service.attachment_endpoint + str(id))
 
         def _launch_browser(ids):
-            if self.service.attachment.endpoint is None:
+            if self.service.attachment_endpoint is None:
                 raise CliError("no web endpoint defined for attachments")
 
             for id in ids:
-                url = self.service.base.rstrip('/') + self.service.attachment.endpoint + str(id)
+                url = self.service.base.rstrip('/') + self.service.attachment_endpoint + str(id)
                 self.log_t('Launching attachment in browser: {} {!r}'.format(
                     const.BROWSER, url))
 
