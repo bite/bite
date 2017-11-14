@@ -58,10 +58,14 @@ class Cli(object):
         self.skip_auth = skip_auth
         self.wrapper = textwrap.TextWrapper(width=const.COLUMNS-3)
 
-        # login if requested; otherwise, login will be required when necessary
-        auth_requested = any((passwordcmd, user, password))
-        if auth_requested:
-            self.login()
+        # Login if requested and not skipping; otherwise, credentials will be
+        # requested when needed.
+        if self.skip_auth:
+            self.service.auth.token = None
+        else:
+            auth_requested = any((passwordcmd, user, password))
+            if auth_requested:
+                self.login()
 
         self.log('Service: {}'.format(self.service))
 
