@@ -1,4 +1,5 @@
 import codecs
+from functools import wraps
 import getpass
 from io import BytesIO
 from itertools import chain
@@ -17,8 +18,9 @@ from .. import const
 from ..exceptions import CliError
 from ..utils import confirm, get_input
 
-def loginretry(func):
+def login_retry(func):
     """Forces authentication on second request if the initial request was unauthenticated and failed due to insufficient permissions."""
+    @wraps(func)
     def wrapper(self, *args, **kw):
         try:
             return func(self, *args, **kw)
@@ -35,8 +37,10 @@ def loginretry(func):
             return func(self, *args, **kw)
     return wrapper
 
-def loginrequired(func):
+
+def login_required(func):
     """Authentication is required to use this functionality."""
+    @wraps(func)
     def wrapper(self, *args, **kw):
         self.login()
         return func(self, *args, **kw)
@@ -99,7 +103,7 @@ class Cli(object):
 
             self.service.login(user, password)
 
-    @loginretry
+    @login_retry
     def get(self, dry_run, ids, browser=False, **kw):
         if not ids:
             raise RuntimeError('No {} ID(s) specified'.format(self.service.item.type))
@@ -128,17 +132,16 @@ class Cli(object):
             data = self.service.send(request)
             self._print_item(data, **kw)
 
-    @loginretry
-    @loginrequired
+    @login_retry
+    @login_required
     def attach(self, dry_run, ids, **kw):
         """Attach a file to a specified item given a filename."""
-        params = self._attach_params(**kw)
         if dry_run: return
-        data = self.service.add_attachment(ids, **params)
+        data = self.service.add_attachment(ids, **kw)
         self.log_t('{!r} attached to {}{}: {}'.format(
             filename, self.service.item.type, pluralism(ids), ', '.join(map(str, ids))))
 
-    @loginretry
+    @login_retry
     def attachments(self, dry_run, ids, item_id=False, output_url=False, browser=False, **kw):
         # skip pulling data if we don't need it
         get_data = (not output_url and not browser)
@@ -253,10 +256,9 @@ class Cli(object):
         except IOError as e:
             raise CliError('error creating file: {!r}: {}'.format(path, e.strerror))
 
-    @loginretry
-    @loginrequired
+    @login_retry
+    @login_required
     def modify(self, ask, dry_run, ids, **kw):
-        kw = self._modify_params(**kw)
         request = self.service.ModifyRequest(ids, **kw)
 
         self.log_t('Modifying {}{}: {}'.format(
@@ -273,10 +275,10 @@ class Cli(object):
         data = self.service.send(request)
         self.print_changes(data, params=kw)
 
-    @loginretry
-    @loginrequired
+    @login_retry
+    @login_required
     def create(self, ask, batch, dry_run, **kw):
-        options_log, params = self._create_params(batch, **kw)
+        options_log = kw.pop('options_log')
 
         for line in options_log:
             self.log(line, prefix='')
@@ -299,7 +301,6 @@ class Cli(object):
             sys.stdout.write(str(data))
 
     def search(self, dry_run, fields=None, **kw):
-        kw = self._search_params(**kw)
         request = self.service.SearchRequest(**kw)
 
         self.log('Searching for {}s with the following options:'.format(self.service.item.type))
@@ -378,18 +379,6 @@ class Cli(object):
                 self.service.cache.write(updates=updates)
         elif remove:
             self.service.cache.remove()
-
-    def _attach_params(self):
-        raise NotImplementedError
-
-    def _modify_params(self, *args, **kw):
-        return kw
-
-    def _create_params(self, *args, **kw):
-        return [], kw
-
-    def _search_params(self, *args, **kw):
-        return kw
 
     def print_changes(self, data, params):
         raise NotImplementedError

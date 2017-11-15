@@ -19,12 +19,12 @@ from ...exceptions import CliError
 class Bugzilla(Cli):
     """CLI for Bugzilla service."""
 
-    def _attach_params(self, **kw):
+    def attach(self, *args, **kw):
         if kw['comment'] is None:
             kw['comment'] = block_edit('Enter optional long description of attachment')
-        return kw
+        super().attach(*args, **kw)
 
-    def _create_params(self, batch, **kw):
+    def create(self, *args, **kw):
         # load description from file or stdin
         if kw['description_from']:
             try:
@@ -35,7 +35,7 @@ class Bugzilla(Cli):
             except IOError as e:
                 raise CliError('Unable to read file: {}: {}'.format(kw['description_from'], e))
 
-        if not batch:
+        if kw.get('batch', False):
             self.log('Press Ctrl+C at any time to abort.')
 
             if not kw['product']:
@@ -207,28 +207,30 @@ class Bugzilla(Cli):
             kw['description'] = kw['description'].decode('string_escape')
             options_log.append('{}'.format(kw['description']))
         options_log.append('=' * const.COLUMNS)
+        kw['options_log'] = options_log
 
-        return (options_log, kw)
+        super().create(*args, **kw)
 
-    def _modify_params(self, **kw):
-        if kw['reply']:
+    def modify(self, *args, **kw):
+        if kw.get('reply'):
             raise NotImplementedError()
             # get comment kw['reply']
             #kw['comment-body'] = block_edit('Enter comment:').rstrip()
 
-        if kw['comment_from']:
+        comment_from = kw.get('comment_from')
+        if comment_from is not None:
             try:
-                if kw['comment_from'] == '-':
+                if comment_from == '-':
                     kw['comment-body'] = sys.stdin.read()
                 else:
-                    kw['comment-body'] = open(kw['comment_from'], 'r').read()
+                    kw['comment-body'] = open(comment_from, 'r').read()
             except IOError as e:
-                raise CliError('Unable to read file: {}: {}'.format(kw['comment_from'], e))
+                raise CliError('Unable to read file: {comment_from}: {e}')
 
-        if kw['comment_editor']:
+        if kw.get('comment_editor'):
             kw['comment-body'] = block_edit('Enter comment:').rstrip()
 
-        return kw
+        super().modify(*args, **kw)
 
     def print_changes(self, bugs, params):
         for bug in bugs:
@@ -239,7 +241,7 @@ class Bugzilla(Cli):
                 print(self._header('-', 'Modified fields'))
                 for k, v in changes.items():
                     try:
-                        field = self.service.attributes[k]
+                        field = self.service.item.attributes[k]
                     except KeyError:
                         field = k
 

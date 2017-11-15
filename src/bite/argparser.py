@@ -3,7 +3,6 @@ from argparse import (
     _get_action_name, _SubParsersAction, _)
 import fileinput
 from importlib import import_module
-import importlib.util
 import logging
 import os
 import re
