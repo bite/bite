@@ -1,0 +1,3 @@
+[mozilla]
+base: https://bugzilla.mozilla.org/
+service: bugzilla-jsonrpc

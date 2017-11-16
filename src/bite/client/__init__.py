@@ -9,14 +9,14 @@ import sys
 import tarfile
 import textwrap
 
-from bitelib.cache import Completion
-from bitelib.exceptions import AuthError
-from bitelib.objects import TarAttachment
 from snakeoil.strings import pluralism
 
 from .. import const
-from ..exceptions import CliError
+from ..cache import Completion
+from ..exceptions import AuthError, BiteError
+from ..objects import TarAttachment
 from ..utils import confirm, get_input
+
 
 def login_retry(func):
     """Forces authentication on second request if the initial request was unauthenticated and failed due to insufficient permissions."""
@@ -110,7 +110,7 @@ class Cli(object):
 
         if browser:
             if self.service.item_endpoint is None:
-                raise CliError("no web endpoint defined for {}s".format(self.service.item.type))
+                raise BiteError("no web endpoint defined for {}s".format(self.service.item.type))
 
             for id in ids:
                 url = self.service.base.rstrip('/') + self.service.item_endpoint + str(id)
@@ -122,7 +122,7 @@ class Cli(object):
                         [const.BROWSER, "{}".format(url)],
                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 except (PermissionError, FileNotFoundError) as e:
-                    raise CliError('failed running browser {!r}: {}'.format(const.BROWSER, e.strerror))
+                    raise BiteError('failed running browser {!r}: {}'.format(const.BROWSER, e.strerror))
         else:
             request = self.service.GetRequest(ids, **kw)
             self.log_t('Getting {}{}: {}'.format(
@@ -164,7 +164,7 @@ class Cli(object):
 
         def _launch_browser(ids):
             if self.service.attachment_endpoint is None:
-                raise CliError("no web endpoint defined for attachments")
+                raise BiteError("no web endpoint defined for attachments")
 
             for id in ids:
                 url = self.service.base.rstrip('/') + self.service.attachment_endpoint + str(id)
@@ -176,7 +176,7 @@ class Cli(object):
                         [const.BROWSER, "{}".format(url)],
                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 except (PermissionError, FileNotFoundError) as e:
-                    raise CliError('failed running browser {!r}: {}'.format(const.BROWSER, e.strerror))
+                    raise BiteError('failed running browser {!r}: {}'.format(const.BROWSER, e.strerror))
 
         if not item_id and (output_url or browser):
             if output_url:
@@ -254,7 +254,7 @@ class Cli(object):
         try:
             f.write(path)
         except IOError as e:
-            raise CliError('error creating file: {!r}: {}'.format(path, e.strerror))
+            raise BiteError('error creating file: {!r}: {}'.format(path, e.strerror))
 
     @login_retry
     @login_required
@@ -293,7 +293,7 @@ class Cli(object):
         try:
             data = self.service.create(**params)
         except ValueError as e:
-            raise CliError(e)
+            raise BiteError(e)
 
         if sys.stdout.isatty():
             self.log('Submitted {} {}'.format(self.service.item.type, data))

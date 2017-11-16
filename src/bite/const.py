@@ -1,9 +1,9 @@
 import os
+from shutil import get_terminal_size
 import sys
 
 from snakeoil import mappings
 from snakeoil.demandload import demandload
-from bitelib.const import COLUMNS
 
 from . import __title__
 
@@ -39,6 +39,7 @@ def _GET_CONST(attr, default_value):
     return result
 
 BROWSER = os.environ.get('BROWSER', 'xdg-open')
+COLUMNS = get_terminal_size()[0]
 DATA_PATH = _GET_CONST('DATA_PATH', _reporoot)
 if CONFIG_PATH is None:
     CONFIG_PATH = _GET_CONST('CONFIG_PATH', '%(DATA_PATH)s/config')
@@ -56,14 +57,30 @@ def _service_cls(x):
         return True
     return False
 
+def _clients():
+    from . import client
+    clients = []
+    for imp, name, _ in pkgutil.walk_packages(client.__path__, client.__name__ + '.'):
+        module = imp.find_module(name).load_module()
+        for name, cls in inspect.getmembers(module, _service_cls):
+            clients.append((cls._service, '.'.join([module.__name__, cls.__name__])))
+    return clients
+
 def _services():
-    from . import cli
+    from . import service
     services = []
-    for imp, name, _ in pkgutil.walk_packages(cli.__path__, cli.__name__ + '.'):
+    for imp, name, _ in pkgutil.walk_packages(service.__path__, service.__name__ + '.'):
         module = imp.find_module(name).load_module()
         for name, cls in inspect.getmembers(module, _service_cls):
             services.append((cls._service, '.'.join([module.__name__, cls.__name__])))
     return services
+
+def _GET_CLIENTS(attr, func):
+    try:
+        result = getattr(_defaults, attr)
+    except AttributeError:
+        result = func()
+    return result
 
 def _GET_SERVICES(attr, func):
     try:
@@ -72,4 +89,5 @@ def _GET_SERVICES(attr, func):
         result = func()
     return result
 
+CLIENTS = mappings.ImmutableDict(_GET_CLIENTS('CLIENTS', _clients))
 SERVICES = mappings.ImmutableDict(_GET_SERVICES('SERVICES', _services))

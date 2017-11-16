@@ -4,13 +4,13 @@ from functools import partial
 import re
 import sys
 
-from bitelib.utc import utc
 from dateutil.parser import parse as parsetime
 from dateutil.relativedelta import *
 
 from .. import base_options, generic_receive, generic_send
 from ...argparser import parse_stdin, string_list, id_list, ids
 from ...scripts.bite import auth_opts
+from ...utc import utc
 
 def parse_bug_list(s):
     try:

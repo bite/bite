@@ -11,12 +11,9 @@ from importlib import import_module
 import os
 import sys
 
-from bitelib import get_service
-from bitelib.exceptions import RequestError
-
-from .. import const
-from .. import get_client
+from .. import const, get_client, get_service
 from ..argparser import ArgumentParser, parse_file, override_attr
+from ..exceptions import RequestError
 
 
 argparser = ArgumentParser(

@@ -13,7 +13,6 @@ Specifically, this module is only meant to be imported in setup.py scripts.
 from contextlib import contextmanager
 import copy
 import errno
-from importlib import import_module
 import io
 import math
 from multiprocessing import cpu_count

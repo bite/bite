@@ -9,13 +9,13 @@ import re
 import shlex
 import sys
 
-from bitelib.exceptions import BiteError
 from snakeoil.cli import arghparse, tool
 from snakeoil.sequences import iflatten_instance
 
 from . import const
 from .alias import substitute_alias
 from .config import get_config
+from .exceptions import BiteError
 
 
 def string_list(s):

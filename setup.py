@@ -45,6 +45,7 @@ def write_lookup_config(python_base, install_prefix):
 
     with pkgdist.syspath(pkgdist.PACKAGEDIR):
         from bite import const
+    clients = tuple(sorted(const.CLIENTS.items()))
     services = tuple(sorted(const.SERVICES.items()))
 
     import textwrap
@@ -60,21 +61,24 @@ def write_lookup_config(python_base, install_prefix):
                 DATA_PATH = osp.join(INSTALL_PREFIX, {!r})
                 CONFIG_PATH = osp.join(INSTALL_PREFIX, {!r})
 
+                CLIENTS = {}
                 SERVICES = {}
             """.format(
-                DATA_INSTALL_OFFSET, CONFIG_INSTALL_OFFSET, services)))
+                DATA_INSTALL_OFFSET, CONFIG_INSTALL_OFFSET,
+                clients, services)))
         else:
             f.write(textwrap.dedent("""\
                 INSTALL_PREFIX = {!r}
                 DATA_PATH = {!r}
                 CONFIG_PATH = {!r}
 
+                CLIENTS = {!r}
                 SERVICES = {!r}
             """.format(
                 install_prefix,
                 os.path.join(install_prefix, DATA_INSTALL_OFFSET),
                 os.path.join(install_prefix, CONFIG_INSTALL_OFFSET),
-                services)))
+                clients, services)))
 
             f.close()
             byte_compile([path], prefix=python_base)
@@ -82,7 +86,7 @@ def write_lookup_config(python_base, install_prefix):
 
 
 setup(
-    description='bug, issue, and ticket extraction tool',
+    description='bug, issue, and ticket extraction library and command line tool',
     author='Tim Harder',
     author_email='radhermit@gmail.com',
     url='https://github.com/radhermit/bite/',
@@ -90,6 +94,7 @@ setup(
     platforms=['any'],
     data_files=list(chain(
         pkgdist.data_mapping(CONFIG_INSTALL_OFFSET, 'config'),
+        pkgdist.data_mapping(os.path.join(DATA_INSTALL_OFFSET, 'services'), 'services'),
     )),
     cmdclass=dict(
         pkgdist_cmds,
@@ -98,7 +103,6 @@ setup(
     classifiers=(
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
-        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
     ),
     **pkgdist_setup

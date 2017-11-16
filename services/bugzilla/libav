@@ -1,0 +1,4 @@
+[libav]
+base = https://bugzilla.libav.org/
+# json-rpc interface currently disabled on server
+service: bugzilla-xmlrpc

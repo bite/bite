@@ -2,10 +2,8 @@ import configparser
 import os
 import re
 
-from bitelib.const import DATA_PATH, USER_DATA_PATH
-from bitelib.exceptions import BiteError
-
 from . import const
+from .exceptions import BiteError
 
 
 class BiteInterpolation(configparser.ExtendedInterpolation):
@@ -184,8 +182,8 @@ def get_config(args, parser):
 
     # load system service settings and then user service settings --
     # later settings override earlier ones
-    for service_dir in (os.path.join(DATA_PATH, 'services'),
-                        os.path.join(USER_DATA_PATH, 'services')):
+    for service_dir in (os.path.join(const.DATA_PATH, 'services'),
+                        os.path.join(const.USER_DATA_PATH, 'services')):
         for root, _, files in os.walk(service_dir):
             config.read([os.path.join(root, f) for f in files])
 

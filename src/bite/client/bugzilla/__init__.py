@@ -7,14 +7,15 @@ import subprocess
 import sys
 from itertools import chain, groupby
 
-from bitelib.utc import utc
 from dateutil.parser import parse as parsetime
 from snakeoil.strings import pluralism
 
 from .. import Cli
 from ... import const
+from ...exceptions import BiteError
+from ...utc import utc
 from ...utils import block_edit, confirm, get_input
-from ...exceptions import CliError
+
 
 class Bugzilla(Cli):
     """CLI for Bugzilla service."""
@@ -33,7 +34,7 @@ class Bugzilla(Cli):
                 else:
                     kw['description'] = open(kw['description_from'], 'r').read()
             except IOError as e:
-                raise CliError('Unable to read file: {}: {}'.format(kw['description_from'], e))
+                raise BiteError('Unable to read file: {}: {}'.format(kw['description_from'], e))
 
         if kw.get('batch', False):
             self.log('Press Ctrl+C at any time to abort.')
@@ -225,7 +226,7 @@ class Bugzilla(Cli):
                 else:
                     kw['comment-body'] = open(comment_from, 'r').read()
             except IOError as e:
-                raise CliError('Unable to read file: {comment_from}: {e}')
+                raise BiteError('Unable to read file: {comment_from}: {e}')
 
         if kw.get('comment_editor'):
             kw['comment-body'] = block_edit('Enter comment:').rstrip()
@@ -405,7 +406,7 @@ class Bugzilla(Cli):
                     try:
                         value = getattr(bug, field)
                     except AttributeError:
-                        raise CliError('{!r} is not a valid field'.format(field))
+                        raise BiteError('{!r} is not a valid field'.format(field))
                     if value is None:
                         continue
                     if isinstance(value, list):
@@ -418,7 +419,7 @@ class Bugzilla(Cli):
                     for field in fields:
                         values.append(getattr(bug, field))
                 except AttributeError:
-                    raise CliError('{!r} is not a valid field'.format(field))
+                    raise BiteError('{!r} is not a valid field'.format(field))
                 self._print_lines(output.format(*values), wrap=False)
             count += 1
         return count
@@ -511,7 +512,7 @@ class Bugzilla(Cli):
                         try:
                             value = getattr(change, field)
                         except AttributeError:
-                            raise CliError('{!r} is not a valid bug field'.format(field))
+                            raise BiteError('{!r} is not a valid bug field'.format(field))
                         if value is None:
                             continue
                         if isinstance(value, list):
@@ -525,7 +526,7 @@ class Bugzilla(Cli):
                         for field in fields:
                             values.append(getattr(change, field))
                     except AttributeError:
-                        raise CliError('{!r} is not a valid field'.format(field))
+                        raise BiteError('{!r} is not a valid field'.format(field))
                     self._print_lines(output.format(*values))
             else:
                 changes = list(str(x) for x in changes)
@@ -585,7 +586,7 @@ class Bugzilla(Cli):
                         try:
                             value = getattr(comment, field)
                         except AttributeError:
-                            raise CliError('{!r} is not a valid bug field'.format(field))
+                            raise BiteError('{!r} is not a valid bug field'.format(field))
                         if value is None:
                             continue
                         if isinstance(value, list):
@@ -599,7 +600,7 @@ class Bugzilla(Cli):
                         for field in fields:
                             values.append(getattr(comment, field))
                     except AttributeError:
-                        raise CliError('{!r} is not a valid field'.format(field))
+                        raise BiteError('{!r} is not a valid field'.format(field))
                     self._print_lines(output.format(*values))
             else:
                 comments = list(str(x) for x in comments)
