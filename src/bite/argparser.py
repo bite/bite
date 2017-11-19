@@ -70,7 +70,13 @@ class parse_stdin(Action):
         super().__init__(*args, **kwargs)
 
     def __call__(self, parser, namespace, values, option_string=None):
-        if values is not None and len(values) == 1 and values[0] == '-':
+        stdin_opt = (
+            isinstance(values, (str, list, tuple)) and
+            len(values) == 1 and
+            values[0] == '-'
+        )
+
+        if stdin_opt:
             if not sys.stdin.isatty():
                 if option_string is None:
                     option = (self.dest, self.dest)
