@@ -8,6 +8,11 @@ import stat
 import tarfile
 import zlib
 
+try:
+    import cchardet as chardet
+except ImportError:
+    import chardet
+
 from . import magic, const
 from .utc import utc
 
@@ -180,6 +185,13 @@ class TarAttachment(object):
         data = self.read()
         mime = magic.from_buffer(data, mime=True)
         if mime.startswith('text'):
-            return data.decode('utf-8')
+            for encoding in ('utf-8', 'latin-1'):
+                try:
+                    return data.decode(encoding)
+                except UnicodeDecodeError:
+                    pass
+            # fallback to detecting the encoding
+            encoding = chardet.detect(data)['encoding']
+            return data.decode(encoding)
         else:
             return 'Non-text data: ' + mime + '\n'
