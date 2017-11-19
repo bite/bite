@@ -9,6 +9,7 @@ from dateutil.relativedelta import *
 
 from .. import base_options, generic_receive, generic_send
 from ...argparser import parse_stdin, string_list, id_list, ids
+from ...objects import DateTime
 from ...scripts.bite import auth_opts
 from ...utc import utc
 
@@ -47,7 +48,7 @@ def parse_date(s):
         else:
             msg = 'invalid date argument: {!r}'.format(s)
             raise argparse.ArgumentTypeError(msg)
-        return (s, date.isoformat())
+        return DateTime(s, date)
     else:
         return s
 

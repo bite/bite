@@ -492,7 +492,7 @@ class Bugzilla(Cli):
             if creator is not None:
                 changes = (x for x in changes if x.creator in creator)
             if creation_time is not None:
-                changes = (x for x in changes if x.date >= parsetime(creation_time[1]).replace(tzinfo=utc))
+                changes = (x for x in changes if x.date >= creation_time)
             if match is not None:
                 changes = (event for event in changes
                            for change in event.changes
@@ -534,8 +534,8 @@ class Bugzilla(Cli):
                     print(self._header('=', 'Bug: {}'.format(str(i))))
                     self._print_lines(changes)
 
-    def comments(self, ids, dry_run=False, creation_time=None, comment_num=None, fields=None, output=None, creator=None,
-                 attachment=False):
+    def comments(self, ids, dry_run=False, creation_time=None, comment_num=None, fields=None,
+                 output=None, creator=None, attachment=False):
         request = self.service.CommentsRequest(ids, created=creation_time)
 
         if creator is not None:
@@ -547,9 +547,6 @@ class Bugzilla(Cli):
 
         self.log('Getting comments matching the following options:')
         self.log_t(request.options, prefix='   - ')
-
-        if creation_time is not None:
-            creation_time = creation_time[1]
 
         if self.service.suffix is not None and creator is not None:
             creator = list(map(self.service._resuffix, creator))

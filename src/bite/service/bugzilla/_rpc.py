@@ -165,9 +165,9 @@ class _SearchRequest(RPCRequest):
         for k, v in ((k, v) for (k, v) in kw.items() if v):
             if k in BugzillaBug.attributes:
                 if k in ['creation_time', 'last_change_time']:
-                    params[k] = v[1]
+                    params[k] = v.format
                     options_log.append('{}: {} (since {} UTC)'.format(
-                        BugzillaBug.attributes[k], v[0], parsetime(v[1])))
+                        BugzillaBug.attributes[k], v.token, v))
                 elif k in ['assigned_to', 'creator']:
                     params[k] = list(map(service._resuffix, v))
                     options_log.append('{}: {}'.format(
@@ -258,9 +258,9 @@ class _CommentsRequest(RPCRequest):
             params['comment_ids'] = comment_ids
             options_log.append('Comment IDs: {}'.format(', '.join(comment_ids)))
         if created is not None:
-            params['new_since'] = created
+            params['new_since'] = created.format
             options_log.append('Created: {} (since {} UTC)'.format(
-                created[0], parsetime(created[1])))
+                created.token, created))
         if fields is not None:
             params['include_fields'] = fields
 
@@ -524,9 +524,9 @@ class _HistoryRequest(RPCRequest):
             params['ids'] = ids
             options_log.append('IDs: {}'.format(', '.join(ids)))
         if created is not None:
-            params['new_since'] = created
+            params['new_since'] = created.format
             options_log.append('Created: {} (since {} UTC)'.format(
-                created[0], parsetime(created[1])))
+                created.token, created))
         if fields is not None:
             params['include_fields'] = fields
 

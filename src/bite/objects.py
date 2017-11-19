@@ -9,6 +9,7 @@ import tarfile
 import zlib
 
 from . import magic, const
+from .utc import utc
 
 
 def decompress(fcn):
@@ -34,6 +35,37 @@ def decompress(fcn):
 def flatten(list_of_lists):
     "Flatten one level of nesting"
     return list(chain.from_iterable(list_of_lists))
+
+
+class DateTime(object):
+
+    def __init__(self, token, datetime):
+        self.token = token
+        self._datetime = datetime.replace(tzinfo=utc)
+
+    def __str__(self):
+        return str(self._datetime)
+
+    @property
+    def format(self):
+        """Format the service expects datetime objects sent to it in."""
+        return self._datetime.isoformat()
+
+    def __eq__(self, x):
+        return self._datetime == x
+
+    def __gt__(self, x):
+        return self._datetime > x
+
+    def __ge__(self, x):
+        return self._datetime >= x
+
+    def __lt__(self, x):
+        return self._datetime < x
+
+    def __le__(self, x):
+        return self._datetime <= x
+
 
 class PrintableObject(object):
     def __str__(self):
