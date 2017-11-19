@@ -199,7 +199,7 @@ class Cli(object):
             else:
                 self._process_attachments(attachments, **kw)
 
-    def _process_attachments(attachments, show_metadata=False, view_attachment=False,
+    def _process_attachments(self, attachments, show_metadata=False, view_attachment=False,
                              save_to=None, **kw):
         """Process a list of attachment objects."""
         for f in attachments:
