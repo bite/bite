@@ -64,8 +64,9 @@ class parse_file(Action):
 
 class parse_stdin(Action):
 
-    def __init__(self, convert_type=None, *args, **kwargs):
+    def __init__(self, convert_type=None, append=True, *args, **kwargs):
         self.convert_type = convert_type if convert_type is not None else lambda x: x
+        self.append = append
         super().__init__(*args, **kwargs)
 
     def __call__(self, parser, namespace, values, option_string=None):
@@ -80,6 +81,7 @@ class parse_stdin(Action):
                     parser.error('argument {}: data from standard input '
                                  'already being used for argument {}'.format(option[1], stdin[1]))
                 except AttributeError:
+                    # store option for stdin check above
                     setattr(namespace, 'stdin', option)
                     # read args from standard input for specified option
                     values = []
@@ -94,6 +96,12 @@ class parse_stdin(Action):
                     # make sure values were piped via stdin for required args
                     if not values and self.required:
                         raise ArgumentError(self, 'missing required values piped via stdin')
+
+        # append multiple args by default for array-based options
+        previous = getattr(namespace, self.dest)
+        if self.append and isinstance(previous, list):
+            values = previous + values
+
         setattr(namespace, self.dest, values)
 
 class override_attr(Action):
