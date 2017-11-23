@@ -7,13 +7,14 @@ trackers in different manners.
 import argparse
 import concurrent.futures
 from functools import partial
-from importlib import import_module
 import os
-import sys
 
-from .. import const, get_client, get_service
+from snakeoil.demandload import demandload
+
 from ..argparser import ArgumentParser, parse_file, override_attr
 from ..exceptions import RequestError
+
+demandload('bite:get_service_cls,const')
 
 
 argparser = ArgumentParser(
@@ -80,7 +81,7 @@ auth_opts.add_argument('--passwordcmd',
 # stub for service specific arguments
 service_specific_opts = argparser.add_argument_group('Service specific options')
 
-subparsers = argparser.add_subparsers(help='help for subcommands')
+subparsers = argparser.add_subparsers()
 ls = subparsers.add_parser('ls', description='list various config info')
 ls.add_argument(
     'item', choices=('aliases', 'connections', 'services'),
@@ -100,9 +101,7 @@ def get_cli(args):
     if not isinstance(args, dict):
         args = vars(args)
     fcn_args = args.pop('fcn_args')
-    service = args.pop('service')
-    args['service'] = get_service(service)(**args)
-    client = get_client(service)(**args)
+    client = get_service_cls(args['service'], const.CLIENTS)(**args)
     return client, fcn_args
 
 
@@ -149,8 +148,8 @@ def _cache(options, out, err):
         if service is None or base is None:
             return 1
         options.connection = connection
-        options.service = service
         options.base = base
+        options.service = get_service_cls(service, const.SERVICES)(**vars(options))
         client, fcn_args = get_cli(dict(vars(options)))
         try:
             client.cache(**fcn_args)

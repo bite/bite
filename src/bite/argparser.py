@@ -10,12 +10,15 @@ import shlex
 import sys
 
 from snakeoil.cli import arghparse, tool
+from snakeoil.demandload import demandload
 from snakeoil.sequences import iflatten_instance
 
-from . import const
+from . import __title__, get_service_cls
 from .alias import substitute_alias
 from .config import get_config
 from .exceptions import BiteError
+
+demandload('bite:const')
 
 
 def string_list(s):
@@ -451,8 +454,8 @@ class ArgumentParser(arghparse.ArgumentParser):
     def parse_args(self, args=None, namespace=None):
         initial_args, unparsed_args = self.parse_optionals(args, namespace)
 
-        # allow symlinks to bite to override the connection type
-        if os.path.basename(sys.argv[0]) != 'bite':
+        # allow symlinks to override the connection type
+        if os.path.basename(sys.argv[0]) != __title__:
             initial_args.connection = os.path.basename(sys.argv[0])
 
         # get settings from the config file
@@ -470,31 +473,17 @@ class ArgumentParser(arghparse.ArgumentParser):
             self.error('invalid service: {!r} (available services: {})'.format(
                 service, ', '.join(const.SERVICES)))
 
-        service_args = import_module('bite.args.' + service.replace('-', '.'))
+        service_opts = get_service_cls(
+            service, const.SERVICE_OPTS)(parser=self, service_name=service)
 
-        # add any additional service specific top level commands
-        try:
-            # import arg group from script so help is placed before subcmds defined in the script
-            from .scripts.bite import service_specific_opts
-            service_args.main_opts(service_specific_opts)
-            # rename service specific args group to match selected service
-            service_specific_opts.title = service.split('-')[0].capitalize() + ' specific options'
-            # parse any additional optional args that were just added
-            initial_args, unparsed_args = self.parse_optionals(unparsed_args, initial_args)
-        except AttributeError:
-            pass
+        # re-parse for any top level service-specific options that were just added
+        initial_args, unparsed_args = self.parse_optionals(unparsed_args, initial_args)
 
-        # add subcommand parsers for the specified service type
-        subparsers = self.add_subparsers(help='help for subcommands')
+        # replace service attr with service object
+        initial_args.service = get_service_cls(service, const.SERVICES)(**vars(initial_args))
 
         # add subcommands
-        service_args.subcmds(subparsers)
-
-        # add any additional service specific subcommands
-        try:
-            service_args.extra_subcmds(subparsers)
-        except AttributeError:
-            pass
+        service_opts.add_subcmds(service=initial_args.service)
 
         # check if unparsed args match any aliases
         if unparsed_args:

@@ -1,3 +1,4 @@
+from importlib import import_module
 import os
 from shutil import get_terminal_size
 import sys
@@ -58,36 +59,39 @@ def _service_cls(x):
     return False
 
 def _clients():
-    from . import client
+    from . import client as mod
     clients = []
-    for imp, name, _ in pkgutil.walk_packages(client.__path__, client.__name__ + '.'):
+    for imp, name, _ in pkgutil.walk_packages(mod.__path__, mod.__name__ + '.'):
         module = imp.find_module(name).load_module()
         for name, cls in inspect.getmembers(module, _service_cls):
             clients.append((cls._service, '.'.join([module.__name__, cls.__name__])))
     return clients
 
 def _services():
-    from . import service
+    from . import service as mod
     services = []
-    for imp, name, _ in pkgutil.walk_packages(service.__path__, service.__name__ + '.'):
+    for imp, name, _ in pkgutil.walk_packages(mod.__path__, mod.__name__ + '.'):
         module = imp.find_module(name).load_module()
         for name, cls in inspect.getmembers(module, _service_cls):
             services.append((cls._service, '.'.join([module.__name__, cls.__name__])))
     return services
 
-def _GET_CLIENTS(attr, func):
+def _service_opts():
+    from . import args as mod
+    opts = []
+    for imp, name, _ in pkgutil.walk_packages(mod.__path__, mod.__name__ + '.'):
+        module = imp.find_module(name).load_module()
+        for name, cls in inspect.getmembers(module, _service_cls):
+            opts.append((cls._service, '.'.join([module.__name__, cls.__name__])))
+    return opts
+
+def _GET_VALS(attr, func):
     try:
         result = getattr(_defaults, attr)
     except AttributeError:
         result = func()
     return result
 
-def _GET_SERVICES(attr, func):
-    try:
-        result = getattr(_defaults, attr)
-    except AttributeError:
-        result = func()
-    return result
-
-CLIENTS = mappings.ImmutableDict(_GET_CLIENTS('CLIENTS', _clients))
-SERVICES = mappings.ImmutableDict(_GET_SERVICES('SERVICES', _services))
+CLIENTS = mappings.ImmutableDict(_GET_VALS('CLIENTS', _clients))
+SERVICES = mappings.ImmutableDict(_GET_VALS('SERVICES', _services))
+SERVICE_OPTS = mappings.ImmutableDict(_GET_VALS('SERVICE_OPTS', _service_opts))

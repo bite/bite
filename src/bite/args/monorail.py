@@ -5,7 +5,6 @@ import datetime
 from dateutil.parser import parse as parsetime
 from dateutil.relativedelta import *
 
-from . import base_options, generic_receive, generic_send
 from ..argparser import parse_stdin, string_list, id_list, ids
 
 def subcmds(subparsers):
@@ -135,14 +134,14 @@ def subcmds(subparsers):
         type=str,
         help='custom format for search output')
 
-    # add generic options for subcommands
-    get_actions = [get, search]
-    send_actions = []
-
-    for group in get_actions:
-        generic_receive(group)
-    for group in send_actions:
-        generic_send(group)
+    # # add generic options for subcommands
+    # get_actions = [get, search]
+    # send_actions = []
+    #
+    # for group in get_actions:
+    #     generic_receive(group)
+    # for group in send_actions:
+    #     generic_send(group)
 
 
 def modify(subparsers):
