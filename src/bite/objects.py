@@ -82,6 +82,8 @@ class PrintableObject(object):
 
 class Item(PrintableObject):
 
+    type = None
+
     def __init__(self, id=None, title=None, creator=None, owner=None, created=None,
                  modified=None, status=None, url=None, blocks=None,
                  depends=None, cc=None, comments=None, attachments=None, changes=None, **kw):
