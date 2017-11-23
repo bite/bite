@@ -32,7 +32,7 @@ class BugzillaXmlrpc(BugzillaRpc, LxmlXmlrpc):
             raise BugzillaError(msg=e.msg, code=e.code, text=e.text)
 
         faults = data.get('faults')
-        if faults is None:
+        if not faults:
             return data
         else:
             self.handle_error(code=faults[0]['faultCode'], msg=faults[0]['faultString'])
