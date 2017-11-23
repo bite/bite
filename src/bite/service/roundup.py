@@ -28,6 +28,109 @@ class RoundupError(RequestError):
         super().__init__(msg, code, text)
 
 
+class RoundupIssue(Item):
+
+    attributes = {
+        'creator': 'Reporter',
+        'creation': 'Created',
+        'assignedto': 'Assignee',
+        'keyword': 'Keywords',
+        'priority': 'Priority',
+        'status': 'Status',
+        'title': 'Title',
+        'nosy': 'Nosy List',
+        'superseder': 'Duplicate of',
+        'actor': 'Modified by',
+        'activity': 'Modified',
+        'messages': 'Comments',
+        'files': 'Attachments',
+    }
+
+    type = 'issue'
+
+    def __init__(self, service, comments=None, attachments=None, **kw):
+        self.service = service
+        for k, v in kw.items():
+            if k in ('creation', 'activity'):
+                setattr(self, k, parsetime(v))
+            elif k in ('creator', 'actor'):
+                try:
+                    username = self.service.cache['users'][int(v)-1]
+                except IndexError:
+                    # cache needs update
+                    username = v
+                setattr(self, k, username)
+            elif k == 'status':
+                try:
+                    status = self.service.cache['status'][int(v)-1]
+                except IndexError:
+                    # cache needs update
+                    status = v
+                setattr(self, k, status)
+            elif k == 'priority' and v is not None:
+                try:
+                    priority = self.service.cache['priority'][int(v)-1]
+                except IndexError:
+                    # cache needs update
+                    priority = v
+                setattr(self, k, priority)
+            elif k == 'keyword' and v is not None:
+                keywords = []
+                for keyword in v:
+                    try:
+                        keywords.append(self.service.cache['keyword'][int(keyword)-1])
+                    except IndexError:
+                        # cache needs update
+                        keywords.append(keyword)
+                setattr(self, k, keywords)
+            else:
+                setattr(self, k, v)
+
+        self.attachments = attachments if attachments is not None else []
+        self.comments = comments if comments is not None else []
+
+    def __str__(self):
+        lines = []
+        print_fields = [
+            ('title', 'Title'),
+            ('assignedto', 'Assignee'),
+            ('creation', 'Created'),
+            ('creator', 'Reporter'),
+            ('activity', 'Modified'),
+            ('actor', 'Modified by'),
+            ('id', 'ID'),
+            ('status', 'Status'),
+            ('priority', 'Priority'),
+            ('superseder', 'Duplicate'),
+            ('keyword', 'Keywords'),
+            ('messages', 'Comments'),
+            ('files', 'Attachments'),
+        ]
+
+        for field, title in print_fields:
+            value = getattr(self, field)
+            if value is None:
+                continue
+
+            if field in ('messages', 'files'):
+                value = len(value)
+
+            if isinstance(value, list):
+                value = ', '.join(map(str, value))
+
+            lines.append('{:<12}: {}'.format(title, value))
+
+        return '\n'.join(lines)
+
+
+class RoundupComment(Comment):
+    pass
+
+
+class RoundupAttachment(Attachment):
+    pass
+
+
 class RoundupCache(Cache):
 
     def __init__(self, *args, **kw):
@@ -55,13 +158,13 @@ class Roundup(LxmlXmlrpc):
     _service = 'roundup'
     _cache_cls = RoundupCache
 
+    item = RoundupIssue
+    item_endpoint = '/issue'
+    attachment = RoundupAttachment
+    attachment_endpoint = '/file'
+
     def __init__(self, **kw):
         super().__init__(endpoint='/xmlrpc', **kw)
-
-        self.item = RoundupIssue
-        self.item_endpoint = '/issue'
-        self.attachment = RoundupAttachment
-        self.attachment_endpoint = '/file'
 
     @property
     def cache_updates(self):
@@ -295,106 +398,3 @@ class _CommentsRequest(Request):
         return [RoundupComment(id=ids[i], count=i, text=d['content'], date=parsetime(d['date']),
                                creator=self.service.cache['users'][int(d['author'])-1])
                 for i, d in enumerate(data)]
-
-
-class RoundupIssue(Item):
-
-    attributes = {
-        'creator': 'Reporter',
-        'creation': 'Created',
-        'assignedto': 'Assignee',
-        'keyword': 'Keywords',
-        'priority': 'Priority',
-        'status': 'Status',
-        'title': 'Title',
-        'nosy': 'Nosy List',
-        'superseder': 'Duplicate of',
-        'actor': 'Modified by',
-        'activity': 'Modified',
-        'messages': 'Comments',
-        'files': 'Attachments',
-    }
-
-    type = 'issue'
-
-    def __init__(self, service, comments=None, attachments=None, **kw):
-        self.service = service
-        for k, v in kw.items():
-            if k in ('creation', 'activity'):
-                setattr(self, k, parsetime(v))
-            elif k in ('creator', 'actor'):
-                try:
-                    username = self.service.cache['users'][int(v)-1]
-                except IndexError:
-                    # cache needs update
-                    username = v
-                setattr(self, k, username)
-            elif k == 'status':
-                try:
-                    status = self.service.cache['status'][int(v)-1]
-                except IndexError:
-                    # cache needs update
-                    status = v
-                setattr(self, k, status)
-            elif k == 'priority' and v is not None:
-                try:
-                    priority = self.service.cache['priority'][int(v)-1]
-                except IndexError:
-                    # cache needs update
-                    priority = v
-                setattr(self, k, priority)
-            elif k == 'keyword' and v is not None:
-                keywords = []
-                for keyword in v:
-                    try:
-                        keywords.append(self.service.cache['keyword'][int(keyword)-1])
-                    except IndexError:
-                        # cache needs update
-                        keywords.append(keyword)
-                setattr(self, k, keywords)
-            else:
-                setattr(self, k, v)
-
-        self.attachments = attachments if attachments is not None else []
-        self.comments = comments if comments is not None else []
-
-    def __str__(self):
-        lines = []
-        print_fields = [
-            ('title', 'Title'),
-            ('assignedto', 'Assignee'),
-            ('creation', 'Created'),
-            ('creator', 'Reporter'),
-            ('activity', 'Modified'),
-            ('actor', 'Modified by'),
-            ('id', 'ID'),
-            ('status', 'Status'),
-            ('priority', 'Priority'),
-            ('superseder', 'Duplicate'),
-            ('keyword', 'Keywords'),
-            ('messages', 'Comments'),
-            ('files', 'Attachments'),
-        ]
-
-        for field, title in print_fields:
-            value = getattr(self, field)
-            if value is None:
-                continue
-
-            if field in ('messages', 'files'):
-                value = len(value)
-
-            if isinstance(value, list):
-                value = ', '.join(map(str, value))
-
-            lines.append('{:<12}: {}'.format(title, value))
-
-        return '\n'.join(lines)
-
-
-class RoundupComment(Comment):
-    pass
-
-
-class RoundupAttachment(Attachment):
-    pass

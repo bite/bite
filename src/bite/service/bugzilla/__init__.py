@@ -26,198 +26,6 @@ def parsetime(time):
         return time.replace(tzinfo=utc.utc)
 
 
-class BugzillaCache(Cache):
-
-    def __init__(self, *args, **kw):
-        # default to bugzilla-5 open/closed statuses
-        defaults = {
-            'open_status': ('CONFIRMED', 'IN_PROGRESS', 'UNCONFIRMED'),
-            'closed_status': ('RESOLVED', 'VERIFIED'),
-        }
-
-        converters = {
-            'open_status': csv2tuple,
-            'closed_status': csv2tuple,
-        }
-
-        super().__init__(defaults=defaults, converters=converters, *args, **kw)
-
-
-class Bugzilla(Service):
-
-    _cache_cls = BugzillaCache
-
-    def __init__(self, **kw):
-        super().__init__(**kw)
-
-        self.item = BugzillaBug
-        self.item_endpoint = '/show_bug.cgi?id='
-        self.attachment = BugzillaAttachment
-        self.attachment_endpoint = '/attachment.cgi?id='
-
-    @property
-    def cache_updates(self):
-        """Pull latest data from service for cache update."""
-        config_updates = {}
-        reqs = []
-
-        # get open/closed status values
-        reqs.append(self.FieldsRequest(names=['bug_status']))
-        # get available products
-        reqs.append(self.ProductsRequest())
-        # get server bugzilla version
-        reqs.append(self.VersionRequest())
-
-        statuses, products, version = self.send(reqs)
-
-        open_status = []
-        closed_status = []
-        for status in statuses[0].get('values', []):
-            if status.get('name', None) is not None:
-                if status.get('is_open', False):
-                    open_status.append(status['name'])
-                else:
-                    closed_status.append(status['name'])
-        products = [d['name'] for d in sorted(products, key=lambda x: x['id']) if d['is_active']]
-        config_updates['open_status'] = tuple(sorted(open_status))
-        config_updates['closed_status'] = tuple(sorted(closed_status))
-        config_updates['products'] = tuple(products)
-        config_updates['version'] = version
-
-        return config_updates
-
-    def login(self, user, password, restrict_login=False, **kw):
-        """Authenticate a session."""
-        super().__init__(user, password, restrict_login=restrict_login)
-
-    def inject_auth(self, request, params):
-        if params is None:
-            params = {}
-        # TODO: Is there a better way to determine the difference between
-        # tokens and API keys?
-        if len(self.auth) > 16:
-            params['Bugzilla_api_key'] = str(self.auth)
-        else:
-            params['Bugzilla_token'] = str(self.auth)
-        return request, params
-
-    @staticmethod
-    def handle_error(code, msg):
-        if code == 32000:
-            if 'expired' in msg:
-                # assume the auth token has expired
-                raise AuthError(msg, expired=True)
-        elif code == 102:
-            raise AuthError(msg=msg)
-        raise BugzillaError(msg=msg, code=code)
-
-    def _failed_http_response(self, response):
-        if response.status_code in (401, 403):
-            data = self.parse_response(response)
-            raise AuthError('authentication failed: {}'.format(data.get('message', '')))
-        else:
-            super()._failed_http_response(response)
-
-
-class ExtensionsRequest(Request):
-
-    def parse(self, data):
-        return data['extensions']
-
-
-class VersionRequest(Request):
-
-    def parse(self, data):
-        return data['version']
-
-
-class FieldsRequest(Request):
-
-    def __init__(self, ids=None, names=None, **kw):
-        """Get information about valid bug fields.
-
-        :param ids: fields IDs
-        :type ids: list of ints
-        :param names: field names
-        :type names: list of strings
-
-        """
-        params = {}
-        options_log = []
-
-        if ids is None and names is None:
-            options_log.append('all non-obsolete fields')
-
-        if ids is not None:
-            ids = list(map(str, ids))
-            params['ids'] = ids
-            options_log.append('IDs: {}'.format(', '.join(ids)))
-        if names is not None:
-            params['names'] = names
-            options_log.append('Field names: {}'.format(', '.join(names)))
-
-        super().__init__(params=params, **kw)
-        self.options = options_log
-
-    def parse(self, data):
-        return data['fields']
-
-
-class ProductsRequest(Request):
-
-    def __init__(self, ids=None, names=None, match=None, **kw):
-        """Query bugzilla for product data."""
-        params = {}
-        options_log = []
-
-        if ids is None and names is None:
-            # TODO: not supported in bugzilla-4.4 -- must call get_accessible_products to get IDs
-            params['type'] = ['accessible']
-            options_log.append('all user-accessible products')
-
-        if ids is not None:
-            ids = list(map(str, ids))
-            params['ids'] = ids
-            options_log.append('IDs: {}'.format(', '.join(ids)))
-        if names is not None:
-            params['names'] = names
-            options_log.append('Product names: {}'.format(', '.join(names)))
-
-        super().__init__(params=params, **kw)
-        self.options = options_log
-
-    def parse(self, data):
-        return data['products']
-
-
-class UsersRequest(Request):
-
-    def __init__(self, ids=None, names=None, match=None, **kw):
-        """Query bugzilla for user data."""
-        if not any((ids, names, match)):
-            raise ValueError('No user ID(s), name(s), or match(es) specified')
-
-        params = {}
-        options_log = []
-
-        if ids is not None:
-            ids = list(map(str, ids))
-            params['ids'] = ids
-            options_log.append('IDs: {}'.format(', '.join(ids)))
-        if names is not None:
-            params['names'] = names
-            options_log.append('Login names: {}'.format(', '.join(names)))
-        if match is not None:
-            params['match'] = match
-            options_log.append('Match patterns: {}'.format(', '.join(match)))
-
-        super().__init__(params=params, **kw)
-        self.options = options_log
-
-    def parse(self, data):
-        return data['users']
-
-
 class BugzillaBug(Item):
 
     attributes = {
@@ -385,6 +193,7 @@ class BugzillaBug(Item):
         else:
             raise AttributeError
 
+
 class BugzillaComment(Comment):
     def __init__(self, comment, id, count, rest=False, **kw):
         self.comment_id = comment['id']
@@ -412,6 +221,7 @@ class BugzillaComment(Comment):
         super().__init__(
             id=id, creator=creator, date=date,
             count=count, changes=changes, text=text)
+
 
 class BugzillaEvent(Change):
     def __init__(self, change, id, alias=None, count=None, rest=False, **kw):
@@ -475,6 +285,7 @@ class BugzillaEvent(Change):
 
         return '\n'.join(lines)
 
+
 class BugzillaAttachment(Attachment):
 
     def __init__(self, id, file_name, size=None, content_type=None,
@@ -506,3 +317,192 @@ class BugzillaAttachment(Attachment):
     @decompress
     def read(self):
         return base64.b64decode(self.data)
+
+
+class BugzillaCache(Cache):
+
+    def __init__(self, *args, **kw):
+        # default to bugzilla-5 open/closed statuses
+        defaults = {
+            'open_status': ('CONFIRMED', 'IN_PROGRESS', 'UNCONFIRMED'),
+            'closed_status': ('RESOLVED', 'VERIFIED'),
+        }
+
+        converters = {
+            'open_status': csv2tuple,
+            'closed_status': csv2tuple,
+        }
+
+        super().__init__(defaults=defaults, converters=converters, *args, **kw)
+
+
+class Bugzilla(Service):
+
+    _cache_cls = BugzillaCache
+
+    item = BugzillaBug
+    item_endpoint = '/show_bug.cgi?id='
+    attachment = BugzillaAttachment
+    attachment_endpoint = '/attachment.cgi?id='
+
+    @property
+    def cache_updates(self):
+        """Pull latest data from service for cache update."""
+        config_updates = {}
+        reqs = []
+
+        # get open/closed status values
+        reqs.append(self.FieldsRequest(names=['bug_status']))
+        # get available products
+        reqs.append(self.ProductsRequest())
+        # get server bugzilla version
+        reqs.append(self.VersionRequest())
+
+        statuses, products, version = self.send(reqs)
+
+        open_status = []
+        closed_status = []
+        for status in statuses[0].get('values', []):
+            if status.get('name', None) is not None:
+                if status.get('is_open', False):
+                    open_status.append(status['name'])
+                else:
+                    closed_status.append(status['name'])
+        products = [d['name'] for d in sorted(products, key=lambda x: x['id']) if d['is_active']]
+        config_updates['open_status'] = tuple(sorted(open_status))
+        config_updates['closed_status'] = tuple(sorted(closed_status))
+        config_updates['products'] = tuple(products)
+        config_updates['version'] = version
+
+        return config_updates
+
+    def login(self, user, password, restrict_login=False, **kw):
+        """Authenticate a session."""
+        super().__init__(user, password, restrict_login=restrict_login)
+
+    def inject_auth(self, request, params):
+        if params is None:
+            params = {}
+        # TODO: Is there a better way to determine the difference between
+        # tokens and API keys?
+        if len(self.auth) > 16:
+            params['Bugzilla_api_key'] = str(self.auth)
+        else:
+            params['Bugzilla_token'] = str(self.auth)
+        return request, params
+
+    @staticmethod
+    def handle_error(code, msg):
+        if code == 32000:
+            if 'expired' in msg:
+                # assume the auth token has expired
+                raise AuthError(msg, expired=True)
+        elif code == 102:
+            raise AuthError(msg=msg)
+        raise BugzillaError(msg=msg, code=code)
+
+    def _failed_http_response(self, response):
+        if response.status_code in (401, 403):
+            data = self.parse_response(response)
+            raise AuthError('authentication failed: {}'.format(data.get('message', '')))
+        else:
+            super()._failed_http_response(response)
+
+
+class ExtensionsRequest(Request):
+
+    def parse(self, data):
+        return data['extensions']
+
+
+class VersionRequest(Request):
+
+    def parse(self, data):
+        return data['version']
+
+
+class FieldsRequest(Request):
+
+    def __init__(self, ids=None, names=None, **kw):
+        """Get information about valid bug fields.
+
+        :param ids: fields IDs
+        :type ids: list of ints
+        :param names: field names
+        :type names: list of strings
+
+        """
+        params = {}
+        options_log = []
+
+        if ids is None and names is None:
+            options_log.append('all non-obsolete fields')
+
+        if ids is not None:
+            ids = list(map(str, ids))
+            params['ids'] = ids
+            options_log.append('IDs: {}'.format(', '.join(ids)))
+        if names is not None:
+            params['names'] = names
+            options_log.append('Field names: {}'.format(', '.join(names)))
+
+        super().__init__(params=params, **kw)
+        self.options = options_log
+
+    def parse(self, data):
+        return data['fields']
+
+
+class ProductsRequest(Request):
+
+    def __init__(self, ids=None, names=None, match=None, **kw):
+        """Query bugzilla for product data."""
+        params = {}
+        options_log = []
+
+        if ids is None and names is None:
+            # TODO: not supported in bugzilla-4.4 -- must call get_accessible_products to get IDs
+            params['type'] = ['accessible']
+            options_log.append('all user-accessible products')
+
+        if ids is not None:
+            ids = list(map(str, ids))
+            params['ids'] = ids
+            options_log.append('IDs: {}'.format(', '.join(ids)))
+        if names is not None:
+            params['names'] = names
+            options_log.append('Product names: {}'.format(', '.join(names)))
+
+        super().__init__(params=params, **kw)
+        self.options = options_log
+
+    def parse(self, data):
+        return data['products']
+
+
+class UsersRequest(Request):
+
+    def __init__(self, ids=None, names=None, match=None, **kw):
+        """Query bugzilla for user data."""
+        if not any((ids, names, match)):
+            raise ValueError('No user ID(s), name(s), or match(es) specified')
+
+        params = {}
+        options_log = []
+
+        if ids is not None:
+            ids = list(map(str, ids))
+            params['ids'] = ids
+            options_log.append('IDs: {}'.format(', '.join(ids)))
+        if names is not None:
+            params['names'] = names
+            options_log.append('Login names: {}'.format(', '.join(names)))
+        if match is not None:
+            params['match'] = match
+            options_log.append('Match patterns: {}'.format(', '.join(match)))
+
+        super().__init__(params=params, **kw)
+        self.options = options_log
+
+    def parse(self, data):
+        return data['users']

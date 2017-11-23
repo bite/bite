@@ -152,6 +152,11 @@ class Service(object):
     _service = None
     _cache_cls = Cache
 
+    item = Item
+    item_endpoint = None
+    attachment = Attachment
+    attachment_endpoint = None
+
     def __init__(self, base, endpoint='', connection=None, verify=True, user=None, password=None,
                  auth_file=None, auth_token=None, suffix=None, timeout=None, concurrent=None, **kw):
         self.base = base
@@ -171,11 +176,6 @@ class Service(object):
             url.netloc,
             url.path.rstrip('/') + endpoint,
             None, None, None))
-
-        self.item = Item
-        self.item_endpoint = None
-        self.attachment = Attachment
-        self.attachment_endpoint = None
 
         self.authenticated = False
         self.cache = self._cache_cls(connection)
