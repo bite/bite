@@ -5,7 +5,7 @@ import os
 
 from . import (Bugzilla, BugzillaBug, BugzillaComment, BugzillaEvent, parsetime,
     ExtensionsRequest, VersionRequest, FieldsRequest, ProductsRequest, UsersRequest)
-from .. import Request, RPCRequest, NullRequest, command, request
+from .. import Request, RPCRequest, NullRequest, req_cmd
 from ... import const, magic
 from ...exceptions import BiteError
 
@@ -14,7 +14,7 @@ class BugzillaRpc(Bugzilla):
     pass
 
 
-@request(BugzillaRpc)
+@req_cmd(BugzillaRpc)
 class _LoginRequest(RPCRequest):
     def __init__(self, user, password, service, restrict_login=False):
         """Log in as a user and get an auth token."""
@@ -29,45 +29,39 @@ class _LoginRequest(RPCRequest):
         return data['token']
 
 
-@command('users', BugzillaRpc)
-@request(BugzillaRpc)
+@req_cmd(BugzillaRpc, 'users')
 class _UsersRequest(UsersRequest, RPCRequest):
     def __init__(self, *args, **kw):
         super().__init__(command='User.get', *args, **kw)
 
 
-@command('fields', BugzillaRpc)
-@request(BugzillaRpc)
+@req_cmd(BugzillaRpc, 'fields')
 class _FieldsRequest(FieldsRequest, RPCRequest):
     def __init__(self, *args, **kw):
         super().__init__(command='Bug.fields', *args, **kw)
 
 
-@command('products', BugzillaRpc)
-@request(BugzillaRpc)
+@req_cmd(BugzillaRpc, 'products')
 class _ProductsRequest(ProductsRequest, RPCRequest):
     def __init__(self, *args, **kw):
         super().__init__(command='Product.get', *args, **kw)
 
 
-@command('extensions', BugzillaRpc)
-@request(BugzillaRpc)
+@req_cmd(BugzillaRpc, 'extensions')
 class _ExtensionsRequest(ExtensionsRequest, RPCRequest):
     def __init__(self, service):
         """Construct an extensions request."""
         super().__init__(service=service, command='Bugzilla.extensions')
 
 
-@command('version', BugzillaRpc)
-@request(BugzillaRpc)
+@req_cmd(BugzillaRpc, 'version')
 class _VersionRequest(VersionRequest, RPCRequest):
     def __init__(self, service):
         """Construct a version request."""
         super().__init__(service=service, command='Bugzilla.version')
 
 
-@command('get', BugzillaRpc)
-@request(BugzillaRpc)
+@req_cmd(BugzillaRpc, 'get')
 class _GetRequest(Request):
     def __init__(self, ids, service, get_comments=False, get_attachments=False,
                  get_history=False, *args, **kw):
@@ -91,7 +85,7 @@ class _GetRequest(Request):
                 for bug in bugs)
 
 
-@request(BugzillaRpc)
+@req_cmd(BugzillaRpc)
 class _GetItemRequest(RPCRequest):
     def __init__(self, ids, service, fields=None, **kw):
         """Construct a get request."""
@@ -110,8 +104,7 @@ class _GetItemRequest(RPCRequest):
         return data['bugs']
 
 
-@command('create', BugzillaRpc)
-@request(BugzillaRpc)
+@req_cmd(BugzillaRpc, 'create')
 class _CreateRequest(RPCRequest):
     def __init__(self, service, product, component, version, summary, description=None, op_sys=None,
                  platform=None, priority=None, severity=None, alias=None, assigned_to=None,
@@ -155,8 +148,7 @@ class _CreateRequest(RPCRequest):
         return data['id']
 
 
-@command('search', BugzillaRpc)
-@request(BugzillaRpc)
+@req_cmd(BugzillaRpc, 'search')
 class _SearchRequest(RPCRequest):
     def __init__(self, service, **kw):
         """Construct a search request."""
@@ -238,8 +230,7 @@ class _SearchRequest(RPCRequest):
         return (self.service.item(service=self.service, bug=bug) for bug in bugs)
 
 
-@command('comments', BugzillaRpc)
-@request(BugzillaRpc)
+@req_cmd(BugzillaRpc, 'comments')
 class _CommentsRequest(RPCRequest):
     def __init__(self, ids=None, comment_ids=None, created=None, fields=None, service=None, **kw):
         """Construct a comments request."""
@@ -280,8 +271,7 @@ class ChangesRequest(RPCRequest):
     pass
 
 
-@command('modify', BugzillaRpc)
-@request(BugzillaRpc)
+@req_cmd(BugzillaRpc, 'modify')
 class _ModifyRequest(RPCRequest):
     def __init__(self, ids, service, *args, **kw):
         """Construct a modify request."""
@@ -375,8 +365,7 @@ class _ModifyRequest(RPCRequest):
         return data['bugs']
 
 
-@command('attach', BugzillaRpc)
-@request(BugzillaRpc)
+@req_cmd(BugzillaRpc, 'attach')
 class _AttachRequest(RPCRequest):
     def __init__(self, ids, data=None, filepath=None, filename=None, mimetype=None,
                  is_patch=False, is_private=False, comment=None, summary=None, **kw):
@@ -460,12 +449,11 @@ class _AttachRequest(RPCRequest):
         return data['attachments']
 
 
-@command('attachments', BugzillaRpc)
-@request(BugzillaRpc)
+@req_cmd(BugzillaRpc, 'attachments')
 class _AttachmentsRequest(RPCRequest):
     def __init__(self, service, ids=None, attachment_ids=None, fields=None,
                  get_data=False, *args, **kw):
-        """Construct a attachments request."""
+        """Construct an attachments request."""
         if ids is None and attachment_ids is None:
             raise ValueError('No {} or attachment ID(s) specified'.format(self.service.item_name))
 
@@ -509,8 +497,7 @@ class _AttachmentsRequest(RPCRequest):
             yield files
 
 
-@command('history', BugzillaRpc)
-@request(BugzillaRpc)
+@req_cmd(BugzillaRpc, 'history')
 class _HistoryRequest(RPCRequest):
     def __init__(self, ids, created=None, fields=None, service=None, **kw):
         if not ids:

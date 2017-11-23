@@ -13,21 +13,15 @@ from ..exceptions import RequestError, AuthError, BiteError
 from ..objects import Item, Attachment
 
 
-def command(cmd_name, service_cls):
-    """Register service command function."""
-    def wrapped(cls, *args, **kwds):
-        send = getattr(service_cls, 'send')
-        send_func = lambda self, *args, **kw: send(self, cls(*args, service=self, **kw))
-        setattr(service_cls, cmd_name, send_func)
-        return cls
-    return wrapped
-
-
-def request(service_cls):
-    """Register request creation function."""
+def req_cmd(service_cls, cmd_name=None):
+    """Register service request and command functions."""
     def wrapped(cls, *args, **kwds):
         req_func = lambda self, *args, **kw: cls(*args, service=self, **kw)
         setattr(service_cls, cls.__name__.lstrip('_'), req_func)
+        if cmd_name is not None:
+            send = getattr(service_cls, 'send')
+            send_func = lambda self, *args, **kw: send(self, cls(*args, service=self, **kw))
+            setattr(service_cls, cmd_name, send_func)
         return cls
     return wrapped
 

@@ -10,7 +10,7 @@ import re
 from datetime import datetime
 from snakeoil.sequences import iflatten_instance
 
-from . import NullRequest, Request, RPCRequest, command, request, generator
+from . import NullRequest, Request, RPCRequest, req_cmd, generator
 from ._xmlrpc import LxmlXmlrpc
 from ..cache import Cache, csv2tuple
 from ..exceptions import AuthError, RequestError, ParsingError
@@ -162,8 +162,7 @@ class Roundup(LxmlXmlrpc):
         return data
 
 
-@command('get', Roundup)
-@request(Roundup)
+@req_cmd(Roundup, 'get')
 class _GetRequest(Request):
 
     def __init__(self, ids, service, fields=None, get_comments=False,
@@ -231,11 +230,10 @@ class _GetRequest(Request):
                 for i, issue in enumerate(issues))
 
 
-@command('attachments', Roundup)
-@request(Roundup)
+@req_cmd(Roundup, 'attachments')
 class _AttachmentsRequest(Request):
     def __init__(self, service, ids=None, attachment_ids=None, get_data=False, *args, **kw):
-        """Construct a attachments request."""
+        """Construct an attachments request."""
         super().__init__(service)
         # TODO: add support for specifying issue IDs
         if attachment_ids is None:
@@ -267,8 +265,7 @@ class _AttachmentsRequest(Request):
                 for i, d in enumerate(data)]
 
 
-@command('comments', Roundup)
-@request(Roundup)
+@req_cmd(Roundup, 'comments')
 class _CommentsRequest(Request):
     def __init__(self, service, ids=None, comment_ids=None, created=None, fields=None, *args, **kw):
         """Construct a comments request."""

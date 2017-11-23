@@ -7,7 +7,7 @@ import requests
 from . import (
     Bugzilla, BugzillaError, BugzillaAttachment, BugzillaComment, BugzillaEvent,
     ExtensionsRequest, VersionRequest, FieldsRequest, ProductsRequest, UsersRequest)
-from .. import RESTRequest, command, request
+from .. import RESTRequest, req_cmd
 from .._json import Json
 from ...exceptions import RequestError
 from ...objects import Item
@@ -46,24 +46,21 @@ class BugzillaRest(Bugzilla, Json):
         super()._failed_http_response(response)
 
 
-@command('extensions', BugzillaRest)
-@request(BugzillaRest)
+@req_cmd(BugzillaRest, 'extensions')
 class _ExtensionsRequest(ExtensionsRequest, RESTRequest):
     def __init__(self, service):
         """Construct an extensions request."""
         super().__init__(service=service, endpoint='/extensions')
 
 
-@command('version', BugzillaRest)
-@request(BugzillaRest)
+@req_cmd(BugzillaRest, 'version')
 class _VersionRequest(VersionRequest, RESTRequest):
     def __init__(self, service):
         """Construct a version request."""
         super().__init__(service=service, endpoint='/version')
 
 
-@command('fields', BugzillaRest)
-@request(BugzillaRest)
+@req_cmd(BugzillaRest, 'fields')
 class _FieldsRequest(FieldsRequest, RESTRequest):
     def __init__(self, *args, **kw):
         super().__init__(endpoint='/field/bug', *args, **kw)
@@ -74,16 +71,14 @@ class _FieldsRequest(FieldsRequest, RESTRequest):
             self.params = params
 
 
-@command('products', BugzillaRest)
-@request(BugzillaRest)
+@req_cmd(BugzillaRest, 'products')
 class _ProductsRequest(ProductsRequest, RESTRequest):
     def __init__(self, *args, **kw):
         super().__init__(endpoint='/product', *args, **kw)
         self.params = [(k, i) for k, v in self.params.items() for i in v]
 
 
-@command('users', BugzillaRest)
-@request(BugzillaRest)
+@req_cmd(BugzillaRest, 'users')
 class _UsersRequest(UsersRequest, RESTRequest):
     def __init__(self, *args, **kw):
         super().__init__(endpoint='/user', *args, **kw)
