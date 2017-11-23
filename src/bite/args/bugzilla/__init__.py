@@ -93,13 +93,6 @@ class Attachments(args.Attachments):
 
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
-        # positional args
-        self.parser.add_argument('ids',
-            type=id_list,
-            action=partial(parse_stdin, ids),
-            metavar='ID',
-            help='attachment ID(s) (or bug ID(s) when --item-id is used)')
-
         # optional args
         self.opts.add_argument('-l', '--list',
             action='store_true',
@@ -168,12 +161,6 @@ class Get(args.Get):
 
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
-        # positional args
-        self.parser.add_argument(
-            'ids', type=id_list, metavar='ID',
-            action=partial(parse_stdin, ids),
-            help='ID(s) or alias(es) of the bug(s) to retrieve')
-
         # optional args
         self.opts.add_argument('--history',
             action='store_true',
@@ -189,12 +176,6 @@ class Modify(args.Modify):
 
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
-        # positional args
-        self.parser.add_argument(
-            'ids', type=id_list, metavar='ID',
-            action=partial(parse_stdin, ids),
-            help='ID(s) of the bug(s) to modify')
-
         # optional args
         attr = self.parser.add_argument_group('Attribute related')
         attr.add_argument('-c', '--comment',
@@ -331,12 +312,6 @@ class Search(args.Search):
 
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
-        # positional args
-        self.parser.add_argument(
-            'terms', nargs='*',
-            action=parse_stdin,
-            help='strings to search for in title and/or body')
-
         # optional args
         self.opts.add_argument('--output',
             help='custom format for search output')

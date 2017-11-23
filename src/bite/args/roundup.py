@@ -1,7 +1,4 @@
-from functools import partial
-
 from .. import args
-from ..argparser import parse_stdin, id_list, ids, string_list
 
 
 class RoundupOpts(args.ServiceOpts):
@@ -11,27 +8,12 @@ class RoundupOpts(args.ServiceOpts):
 
 @args.subcmd(RoundupOpts)
 class Get(args.Get):
-
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
-        # positional args
-        self.parser.add_argument(
-            'ids', type=id_list, metavar='ID',
-            action=partial(parse_stdin, ids),
-            help='ID(s) or alias(es) of the issue(s) to retrieve')
+    pass
 
 
 @args.subcmd(RoundupOpts)
 class Attachments(args.Attachments):
-
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
-        # positional args
-        self.parser.add_argument('ids',
-            type=id_list,
-            action=partial(parse_stdin, ids),
-            metavar='ID',
-            help='attachment ID(s) (or issue ID(s) when --item-id is used)')
+    pass
 
 
 # def subcmds(subparsers):

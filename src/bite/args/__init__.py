@@ -1,4 +1,6 @@
-from ..argparser import string_list
+from functools import partial
+
+from ..argparser import parse_stdin, string_list, id_list, ids
 
 
 def subcmd(service_cls, name=None):
@@ -73,6 +75,13 @@ class Search(ReceiveSubcmd):
             desc = 'search for {}s'.format(kw['service'].item.type)
         super().__init__(*args, desc=desc, **kw)
 
+        # positional args
+        self.parser.add_argument(
+            'terms', nargs='*',
+            action=parse_stdin,
+            help='strings to search for in {} summary/title'.format(kw['service'].item.type))
+
+        # optional args
         self.opts.add_argument('--limit',
             type=int,
             help='Limit the number of records returned in a search')
@@ -88,6 +97,14 @@ class Get(ReceiveSubcmd):
             desc = 'get {}(s)'.format(kw['service'].item.type)
         super().__init__(*args, desc=desc, **kw)
 
+        # positional args
+        self.parser.add_argument(
+            'ids', type=id_list, metavar='ID',
+            action=partial(parse_stdin, ids),
+            help='ID(s) or alias(es) of the {}(s) to retrieve'.format(
+                kw['service'].item.type))
+
+        # optional args
         self.opts.add_argument('-a', '--no-attachments',
             action='store_false',
             help='do not show attachments',
@@ -108,6 +125,14 @@ class Attachments(Subcmd):
             desc = 'get attachment(s) from {}(s)'.format(kw['service'].item.type)
         super().__init__(*args, desc=desc, **kw)
 
+        # positional args
+        self.parser.add_argument(
+            'ids', metavar='ID',
+            type=id_list, action=partial(parse_stdin, ids),
+            help='attachment ID(s) (or {} ID(s) when --item-id is used)'.format(
+                kw['service'].item.type))
+
+        # optional args
         single_action = self.opts.add_mutually_exclusive_group()
         single_action.add_argument('-U', '--url',
             dest='output_url',
@@ -149,6 +174,13 @@ class Modify(SendSubcmd):
             desc = 'modify {}(s)'.format(kw['service'].item.type)
         super().__init__(*args, desc=desc, **kw)
 
+        # positional args
+        self.parser.add_argument(
+            'ids', type=id_list, metavar='ID',
+            action=partial(parse_stdin, ids),
+            help='ID(s) of the {}(s) to modify'.format(kw['service'].item.type))
+
+        # optional args
         self.opts.add_argument('-C', '--comment-editor',
             action='store_true',
             help='add comment via default editor')
