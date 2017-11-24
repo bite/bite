@@ -312,7 +312,7 @@ class Cli(object):
         # cache results for completion usage if requested fields are sane
         if self.completion_cache is not None and fields is None:
             data = list(data)
-            self.completion_cache.write('\n'.join('{} {}'.format(x.id, x.summary) for x in data))
+            self.completion_cache.update('\n'.join('{} {}'.format(x.id, x.summary) for x in data))
 
         if fields is None:
             fields = request.fields

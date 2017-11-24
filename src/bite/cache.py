@@ -217,6 +217,11 @@ class Completion(object):
             raise BiteError('failed writing completion data to {!r}: {}'.format(
                 self.path, e.strerror))
 
+    def update(self, data):
+        """Update completion data if not empty."""
+        if data:
+            self.write(data)
+
     def remove(self):
         """Remove the completion data."""
         try:
