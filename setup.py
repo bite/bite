@@ -47,6 +47,7 @@ def write_lookup_config(python_base, install_prefix):
         from bite import const
     clients = tuple(sorted(const.CLIENTS.items()))
     services = tuple(sorted(const.SERVICES.items()))
+    service_opts = tuple(sorted(const.SERVICE_OPTS.items()))
 
     import textwrap
     with open(path, "w") as f:
@@ -63,9 +64,10 @@ def write_lookup_config(python_base, install_prefix):
 
                 CLIENTS = {}
                 SERVICES = {}
+                SERVICE_OPTS = {}
             """.format(
                 DATA_INSTALL_OFFSET, CONFIG_INSTALL_OFFSET,
-                clients, services)))
+                clients, services, service_opts)))
         else:
             f.write(textwrap.dedent("""\
                 INSTALL_PREFIX = {!r}
@@ -74,11 +76,12 @@ def write_lookup_config(python_base, install_prefix):
 
                 CLIENTS = {!r}
                 SERVICES = {!r}
+                SERVICE_OPTS = {!r}
             """.format(
                 install_prefix,
                 os.path.join(install_prefix, DATA_INSTALL_OFFSET),
                 os.path.join(install_prefix, CONFIG_INSTALL_OFFSET),
-                clients, services)))
+                clients, services, service_opts)))
 
             f.close()
             byte_compile([path], prefix=python_base)
