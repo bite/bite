@@ -378,7 +378,7 @@ class Bugzilla(Service):
 
     def login(self, user, password, restrict_login=False, **kw):
         """Authenticate a session."""
-        super().__init__(user, password, restrict_login=restrict_login)
+        super().login(user, password, restrict_login=restrict_login)
 
     def inject_auth(self, request, params):
         if params is None:
