@@ -280,7 +280,7 @@ class _ModifyRequest(RPCRequest):
         for k, v in ((k, v) for (k, v) in kw.items() if v):
             if k in BugzillaBug.attributes:
                 if k == 'assigned_to':
-                    v = self.service._resuffix(v)
+                    v = service._resuffix(v)
                 params[k] = v
                 options_log.append('{:<10}: {}'.format(BugzillaBug.attributes[k], v))
             elif '-' in k:
@@ -289,7 +289,7 @@ class _ModifyRequest(RPCRequest):
                     raise RuntimeError('Argument parsing error')
                 else:
                     if keys[0] == 'cc':
-                        v = list(map(self.service._resuffix, v))
+                        v = list(map(service._resuffix, v))
                     if k == 'comment-body':
                         v = codecs.getdecoder('unicode_escape')(v)[0]
 
@@ -455,7 +455,7 @@ class _AttachmentsRequest(RPCRequest):
                  get_data=False, *args, **kw):
         """Construct an attachments request."""
         if ids is None and attachment_ids is None:
-            raise ValueError('No {} or attachment ID(s) specified'.format(self.service.item_name))
+            raise ValueError('No {} or attachment ID(s) specified'.format(service.item_name))
 
         params = {}
         options_log = []
