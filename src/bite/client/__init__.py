@@ -104,7 +104,7 @@ class Cli(object):
             self.service.login(user, password)
 
     @login_retry
-    def get(self, dry_run, ids, browser=False, **kw):
+    def get(self, ids, dry_run=False, browser=False, **kw):
         if not ids:
             raise RuntimeError('No {} ID(s) specified'.format(self.service.item.type))
 
@@ -134,7 +134,7 @@ class Cli(object):
 
     @login_retry
     @login_required
-    def attach(self, dry_run, ids, **kw):
+    def attach(self, ids, dry_run=False, **kw):
         """Attach a file to a specified item given a filename."""
         if dry_run: return
         data = self.service.add_attachment(ids, **kw)
@@ -142,7 +142,7 @@ class Cli(object):
             filename, self.service.item.type, pluralism(ids), ', '.join(map(str, ids))))
 
     @login_retry
-    def attachments(self, dry_run, ids, item_id=False, output_url=False, browser=False, **kw):
+    def attachments(self, ids, dry_run=False, item_id=False, output_url=False, browser=False, **kw):
         # skip pulling data if we don't need it
         get_data = (not output_url and not browser)
 
@@ -258,7 +258,7 @@ class Cli(object):
 
     @login_retry
     @login_required
-    def modify(self, ask, dry_run, ids, **kw):
+    def modify(self, ids, ask=False, dry_run=False, **kw):
         request = self.service.ModifyRequest(ids, **kw)
 
         self.log_t('Modifying {}{}: {}'.format(
@@ -277,7 +277,7 @@ class Cli(object):
 
     @login_retry
     @login_required
-    def create(self, ask, batch, dry_run, **kw):
+    def create(self, ask=False, batch=False, dry_run=False, **kw):
         options_log = kw.pop('options_log')
 
         for line in options_log:
@@ -300,7 +300,7 @@ class Cli(object):
         else:
             sys.stdout.write(str(data))
 
-    def search(self, dry_run, fields=None, **kw):
+    def search(self, dry_run=False, fields=None, **kw):
         request = self.service.SearchRequest(**kw)
 
         self.log('Searching for {}s with the following options:'.format(self.service.item.type))
