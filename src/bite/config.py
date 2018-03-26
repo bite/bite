@@ -1,4 +1,5 @@
 import configparser
+from functools import partial
 import os
 import re
 
@@ -157,28 +158,29 @@ def get_config_option(config_file, section, option):
         raise ValueError('No section {!r}'.format(section))
     return value
 
-def fill_config_option(args, parser, get, section, option, func=None):
-    func = func if func is not None else lambda x: x
-    value = config_option(parser, get, section, option)
-    if value is not None:
-        setattr(args, option, func(value))
-
 def fill_config(args, parser, section):
-    fill_config_option(args, parser, parser.get, section, 'service')
-    fill_config_option(args, parser, parser.get, section, 'base')
-    fill_config_option(args, parser, parser.get, section, 'user')
-    fill_config_option(args, parser, parser.get, section, 'password')
-    fill_config_option(args, parser, parser.get, section, 'passwordcmd')
-    fill_config_option(args, parser, parser.get, section, 'auth_token')
-    fill_config_option(args, parser, parser.get, section, 'auth_file')
-    fill_config_option(args, parser, parser.getboolean, section, 'skip_auth')
-    fill_config_option(args, parser, parser.getboolean, section, 'completion_cache')
-    fill_config_option(args, parser, parser.getint, section, 'columns')
-    fill_config_option(args, parser, parser.getint, section, 'concurrent')
-    fill_config_option(args, parser, parser.getint, section, 'timeout')
-    fill_config_option(args, parser, parser.getboolean, section, 'verify')
-    fill_config_option(args, parser, parser.getboolean, section, 'quiet')
-    fill_config_option(args, parser, parser.get, section, 'suffix')
+    def fill_config_option(args, parser, section, get, option, func=None):
+        func = func if func is not None else lambda x: x
+        value = config_option(parser, get, section, option)
+        if value is not None:
+            setattr(args, option, func(value))
+
+    parse_option = partial(fill_config_option, args, parser, section)
+    parse_option(parser.get, 'service')
+    parse_option(parser.get, 'base')
+    parse_option(parser.get, 'user')
+    parse_option(parser.get, 'password')
+    parse_option(parser.get, 'passwordcmd')
+    parse_option(parser.get, 'auth_token')
+    parse_option(parser.get, 'auth_file')
+    parse_option(parser.getboolean, 'skip_auth')
+    parse_option(parser.getint, 'columns')
+    parse_option(parser.getint, 'concurrent')
+    parse_option(parser.getint, 'timeout')
+    parse_option(parser.getboolean, 'verify')
+    parse_option(parser.getboolean, 'quiet')
+    parse_option(parser.get, 'suffix')
+
 
 def get_config(args, parser):
     config = configparser.ConfigParser(interpolation=BiteInterpolation())
