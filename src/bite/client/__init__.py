@@ -53,8 +53,7 @@ class Cli(object):
     _service = None
 
     def __init__(self, service, quiet=False, verbose=False, connection=None,
-                 completion_cache=False, user=None, password=None, passwordcmd=None,
-                 skip_auth=True, **kw):
+                 user=None, password=None, passwordcmd=None, skip_auth=True, **kw):
         self.service = service
         self.quiet = quiet
         self.verbose = verbose
@@ -74,7 +73,7 @@ class Cli(object):
         self.log('Service: {}'.format(self.service))
 
         # completion cache is only enabled for configured services
-        if completion_cache and connection is not None:
+        if connection is not None:
             self.completion_cache = Completion(
                 os.path.join(const.USER_CACHE_PATH, 'completion', connection))
         else:
