@@ -50,16 +50,16 @@ class _ProductsRequest(ProductsRequest, RPCRequest):
 
 @req_cmd(BugzillaRpc, 'extensions')
 class _ExtensionsRequest(ExtensionsRequest, RPCRequest):
-    def __init__(self, service):
+    def __init__(self, *args, **kw):
         """Construct an extensions request."""
-        super().__init__(service=service, command='Bugzilla.extensions')
+        super().__init__(command='Bugzilla.extensions', *args, **kw)
 
 
 @req_cmd(BugzillaRpc, 'version')
 class _VersionRequest(VersionRequest, RPCRequest):
-    def __init__(self, service):
+    def __init__(self, *args, **kw):
         """Construct a version request."""
-        super().__init__(service=service, command='Bugzilla.version')
+        super().__init__(command='Bugzilla.version', *args, **kw)
 
 
 @req_cmd(BugzillaRpc, 'get')
