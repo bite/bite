@@ -129,8 +129,9 @@ class Cli(object):
                 self.service.item.type, pluralism(ids), ', '.join(map(str, ids))))
 
             if dry_run: return
-            data = self.service.send(request)
-            self._print_item(data, **kw)
+            items = request.send()
+            lines = chain.from_iterable(self._render_item(item, **kw) for item in items)
+            print(*lines, sep='\n')
 
     @login_retry
     @login_required
@@ -185,7 +186,7 @@ class Cli(object):
                 _launch_browser(ids)
         else:
             if dry_run: return
-            attachments = self.service.send(request)
+            attachments = request.send()
 
             # Attachment requests yield lists of attachments -- each list
             # corresponds to the attachments for given item ID or a single list
@@ -272,8 +273,9 @@ class Cli(object):
                 return
 
         if dry_run: return
-        data = self.service.send(request)
-        self.print_changes(data, params=kw)
+        data = request.send()
+        lines = chain.from_iterable(self._render_changes(bug, **kw) for bug in data)
+        print(*lines, sep='\n')
 
     @login_retry
     @login_required
@@ -307,7 +309,7 @@ class Cli(object):
         self.log(request.options, prefix='   - ')
 
         if dry_run: return
-        data = self.service.send(request)
+        data = request.send()
 
         # cache results for completion usage if requested fields are sane
         if self.completion_cache is not None and fields is None:
@@ -316,9 +318,8 @@ class Cli(object):
 
         if fields is None:
             fields = request.fields
-        count = self.print_search(data, fields=fields, **kw)
-        if sys.stdout.isatty():
-            self.log('{} {}{} found.'.format(count, self.service.item.type, 's'[count == 1:]))
+        lines = self._render_search(data, fields=fields, **kw)
+        print(*lines, sep='\n')
 
     def _header(self, char, msg):
         return '{} {} {}'.format(char * 3, msg, char * (const.COLUMNS - len(msg) - 5))
@@ -356,21 +357,21 @@ class Cli(object):
             line.append('...')
             return ' '.join(line)
 
-    def _print_lines(self, stuff, wrap=True):
-        if isinstance(stuff, str):
+    def _iter_lines(self, data, wrap=True):
+        if isinstance(data, str):
             sep = ''
         else:
             sep = '\n\n'
 
-        for line in sep.join(stuff).splitlines():
+        for line in sep.join(data).splitlines():
             if line == '-' * const.COLUMNS:
-                print('-' * const.COLUMNS)
+                yield '-' * const.COLUMNS
             elif len(line) <= const.COLUMNS or not sys.stdout.isatty():
-                print(line)
+                yield line
             elif wrap:
-                print(self.wrapper.fill(line))
+                yield self.wrapper.fill(line)
             else:
-                print(line[:const.COLUMNS])
+                yield line[:const.COLUMNS]
 
     def cache(self, update=False, remove=False, *args, **kw):
         if update:
@@ -380,12 +381,11 @@ class Cli(object):
         elif remove:
             self.service.cache.remove()
 
-    def print_changes(self, data, params):
+    def _render_changes(self, data, **kw):
         raise NotImplementedError
 
-    def print_search(self, data, **kw):
+    def _render_search(self, data, **kw):
         raise NotImplementedError
 
-    @staticmethod
-    def _print_item(data, **kw):
+    def _render_item(self, data, **kw):
         raise NotImplementedError

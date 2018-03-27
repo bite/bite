@@ -1,5 +1,6 @@
 import base64
 from collections import OrderedDict
+from itertools import chain
 import os
 import re
 import stat
@@ -232,33 +233,32 @@ class Bugzilla(Cli):
 
         super().modify(*args, **kw)
 
-    def print_changes(self, bugs, params):
-        for bug in bugs:
-            print(self._header('=', 'Bug: {}'.format(str(bug['id']))))
-            changes = bug['changes']
+    def _render_changes(self, bug, **kw):
+        yield self._header('=', 'Bug: {}'.format(str(bug['id'])))
+        changes = bug['changes']
 
-            if len(changes):
-                print(self._header('-', 'Modified fields'))
-                for k, v in changes.items():
-                    try:
-                        field = self.service.item.attributes[k]
-                    except KeyError:
-                        field = k
+        if len(changes):
+            yield self._header('-', 'Modified fields')
+            for k, v in changes.items():
+                try:
+                    field = self.service.item.attributes[k]
+                except KeyError:
+                    field = k
 
-                    if v['removed'] and v['added']:
-                        print('{}: {} -> {}'.format(field, v['removed'], v['added']))
-                    else:
-                        if v['removed']:
-                            print('{}: -{}'.format(field, v['removed']))
-                        elif v['added']:
-                            print('{}: +{}'.format(field, v['added']))
-            else:
-                if 'comment-body' not in params:
-                    print('No changes made')
+                if v['removed'] and v['added']:
+                    yield '{}: {} -> {}'.format(field, v['removed'], v['added'])
+                else:
+                    if v['removed']:
+                        yield '{}: -{}'.format(field, v['removed'])
+                    elif v['added']:
+                        yield '{}: +{}'.format(field, v['added'])
+        else:
+            if 'comment-body' not in kw:
+                yield 'No changes made'
 
-            if 'comment-body' in params and params['comment-body'] is not None:
-                print(self._header('-', 'Added comment'))
-                print(params['comment-body'])
+        if kw.get('comment-body', None) is not None:
+            yield self._header('-', 'Added comment')
+            yield kw['comment-body']
 
     def version(self, dry_run=False):
         version = self.service.version()
@@ -391,14 +391,13 @@ class Bugzilla(Cli):
         else:
             self.log('No matching users found')
 
-    def print_search(self, bugs, fields, output=None, **kw):
+    def _render_search(self, bugs, fields, output=None, **kw):
         if output is None:
             if fields == ['id', 'assigned_to', 'summary']:
                 output = '{} {:<20} {}'
             else:
                 output = ' '.join(['{}' for x in fields])
 
-        count = 0
         for bug in bugs:
             if output == '-':
                 for field in fields:
@@ -409,9 +408,9 @@ class Bugzilla(Cli):
                     if value is None:
                         continue
                     if isinstance(value, list):
-                        print('\n'.join(map(str, value)))
+                        yield from map(str, value)
                     else:
-                        print(value)
+                        yield value
             else:
                 try:
                     values = []
@@ -419,9 +418,7 @@ class Bugzilla(Cli):
                         values.append(getattr(bug, field))
                 except AttributeError:
                     raise BiteError('{!r} is not a valid field'.format(field))
-                self._print_lines(output.format(*values), wrap=False)
-            count += 1
-        return count
+                yield from self._iter_lines(output.format(*values), wrap=False)
 
     def _match_change(self, change, fields):
         change_aliases = {
@@ -472,69 +469,74 @@ class Bugzilla(Cli):
                         change['removed'] == value
                     )
 
-    def changes(self, ids, dry_run=False, creation_time=None, change_num=None, fields=None, output=None, creator=None,
-                match=None):
-        request = self.service.HistoryRequest(ids, created=creation_time)
+    def changes(self, ids, dry_run=False, **kw):
+        request = self.service.HistoryRequest(ids, created=kw.get('creation_time', None))
 
         self.log('Getting changes matching the following options:')
         self.log_t(request.options, prefix='   - ')
 
-        if creator is not None and self.service.suffix is not None:
-            creator = list(map(self.service._resuffix, creator))
+        if kw.get('creator', None) is not None and self.service.suffix is not None:
+            kw['creator'] = list(map(self.service._resuffix, kw['creator']))
 
         if dry_run: return
-        history = self.service.send(request)
+        history_iter = request.send()
+        lines = chain.from_iterable(self._render_history(ids[i], history, **kw)
+                                    for i, history in enumerate(history_iter))
+        print(*lines, sep='\n')
 
-        for i in ids:
-            changes = next(history)
-
-            if creator is not None:
-                changes = (x for x in changes if x.creator in creator)
-            if creation_time is not None:
-                changes = (x for x in changes if x.date >= creation_time)
-            if match is not None:
-                changes = (event for event in changes
-                           for change in event.changes
-                           if self._match_change(change=change, fields=match))
-            if change_num is not None:
-                if len(change_num) == 1 and change_num[0] < 0:
-                    changes = list(changes)[change_num[0]:]
-                else:
-                    changes = (x for x in changes if x.count in change_num)
-
-            if fields and output is None:
-                output = ' '.join(['{}' for x in fields])
-
-            if output == '-':
-                for change in changes:
-                    for field in fields:
-                        try:
-                            value = getattr(change, field)
-                        except AttributeError:
-                            raise BiteError('{!r} is not a valid bug field'.format(field))
-                        if value is None:
-                            continue
-                        if isinstance(value, list):
-                            print('\n'.join(map(str, value)))
-                        else:
-                            print(value)
-            elif fields and output:
-                for change in changes:
-                    try:
-                        values = []
-                        for field in fields:
-                            values.append(getattr(change, field))
-                    except AttributeError:
-                        raise BiteError('{!r} is not a valid field'.format(field))
-                    self._print_lines(output.format(*values))
+    def _render_history(self, bug_id, changes, creation_time=None, change_num=None,
+                        fields=None, output=None, creator=None, match=None):
+        if creator is not None:
+            changes = (x for x in changes if x.creator in creator)
+        if creation_time is not None:
+            changes = (x for x in changes if x.date >= creation_time)
+        if match is not None:
+            changes = (event for event in changes
+                        for change in event.changes
+                        if self._match_change(change=change, fields=match))
+        if change_num is not None:
+            if len(change_num) == 1 and change_num[0] < 0:
+                changes = list(changes)[change_num[0]:]
             else:
-                changes = list(str(x) for x in changes)
-                if changes:
-                    print(self._header('=', 'Bug: {}'.format(str(i))))
-                    self._print_lines(changes)
+                changes = (x for x in changes if x.count in change_num)
 
-    def comments(self, ids, dry_run=False, creation_time=None, comment_num=None, fields=None,
-                 output=None, creator=None, attachment=False):
+        if fields and output is None:
+            output = ' '.join(['{}' for x in fields])
+
+        if output == '-':
+            for change in changes:
+                for field in fields:
+                    try:
+                        value = getattr(change, field)
+                    except AttributeError:
+                        raise BiteError('{!r} is not a valid bug field'.format(field))
+                    if value is None:
+                        continue
+                    if isinstance(value, list):
+                        yield from map(str(value))
+                    else:
+                        yield value
+        elif fields and output:
+            for change in changes:
+                try:
+                    values = []
+                    for field in fields:
+                        values.append(getattr(change, field))
+                except AttributeError:
+                    raise BiteError('{!r} is not a valid field'.format(field))
+                yield from self._iter_lines(output.format(*values))
+        else:
+            changes = list(str(x) for x in changes)
+            if changes:
+                yield self._header('=', 'Bug: {}'.format(bug_id))
+                yield from self._iter_lines(changes)
+
+    def comments(self, ids, dry_run=False, **kw):
+        creation_time = kw.get('creation_time', None)
+        creator = kw.get('creator', None)
+        attachment = kw.get('attachment', False)
+        comment_num = kw.get('comment_num', None)
+
         request = self.service.CommentsRequest(ids, created=creation_time)
 
         if creator is not None:
@@ -551,81 +553,82 @@ class Bugzilla(Cli):
             creator = list(map(self.service._resuffix, creator))
 
         if dry_run: return
-        comment_list = self.service.send(request)
+        comments_iter = request.send()
+        lines = chain.from_iterable(self._render_comments(ids[i], comments, **kw)
+                                    for i, comments in enumerate(comments_iter))
+        print(*lines, sep='\n')
 
-        for i in ids:
-            comments = next(comment_list)
-
-            if creator is not None:
-                comments = (x for x in comments if x.creator in creator)
-            if attachment:
-                comments = (x for x in comments if x.changes['attachment_id'] is not None)
-            if comment_num is not None:
-                if any(x < 0 for x in comment_num):
-                    comments = list(comments)
-                    selected = []
-                    for x in comment_num:
-                        try:
-                            selected.append(comments[x])
-                        except IndexError:
-                            pass
-                    comments = selected
-                else:
-                    comments = (x for x in comments if x.count in comment_num)
-
-            if fields and output is None:
-                output = ' '.join(['{}' for x in fields])
-
-            if output == '-':
-                for comment in comments:
-                    for field in fields:
-                        try:
-                            value = getattr(comment, field)
-                        except AttributeError:
-                            raise BiteError('{!r} is not a valid bug field'.format(field))
-                        if value is None:
-                            continue
-                        if isinstance(value, list):
-                            print('\n'.join(map(str, value)))
-                        else:
-                            print(value)
-            elif fields and output:
-                for comment in comments:
+    def _render_comments(self, bug_id, comments, creation_time=None, comment_num=None,
+                        fields=None, output=None, creator=None, attachment=False):
+        if creator is not None:
+            comments = (x for x in comments if x.creator in creator)
+        if attachment:
+            comments = (x for x in comments if x.changes['attachment_id'] is not None)
+        if comment_num is not None:
+            if any(x < 0 for x in comment_num):
+                comments = list(comments)
+                selected = []
+                for x in comment_num:
                     try:
-                        values = []
-                        for field in fields:
-                            values.append(getattr(comment, field))
-                    except AttributeError:
-                        raise BiteError('{!r} is not a valid field'.format(field))
-                    self._print_lines(output.format(*values))
+                        selected.append(comments[x])
+                    except IndexError:
+                        pass
+                comments = selected
             else:
-                comments = list(str(x) for x in comments)
-                if comments:
-                    print(self._header('=', 'Bug: {}'.format(str(i))))
-                    self._print_lines(comments)
+                comments = (x for x in comments if x.count in comment_num)
 
-    def _print_item(self, bugs, get_comments=False, get_history=False, show_obsolete=False, **kw):
-        for bug in bugs:
-            print('=' * const.COLUMNS)
-            for line in str(bug).splitlines():
-                if len(line) <= const.COLUMNS:
-                    print(line)
-                else:
-                    print(self.wrapper.fill(line))
+        if fields and output is None:
+            output = ' '.join(['{}' for x in fields])
 
-            if bug.attachments:
-                if show_obsolete:
-                    attachments = [str(a) for a in bug.attachments]
-                else:
-                    attachments = [str(a) for a in bug.attachments if not a.is_obsolete]
-                if attachments:
-                    if str(bug):
-                        print()
-                    print('\n'.join(attachments))
+        if output == '-':
+            for comment in comments:
+                for field in fields:
+                    try:
+                        value = getattr(comment, field)
+                    except AttributeError:
+                        raise BiteError('{!r} is not a valid bug field'.format(field))
+                    if value is None:
+                        continue
+                    if isinstance(value, list):
+                        yield from map(str, value)
+                    else:
+                        yield value
+        elif fields and output:
+            for comment in comments:
+                try:
+                    values = []
+                    for field in fields:
+                        values.append(getattr(comment, field))
+                except AttributeError:
+                    raise BiteError('{!r} is not a valid field'.format(field))
+                yield from self._iter_lines(output.format(*values))
+        else:
+            comments = list(str(x) for x in comments)
+            if comments:
+                yield self._header('=', 'Bug: {}'.format(bug_id))
+                yield from self._iter_lines(comments)
 
-            if bug.events and (str(bug) or bug.attachments):
-                print()
-            self._print_lines((str(x) for x in bug.events))
+    def _render_item(self, bug, show_obsolete=False, **kw):
+        yield '=' * const.COLUMNS
+        for line in str(bug).splitlines():
+            if len(line) <= const.COLUMNS:
+                yield line
+            else:
+                yield self.wrapper.fill(line)
+
+        if bug.attachments:
+            if show_obsolete:
+                attachments = [str(a) for a in bug.attachments]
+            else:
+                attachments = [str(a) for a in bug.attachments if not a.is_obsolete]
+            if attachments:
+                if str(bug):
+                    yield ''
+                yield from attachments
+
+        if bug.events and (str(bug) or bug.attachments):
+            yield ''
+        yield from self._iter_lines(str(x) for x in bug.events)
 
     def change_fields(self, s):
         changes = s.split(',')

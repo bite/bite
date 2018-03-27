@@ -94,6 +94,9 @@ class Request(object):
     def parse(self, data):
         return data
 
+    def send(self):
+        return self.service.send(self)
+
     def handle_exception(self, e):
         raise e
 
