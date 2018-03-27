@@ -105,17 +105,17 @@ class Get(ReceiveSubcmd):
                 kw['service'].item.type))
 
         # optional args
-        self.opts.add_argument('-a', '--no-attachments',
-            action='store_false',
-            help='do not show attachments',
-            dest='get_attachments')
-        self.opts.add_argument('-c', '--no-comments',
-            action='store_false',
-            help='do not show comments',
-            dest='get_comments')
         self.opts.add_argument('-B', '--browser',
             action='store_true',
             help="open item page in a browser")
+        self.opts.add_argument('-A', '--no-attachments',
+            action='store_false',
+            help='do not show attachments',
+            dest='get_attachments')
+        self.opts.add_argument('-C', '--no-comments',
+            action='store_false',
+            help='do not show comments',
+            dest='get_comments')
 
 
 class Attachments(Subcmd):
