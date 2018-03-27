@@ -83,18 +83,15 @@ class BugzillaBug(Item):
 
     type = 'bug'
 
-    def __init__(self, service, bug, comments=None, attachments=None, history=None):
+    def __init__(self, service, **kw):
         self.service = service
-        self.attachments = attachments
-        self.comments = comments
-        self.history = history
 
-        for k, v in bug.items():
+        for k, v in kw.items():
             if not v or v == '---':
                 # skip empty lists and blank fields
                 continue
             elif v == 'flags':
-                self.flags = [flag['name'] for flag in bug['flags']]
+                self.flags = [flag['name'] for flag in kw['flags']]
             elif k in ['creation_time', 'last_change_time']:
                 setattr(self, k, parsetime(v))
             else:

@@ -80,9 +80,11 @@ class _GetRequest(Request):
 
     def parse(self, data):
         bugs, attachments, comments, history = data
-        return (self.service.item(self.service, bug, comments=next(comments),
-                                  attachments=next(attachments), history=next(history))
-                for bug in bugs)
+        for bug in bugs:
+            bug['comments'] = next(comments)
+            bug['attachments'] = next(attachments)
+            bug['history'] = next(history)
+            yield self.service.item(self.service, **bug)
 
 
 @req_cmd(BugzillaRpc)
@@ -227,7 +229,8 @@ class _SearchRequest(RPCRequest):
 
     def parse(self, data):
         bugs = data['bugs']
-        return (self.service.item(self.service, bug) for bug in bugs)
+        for bug in bugs:
+            yield self.service.item(self.service, **bug)
 
 
 @req_cmd(BugzillaRpc, 'comments')
