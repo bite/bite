@@ -1,9 +1,11 @@
 import base64
 import datetime
+from itertools import chain
 import re
 import string
 
 from dateutil.parser import parse as dateparse
+from snakeoil import klass
 
 from .. import Service, Request
 from ... import const, utc
@@ -103,6 +105,12 @@ class BugzillaBug(Item):
             self.comments = comments
         if history:
             self.history = history
+
+    @klass.jit_attr
+    def events(self):
+        comments = self.comments if self.comments is not None else ()
+        history = self.history if self.history is not None else ()
+        return sorted(chain(comments, history), key=lambda event: event.date)
 
     def __str__(self):
         lines = []

@@ -5,7 +5,6 @@ import re
 import stat
 import subprocess
 import sys
-from itertools import chain, groupby
 
 from dateutil.parser import parse as parsetime
 from snakeoil.strings import pluralism
@@ -624,20 +623,12 @@ class Bugzilla(Cli):
                         print()
                     print('\n'.join(attachments))
 
-            changes = []
-            if get_history and get_comments:
-                changes = sorted(chain(bug.history, bug.comments), key=lambda event: event.date)
-            else:
-                if get_history:
-                    changes = bug.history
-                elif get_comments:
-                    changes = bug.comments
-            if changes and (str(bug) or bug.attachments):
+            if bug.events and (str(bug) or bug.attachments):
                 print()
-            self._print_lines((str(x) for x in changes))
+            self._print_lines((str(x) for x in bug.events))
 
     def change_fields(self, s):
-        changes = s.split(',');
+        changes = s.split(',')
         fields = []
         for field in changes:
             try:
