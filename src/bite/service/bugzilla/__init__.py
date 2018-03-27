@@ -83,8 +83,12 @@ class BugzillaBug(Item):
 
     type = 'bug'
 
-    def __init__(self, service, bug, comments=None, attachments=None, history=None, **kw):
+    def __init__(self, service, bug, comments=None, attachments=None, history=None):
         self.service = service
+        self.attachments = attachments
+        self.comments = comments
+        self.history = history
+
         for k, v in bug.items():
             if not v or v == '---':
                 # skip empty lists and blank fields
@@ -98,13 +102,6 @@ class BugzillaBug(Item):
                     setattr(self, k, parsetime(v))
                 else:
                     setattr(self, k, v)
-
-        if attachments:
-            self.attachments = attachments
-        if comments:
-            self.comments = comments
-        if history:
-            self.history = history
 
     @klass.jit_attr
     def events(self):
