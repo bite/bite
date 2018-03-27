@@ -162,9 +162,9 @@ class Get(args.Get):
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
         # optional args
-        self.opts.add_argument('--history',
-            action='store_true',
-            help='show bug history',
+        self.opts.add_argument('-H', '--no-history',
+            action='store_false',
+            help='do not bug history',
             dest='get_history')
         self.opts.add_argument('--show-obsolete',
             action='store_true',
