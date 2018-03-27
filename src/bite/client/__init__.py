@@ -52,11 +52,12 @@ class Cli(object):
 
     _service = None
 
-    def __init__(self, service, quiet=False, verbose=False, connection=None,
+    def __init__(self, service, quiet=False, verbose=False, color=False, connection=None,
                  user=None, password=None, passwordcmd=None, skip_auth=True, **kw):
         self.service = service
         self.quiet = quiet
         self.verbose = verbose
+        self.color = color
         self.passwordcmd = passwordcmd
         self.skip_auth = skip_auth
         self.wrapper = textwrap.TextWrapper(width=const.COLUMNS-3)
