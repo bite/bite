@@ -3,7 +3,8 @@ import codecs
 from itertools import groupby
 import os
 
-from . import (Bugzilla, BugzillaBug, BugzillaComment, BugzillaEvent, parsetime,
+from . import (
+    Bugzilla, BugzillaBug, BugzillaComment, BugzillaEvent,
     ExtensionsRequest, VersionRequest, FieldsRequest, ProductsRequest, UsersRequest)
 from .. import Request, RPCRequest, NullRequest, req_cmd
 from ... import const, magic
@@ -209,7 +210,7 @@ class _SearchRequest(RPCRequest):
             raise BiteError('no supported search terms or options specified')
 
         # only return open bugs by default
-        if not 'status' in params:
+        if 'status' not in params:
             params['status'] = service.cache['open_status']
 
         if kw.get('fields', None) is None:
