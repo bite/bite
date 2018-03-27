@@ -371,7 +371,7 @@ class _ModifyRequest(RPCRequest):
 
 @req_cmd(BugzillaRpc, 'attach')
 class _AttachRequest(RPCRequest):
-    def __init__(self, ids, data=None, filepath=None, filename=None, mimetype=None,
+    def __init__(self, service, ids, data=None, filepath=None, filename=None, mimetype=None,
                  is_patch=False, is_private=False, comment=None, summary=None, **kw):
         """Add an attachment to a bug
 
