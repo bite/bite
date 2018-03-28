@@ -221,12 +221,12 @@ class Service(object):
     @staticmethod
     def _encode_request(method, params=None):
         """Encode the data body for a request."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @staticmethod
     def _decode_request(request):
         """Decode the data body of a request."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def inject_auth(self, request=None, params=None):
         """Authenticate a request or session."""
@@ -234,7 +234,7 @@ class Service(object):
 
     def parse_response(self, response):
         """Parse the returned response."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def send(self, *reqs):
         """Send requests and return parsed response data."""

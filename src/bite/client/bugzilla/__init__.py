@@ -214,7 +214,7 @@ class Bugzilla(Cli):
 
     def modify(self, *args, **kw):
         if kw.get('reply'):
-            raise NotImplementedError()
+            raise NotImplementedError
             # get comment kw['reply']
             #kw['comment-body'] = block_edit('Enter comment:').rstrip()
 
