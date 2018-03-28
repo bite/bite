@@ -213,11 +213,6 @@ class Bugzilla(Cli):
         super().create(*args, **kw)
 
     def modify(self, *args, **kw):
-        if kw.get('reply'):
-            raise NotImplementedError
-            # get comment kw['reply']
-            #kw['comment-body'] = block_edit('Enter comment:').rstrip()
-
         comment_from = kw.get('comment_from')
         if comment_from is not None:
             try:

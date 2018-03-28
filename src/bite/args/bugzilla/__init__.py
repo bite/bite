@@ -182,8 +182,6 @@ class Modify(args.Modify):
             help='add comment from command line',
             metavar='COMMENT',
             dest='comment-body')
-        attr.add_argument('-r', '--reply',
-            help='reply to a comment')
         attr.add_argument('-R', '--resolution',
             help='set new resolution (only if status = RESOLVED)')
         attr.add_argument('-S', '--severity',
