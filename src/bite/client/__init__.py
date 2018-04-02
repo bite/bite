@@ -302,7 +302,7 @@ class Cli(object):
         else:
             sys.stdout.write(str(data))
 
-    def search(self, dry_run=False, fields=None, **kw):
+    def search(self, dry_run=False, **kw):
         request = self.service.SearchRequest(**kw)
 
         self.log('Searching for {}s with the following options:'.format(self.service.item.type))
@@ -311,14 +311,14 @@ class Cli(object):
         if dry_run: return
         data = request.send()
 
-        # cache results for completion usage if requested fields are sane
-        if self.completion_cache is not None and fields is None:
+        # cache results for completion usage when using default fields
+        if self.completion_cache is not None and 'fields' not in kw:
             data = list(data)
             self.completion_cache.update('\n'.join('{} {}'.format(x.id, x.summary) for x in data))
 
-        if fields is None:
-            fields = request.fields
-        lines = self._render_search(data, fields=fields, **kw)
+        if 'fields' not in kw:
+            kw['fields'] = request.fields
+        lines = self._render_search(data, **kw)
         print(*lines, sep='\n')
 
     def _header(self, char, msg):

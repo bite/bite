@@ -213,7 +213,7 @@ class _SearchRequest(RPCRequest):
         if 'status' not in params:
             params['status'] = service.cache['open_status']
 
-        if kw.get('fields', None) is None:
+        if 'fields' not in kw:
             fields = ['id', 'assigned_to', 'summary']
         else:
             fields = kw['fields']
