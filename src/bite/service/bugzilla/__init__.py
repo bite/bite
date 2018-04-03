@@ -609,6 +609,100 @@ class AttachmentsRequest(Request):
             yield files
 
 
+class ModifyRequest(Request):
+    def __init__(self, ids, service, *args, **kw):
+        """Construct a modify request."""
+        options_log = []
+        params = {}
+        for k, v in ((k, v) for (k, v) in kw.items() if v):
+            if k in service.item.attributes:
+                if k == 'assigned_to':
+                    v = service._resuffix(v)
+                params[k] = v
+                options_log.append('{:<10}: {}'.format(service.item.attributes[k], v))
+            elif '-' in k:
+                keys = k.split('-')
+                if len(keys) != 2:
+                    raise RuntimeError('Argument parsing error')
+                else:
+                    if keys[0] == 'cc':
+                        v = list(map(service._resuffix, v))
+                    if k == 'comment-body':
+                        v = codecs.getdecoder('unicode_escape')(v)[0]
+
+                    if keys[0] not in kw:
+                        params[keys[0]] = {}
+
+                    params[keys[0]][keys[1]] = v
+
+                    if keys[1] in ['add', 'remove', 'set']:
+                        options_log.append((keys[0], keys[1], v))
+                    elif keys[0] == 'comment':
+                        pass
+                    else:
+                        try:
+                            options_log.append('{:<10}: {}'.format(service.item.attributes[keys[0]], v))
+                        except KeyError:
+                            options_log.append('{:<10}: {}'.format(keys[0].capitalize(), v))
+            else:
+                if k == 'fixed':
+                    params['status'] = 'RESOLVED'
+                    params['resolution'] = 'FIXED'
+                    options_log.append('Status    : RESOLVED')
+                    options_log.append('Resolution: FIXED')
+                elif k == 'invalid':
+                    params['status'] = 'RESOLVED'
+                    params['resolution'] = 'INVALID'
+                    options_log.append('Status    : RESOLVED')
+                    options_log.append('Resolution: INVALID')
+
+        merge_targets = ((i, x) for i, x in enumerate(options_log) if isinstance(x, tuple))
+        merge_targets = sorted(merge_targets, key=lambda x: x[1][0])
+        old_indices = [i for (i, x) in merge_targets]
+        for key, group in groupby(merge_targets, lambda x: x[1][0]):
+            value = []
+            for (_, (key, action, values)) in group:
+                if action == 'add':
+                    value.extend(['+' + str(x) for x in values])
+                elif action == 'remove':
+                    value.extend(['-' + str(x) for x in values])
+                elif action == 'set':
+                    value = values
+                    break
+            try:
+                options_log.append('{:<10}: {}'.format(service.item.attributes[key], ', '.join(value)))
+            except KeyError:
+                options_log.append('{:<10}: {}'.format(key.capitalize(), ', '.join(value)))
+
+        # remove old entries
+        options_log = [x for i, x in enumerate(options_log) if i not in old_indices]
+
+        if not params:
+            raise ValueError('No changes specified')
+
+        if options_log:
+            prefix = '--- Modifying fields '
+            options_log.insert(0, prefix + '-' * (const.COLUMNS - len(prefix)))
+
+        if 'comment' in params:
+            prefix = '--- Adding comment '
+            options_log.append(prefix + '-' * (const.COLUMNS - len(prefix)))
+            options_log.append(params['comment']['body'])
+
+        options_log.append('-' * const.COLUMNS)
+
+        if not ids:
+            raise ValueError('No bug ID(s) specified')
+        params['ids'] = ids
+
+        super().__init__(service=service, params=params, **kw)
+        self.params = params
+        self.options = options_log
+
+    def parse(self, data):
+        return data['bugs']
+
+
 class GetItemRequest(Request):
     def __init__(self, ids, service, fields=None, **kw):
         """Construct a get request."""

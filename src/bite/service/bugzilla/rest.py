@@ -2,7 +2,8 @@ from collections import deque
 
 from . import (
     Bugzilla, BugzillaBug, BugzillaError, BugzillaAttachment, BugzillaComment, BugzillaEvent,
-    SearchRequest, HistoryRequest, CommentsRequest, AttachmentsRequest, GetItemRequest, GetRequest,
+    SearchRequest, HistoryRequest, CommentsRequest, AttachmentsRequest,
+    GetItemRequest, GetRequest, ModifyRequest,
     ExtensionsRequest, VersionRequest, FieldsRequest, ProductsRequest, UsersRequest)
 from .. import ContinuedRequest, RESTRequest, req_cmd
 from .._json import Json
@@ -48,6 +49,15 @@ class _GetRequest(GetRequest):
     def __init__(self, *args, **kw):
         """Construct a get request."""
         super().__init__(*args, **kw)
+
+
+@req_cmd(BugzillaRest, 'modify')
+class _ModifyRequest(ModifyRequest, RESTRequest):
+    def __init__(self, *args, **kw):
+        """Construct a modify request."""
+        super().__init__(endpoint='/bug', method='PUT', *args, **kw)
+        self.endpoint = f"/bug/{self.params['ids'][0]}"
+        self.params['ids'] = self.params['ids'][1:]
 
 
 @req_cmd(BugzillaRest, 'search')
