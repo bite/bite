@@ -1,13 +1,11 @@
 from collections import deque
-try: import simplejson as json
-except ImportError: import json
 
 import requests
 
 from . import (
-    Bugzilla, BugzillaError, BugzillaAttachment, BugzillaComment, BugzillaEvent,
-    ExtensionsRequest, VersionRequest, FieldsRequest, ProductsRequest, UsersRequest)
-from .. import RESTRequest, req_cmd
+    Bugzilla, BugzillaBug, BugzillaError, BugzillaAttachment, BugzillaComment, BugzillaEvent,
+    SearchRequest, ExtensionsRequest, VersionRequest, FieldsRequest, ProductsRequest, UsersRequest)
+from .. import ContinuedRequest, RESTRequest, req_cmd
 from .._json import Json
 from ...exceptions import RequestError
 from ...objects import Item
@@ -22,7 +20,7 @@ class BugzillaRest(Bugzilla, Json):
 
     def __init__(self, **kw):
         super().__init__(endpoint='/rest', **kw)
-        self.item = RestBug
+        self.item = BugzillaBug
 
     def inject_auth(self, request, params):
         if len(self.auth) > 16:
@@ -44,6 +42,13 @@ class BugzillaRest(Bugzilla, Json):
         if response.status_code in (404,):
             self.parse_response(response)
         super()._failed_http_response(response)
+
+
+@req_cmd(BugzillaRest, 'search')
+class _SearchRequest(SearchRequest, RESTRequest):
+    def __init__(self, *args, **kw):
+        """Construct a search request."""
+        super().__init__(endpoint='/bug', *args, **kw)
 
 
 @req_cmd(BugzillaRest, 'extensions')
@@ -85,8 +90,8 @@ class _UsersRequest(UsersRequest, RESTRequest):
         self.params = [(k, i) for k, v in self.params.items() for i in v]
 
 
+class RestBug(BugzillaBug):
 
-class RestBug(Item):
     def __init__(self, bug, comments=None, attachments=None, history=None, **kw):
         for k, v in bug.items():
             try:

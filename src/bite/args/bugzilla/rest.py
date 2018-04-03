@@ -26,4 +26,4 @@ class BugzillaRestOpts(bz.BugzillaOpts):
 
     _service = 'bugzilla-rest'
     _subcmds = ((None, x) for x in
-                (bz.Version, bz.Extensions, bz.Products, bz.Users, bz.Fields))
+                (bz.Version, bz.Extensions, bz.Products, bz.Users, bz.Fields, bz.Search))

@@ -4,9 +4,9 @@ from itertools import groupby
 import os
 
 from . import (
-    Bugzilla, BugzillaBug, BugzillaComment, BugzillaEvent,
+    Bugzilla, BugzillaComment, BugzillaEvent, SearchRequest,
     ExtensionsRequest, VersionRequest, FieldsRequest, ProductsRequest, UsersRequest)
-from .. import Request, ContinuedRequest, RPCRequest, NullRequest, req_cmd
+from .. import Request, RPCRequest, NullRequest, req_cmd
 from ... import const, magic
 from ...exceptions import BiteError
 
@@ -152,85 +152,10 @@ class _CreateRequest(RPCRequest):
 
 
 @req_cmd(BugzillaRpc, 'search')
-class _SearchRequest(ContinuedRequest, RPCRequest):
-    def __init__(self, service, **kw):
+class _SearchRequest(SearchRequest, RPCRequest):
+    def __init__(self, *args, **kw):
         """Construct a search request."""
-        params = {}
-        options_log = []
-        for k, v in ((k, v) for (k, v) in kw.items() if v):
-            if k in BugzillaBug.attributes:
-                if k in ['creation_time', 'last_change_time']:
-                    params[k] = v.format
-                    options_log.append(f'{BugzillaBug.attributes[k]}: {v.token} (since {v} UTC)')
-                elif k in ['assigned_to', 'creator']:
-                    params[k] = list(map(service._resuffix, v))
-                    options_log.append(f"{BugzillaBug.attributes[k]}: {', '.join(map(str, v))}")
-                elif k == 'status':
-                    status_alias = []
-                    status_map = {
-                        'open': service.cache['open_status'],
-                        'closed': service.cache['closed_status'],
-                        'all': service.cache['open_status'] + service.cache['closed_status'],
-                    }
-                    for status in v:
-                        if status_map.get(status.lower(), False):
-                            status_alias.append(status)
-                            params.setdefault(k, []).extend(status_map[status.lower()])
-                        else:
-                            params.setdefault(k, []).append(status)
-                    if status_alias:
-                        options_log.append(f"{BugzillaBug.attributes[k]}: {', '.join(status_alias)} ({', '.join(params[k])})")
-                    else:
-                        options_log.append(f"{BugzillaBug.attributes[k]}: {', '.join(params[k])}")
-                else:
-                    params[k] = v
-                    options_log.append(f"{BugzillaBug.attributes[k]}: {', '.join(map(str, v))}")
-            else:
-                if k == 'terms':
-                    params['summary'] = v
-                    options_log.append(f"Summary: {', '.join(map(str, v))}")
-                elif k == 'commenter':
-                    # XXX: probably fragile since it uses custom search URL params
-                    # only works with >=bugzilla-5, previous versions return invalid parameter errors
-                    for i, val in enumerate(v):
-                        i = str(i + 1)
-                        params['f' + i] = 'commenter'
-                        params['o' + i] = 'substring'
-                        params['v' + i] = val
-                    options_log.append(f"Commenter: {', '.join(map(str, v))}")
-                elif k in ['limit', 'offset', 'votes']:
-                    params[k] = v
-
-        if not params:
-            raise BiteError('no supported search terms or options specified')
-
-        # only return open bugs by default
-        if 'status' not in params:
-            params['status'] = service.cache['open_status']
-
-        # set a search limit to make continued requests work as expected
-        if 'limit' not in params and service.max_results is not None:
-            params['limit'] = service.max_results
-
-        if 'fields' not in kw:
-            fields = ['id', 'assigned_to', 'summary']
-        else:
-            fields = kw['fields']
-            unknown_fields = set(fields).difference(BugzillaBug.attributes.keys())
-            if unknown_fields:
-                raise BiteError(f"unknown fields: {', '.join(unknown_fields)}")
-            options_log.append(f"Fields: {' '.join(fields)}")
-
-        params['include_fields'] = fields
-
-        super().__init__(service=service, command='Bug.search', params=params)
-        self.fields = fields
-        self.options = options_log
-
-    def parse(self, data):
-        bugs = data['bugs']
-        for bug in bugs:
-            yield self.service.item(self.service, **bug)
+        super().__init__(command='Bug.search', *args, **kw)
 
 
 @req_cmd(BugzillaRpc, 'comments')
@@ -280,11 +205,11 @@ class _ModifyRequest(RPCRequest):
         options_log = []
         params = {}
         for k, v in ((k, v) for (k, v) in kw.items() if v):
-            if k in BugzillaBug.attributes:
+            if k in service.item.attributes:
                 if k == 'assigned_to':
                     v = service._resuffix(v)
                 params[k] = v
-                options_log.append('{:<10}: {}'.format(BugzillaBug.attributes[k], v))
+                options_log.append('{:<10}: {}'.format(service.item.attributes[k], v))
             elif '-' in k:
                 keys = k.split('-')
                 if len(keys) != 2:
@@ -306,7 +231,7 @@ class _ModifyRequest(RPCRequest):
                         pass
                     else:
                         try:
-                            options_log.append('{:<10}: {}'.format(BugzillaBug.attributes[keys[0]], v))
+                            options_log.append('{:<10}: {}'.format(service.item.attributes[keys[0]], v))
                         except KeyError:
                             options_log.append('{:<10}: {}'.format(keys[0].capitalize(), v))
             else:
@@ -335,7 +260,7 @@ class _ModifyRequest(RPCRequest):
                     value = values
                     break
             try:
-                options_log.append('{:<10}: {}'.format(BugzillaBug.attributes[key], ', '.join(value)))
+                options_log.append('{:<10}: {}'.format(service.item.attributes[key], ', '.join(value)))
             except KeyError:
                 options_log.append('{:<10}: {}'.format(key.capitalize(), ', '.join(value)))
 

@@ -38,7 +38,7 @@ def generator(func):
 class Request(object):
     """Construct a request."""
 
-    def __init__(self, service, url=None, method=None, params=None, reqs=None):
+    def __init__(self, service, url=None, method=None, params=None, reqs=None, **kw):
         self.service = service
         self.options = []
         self.params = params
@@ -137,8 +137,8 @@ class RPCRequest(Request):
     """Construct an RPC request."""
 
     def __init__(self, command, **kw):
-        self.command = command
         super().__init__(method='POST', **kw)
+        self.command = command
 
     def _finalize(self):
         super()._finalize()
@@ -154,7 +154,15 @@ class RESTRequest(Request):
 
     def _finalize(self):
         super()._finalize()
-        params = '?' + urlencode(self.params) if self.params else ''
+
+        params = []
+        for k, v in self.params.items():
+            if isinstance(v, (list, tuple)):
+                params.extend([(k, i) for i in v])
+            else:
+                params.append((k, v))
+        params = '?' + urlencode(params) if params else ''
+
         self._req.url = '{}/{}{}'.format(self._req.url, self.endpoint.lstrip('/'), params)
 
 
