@@ -1,12 +1,9 @@
-import base64
-import codecs
 from itertools import groupby
-import os
 
 from . import (
     Bugzilla, BugzillaComment, BugzillaEvent,
     SearchRequest, HistoryRequest, CommentsRequest, AttachmentsRequest,
-    GetItemRequest, GetRequest, ModifyRequest,
+    GetItemRequest, GetRequest, ModifyRequest, AttachRequest,
     ExtensionsRequest, VersionRequest, FieldsRequest, ProductsRequest, UsersRequest)
 from .. import Request, RPCRequest, req_cmd
 from ... import const, magic
@@ -164,84 +161,7 @@ class _ModifyRequest(ModifyRequest, RPCRequest):
 
 
 @req_cmd(BugzillaRpc, 'attach')
-class _AttachRequest(RPCRequest):
-    def __init__(self, service, ids, data=None, filepath=None, filename=None, mimetype=None,
-                 is_patch=False, is_private=False, comment=None, summary=None, **kw):
-        """Add an attachment to a bug
-
-        :param ids: The ids or aliases of bugs that you want to add the attachment to.
-        :type ids: list of ints and/or strings
-        :param data: Raw attachment data
-        :type data: binary data
-        :param filepath: Path to the file.
-        :type filepath: string
-        :param filename: The file name that will be displayed in the UI for the attachment.
-        :type filename: string
-        :param mimetype: The MIME type of the attachment, like text/plain or image/png.
-        :type mimetype: string
-        :param comment: A comment to add along with the attachment.
-        :type comment: string
-        :param summary: A short string describing the attachment.
-        :type summary: string
-        :param is_patch: True if Bugzilla should treat this attachment as a patch.
-            If specified, a content_type doesn't need to be specified as it is forced to text/plain.
-            Defaults to false if unspecified.
-        :type is_patch: boolean
-        :param is_private: True if the attachment should be private, False if public.
-            Defaults to false if unspecified.
-        :type is_private: boolean
-
-        :raises ValueError: if no bug IDs are specified
-        :raises ValueError: if data or filepath arguments aren't specified
-        :raises ValueError: if data isn't defined and filepath points to a nonexistent file
-        :raises ValueError: if filepath isn't defined and summary or filename isn't specified
-
-        :returns: attachment IDs created
-        :rtype: list of attachment IDs
-        """
-        if not ids:
-            raise ValueError('No bug ID(s) or aliases specified')
-
-        params = {'ids': ids}
-
-        if data is not None:
-            params['data'] = base64.b64encode(data)
-        else:
-            if filepath is None:
-                raise ValueError('Either data or a filepath must be passed as an argument')
-            else:
-                if not os.path.exists(filepath):
-                    raise ValueError(f'File not found: {filepath}')
-                else:
-                    with open(filepath, 'rb') as f:
-                        params['data'] = base64.b64encode(f.read())
-
-        if filename is None:
-            if filepath is not None:
-                filename = os.path.basename(filepath)
-            else:
-                raise ValueError('A valid filename must be specified')
-
-        if mimetype is None and not is_patch:
-            if data is not None:
-                mimetype = magic.from_buffer(data, mime=True)
-            else:
-                mimetype = magic.from_file(filepath, mime=True)
-
-        if summary is None:
-            if filepath is not None:
-                summary = filename
-            else:
-                raise ValueError('A valid summary must be specified')
-
-        params['file_name'] = filename
-        params['summary'] = summary
-        if not is_patch:
-            params['content_type'] = mimetype
-        params['comment'] = comment
-        params['is_patch'] = is_patch
-
-        super().__init__(service=service, command='Bug.add_attachment', params=params)
-
-    def parse(self, data):
-        return data['attachments']
+class _AttachRequest(AttachRequest, RPCRequest):
+    def __init__(self, *args, **kw):
+        """Construct an attach request."""
+        super().__init__(command='Bug.add_attachment', *args, **kw)
