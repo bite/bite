@@ -124,7 +124,7 @@ class ContinuedRequest(Request):
                 yield x
 
             # no more results exist, stop requesting them
-            if count < self.params['limit']:
+            if self.service.max_results is None or count < self.service.max_results:
                 break
 
             # set offset and send new request
