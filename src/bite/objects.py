@@ -58,8 +58,7 @@ class DateTime(object):
     def __repr__(self):
         return str(self._datetime)
 
-    @property
-    def format(self):
+    def isoformat(self):
         """Format the service expects datetime objects sent to it in."""
         return self._datetime.isoformat()
 

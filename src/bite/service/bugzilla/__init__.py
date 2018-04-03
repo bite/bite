@@ -431,8 +431,8 @@ class SearchRequest(ContinuedRequest):
         for k, v in ((k, v) for (k, v) in kw.items() if v):
             if k in service.item.attributes:
                 if k in ['creation_time', 'last_change_time']:
-                    params[k] = v.format
-                    options_log.append(f'{service.item.attributes[k]}: {v.token} (since {v} UTC)')
+                    params[k] = v.isoformat()
+                    options_log.append(f'{service.item.attributes[k]}: {v} (since {repr(v)} UTC)')
                 elif k in ['assigned_to', 'creator']:
                     params[k] = list(map(service._resuffix, v))
                     options_log.append(f"{service.item.attributes[k]}: {', '.join(map(str, v))}")
@@ -518,8 +518,8 @@ class HistoryRequest(Request):
             params['ids'] = ids
             options_log.append(f"IDs: {', '.join(ids)}")
         if created is not None:
-            params['new_since'] = created.format
-            options_log.append(f'Created: {created.token} (since {created} UTC)')
+            params['new_since'] = created.isoformat()
+            options_log.append(f'Created: {created} (since {repr(created)} UTC)')
 
         super().__init__(service=service, params=params, **kw)
         self.params = params
@@ -550,8 +550,8 @@ class CommentsRequest(Request):
             params['comment_ids'] = comment_ids
             options_log.append(f"Comment IDs: {', '.join(comment_ids)}")
         if created is not None:
-            params['new_since'] = created.format
-            options_log.append(f'Created: {created.token} (since {created} UTC)')
+            params['new_since'] = created.isoformat()
+            options_log.append(f'Created: {created} (since {repr(created)} UTC)')
         if fields is not None:
             params['include_fields'] = fields
 
