@@ -304,7 +304,11 @@ class Cli(object):
         if 'fields' not in kw:
             kw['fields'] = request.fields
         lines = self._render_search(data, **kw)
-        print(*lines, sep='\n')
+        count = 0
+        for line in lines:
+            count += 1
+            print(line)
+        self.log(f"{count} {self.service.item.type}{pluralism(count)} found.")
 
     def _header(self, char, msg):
         return '{} {} {}'.format(char * 3, msg, char * (const.COLUMNS - len(msg) - 5))

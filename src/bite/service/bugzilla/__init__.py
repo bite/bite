@@ -347,6 +347,12 @@ class Bugzilla(Service):
     attachment = BugzillaAttachment
     attachment_endpoint = '/attachment.cgi?id='
 
+    def __init__(self, max_results=None, *args, **kw):
+        # most bugzilla instances default to 10k results per req
+        if max_results is None:
+            max_results = 10000
+        super().__init__(*args, max_results=max_results, **kw)
+
     @property
     def cache_updates(self):
         """Pull latest data from service for cache update."""

@@ -107,6 +107,32 @@ class Request(object):
         return self._requests
 
 
+# TODO: run these asynchronously
+class ContinuedRequest(Request):
+    """Keep requesting matching records until all relevant results are returned."""
+
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
+        self._count = 0
+
+    def send(self):
+        while True:
+            data = self.service.send(self)
+            count = 0
+            for x in data:
+                count += 1
+                yield x
+
+            # no more results exist, stop requesting them
+            if count < self.params['limit']:
+                break
+
+            # set offset and send new request
+            self._count += count
+            self.params['offset'] = self._count
+            self._finalized = False
+
+
 class RPCRequest(Request):
     """Construct an RPC request."""
 
@@ -161,13 +187,15 @@ class Service(object):
     attachment_endpoint = None
 
     def __init__(self, base, endpoint='', connection=None, verify=True, user=None, password=None,
-                 auth_file=None, auth_token=None, suffix=None, timeout=None, concurrent=None, **kw):
+                 auth_file=None, auth_token=None, suffix=None, timeout=None, concurrent=None,
+                 max_results=None, **kw):
         self.base = base
         self.user = user
         self.password = password
         self.suffix = suffix
         self.verify = verify
         self.timeout = timeout if timeout is not None else 30
+        self.max_results = max_results
 
         # max workers defaults to system CPU count * 5 if concurrent is None
         self.executor = ThreadPoolExecutor(max_workers=concurrent)

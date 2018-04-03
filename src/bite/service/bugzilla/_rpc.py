@@ -6,7 +6,7 @@ import os
 from . import (
     Bugzilla, BugzillaBug, BugzillaComment, BugzillaEvent,
     ExtensionsRequest, VersionRequest, FieldsRequest, ProductsRequest, UsersRequest)
-from .. import Request, RPCRequest, NullRequest, req_cmd
+from .. import Request, ContinuedRequest, RPCRequest, NullRequest, req_cmd
 from ... import const, magic
 from ...exceptions import BiteError
 
@@ -152,7 +152,7 @@ class _CreateRequest(RPCRequest):
 
 
 @req_cmd(BugzillaRpc, 'search')
-class _SearchRequest(RPCRequest):
+class _SearchRequest(ContinuedRequest, RPCRequest):
     def __init__(self, service, **kw):
         """Construct a search request."""
         params = {}
@@ -207,6 +207,10 @@ class _SearchRequest(RPCRequest):
         # only return open bugs by default
         if 'status' not in params:
             params['status'] = service.cache['open_status']
+
+        # set a search limit to make continued requests work as expected
+        if 'limit' not in params and service.max_results is not None:
+            params['limit'] = service.max_results
 
         if 'fields' not in kw:
             fields = ['id', 'assigned_to', 'summary']

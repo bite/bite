@@ -177,6 +177,7 @@ def fill_config(args, parser, section):
     parse_option(parser.getint, 'columns')
     parse_option(parser.getint, 'concurrent')
     parse_option(parser.getint, 'timeout')
+    parse_option(parser.getint, 'max_results')
     parse_option(parser.getboolean, 'verify')
     parse_option(parser.getboolean, 'quiet')
     parse_option(parser.get, 'suffix')
