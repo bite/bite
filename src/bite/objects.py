@@ -73,11 +73,9 @@ class DateTime(object):
 
 
 class PrintableObject(object):
-    def __str__(self):
-        raise NotImplemented
 
     def __str__(self):
-        return str(self).encode('utf-8')
+        raise NotImplementedError
 
 
 class Item(PrintableObject):
