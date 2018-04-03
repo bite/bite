@@ -191,7 +191,7 @@ def get_config(args, parser):
     for service_dir in (os.path.join(const.DATA_PATH, 'services'),
                         os.path.join(const.USER_DATA_PATH, 'services')):
         for root, _, files in os.walk(service_dir):
-            config.read([os.path.join(root, f) for f in files])
+            config.read([os.path.join(root, f) for f in files if not f.startswith('.')])
 
     system_config = os.path.join(const.CONFIG_PATH, 'config')
     user_config = os.path.join(const.USER_CONFIG_PATH, 'config')
