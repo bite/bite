@@ -1,0 +1,36 @@
+#!/usr/bin/env python3
+#
+# Show sorted listing of the top 25 users who attached patches on Gentoo
+# bugzilla in the last week.
+
+import collections
+import datetime
+
+from dateutil.relativedelta import *
+from dateutil.parser import parse as parsetime
+
+from bite.service.bugzilla.jsonrpc import BugzillaJsonrpc
+
+today = datetime.datetime.utcnow()
+previous = today + relativedelta(weeks=-1)
+
+bugz = BugzillaJsonrpc(base='https://bugs.gentoo.org/')
+params = {}
+
+params['status'] = 'all'
+params['last_change_time'] = previous
+params['include_fields'] = ['id']
+bugs = [bug.id for bug in bugz.search(**params)]
+attachments = bugz.attachments(ids=bugs)
+
+
+def filter_attachments(attachment_list):
+    for bug_attachments in attachment_list:
+        for attachment in bug_attachments:
+            if attachment.modified.replace(tzinfo=None) > previous:
+                yield attachment.creator
+
+
+c = collections.Counter(filter_attachments(attachments))
+for dev, i in c.most_common(25):
+    print(f'{i}: {dev}')
