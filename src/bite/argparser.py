@@ -478,6 +478,8 @@ class ArgumentParser(arghparse.ArgumentParser):
         if initial_args.base is None or initial_args.service is None:
             self.error('both arguments -b/--base and -s/--service are required '
                        'or must be specified in the config file for a connection')
+        elif not re.match(r'^http(s)?://.+', initial_args.base):
+            self.error(f'invalid base: {repr(initial_args.base)}')
 
         service = initial_args.service
         if service not in const.SERVICES:
