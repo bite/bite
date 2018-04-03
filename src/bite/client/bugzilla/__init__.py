@@ -408,12 +408,7 @@ class Bugzilla(Cli):
                     else:
                         yield value
             else:
-                try:
-                    values = []
-                    for field in fields:
-                        values.append(getattr(bug, field))
-                except AttributeError:
-                    raise BiteError(f'invalid field: {repr(field)}')
+                values = (getattr(bug, field) for field in fields)
                 yield from self._iter_lines(output.format(*values), wrap=False)
 
     def _match_change(self, change, fields):
@@ -514,12 +509,7 @@ class Bugzilla(Cli):
                         yield value
         elif fields and output:
             for change in changes:
-                try:
-                    values = []
-                    for field in fields:
-                        values.append(getattr(change, field))
-                except AttributeError:
-                    raise BiteError(f'invalid field: {repr(field)}')
+                values = (getattr(change, field) for field in fields)
                 yield from self._iter_lines(output.format(*values))
         else:
             changes = list(str(x) for x in changes)
@@ -592,12 +582,7 @@ class Bugzilla(Cli):
                         yield value
         elif fields and output:
             for comment in comments:
-                try:
-                    values = []
-                    for field in fields:
-                        values.append(getattr(comment, field))
-                except AttributeError:
-                    raise BiteError(f'invalid field: {repr(field)}')
+                values = (getattr(comment, field) for field in fields)
                 yield from self._iter_lines(output.format(*values))
         else:
             comments = list(str(x) for x in comments)
