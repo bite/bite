@@ -12,7 +12,6 @@ import textwrap
 from snakeoil.strings import pluralism
 
 from .. import const
-from ..cache import Completion
 from ..exceptions import AuthError, BiteError
 from ..objects import TarAttachment
 from ..utils import confirm, get_input
@@ -72,13 +71,6 @@ class Cli(object):
                 self.login()
 
         self.log(f'Service: {self.service}')
-
-        # completion cache is only enabled for configured services
-        if connection is not None:
-            self.completion_cache = Completion(
-                os.path.join(const.USER_CACHE_PATH, 'completion', connection))
-        else:
-            self.completion_cache = None
 
     def login(self):
         """Login to a service and try to cache the authentication token."""
@@ -308,11 +300,6 @@ class Cli(object):
 
         if dry_run: return
         data = request.send()
-
-        # cache results for completion usage when using default fields
-        if self.completion_cache is not None and 'fields' not in kw:
-            data = list(data)
-            self.completion_cache.update('\n'.join(f'{x.id} {x.summary}' for x in data))
 
         if 'fields' not in kw:
             kw['fields'] = request.fields

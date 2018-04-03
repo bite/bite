@@ -195,34 +195,3 @@ class Auth(object):
 
     def __len__(self):
         return len(self.token)
-
-
-class Completion(object):
-
-    def __init__(self, path):
-        self.path = path
-
-    def write(self, data):
-        """Write completion data."""
-        try:
-            os.makedirs(os.path.dirname(self.path))
-        except FileExistsError:
-            pass
-
-        try:
-            with open(self.path, 'w+') as f:
-                f.write(data)
-        except (PermissionError, IsADirectoryError) as e:
-            raise BiteError(f'failed writing completion data to {repr(self.path)}: {e.strerror}')
-
-    def update(self, data):
-        """Update completion data if not empty."""
-        if data:
-            self.write(data)
-
-    def remove(self):
-        """Remove the completion data."""
-        try:
-            os.remove(self.path)
-        except FileNotFoundError:
-            pass
