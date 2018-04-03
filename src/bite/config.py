@@ -158,14 +158,14 @@ def get_config_option(config_file, section, option):
         raise ValueError(f'No section {repr(section)}')
     return value
 
-def fill_config(args, parser, section):
-    def fill_config_option(args, parser, section, get, option, func=None):
+def fill_config(settings, parser, section):
+    def fill_config_option(settings, parser, section, get, option, func=None):
         func = func if func is not None else lambda x: x
         value = config_option(parser, get, section, option)
         if value is not None:
-            setattr(args, option, func(value))
+            settings[option] = func(value)
 
-    parse_option = partial(fill_config_option, args, parser, section)
+    parse_option = partial(fill_config_option, settings, parser, section)
     parse_option(parser.get, 'service')
     parse_option(parser.get, 'base')
     parse_option(parser.get, 'user')
@@ -214,14 +214,19 @@ def get_config(args, parser):
     except (configparser.DuplicateSectionError, configparser.DuplicateOptionError) as e:
         raise BiteError(e)
 
-    args.config = config
-    args.aliases = aliases
+    config_settings = {
+        'config': config,
+        'aliases': aliases,
+    }
 
     if args.service is None and args.base is None:
         if args.connection is None:
             args.connection = config.defaults().get('connection', None)
+            config_settings['connection'] = args.connection
 
     if config.has_section(args.connection):
-        fill_config(args, config, args.connection)
+        fill_config(config_settings, config, args.connection)
     elif args.connection:
         parser.error(f'unknown connection: {repr(args.connection)}')
+
+    return config_settings

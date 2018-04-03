@@ -464,8 +464,13 @@ class ArgumentParser(arghparse.ArgumentParser):
         if os.path.basename(sys.argv[0]) != __title__:
             initial_args.connection = os.path.basename(sys.argv[0])
 
-        # get settings from the config file
-        get_config(initial_args, self)
+        # load settings from the config file
+        config_settings = get_config(initial_args, self)
+
+        # merge config options, command line options override these
+        for k, v in config_settings.items():
+            if getattr(initial_args, k, None) is None:
+                setattr(initial_args, k, v)
 
         logger = logging.getLogger(__name__)
         #logger.setLevel(logging.DEBUG)
