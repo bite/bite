@@ -789,6 +789,50 @@ class AttachRequest(Request):
         return data['attachments']
 
 
+class CreateRequest(Request):
+    def __init__(self, service, product, component, version, summary, description=None, op_sys=None,
+                 platform=None, priority=None, severity=None, alias=None, assigned_to=None,
+                 cc=None, target_milestone=None, groups=None, status=None, **kw):
+        """Create a new bug given a list of parameters
+
+        :returns: ID of the newly created bug
+        :rtype: int
+        """
+        params = {}
+        params['product'] = product
+        params['component'] = component
+        params['version'] = version
+        params['summary'] = summary
+        if description is not None:
+            params['description'] = description
+        if op_sys is not None:
+            params['op_sys'] = op_sys
+        if platform is not None:
+            params['platform'] = platform
+        if priority is not None:
+            params['priority'] = priority
+        if severity is not None:
+            params['severity'] = severity
+        if alias is not None:
+            params['alias'] = alias
+        if assigned_to is not None:
+            params['assigned_to'] = assigned_to
+        if cc is not None:
+            params['cc'] = cc
+        if target_milestone is not None:
+            params['target_milestone'] = target_milestone
+        if groups is not None:
+            params['groups'] = groups
+        if status is not None:
+            params['status'] = status
+
+        super().__init__(service=service, params=params, **kw)
+        self.params = params
+
+    def parse(self, data):
+        return data['id']
+
+
 class GetItemRequest(Request):
     def __init__(self, ids, service, fields=None, **kw):
         """Construct a get request."""

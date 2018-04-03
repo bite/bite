@@ -3,7 +3,7 @@ from itertools import groupby
 from . import (
     Bugzilla, BugzillaComment, BugzillaEvent,
     SearchRequest, HistoryRequest, CommentsRequest, AttachmentsRequest,
-    GetItemRequest, GetRequest, ModifyRequest, AttachRequest,
+    GetItemRequest, GetRequest, ModifyRequest, AttachRequest, CreateRequest,
     ExtensionsRequest, VersionRequest, FieldsRequest, ProductsRequest, UsersRequest)
 from .. import Request, RPCRequest, req_cmd
 from ... import const, magic
@@ -59,50 +59,6 @@ class _VersionRequest(VersionRequest, RPCRequest):
     def __init__(self, *args, **kw):
         """Construct a version request."""
         super().__init__(command='Bugzilla.version', *args, **kw)
-
-
-@req_cmd(BugzillaRpc, 'create')
-class _CreateRequest(RPCRequest):
-    def __init__(self, service, product, component, version, summary, description=None, op_sys=None,
-                 platform=None, priority=None, severity=None, alias=None, assigned_to=None,
-                 cc=None, target_milestone=None, groups=None, status=None, **kw):
-        """Create a new bug given a list of parameters
-
-        :returns: ID of the newly created bug
-        :rtype: int
-        """
-        params = {}
-        params['product'] = product
-        params['component'] = component
-        params['version'] = version
-        params['summary'] = summary
-        if description is not None:
-            params['description'] = description
-        if op_sys is not None:
-            params['op_sys'] = op_sys
-        if platform is not None:
-            params['platform'] = platform
-        if priority is not None:
-            params['priority'] = priority
-        if severity is not None:
-            params['severity'] = severity
-        if alias is not None:
-            params['alias'] = alias
-        if assigned_to is not None:
-            params['assigned_to'] = assigned_to
-        if cc is not None:
-            params['cc'] = cc
-        if target_milestone is not None:
-            params['target_milestone'] = target_milestone
-        if groups is not None:
-            params['groups'] = groups
-        if status is not None:
-            params['status'] = status
-
-        super().__init__(service=service, command='Bug.create', params=params)
-
-    def parse(self, data):
-        return data['id']
 
 
 @req_cmd(BugzillaRpc, 'get')
@@ -165,3 +121,10 @@ class _AttachRequest(AttachRequest, RPCRequest):
     def __init__(self, *args, **kw):
         """Construct an attach request."""
         super().__init__(command='Bug.add_attachment', *args, **kw)
+
+
+@req_cmd(BugzillaRpc, 'create')
+class _CreateRequest(CreateRequest, RPCRequest):
+    def __init__(self, *args, **kw):
+        """Construct a create request."""
+        super().__init__(command='Bug.create', *args, **kw)

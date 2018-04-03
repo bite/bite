@@ -3,7 +3,7 @@ from collections import deque
 from . import (
     Bugzilla, BugzillaBug, BugzillaError, BugzillaAttachment, BugzillaComment, BugzillaEvent,
     SearchRequest, HistoryRequest, CommentsRequest, AttachmentsRequest,
-    GetItemRequest, GetRequest, ModifyRequest, AttachRequest,
+    GetItemRequest, GetRequest, ModifyRequest, AttachRequest, CreateRequest,
     ExtensionsRequest, VersionRequest, FieldsRequest, ProductsRequest, UsersRequest)
 from .. import ContinuedRequest, RESTRequest, req_cmd
 from .._json import Json
@@ -67,6 +67,13 @@ class _AttachRequest(AttachRequest, RESTRequest):
         super().__init__(endpoint='/bug/{}/attachment', method='POST', *args, **kw)
         self.endpoint = self.endpoint.format(self.params['ids'][0])
         self.params['ids'] = self.params['ids'][1:]
+
+
+@req_cmd(BugzillaRest, 'create')
+class _CreateRequest(CreateRequest, RESTRequest):
+    def __init__(self, *args, **kw):
+        """Construct a create request."""
+        super().__init__(endpoint='/bug', method='POST', *args, **kw)
 
 
 @req_cmd(BugzillaRest, 'search')
