@@ -4,7 +4,8 @@ from itertools import groupby
 import os
 
 from . import (
-    Bugzilla, BugzillaComment, BugzillaEvent, SearchRequest, HistoryRequest, CommentsRequest,
+    Bugzilla, BugzillaComment, BugzillaEvent,
+    SearchRequest, HistoryRequest, CommentsRequest, AttachmentsRequest,
     ExtensionsRequest, VersionRequest, FieldsRequest, ProductsRequest, UsersRequest)
 from .. import Request, RPCRequest, NullRequest, req_cmd
 from ... import const, magic
@@ -170,6 +171,13 @@ class _CommentsRequest(CommentsRequest, RPCRequest):
     def __init__(self, *args, **kw):
         """Construct a comments request."""
         super().__init__(command='Bug.comments', *args, **kw)
+
+
+@req_cmd(BugzillaRpc, 'attachments')
+class _AttachmentsRequest(AttachmentsRequest, RPCRequest):
+    def __init__(self, *args, **kw):
+        """Construct an attachments request."""
+        super().__init__(command='Bug.attachments', *args, **kw)
 
 
 class ChangesRequest(RPCRequest):
@@ -352,51 +360,3 @@ class _AttachRequest(RPCRequest):
 
     def parse(self, data):
         return data['attachments']
-
-
-@req_cmd(BugzillaRpc, 'attachments')
-class _AttachmentsRequest(RPCRequest):
-    def __init__(self, service, ids=None, attachment_ids=None, fields=None,
-                 get_data=False, *args, **kw):
-        """Construct an attachments request."""
-        if ids is None and attachment_ids is None:
-            raise ValueError(f'No {service.item.type} or attachment ID(s) specified')
-
-        params = {}
-        options_log = []
-
-        if ids is not None:
-            ids = list(map(str, ids))
-            params['ids'] = ids
-            options_log.append(f"IDs: {', '.join(ids)}")
-        if attachment_ids is not None:
-            attachment_ids = list(map(str, attachment_ids))
-            params['attachment_ids'] = attachment_ids
-            options_log.append(f"Attachment IDs: {', '.join(attachment_ids)}")
-        if fields is not None:
-            params['include_fields'] = fields
-        # attachment data doesn't get pulled by default
-        if not get_data:
-            params['exclude_fields'] = ['data']
-
-        super().__init__(service=service, command='Bug.attachments', params=params)
-
-        self.options = options_log
-        self.ids = ids
-        self.attachment_ids = attachment_ids
-
-    def parse(self, data):
-        if self.ids:
-            bugs = data['bugs']
-            for i in self.ids:
-                yield [self.service.attachment(**attachment) for attachment in bugs[str(i)]]
-
-        if self.attachment_ids:
-            attachments = data['attachments']
-            files = []
-            try:
-                for i in self.attachment_ids:
-                    files.append(self.service.attachment(**attachments[str(i)]))
-            except KeyError:
-                raise BiteError(f'invalid attachment ID: {i}')
-            yield files

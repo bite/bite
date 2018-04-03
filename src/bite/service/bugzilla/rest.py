@@ -2,7 +2,7 @@ from collections import deque
 
 from . import (
     Bugzilla, BugzillaBug, BugzillaError, BugzillaAttachment, BugzillaComment, BugzillaEvent,
-    SearchRequest, HistoryRequest, CommentsRequest,
+    SearchRequest, HistoryRequest, CommentsRequest, AttachmentsRequest,
     ExtensionsRequest, VersionRequest, FieldsRequest, ProductsRequest, UsersRequest)
 from .. import ContinuedRequest, RESTRequest, req_cmd
 from .._json import Json
@@ -66,6 +66,19 @@ class _CommentsRequest(CommentsRequest, RESTRequest):
         super().__init__(endpoint='/bug/{}/comment', *args, **kw)
         self.endpoint = self.endpoint.format(self.params['ids'][0])
         self.params['ids'] = self.params['ids'][1:]
+
+
+@req_cmd(BugzillaRest, 'attachments')
+class _AttachmentsRequest(AttachmentsRequest, RESTRequest):
+    def __init__(self, *args, **kw):
+        """Construct an attachments request."""
+        super().__init__(endpoint='/bug/{}/attachment', *args, **kw)
+        if 'ids' in self.params:
+            self.endpoint = self.endpoint.format(self.params['ids'][0])
+            self.params['ids'] = self.params['ids'][1:]
+        else:
+            self.endpoint = f"/bug/attachment/{self.params['attachment_ids'][0]}"
+            self.params['attachment_ids'] = self.params['attachment_ids'][1:]
 
 
 @req_cmd(BugzillaRest, 'extensions')

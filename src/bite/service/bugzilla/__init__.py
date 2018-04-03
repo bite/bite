@@ -10,7 +10,7 @@ from snakeoil import klass
 from .. import Service, ContinuedRequest, Request
 from ... import const, utc
 from ...cache import Cache, csv2tuple
-from ...exceptions import RequestError, AuthError
+from ...exceptions import RequestError, AuthError, BiteError
 from ...objects import Item, Change, Comment, Attachment, decompress
 
 
@@ -561,6 +561,52 @@ class CommentsRequest(Request):
         for i in self.ids:
             yield [BugzillaComment(comment=comment, id=i, count=j)
                    for j, comment in enumerate(bugs[str(i)]['comments'])]
+
+
+class AttachmentsRequest(Request):
+    def __init__(self, service, ids=None, attachment_ids=None, fields=None,
+                 get_data=False, *args, **kw):
+        """Construct an attachments request."""
+        if ids is None and attachment_ids is None:
+            raise ValueError(f'No {service.item.type} or attachment ID(s) specified')
+
+        params = {}
+        options_log = []
+
+        if ids is not None:
+            ids = list(map(str, ids))
+            params['ids'] = ids
+            options_log.append(f"IDs: {', '.join(ids)}")
+        if attachment_ids is not None:
+            attachment_ids = list(map(str, attachment_ids))
+            params['attachment_ids'] = attachment_ids
+            options_log.append(f"Attachment IDs: {', '.join(attachment_ids)}")
+        if fields is not None:
+            params['include_fields'] = fields
+        # attachment data doesn't get pulled by default
+        if not get_data:
+            params['exclude_fields'] = ['data']
+
+        super().__init__(service=service, params=params, **kw)
+        self.options = options_log
+        self.ids = ids
+        self.attachment_ids = attachment_ids
+
+    def parse(self, data):
+        if self.ids:
+            bugs = data['bugs']
+            for i in self.ids:
+                yield [self.service.attachment(**attachment) for attachment in bugs[str(i)]]
+
+        if self.attachment_ids:
+            attachments = data['attachments']
+            files = []
+            try:
+                for i in self.attachment_ids:
+                    files.append(self.service.attachment(**attachments[str(i)]))
+            except KeyError:
+                raise BiteError(f'invalid attachment ID: {i}')
+            yield files
 
 
 class ExtensionsRequest(Request):
