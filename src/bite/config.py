@@ -219,7 +219,7 @@ def get_config(args, parser):
         'aliases': aliases,
     }
 
-    if args.service is None and args.base is None:
+    if args.service is None or args.base is None:
         if args.connection is None:
             args.connection = config.defaults().get('connection', None)
             config_settings['connection'] = args.connection
