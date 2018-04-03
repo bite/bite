@@ -1,4 +1,4 @@
 [gentoo]
 base: https://bugs.gentoo.org/
-service: bugzilla-jsonrpc
+service: bugzilla-rest
 suffix: @gentoo.org
