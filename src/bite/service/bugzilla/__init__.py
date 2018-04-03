@@ -7,7 +7,7 @@ import string
 from dateutil.parser import parse as dateparse
 from snakeoil import klass
 
-from .. import Service, ContinuedRequest, Request
+from .. import Service, ContinuedRequest, NullRequest, Request
 from ... import const, utc
 from ...cache import Cache, csv2tuple
 from ...exceptions import RequestError, AuthError, BiteError
@@ -607,6 +607,48 @@ class AttachmentsRequest(Request):
             except KeyError:
                 raise BiteError(f'invalid attachment ID: {i}')
             yield files
+
+
+class GetItemRequest(Request):
+    def __init__(self, ids, service, fields=None, **kw):
+        """Construct a get request."""
+        if not ids:
+            raise ValueError('No bug ID(s) specified')
+
+        params = {}
+        params['ids'] = ids
+        if fields is not None:
+            params['include_fields'] = fields
+
+        super().__init__(service=service, params=params, **kw)
+
+    def parse(self, data):
+        return data['bugs']
+
+
+class GetRequest(Request):
+    def __init__(self, ids, service, get_comments=False, get_attachments=False,
+                 get_history=False, *args, **kw):
+        """Construct requests to retrieve all known data for given bug IDs."""
+        if not ids:
+            raise ValueError('No bug ID(s) specified')
+
+        reqs = [service.GetItemRequest(ids=ids)]
+        for call in ('attachments', 'comments', 'history'):
+            if locals()['get_' + call]:
+                reqs.append(getattr(service, call.capitalize() + 'Request')(ids=ids))
+            else:
+                reqs.append(NullRequest(generator=True))
+
+        super().__init__(service=service, reqs=reqs)
+
+    def parse(self, data):
+        bugs, attachments, comments, history = data
+        for bug in bugs:
+            bug['comments'] = next(comments)
+            bug['attachments'] = next(attachments)
+            bug['history'] = next(history)
+            yield self.service.item(self.service, **bug)
 
 
 class ExtensionsRequest(Request):

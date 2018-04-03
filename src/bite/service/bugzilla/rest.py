@@ -2,7 +2,7 @@ from collections import deque
 
 from . import (
     Bugzilla, BugzillaBug, BugzillaError, BugzillaAttachment, BugzillaComment, BugzillaEvent,
-    SearchRequest, HistoryRequest, CommentsRequest, AttachmentsRequest,
+    SearchRequest, HistoryRequest, CommentsRequest, AttachmentsRequest, GetItemRequest, GetRequest,
     ExtensionsRequest, VersionRequest, FieldsRequest, ProductsRequest, UsersRequest)
 from .. import ContinuedRequest, RESTRequest, req_cmd
 from .._json import Json
@@ -43,6 +43,13 @@ class BugzillaRest(Bugzilla, Json):
         super()._failed_http_response(response)
 
 
+@req_cmd(BugzillaRest, 'get')
+class _GetRequest(GetRequest):
+    def __init__(self, *args, **kw):
+        """Construct a get request."""
+        super().__init__(*args, **kw)
+
+
 @req_cmd(BugzillaRest, 'search')
 class _SearchRequest(SearchRequest, RESTRequest):
     def __init__(self, *args, **kw):
@@ -79,6 +86,15 @@ class _AttachmentsRequest(AttachmentsRequest, RESTRequest):
         else:
             self.endpoint = f"/bug/attachment/{self.params['attachment_ids'][0]}"
             self.params['attachment_ids'] = self.params['attachment_ids'][1:]
+
+
+@req_cmd(BugzillaRest)
+class _GetItemRequest(GetItemRequest, RESTRequest):
+    def __init__(self, *args, **kw):
+        """Construct a get request."""
+        super().__init__(endpoint='/bug', *args, **kw)
+        # REST interface renames 'ids' param to 'id'
+        self.params['id'] = self.params.pop('ids')
 
 
 @req_cmd(BugzillaRest, 'extensions')
