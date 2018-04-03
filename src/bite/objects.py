@@ -50,6 +50,9 @@ class DateTime(object):
         self._datetime = datetime.replace(tzinfo=utc)
 
     def __str__(self):
+        return self.token
+
+    def __repr__(self):
         return str(self._datetime)
 
     @property
