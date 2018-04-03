@@ -65,7 +65,7 @@ def _clients():
     from . import client as mod
     clients = []
     for imp, name, _ in pkgutil.walk_packages(mod.__path__, mod.__name__ + '.'):
-        module = imp.find_module(name).load_module()
+        module = import_module(name)
         for name, cls in inspect.getmembers(module, _service_cls):
             clients.append((cls._service, '.'.join([module.__name__, cls.__name__])))
     return clients
@@ -75,7 +75,7 @@ def _services():
     from . import service as mod
     services = []
     for imp, name, _ in pkgutil.walk_packages(mod.__path__, mod.__name__ + '.'):
-        module = imp.find_module(name).load_module()
+        module = import_module(name)
         for name, cls in inspect.getmembers(module, _service_cls):
             services.append((cls._service, '.'.join([module.__name__, cls.__name__])))
     return services
@@ -85,7 +85,7 @@ def _service_opts():
     from . import args as mod
     opts = []
     for imp, name, _ in pkgutil.walk_packages(mod.__path__, mod.__name__ + '.'):
-        module = imp.find_module(name).load_module()
+        module = import_module(name)
         for name, cls in inspect.getmembers(module, _service_cls):
             opts.append((cls._service, '.'.join([module.__name__, cls.__name__])))
     return opts
