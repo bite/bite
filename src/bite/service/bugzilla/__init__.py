@@ -293,7 +293,7 @@ class BugzillaEvent(Change):
 class BugzillaAttachment(Attachment):
 
     def __init__(self, id, file_name, size=None, content_type=None,
-                 data=None, creation_time=None, last_change_time=None, **kw):
+                 data=None, creator=None, creation_time=None, last_change_time=None, **kw):
 
         if creation_time is not None:
             creation_time = parsetime(creation_time)
@@ -305,7 +305,7 @@ class BugzillaAttachment(Attachment):
 
         super().__init__(
             id=id, filename=file_name, size=size, mimetype=content_type,
-            data=data, created=creation_time, modified=last_change_time)
+            data=data, creator=creator, created=creation_time, modified=last_change_time)
 
     def __str__(self):
         if self.size is not None:
