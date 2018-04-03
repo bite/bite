@@ -500,6 +500,33 @@ class SearchRequest(ContinuedRequest):
             yield self.service.item(self.service, **bug)
 
 
+class HistoryRequest(Request):
+    def __init__(self, ids, created=None, service=None, **kw):
+        if not ids:
+            raise ValueError('No bug ID(s) specified')
+
+        params = {}
+        options_log = []
+
+        if ids is not None:
+            ids = list(map(str, ids))
+            params['ids'] = ids
+            options_log.append(f"IDs: {', '.join(ids)}")
+        if created is not None:
+            params['new_since'] = created.format
+            options_log.append(f'Created: {created.token} (since {created} UTC)')
+
+        super().__init__(service=service, params=params, **kw)
+        self.params = params
+        self.options = options_log
+
+    def parse(self, data):
+        bugs = data['bugs']
+        for b in bugs:
+            yield [BugzillaEvent(change=x, id=b['id'], alias=b['alias'], count=i)
+                   for i, x in enumerate(b['history'], start=1)]
+
+
 class ExtensionsRequest(Request):
 
     def parse(self, data):

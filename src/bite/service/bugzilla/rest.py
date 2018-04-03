@@ -4,7 +4,8 @@ import requests
 
 from . import (
     Bugzilla, BugzillaBug, BugzillaError, BugzillaAttachment, BugzillaComment, BugzillaEvent,
-    SearchRequest, ExtensionsRequest, VersionRequest, FieldsRequest, ProductsRequest, UsersRequest)
+    SearchRequest, HistoryRequest,
+    ExtensionsRequest, VersionRequest, FieldsRequest, ProductsRequest, UsersRequest)
 from .. import ContinuedRequest, RESTRequest, req_cmd
 from .._json import Json
 from ...exceptions import RequestError
@@ -49,6 +50,15 @@ class _SearchRequest(SearchRequest, RESTRequest):
     def __init__(self, *args, **kw):
         """Construct a search request."""
         super().__init__(endpoint='/bug', *args, **kw)
+
+
+@req_cmd(BugzillaRest, 'history')
+class _HistoryRequest(HistoryRequest, RESTRequest):
+    def __init__(self, *args, **kw):
+        """Construct a search request."""
+        super().__init__(endpoint='/bug/{}/history', *args, **kw)
+        self.endpoint = self.endpoint.format(self.params['ids'][0])
+        self.params['ids'] = self.params['ids'][1:]
 
 
 @req_cmd(BugzillaRest, 'extensions')

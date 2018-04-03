@@ -4,7 +4,7 @@ from itertools import groupby
 import os
 
 from . import (
-    Bugzilla, BugzillaComment, BugzillaEvent, SearchRequest,
+    Bugzilla, BugzillaComment, BugzillaEvent, SearchRequest, HistoryRequest,
     ExtensionsRequest, VersionRequest, FieldsRequest, ProductsRequest, UsersRequest)
 from .. import Request, RPCRequest, NullRequest, req_cmd
 from ... import const, magic
@@ -425,27 +425,7 @@ class _AttachmentsRequest(RPCRequest):
 
 
 @req_cmd(BugzillaRpc, 'history')
-class _HistoryRequest(RPCRequest):
-    def __init__(self, ids, created=None, service=None, **kw):
-        if not ids:
-            raise ValueError('No bug ID(s) specified')
-
-        params = {}
-        options_log = []
-
-        if ids is not None:
-            ids = list(map(str, ids))
-            params['ids'] = ids
-            options_log.append(f"IDs: {', '.join(ids)}")
-        if created is not None:
-            params['new_since'] = created.format
-            options_log.append(f'Created: {created.token} (since {created} UTC)')
-
-        super().__init__(service=service, command='Bug.history', params=params)
-        self.options = options_log
-
-    def parse(self, data):
-        bugs = data['bugs']
-        for b in bugs:
-            yield [BugzillaEvent(change=x, id=b['id'], alias=b['alias'], count=i)
-                   for i, x in enumerate(b['history'], start=1)]
+class _HistoryRequest(HistoryRequest, RPCRequest):
+    def __init__(self, *args, **kw):
+        """Construct a history request."""
+        super().__init__(command='Bug.history', *args, **kw)
