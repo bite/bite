@@ -1,10 +1,8 @@
 from collections import deque
 
-import requests
-
 from . import (
     Bugzilla, BugzillaBug, BugzillaError, BugzillaAttachment, BugzillaComment, BugzillaEvent,
-    SearchRequest, HistoryRequest,
+    SearchRequest, HistoryRequest, CommentsRequest,
     ExtensionsRequest, VersionRequest, FieldsRequest, ProductsRequest, UsersRequest)
 from .. import ContinuedRequest, RESTRequest, req_cmd
 from .._json import Json
@@ -57,6 +55,15 @@ class _HistoryRequest(HistoryRequest, RESTRequest):
     def __init__(self, *args, **kw):
         """Construct a search request."""
         super().__init__(endpoint='/bug/{}/history', *args, **kw)
+        self.endpoint = self.endpoint.format(self.params['ids'][0])
+        self.params['ids'] = self.params['ids'][1:]
+
+
+@req_cmd(BugzillaRest, 'comments')
+class _CommentsRequest(CommentsRequest, RESTRequest):
+    def __init__(self, *args, **kw):
+        """Construct a comments request."""
+        super().__init__(endpoint='/bug/{}/comment', *args, **kw)
         self.endpoint = self.endpoint.format(self.params['ids'][0])
         self.params['ids'] = self.params['ids'][1:]
 

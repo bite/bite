@@ -527,6 +527,42 @@ class HistoryRequest(Request):
                    for i, x in enumerate(b['history'], start=1)]
 
 
+class CommentsRequest(Request):
+    def __init__(self, ids=None, comment_ids=None, created=None, fields=None, service=None, **kw):
+        """Construct a comments request."""
+        if ids is None and comment_ids is None:
+            raise ValueError(f'No {service.item.type} or comment ID(s) specified')
+
+        params = {}
+        options_log = []
+
+        if ids is not None:
+            ids = list(map(str, ids))
+            params['ids'] = ids
+            options_log.append(f"IDs: {', '.join(ids)}")
+        if comment_ids is not None:
+            comment_ids = list(map(str, comment_ids))
+            params['comment_ids'] = comment_ids
+            options_log.append(f"Comment IDs: {', '.join(comment_ids)}")
+        if created is not None:
+            params['new_since'] = created.format
+            options_log.append(f'Created: {created.token} (since {created} UTC)')
+        if fields is not None:
+            params['include_fields'] = fields
+
+        self.ids = ids
+
+        super().__init__(service=service, params=params, **kw)
+        self.params = params
+        self.options = options_log
+
+    def parse(self, data):
+        bugs = data['bugs']
+        for i in self.ids:
+            yield [BugzillaComment(comment=comment, id=i, count=j)
+                   for j, comment in enumerate(bugs[str(i)]['comments'])]
+
+
 class ExtensionsRequest(Request):
 
     def parse(self, data):

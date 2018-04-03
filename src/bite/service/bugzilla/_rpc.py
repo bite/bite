@@ -4,7 +4,7 @@ from itertools import groupby
 import os
 
 from . import (
-    Bugzilla, BugzillaComment, BugzillaEvent, SearchRequest, HistoryRequest,
+    Bugzilla, BugzillaComment, BugzillaEvent, SearchRequest, HistoryRequest, CommentsRequest,
     ExtensionsRequest, VersionRequest, FieldsRequest, ProductsRequest, UsersRequest)
 from .. import Request, RPCRequest, NullRequest, req_cmd
 from ... import const, magic
@@ -158,40 +158,18 @@ class _SearchRequest(SearchRequest, RPCRequest):
         super().__init__(command='Bug.search', *args, **kw)
 
 
+@req_cmd(BugzillaRpc, 'history')
+class _HistoryRequest(HistoryRequest, RPCRequest):
+    def __init__(self, *args, **kw):
+        """Construct a history request."""
+        super().__init__(command='Bug.history', *args, **kw)
+
+
 @req_cmd(BugzillaRpc, 'comments')
-class _CommentsRequest(RPCRequest):
-    def __init__(self, ids=None, comment_ids=None, created=None, fields=None, service=None, **kw):
+class _CommentsRequest(CommentsRequest, RPCRequest):
+    def __init__(self, *args, **kw):
         """Construct a comments request."""
-        if ids is None and comment_ids is None:
-            raise ValueError(f'No {service.item.type} or comment ID(s) specified')
-
-        params = {}
-        options_log = []
-
-        if ids is not None:
-            ids = list(map(str, ids))
-            params['ids'] = ids
-            options_log.append(f"IDs: {', '.join(ids)}")
-        if comment_ids is not None:
-            comment_ids = list(map(str, comment_ids))
-            params['comment_ids'] = comment_ids
-            options_log.append(f"Comment IDs: {', '.join(comment_ids)}")
-        if created is not None:
-            params['new_since'] = created.format
-            options_log.append(f'Created: {created.token} (since {created} UTC)')
-        if fields is not None:
-            params['include_fields'] = fields
-
-        self.ids = ids
-
-        super().__init__(service=service, command='Bug.comments', params=params)
-        self.options = options_log
-
-    def parse(self, data):
-        bugs = data['bugs']
-        for i in self.ids:
-            yield [BugzillaComment(comment=comment, id=i, count=j)
-                   for j, comment in enumerate(bugs[str(i)]['comments'])]
+        super().__init__(command='Bug.comments', *args, **kw)
 
 
 class ChangesRequest(RPCRequest):
@@ -422,10 +400,3 @@ class _AttachmentsRequest(RPCRequest):
             except KeyError:
                 raise BiteError(f'invalid attachment ID: {i}')
             yield files
-
-
-@req_cmd(BugzillaRpc, 'history')
-class _HistoryRequest(HistoryRequest, RPCRequest):
-    def __init__(self, *args, **kw):
-        """Construct a history request."""
-        super().__init__(command='Bug.history', *args, **kw)
