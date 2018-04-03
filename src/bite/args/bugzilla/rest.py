@@ -1,6 +1,6 @@
 import argparse
 
-from .. import bugzilla as bz
+from . import BugzillaOpts
 
 
 def person_search(s):
@@ -22,8 +22,6 @@ def person_search(s):
         return (search_type, name)
 
 
-class BugzillaRestOpts(bz.BugzillaOpts):
+class BugzillaRestOpts(BugzillaOpts):
 
     _service = 'bugzilla-rest'
-    _subcmds = ((None, x) for x in
-                (bz.Version, bz.Extensions, bz.Products, bz.Users, bz.Fields, bz.Search))
