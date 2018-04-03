@@ -15,6 +15,7 @@ class BiteError(Exception):
             return self.msg
         return ' -- '.join((self.msg, self.text))
 
+
 class RequestError(BiteError):
     """Generic http(s) request exceptions."""
 
@@ -32,9 +33,11 @@ class RequestError(BiteError):
             text = self.text
         return self.msg + ' -- (see server response below)\n\n' + text
 
+
 class ParsingError(BiteError):
     """Parser failed to process the returned data."""
     pass
+
 
 class AuthError(RequestError):
     """Exception related to failed authentication or lack of sufficient privileges."""
@@ -42,6 +45,7 @@ class AuthError(RequestError):
     def __init__(self, msg, code=None, expired=False):
         super().__init__(msg, code)
         self.expired = expired
+
 
 class BadAuthToken(RequestError):
     """Exception for old or bad authentication tokens."""

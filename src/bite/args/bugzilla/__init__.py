@@ -26,8 +26,15 @@ def parse_date(s):
         offset = re.match(r'^(\d+)([ymwdhs]|min)$', s)
 
         if offset:
-            units = {'y': 'years', 'm': 'months', 'w': 'weeks', 'd': 'days',
-                'h': 'hours', 'min': 'minutes', 's': 'seconds'}
+            units = {
+                'y': 'years',
+                'm': 'months',
+                'w': 'weeks',
+                'd': 'days',
+                'h': 'hours',
+                'min': 'minutes',
+                's': 'seconds',
+            }
             unit = units[offset.group(2)]
             value = -int(offset.group(1))
             kw = {unit: value}
@@ -68,22 +75,21 @@ class Attach(args.Attach):
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
         # positional args
-        self.parser.add_argument('filepath',
-            type=str,
+        self.parser.add_argument(
+            'filepath', type=str,
             help='path of the file to attach')
-        self.parser.add_argument('ids',
-            type=id_list,
+        self.parser.add_argument(
+            'ids', type=id_list, metavar='ID',
             action=partial(parse_stdin, ids),
-            metavar='ID',
             help='bug ID(s) where the file should be attached')
 
         # optional args
-        self.opts.add_argument('-c', '--content-type',
+        self.opts.add_argument(
+            '-c', '--content-type',
             help='mimetype of the file e.g. text/plain (default: auto-detect)')
-        self.opts.add_argument('-p', '--patch',
-            action='store_true',
-            help='attachment is a patch',
-            dest='is_patch')
+        self.opts.add_argument(
+            '-p', '--patch', action='store_true', dest='is_patch',
+            help='attachment is a patch')
 
 
 @args.subcmd(BugzillaOpts)
@@ -92,9 +98,8 @@ class Attachments(args.Attachments):
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
         # optional args
-        self.opts.add_argument('-l', '--list',
-            action='store_true',
-            dest='show_metadata',
+        self.opts.add_argument(
+            '-l', '--list', action='store_true', dest='show_metadata',
             help='list attachment metadata')
 
 
@@ -105,52 +110,66 @@ class Create(args.Create):
         super().__init__(*args, **kw)
         # optional args
         person = self.parser.add_argument_group('Person related')
-        person.add_argument('-a', '--assigned-to',
+        person.add_argument(
+            '-a', '--assigned-to',
             help='assign bug to someone other than the default assignee')
-        person.add_argument('--qa-contact',
+        person.add_argument(
+            '--qa-contact',
             help='set the QA Contact for this bug')
-        person.add_argument('--cc',
-            type=string_list,
+        person.add_argument(
+            '--cc', type=string_list,
             help='add a list of emails to CC list')
         attr = self.parser.add_argument_group('Attribute related')
-        attr.add_argument('-d', '--description',
+        attr.add_argument(
+            '-d', '--description',
             help='description of the bug')
-        attr.add_argument('-S', '--severity',
+        attr.add_argument(
+            '-S', '--severity',
             help='set the severity for the new bug')
-        attr.add_argument('-s', '--status',
+        attr.add_argument(
+            '-s', '--status',
             help='set the status for the new bug')
-        attr.add_argument('-t', '--title',
-            help='title of bug',
-            dest='summary')
-        attr.add_argument('-u', '--url',
+        attr.add_argument(
+            '-t', '--title', dest='summary',
+            help='title of bug')
+        attr.add_argument(
+            '-u', '--url',
             help='URL for this bug')
-        attr.add_argument('--product',
+        attr.add_argument(
+            '--product',
             help='product')
-        attr.add_argument('-C', '--component',
+        attr.add_argument(
+            '-C', '--component',
             help='component')
-        attr.add_argument('--version',
+        attr.add_argument(
+            '--version',
             help='version of the product')
-        attr.add_argument('--op-sys',
+        attr.add_argument(
+            '--op-sys',
             help='operating system for this bug')
-        attr.add_argument('--platform',
+        attr.add_argument(
+            '--platform',
             help='platform for this bug')
-        attr.add_argument('--priority',
+        attr.add_argument(
+            '--priority',
             help='set priority for the new bug')
-        attr.add_argument('--target-milestone',
+        attr.add_argument(
+            '--target-milestone',
             help='set a target milestone for this bug')
-        attr.add_argument('--alias',
+        attr.add_argument(
+            '--alias',
             help='set the alias for this bug')
-        attr.add_argument('--groups',
-            type=string_list,
+        attr.add_argument(
+            '--groups', type=string_list,
             help='list of groups this bug should be put into')
-        attr.add_argument('--blocks',
-            type=parse_bug_list,
+        attr.add_argument(
+            '--blocks', type=parse_bug_list,
             help='list of bugs this bug blocks')
-        attr.add_argument('--depends',
-            type=parse_bug_list,
+        attr.add_argument(
+            '--depends', type=parse_bug_list,
             help='list of bugs this bug depends on')
-        attr.add_argument('-K', '--keywords',
-            type=string_list,
+        attr.add_argument(
+            '-K', '--keywords', type=string_list,
             help='set the keywords of this bug')
 
 
@@ -160,12 +179,11 @@ class Get(args.Get):
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
         # optional args
-        self.opts.add_argument('-H', '--no-history',
-            action='store_false',
-            help='do not bug history',
-            dest='get_history')
-        self.opts.add_argument('--show-obsolete',
-            action='store_true',
+        self.opts.add_argument(
+            '-H', '--no-history', dest='get_history', action='store_false',
+            help='do not bug history')
+        self.opts.add_argument(
+            '--show-obsolete', action='store_true',
             help='show obsolete attachments')
 
 
@@ -176,130 +194,131 @@ class Modify(args.Modify):
         super().__init__(*args, **kw)
         # optional args
         attr = self.parser.add_argument_group('Attribute related')
-        attr.add_argument('-c', '--comment',
-            help='add comment from command line',
-            metavar='COMMENT',
-            dest='comment-body')
-        attr.add_argument('-R', '--resolution',
+        attr.add_argument(
+            '-c', '--comment', metavar='COMMENT', dest='comment-body',
+            help='add comment from command line')
+        attr.add_argument(
+            '-R', '--resolution',
             help='set new resolution (only if status = RESOLVED)')
-        attr.add_argument('-S', '--severity',
+        attr.add_argument(
+            '-S', '--severity',
             help='set severity for this bug')
-        attr.add_argument('-s', '--status',
+        attr.add_argument(
+            '-s', '--status',
             help='set new status of bug (e.g. RESOLVED)')
-        attr.add_argument('-t', '--title',
-            help='set title of bug',
-            dest='summary')
-        attr.add_argument('-u', '--url',
+        attr.add_argument(
+            '-t', '--title', dest='summary',
+            help='set title of bug')
+        attr.add_argument(
+            '-u', '--url',
             help='set URL field of bug')
-        attr.add_argument('-v', '--version',
+        attr.add_argument(
+            '-v', '--version',
             help='set the version for this bug'),
-        attr.add_argument('-w', '--whiteboard',
+        attr.add_argument(
+            '-w', '--whiteboard',
             help='set status whiteboard'),
-        attr.add_argument('--alias',
+        attr.add_argument(
+            '--alias',
             help='change the alias for this bug')
-        attr.add_argument('--add-blocks',
-            type=id_list,
-            help='add a bug to the blocked list',
-            metavar='BUG_ID',
-            dest='blocks-add')
-        attr.add_argument('--remove-blocks',
-            type=id_list,
-            help='remove a bug from the blocked list',
-            metavar='BUG_ID',
-            dest='blocks-remove')
-        attr.add_argument('--component',
+        attr.add_argument(
+            '--add-blocks', type=id_list,
+            metavar='BUG_ID', dest='blocks-add',
+            help='add a bug to the blocked list')
+        attr.add_argument(
+            '--remove-blocks', type=id_list,
+            metavar='BUG_ID', dest='blocks-remove',
+            help='remove a bug from the blocked list')
+        attr.add_argument(
+            '--component',
             help='change the component for this bug')
-        attr.add_argument('--add-depends',
-            type=id_list,
-            help='add a bug to the depends list',
-            metavar='BUG_ID',
-            dest='depends_on-add')
-        attr.add_argument('--remove-depends',
-            type=id_list,
-            help='remove a bug from the depends list',
-            metavar='BUG_ID',
-            dest='depends_on-remove')
-        attr.add_argument('--add-groups',
-            type=string_list,
-            help='add a group to this bug',
-            metavar='GROUP',
-            dest='groups-add')
-        attr.add_argument('--remove-groups',
-            type=string_list,
-            help='remove a group from this bug',
-            metavar='GROUP',
-            dest='groups-remove')
-        attr.add_argument('-K', '--keywords',
-            type=string_list,
-            help='set the keywords of this bug',
-            metavar='KEYWORDS',
-            dest='keywords-set')
-        attr.add_argument('--add-keywords',
-            type=string_list,
-            help='add a keyword to the bug',
-            metavar='KEYWORD',
-            dest='keywords-add')
-        attr.add_argument('--remove-keywords',
-            type=string_list,
-            help='remove a keyword from this bug',
-            metavar='KEYWORD',
-            dest='keywords-remove')
-        attr.add_argument('--target-milestone',
+        attr.add_argument(
+            '--add-depends', type=id_list,
+            metavar='BUG_ID', dest='depends_on-add',
+            help='add a bug to the depends list')
+        attr.add_argument(
+            '--remove-depends', type=id_list,
+            metavar='BUG_ID', dest='depends_on-remove',
+            help='remove a bug from the depends list')
+        attr.add_argument(
+            '--add-groups', type=string_list,
+            metavar='GROUP', dest='groups-add',
+            help='add a group to this bug')
+        attr.add_argument(
+            '--remove-groups', type=string_list,
+            metavar='GROUP', dest='groups-remove',
+            help='remove a group from this bug')
+        attr.add_argument(
+            '-K', '--keywords', type=string_list,
+            metavar='KEYWORDS', dest='keywords-set',
+            help='set the keywords of this bug')
+        attr.add_argument(
+            '--add-keywords', type=string_list,
+            metavar='KEYWORD', dest='keywords-add',
+            help='add a keyword to the bug')
+        attr.add_argument(
+            '--remove-keywords', type=string_list,
+            metavar='KEYWORD', dest='keywords-remove',
+            help='remove a keyword from this bug')
+        attr.add_argument(
+            '--target-milestone',
             help='set a target milestone for this bug')
-        attr.add_argument('--op-sys',
+        attr.add_argument(
+            '--op-sys',
             help='change the operating system for this bug')
-        attr.add_argument('--platform',
+        attr.add_argument(
+            '--platform',
             help='change the platform for this bug')
-        attr.add_argument('--priority',
+        attr.add_argument(
+            '--priority',
             help='change the priority for this bug')
-        attr.add_argument('--product',
+        attr.add_argument(
+            '--product',
             help='change the product for this bug')
-        attr.add_argument('--add-see-also',
-            type=string_list,
-            help='add a "see also" URL to this bug',
-            metavar='URL',
-            dest='see_also-add')
-        attr.add_argument('--remove-see-also',
-            type=string_list,
-            help='remove a "see also" URL from this bug',
-            metavar='URL',
-            dest='see_also-remove')
+        attr.add_argument(
+            '--add-see-also', type=string_list,
+            metavar='URL', dest='see_also-add',
+            help='add a "see also" URL to this bug')
+        attr.add_argument(
+            '--remove-see-also', type=string_list,
+            metavar='URL', dest='see_also-remove',
+            help='remove a "see also" URL from this bug')
         person = self.parser.add_argument_group('Person related')
-        person.add_argument('-a', '--assigned-to',
+        person.add_argument(
+            '-a', '--assigned-to',
             help='change assignee for this bug')
-        person.add_argument('--add-cc',
-            type=string_list,
-            help='add emails to the CC list',
-            dest='cc-add')
-        person.add_argument('--remove-cc',
-            type=string_list,
-            help='remove emails from the CC list',
-            dest='cc-remove')
-        person.add_argument('--qa-contact',
+        person.add_argument(
+            '--add-cc', type=string_list, dest='cc-add',
+            help='add emails to the CC list')
+        person.add_argument(
+            '--remove-cc', type=string_list, dest='cc-remove',
+            help='remove emails from the CC list')
+        person.add_argument(
+            '--qa-contact',
             help='change the QA contact for this bug')
         status = self.parser.add_argument_group('Status related')
-        status.add_argument('-d', '--duplicate',
-            type=int,
-            help='mark bug as a duplicate',
-            metavar='BUG_ID',
-            dest='dupe_of')
-        status.add_argument('--fixed',
-            action='store_true',
+        status.add_argument(
+            '-d', '--duplicate', type=int,
+            metavar='BUG_ID', dest='dupe_of',
+            help='mark bug as a duplicate')
+        status.add_argument(
+            '--fixed', action='store_true',
             help='mark bug as RESOLVED, FIXED')
-        status.add_argument('--invalid',
-            action='store_true',
+        status.add_argument(
+            '--invalid', action='store_true',
             help='mark bug as RESOLVED, INVALID')
         time = self.parser.add_argument_group('Time related')
-        time.add_argument('--deadline',
+        time.add_argument(
+            '--deadline',
             help='change the deadline for this bug')
-        time.add_argument('--estimated-time',
-            metavar='TIME',
+        time.add_argument(
+            '--estimated-time', metavar='TIME',
             help='change the estimated time for this bug')
-        time.add_argument('--remaining-time',
-            metavar='TIME',
+        time.add_argument(
+            '--remaining-time', metavar='TIME',
             help='change the remaining time for this bug')
-        time.add_argument('--work-time',
-            metavar='TIME',
+        time.add_argument(
+            '--work-time', metavar='TIME',
             help='set number of hours worked on this bug as part of this change'),
 
 
@@ -309,122 +328,118 @@ class Search(args.Search):
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
         # optional args
-        self.opts.add_argument('--output',
+        self.opts.add_argument(
+            '--output',
             help='custom format for search output')
         person = self.parser.add_argument_group('Person related')
-        person.add_argument('-a', '--assigned-to',
-            type=string_list,
-            action=parse_stdin,
+        person.add_argument(
+            '-a', '--assigned-to', type=string_list, action=parse_stdin,
             help='email of the person the bug is assigned to')
-        person.add_argument('-r', '--creator',
-            type=string_list,
-            action=parse_stdin,
+        person.add_argument(
+            '-r', '--creator', type=string_list, action=parse_stdin,
             help='email of the person who created the bug')
         # XXX: undocumented in the Bugzilla Webservice API
         # only works with >= bugzilla-5
-        person.add_argument('--cc',
-            type=string_list,
-            action=parse_stdin,
+        person.add_argument(
+            '--cc', type=string_list, action=parse_stdin,
             help='email in the CC list for the bug')
         # XXX: undocumented in the Bugzilla Webservice API, uses advanced search URL params
         # only works with >= bugzilla-5
-        person.add_argument('--commenter',
-            type=string_list,
-            action=parse_stdin,
+        person.add_argument(
+            '--commenter', type=string_list, action=parse_stdin,
             help='commenter in the bug')
-        person.add_argument('--qa-contact',
+        person.add_argument(
+            '--qa-contact',
             help='email of the QA contact for the bug')
         time = self.parser.add_argument_group('Time related')
-        time.add_argument('-c', '--created',
-            dest='creation_time',
-            metavar='TIME',
-            type=parse_date,
+        time.add_argument(
+            '-c', '--created', type=parse_date,
+            dest='creation_time', metavar='TIME',
             action=partial(parse_stdin, parse_date),
             help='bugs created at this time or later')
-        time.add_argument('-m', '--modified',
-            dest='last_change_time',
-            metavar='TIME',
-            type=parse_date,
+        time.add_argument(
+            '-m', '--modified', type=parse_date,
+            dest='last_change_time', metavar='TIME',
             action=partial(parse_stdin, parse_date),
             help='bugs modified at this time or later')
         attr = self.parser.add_argument_group('Attribute related')
-        attr.add_argument('-s', '--status',
-            type=string_list,
+        attr.add_argument(
+            '-s', '--status', type=string_list,
             action=parse_stdin,
             help='restrict by status (one or more)')
-        attr.add_argument('-v', '--version',
-            type=string_list,
+        attr.add_argument(
+            '-v', '--version', type=string_list,
             action=parse_stdin,
             help='restrict by version (one or more)')
-        attr.add_argument('-w', '--whiteboard',
-            type=string_list,
+        attr.add_argument(
+            '-w', '--whiteboard', type=string_list,
             action=parse_stdin,
             help='status whiteboard')
-        attr.add_argument('-C', '--component',
-            type=string_list,
+        attr.add_argument(
+            '-C', '--component', type=string_list,
             action=parse_stdin,
             help='restrict by component (one or more)')
         # XXX: undocumented in the Bugzilla Webservice API
         # only works with >= bugzilla-5
-        attr.add_argument('-K', '--keywords',
-            type=string_list,
+        attr.add_argument(
+            '-K', '--keywords', type=string_list,
             action=parse_stdin,
             help='restrict by keywords (one or more)')
         # XXX: undocumented in the Bugzilla Webservice API
         # only works with >= bugzilla-5
-        attr.add_argument('--blocks',
-            type=id_list,
+        attr.add_argument(
+            '--blocks', type=id_list,
             action=partial(parse_stdin, ids),
             help='restrict by bug blocks')
         # XXX: undocumented in the Bugzilla Webservice API
         # only works with >= bugzilla-5
-        attr.add_argument('--depends',
-            type=id_list,
+        attr.add_argument(
+            '--depends', type=id_list, dest='depends_on',
             action=partial(parse_stdin, ids),
-            dest='depends_on',
             help='restrict by bug depends')
         # XXX: used to be documented in the Bugzilla 3.6 Webservice API, but is now undocumented
         # assumes Bugzilla instance uses votes, otherwise returns odd results
-        attr.add_argument('--votes',
+        attr.add_argument(
+            '--votes',
             help='restrict bugs by the specified number of votes or greater')
-        attr.add_argument('--alias',
-            type=string_list,
+        attr.add_argument(
+            '--alias', type=string_list,
             action=parse_stdin,
             help='unique alias for this bug')
-        attr.add_argument('--id',
-            type=id_list,
+        attr.add_argument(
+            '--id', type=id_list,
             action=partial(parse_stdin, ids),
             help='restrict by bug ID(s)')
-        attr.add_argument('--op-sys',
-            type=string_list,
+        attr.add_argument(
+            '--op-sys', type=string_list,
             action=parse_stdin,
             help='restrict by operating system (one or more)')
-        attr.add_argument('--platform',
-            type=string_list,
+        attr.add_argument(
+            '--platform', type=string_list,
             action=parse_stdin,
             help='restrict by platform (one or more)')
-        attr.add_argument('--priority',
-            type=string_list,
+        attr.add_argument(
+            '--priority', type=string_list,
             action=parse_stdin,
             help='restrict by priority (one or more)')
-        attr.add_argument('--product',
-            type=string_list,
+        attr.add_argument(
+            '--product', type=string_list,
             action=parse_stdin,
             help='restrict by product (one or more)')
-        attr.add_argument('--resolution',
-            type=string_list,
+        attr.add_argument(
+            '--resolution', type=string_list,
             action=parse_stdin,
             help='restrict by resolution')
-        attr.add_argument('--severity',
-            type=string_list,
+        attr.add_argument(
+            '--severity', type=string_list,
             action=parse_stdin,
             help='restrict by severity (one or more)')
-        attr.add_argument('--target-milestone',
-            type=string_list,
+        attr.add_argument(
+            '--target-milestone', type=string_list,
             action=parse_stdin,
             help='restrict by target milestone (one or more)')
-        attr.add_argument('--url',
-            type=string_list,
+        attr.add_argument(
+            '--url', type=string_list,
             action=parse_stdin,
             help='restrict by url (one or more)')
 
@@ -442,25 +457,25 @@ class Changes(args.ReceiveSubcmd):
             help='ID(s) or alias(es) of the bug(s) to retrieve all changes')
 
         # optional args
-        self.opts.add_argument('-c', '--created',
-            dest='creation_time',
-            metavar='TIME',
-            type=parse_date,
+        self.opts.add_argument(
+            '-c', '--created', dest='creation_time',
+            metavar='TIME', type=parse_date,
             action=partial(parse_stdin, parse_date),
             help='changes made at this time or later')
-        self.opts.add_argument('-m', '--match',
-            type=string_list,
+        self.opts.add_argument(
+            '-m', '--match', type=string_list,
             help='restrict by matching changed fields')
-        self.opts.add_argument('-n', '--number',
-            dest='change_num',
-            type=id_list,
+        self.opts.add_argument(
+            '-n', '--number',
+            dest='change_num', type=id_list,
             action=partial(parse_stdin, ids),
             help='restrict by change number(s)')
-        self.opts.add_argument('--output',
+        self.opts.add_argument(
+            '--output',
             help='custom format for output')
-        self.opts.add_argument('-r', '--creator',
-            type=string_list,
-            action=parse_stdin,
+        self.opts.add_argument(
+            '-r', '--creator',
+            type=string_list, action=parse_stdin,
             help='restrict by person who made the change')
 
 
@@ -477,24 +492,22 @@ class Comments(args.ReceiveSubcmd):
             help='ID(s) or alias(es) of the bug(s) to retrieve all comments')
 
         # optional args
-        self.opts.add_argument('-n', '--number',
-            dest='comment_num',
-            type=id_list,
+        self.opts.add_argument(
+            '-n', '--number', dest='comment_num', type=id_list,
             action=partial(parse_stdin, ids),
             help='restrict by comment number(s)')
-        self.opts.add_argument('--output',
+        self.opts.add_argument(
+            '--output',
             help='custom format for output')
-        self.opts.add_argument('-c', '--created',
-            dest='creation_time',
-            metavar='TIME',
-            type=parse_date,
+        self.opts.add_argument(
+            '-c', '--created', dest='creation_time',
+            metavar='TIME', type=parse_date,
             help='comments made at this time or later')
-        self.opts.add_argument('-r', '--creator',
-            type=string_list,
-            action=parse_stdin,
+        self.opts.add_argument(
+            '-r', '--creator', type=string_list, action=parse_stdin,
             help='restrict by the email of the person who made the comment')
-        self.opts.add_argument('-a', '--attachment',
-            action='store_true',
+        self.opts.add_argument(
+            '-a', '--attachment', action='store_true',
             help='restrict by comments that include attachments')
 
 

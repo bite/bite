@@ -82,11 +82,11 @@ class Search(ReceiveSubcmd):
             help=f"strings to search for in {kw['service'].item.type} summary/title")
 
         # optional args
-        self.opts.add_argument('--limit',
-            type=int,
+        self.opts.add_argument(
+            '--limit', type=int,
             help='Limit the number of records returned in a search')
-        self.opts.add_argument('--offset',
-            type=int,
+        self.opts.add_argument(
+            '--offset', type=int,
             help='Set the start position for a search')
 
 
@@ -104,15 +104,15 @@ class Get(ReceiveSubcmd):
             help=f"ID(s) or alias(es) of the {kw['service'].item.type}(s) to retrieve")
 
         # optional args
-        self.opts.add_argument('-B', '--browser',
-            action='store_true',
+        self.opts.add_argument(
+            '-B', '--browser', action='store_true',
             help="open item page in a browser")
-        self.opts.add_argument('-A', '--no-attachments',
-            action='store_false',
+        self.opts.add_argument(
+            '-A', '--no-attachments', action='store_false',
             help='do not show attachments',
             dest='get_attachments')
-        self.opts.add_argument('-C', '--no-comments',
-            action='store_false',
+        self.opts.add_argument(
+            '-C', '--no-comments', action='store_false',
             help='do not show comments',
             dest='get_comments')
 
@@ -132,21 +132,20 @@ class Attachments(Subcmd):
 
         # optional args
         single_action = self.opts.add_mutually_exclusive_group()
-        single_action.add_argument('-U', '--url',
-            dest='output_url',
-            action='store_true',
+        single_action.add_argument(
+            '-U', '--url', dest='output_url', action='store_true',
             help='output the URL of the attachment')
-        single_action.add_argument('-V', '--view',
-            action='store_true',
-            dest='view_attachment',
+        single_action.add_argument(
+            '-V', '--view', action='store_true', dest='view_attachment',
             help='output attachment data')
-        single_action.add_argument('-B', '--browser',
-            action='store_true',
+        single_action.add_argument(
+            '-B', '--browser', action='store_true',
             help="open item page in a browser")
-        self.opts.add_argument('-I', '--item-id',
-            action='store_true',
+        self.opts.add_argument(
+            '-I', '--item-id', action='store_true',
             help='search by item ID(s) rather than attachment ID(s)')
-        self.opts.add_argument('--save-to',
+        self.opts.add_argument(
+            '--save-to',
             help='save attachments into a specified dir')
 
 
@@ -157,12 +156,13 @@ class Attach(SendSubcmd):
             desc = f"attach file to {kw['service'].item.type}(s)"
         super().__init__(*args, desc=desc, **kw)
 
-        self.opts.add_argument('-d', '--description',
+        self.opts.add_argument(
+            '-d', '--description',
             help='a long description of the attachment',
             dest='comment')
-        self.opts.add_argument('-t', '--title',
-            help='a short description of the attachment (default: filename)',
-            dest='summary')
+        self.opts.add_argument(
+            '-t', '--title', dest='summary',
+            help='a short description of the attachment (default: filename)')
 
 
 class Modify(SendSubcmd):
@@ -179,10 +179,11 @@ class Modify(SendSubcmd):
             help=f"ID(s) of the {kw['service'].item.type}(s) to modify")
 
         # optional args
-        self.opts.add_argument('-C', '--comment-editor',
-            action='store_true',
+        self.opts.add_argument(
+            '-C', '--comment-editor', action='store_true',
             help='add comment via default editor')
-        self.opts.add_argument('-F', '--comment-from',
+        self.opts.add_argument(
+            '-F', '--comment-from',
             help='add comment from file. If -C is also specified, '
                  'the editor will be opened with this file as its contents')
 
@@ -194,10 +195,12 @@ class Create(SendSubcmd):
             desc = f"create a new {kw['service'].item.type}"
         super().__init__(*args, desc=desc, **kw)
 
-        self.opts.add_argument('-F' , '--description-from',
+        self.opts.add_argument(
+            '-F', '--description-from',
             help='description from contents of file')
-        self.opts.add_argument('--append-command',
+        self.opts.add_argument(
+            '--append-command',
             help='append the output of a command to the description')
-        self.opts.add_argument('--batch',
-            action='store_true',
+        self.opts.add_argument(
+            '--batch', action='store_true',
             help='do not prompt for any values')

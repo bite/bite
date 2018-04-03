@@ -8,6 +8,7 @@ def shell_split(string):
     lex.whitespace_split = True
     return list(lex)
 
+
 #def inner_alias(args, section, inner_alias):
 #    # TODO: check for arguments
 #    try:
@@ -17,11 +18,13 @@ def shell_split(string):
 #    if alias_list[i][0] == '$':
 #        alias_list[i] = alias_list[i][1:]
 
+
 def get_alias(args, section, alias):
     value = args.config[section]['alias'][alias]
     if value[0] == '$':
         value = value[1:]
     return value
+
 
 def substitute_alias(args, unparsed_args):
     alias_name = unparsed_args[0]
@@ -54,6 +57,7 @@ def substitute_alias(args, unparsed_args):
     params = shell_split(alias_cmd)
     params.extend(extra_cmds)
     return params
+
 
 def run_shell_cmd(cmd):
     #print(cmd)

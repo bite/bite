@@ -27,6 +27,7 @@ def string_list(s):
     else:
         return s
 
+
 def id_list(s):
     if sys.stdin.isatty() or s != '-':
         try:
@@ -42,6 +43,7 @@ def id_list(s):
     else:
         return s
 
+
 def ids(s):
     if sys.stdin.isatty() or s != '-':
         try:
@@ -54,15 +56,18 @@ def ids(s):
     else:
         return s
 
+
 def existing_file(s):
     if not os.path.exists(s):
         raise ArgumentTypeError(f'nonexistent file: {repr(s)}')
     return s
 
+
 class parse_file(Action):
     def __call__(self, parser, namespace, values, option_string=None):
         lines = (shlex.split(line.strip()) for line in values)
         setattr(namespace, self.dest, lines)
+
 
 class parse_stdin(Action):
 
@@ -112,6 +117,7 @@ class parse_stdin(Action):
 
         setattr(namespace, self.dest, values)
 
+
 class override_attr(Action):
     """Override or set the value of a module's attribute."""
 
@@ -127,6 +133,7 @@ class override_attr(Action):
             setattr(import_module(self.module), self.attr, values)
         except ImportError:
             raise ArgumentTypeError(f"couldn't import module: {repr(self.module)}")
+
 
 class parse_append(Action):
     def __call__(self, parser, namespace, values, option_string=None):
@@ -501,7 +508,7 @@ class ArgumentParser(arghparse.ArgumentParser):
             sys.stdin = open('/dev/tty')
 
         args = vars(args)
-        fcn_args = {k:v for k,v in vars(fcn_args).items() if k not in args and v}
+        fcn_args = {k: v for k, v in vars(fcn_args).items() if k not in args and v}
         extra_fcn_args = {'dry_run'}
         for x in extra_fcn_args.intersection(args):
             fcn_args[x] = args[x]

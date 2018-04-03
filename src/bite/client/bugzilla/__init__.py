@@ -392,7 +392,7 @@ class Bugzilla(Cli):
             if fields == ['id', 'assigned_to', 'summary']:
                 output = '{} {:<20} {}'
             else:
-                output = ' '.join(['{}' for x in fields])
+                output = ' '.join('{}' for x in fields)
 
         for bug in bugs:
             if output == '-':
@@ -482,9 +482,10 @@ class Bugzilla(Cli):
         if creation_time is not None:
             changes = (x for x in changes if x.date >= creation_time)
         if match is not None:
-            changes = (event for event in changes
-                        for change in event.changes
-                        if self._match_change(change=change, fields=match))
+            changes = (
+                event for event in changes
+                for change in event.changes
+                if self._match_change(change=change, fields=match))
         if change_num is not None:
             if len(change_num) == 1 and change_num[0] < 0:
                 changes = list(changes)[change_num[0]:]

@@ -30,12 +30,13 @@ def decompress(fcn):
             if mime_subtype in ('x-bzip2', 'x-bzip', 'bzip'):
                 data = bz2.decompress(data)
             elif mime_subtype in ('x-gzip', 'gzip'):
-                data = zlib.decompress(data, 16+zlib.MAX_WBITS)
+                data = zlib.decompress(data, 16 + zlib.MAX_WBITS)
             elif mime_subtype in ('x-xz'):
                 data = lzma.decompress(data)
             mime_type, mime_subtype = magic.from_buffer(data, mime=True).split('/')
         return data
     return wrapper
+
 
 def flatten(list_of_lists):
     "Flatten one level of nesting"
@@ -112,6 +113,7 @@ class Change(PrintableObject):
     def __str__(self):
         return f'Change by {self.creator}, {self.date}'
 
+
 class Comment(Change):
     def __init__(self, creator, date, id=None, count=None, changes=None, text=None):
         self.text = text
@@ -126,6 +128,7 @@ class Comment(Change):
         if self.text:
             lines.append(self.text)
         return '\n'.join(lines)
+
 
 class Attachment(PrintableObject):
 

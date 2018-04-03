@@ -60,7 +60,7 @@ class Cli(object):
         self.color = color
         self.passwordcmd = passwordcmd
         self.skip_auth = skip_auth
-        self.wrapper = textwrap.TextWrapper(width=const.COLUMNS-3)
+        self.wrapper = textwrap.TextWrapper(width=const.COLUMNS - 3)
 
         # Login if requested and not skipping; otherwise, credentials will be
         # requested when needed.
@@ -330,9 +330,9 @@ class Cli(object):
             msg = '\n'.join(msg)
 
         if sys.stdout.isatty():
-            output=sys.stdout
+            output = sys.stdout
         else:
-            output=sys.stderr
+            output = sys.stderr
 
         msg = prefix + msg
         if truncate:

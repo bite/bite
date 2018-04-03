@@ -39,6 +39,7 @@ def _GET_CONST(attr, default_value):
         result = tuple(result)
     return result
 
+
 BROWSER = os.environ.get('BROWSER', 'xdg-open')
 COLUMNS = get_terminal_size()[0]
 DATA_PATH = _GET_CONST('DATA_PATH', _reporoot)
@@ -53,10 +54,12 @@ for xdg_var, var_name, fallback_dir in (
     setattr(_module, var_name,
             os.environ.get(xdg_var, os.path.join(os.path.expanduser(fallback_dir), __title__)))
 
+
 def _service_cls(x):
     if inspect.isclass(x) and getattr(x, '_service', None) is not None:
         return True
     return False
+
 
 def _clients():
     from . import client as mod
@@ -67,6 +70,7 @@ def _clients():
             clients.append((cls._service, '.'.join([module.__name__, cls.__name__])))
     return clients
 
+
 def _services():
     from . import service as mod
     services = []
@@ -75,6 +79,7 @@ def _services():
         for name, cls in inspect.getmembers(module, _service_cls):
             services.append((cls._service, '.'.join([module.__name__, cls.__name__])))
     return services
+
 
 def _service_opts():
     from . import args as mod
@@ -85,12 +90,14 @@ def _service_opts():
             opts.append((cls._service, '.'.join([module.__name__, cls.__name__])))
     return opts
 
+
 def _GET_VALS(attr, func):
     try:
         result = getattr(_defaults, attr)
     except AttributeError:
         result = func()
     return result
+
 
 CLIENTS = mappings.ImmutableDict(_GET_VALS('CLIENTS', _clients))
 SERVICES = mappings.ImmutableDict(_GET_VALS('SERVICES', _services))
