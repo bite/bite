@@ -497,7 +497,7 @@ class _AttachmentsRequest(RPCRequest):
 
 @req_cmd(BugzillaRpc, 'history')
 class _HistoryRequest(RPCRequest):
-    def __init__(self, ids, created=None, fields=None, service=None, **kw):
+    def __init__(self, ids, created=None, service=None, **kw):
         if not ids:
             raise ValueError('No bug ID(s) specified')
 
@@ -511,8 +511,6 @@ class _HistoryRequest(RPCRequest):
         if created is not None:
             params['new_since'] = created.format
             options_log.append(f'Created: {created.token} (since {created} UTC)')
-        if fields is not None:
-            params['include_fields'] = fields
 
         super().__init__(service=service, command='Bug.history', params=params)
         self.options = options_log
