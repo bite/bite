@@ -161,12 +161,10 @@ class _SearchRequest(RPCRequest):
             if k in BugzillaBug.attributes:
                 if k in ['creation_time', 'last_change_time']:
                     params[k] = v.format
-                    options_log.append('{}: {} (since {} UTC)'.format(
-                        BugzillaBug.attributes[k], v.token, v))
+                    options_log.append(f'{BugzillaBug.attributes[k]}: {v.token} (since {v} UTC)')
                 elif k in ['assigned_to', 'creator']:
                     params[k] = list(map(service._resuffix, v))
-                    options_log.append('{}: {}'.format(
-                        BugzillaBug.attributes[k], ', '.join(map(str, v))))
+                    options_log.append(f"{BugzillaBug.attributes[k]}: {', '.join(map(str, v))}")
                 elif k == 'status':
                     status_alias = []
                     status_map = {
@@ -181,19 +179,16 @@ class _SearchRequest(RPCRequest):
                         else:
                             params.setdefault(k, []).append(status)
                     if status_alias:
-                        options_log.append('{}: {} ({})'.format(
-                            BugzillaBug.attributes[k], ', '.join(status_alias), ', '.join(params[k])))
+                        options_log.append(f"{BugzillaBug.attributes[k]}: {', '.join(status_alias)} ({', '.join(params[k])})")
                     else:
-                        options_log.append('{}: {}'.format(
-                            BugzillaBug.attributes[k], ', '.join(params[k])))
+                        options_log.append(f"{BugzillaBug.attributes[k]}: {', '.join(params[k])}")
                 else:
                     params[k] = v
-                    options_log.append('{}: {}'.format(
-                        BugzillaBug.attributes[k], ', '.join(map(str, v))))
+                    options_log.append(f"{BugzillaBug.attributes[k]}: {', '.join(map(str, v))}")
             else:
                 if k == 'terms':
                     params['summary'] = v
-                    options_log.append('{}: {}'.format('Summary', ', '.join(map(str, v))))
+                    options_log.append(f"Summary: {', '.join(map(str, v))}")
                 elif k == 'commenter':
                     # XXX: probably fragile since it uses custom search URL params
                     # only works with >=bugzilla-5, previous versions return invalid parameter errors
@@ -202,7 +197,7 @@ class _SearchRequest(RPCRequest):
                         params['f' + i] = 'commenter'
                         params['o' + i] = 'substring'
                         params['v' + i] = val
-                    options_log.append('{}: {}'.format('Commenter', ', '.join(map(str, v))))
+                    options_log.append(f"Commenter: {', '.join(map(str, v))}")
                 elif k in ['limit', 'offset', 'votes']:
                     params[k] = v
 
@@ -219,8 +214,8 @@ class _SearchRequest(RPCRequest):
             fields = kw['fields']
             unknown_fields = set(fields).difference(BugzillaBug.attributes.keys())
             if unknown_fields:
-                raise BiteError('unknown fields: {}'.format(', '.join(unknown_fields)))
-            options_log.append('{}: {}'.format('Fields', ' '.join(fields)))
+                raise BiteError(f"unknown fields: {', '.join(unknown_fields)}")
+            options_log.append(f"Fields: {' '.join(fields)}")
 
         params['include_fields'] = fields
 
@@ -239,7 +234,7 @@ class _CommentsRequest(RPCRequest):
     def __init__(self, ids=None, comment_ids=None, created=None, fields=None, service=None, **kw):
         """Construct a comments request."""
         if ids is None and comment_ids is None:
-            raise ValueError('No {} or comment ID(s) specified'.format(self.service.item_name))
+            raise ValueError(f'No {service.item.type} or comment ID(s) specified')
 
         params = {}
         options_log = []
@@ -247,15 +242,14 @@ class _CommentsRequest(RPCRequest):
         if ids is not None:
             ids = list(map(str, ids))
             params['ids'] = ids
-            options_log.append('IDs: {}'.format(', '.join(ids)))
+            options_log.append(f"IDs: {', '.join(ids)}")
         if comment_ids is not None:
             comment_ids = list(map(str, comment_ids))
             params['comment_ids'] = comment_ids
-            options_log.append('Comment IDs: {}'.format(', '.join(comment_ids)))
+            options_log.append(f"Comment IDs: {', '.join(comment_ids)}")
         if created is not None:
             params['new_since'] = created.format
-            options_log.append('Created: {} (since {} UTC)'.format(
-                created.token, created))
+            options_log.append(f'Created: {created.token} (since {created} UTC)')
         if fields is not None:
             params['include_fields'] = fields
 
@@ -417,7 +411,7 @@ class _AttachRequest(RPCRequest):
                 raise ValueError('Either data or a filepath must be passed as an argument')
             else:
                 if not os.path.exists(filepath):
-                    raise ValueError('File not found: {}'.format(filepath))
+                    raise ValueError(f'File not found: {filepath}')
                 else:
                     with open(filepath, 'rb') as f:
                         params['data'] = base64.b64encode(f.read())
@@ -459,7 +453,7 @@ class _AttachmentsRequest(RPCRequest):
                  get_data=False, *args, **kw):
         """Construct an attachments request."""
         if ids is None and attachment_ids is None:
-            raise ValueError('No {} or attachment ID(s) specified'.format(service.item_name))
+            raise ValueError(f'No {service.item.type} or attachment ID(s) specified')
 
         params = {}
         options_log = []
@@ -467,11 +461,11 @@ class _AttachmentsRequest(RPCRequest):
         if ids is not None:
             ids = list(map(str, ids))
             params['ids'] = ids
-            options_log.append('IDs: {}'.format(', '.join(ids)))
+            options_log.append(f"IDs: {', '.join(ids)}")
         if attachment_ids is not None:
             attachment_ids = list(map(str, attachment_ids))
             params['attachment_ids'] = attachment_ids
-            options_log.append('Attachment IDs: {}'.format(', '.join(attachment_ids)))
+            options_log.append(f"Attachment IDs: {', '.join(attachment_ids)}")
         if fields is not None:
             params['include_fields'] = fields
         # attachment data doesn't get pulled by default
@@ -497,7 +491,7 @@ class _AttachmentsRequest(RPCRequest):
                 for i in self.attachment_ids:
                     files.append(self.service.attachment(**attachments[str(i)]))
             except KeyError:
-                raise BiteError('invalid attachment ID: {}'.format(i))
+                raise BiteError(f'invalid attachment ID: {i}')
             yield files
 
 
@@ -513,11 +507,10 @@ class _HistoryRequest(RPCRequest):
         if ids is not None:
             ids = list(map(str, ids))
             params['ids'] = ids
-            options_log.append('IDs: {}'.format(', '.join(ids)))
+            options_log.append(f"IDs: {', '.join(ids)}")
         if created is not None:
             params['new_since'] = created.format
-            options_log.append('Created: {} (since {} UTC)'.format(
-                created.token, created))
+            options_log.append(f'Created: {created.token} (since {created} UTC)')
         if fields is not None:
             params['include_fields'] = fields
 

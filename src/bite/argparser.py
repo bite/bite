@@ -38,7 +38,7 @@ def id_list(s):
             if item == '-':
                 raise ArgumentTypeError("'-' is only valid when piping data in")
             else:
-                raise ArgumentTypeError('invalid ID value: {!r}'.format(item))
+                raise ArgumentTypeError(f'invalid ID value: {repr(item)}')
     else:
         return s
 
@@ -50,14 +50,13 @@ def ids(s):
             if s == '-':
                 raise ArgumentTypeError("'-' is only valid when piping data in")
             else:
-                raise ArgumentTypeError('invalid ID value: {!r}'.format(s))
+                raise ArgumentTypeError(f'invalid ID value: {repr(s)}')
     else:
         return s
 
 def existing_file(s):
     if not os.path.exists(s):
-        msg = '{!r} does not exist'.format(s)
-        raise ArgumentTypeError(msg)
+        raise ArgumentTypeError(f'nonexistent file: {repr(s)}')
     return s
 
 class parse_file(Action):
@@ -87,8 +86,8 @@ class parse_stdin(Action):
                     option = (self.dest, option_string)
                 try:
                     stdin = getattr(namespace, 'stdin')
-                    parser.error('argument {}: data from standard input '
-                                 'already being used for argument {}'.format(option[1], stdin[1]))
+                    parser.error(f'argument {option[1]}: data from standard input '
+                                 'already being used for argument {stdin[1]}')
                 except AttributeError:
                     # store option for stdin check above
                     setattr(namespace, 'stdin', option)
@@ -127,7 +126,7 @@ class override_attr(Action):
         try:
             setattr(import_module(self.module), self.attr, values)
         except ImportError:
-            raise ArgumentTypeError("couldn't import module: {!r}".format(self.module))
+            raise ArgumentTypeError(f"couldn't import module: {repr(self.module)}")
 
 class parse_append(Action):
     def __call__(self, parser, namespace, values, option_string=None):
@@ -449,7 +448,7 @@ class ArgumentParser(arghparse.ArgumentParser):
                         line.append(s)
                 yield line
             except IndexError:
-                raise RuntimeError('nonexistent replacement {!r}, only {} values exist'.format(s, len(input_list)))
+                raise RuntimeError(f'nonexistent replacement {repr(s)}, only {len(input_list)} values exist')
 
     def parse_args(self, args=None, namespace=None):
         initial_args, unparsed_args = self.parse_optionals(args, namespace)
@@ -470,8 +469,7 @@ class ArgumentParser(arghparse.ArgumentParser):
 
         service = initial_args.service
         if service not in const.SERVICES:
-            self.error('invalid service: {!r} (available services: {})'.format(
-                service, ', '.join(const.SERVICES)))
+            self.error(f"invalid service: {repr(service)} (available services: {', '.join(const.SERVICES)}")
 
         service_opts = get_service_cls(
             service, const.SERVICE_OPTS)(parser=self, service_name=service)

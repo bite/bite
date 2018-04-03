@@ -86,7 +86,7 @@ class Cache(object):
             except FileNotFoundError:
                 pass
             except IOError as e:
-                raise BiteError('unable to remove cache: {!r}: {}'.format(path, e.strerror))
+                raise BiteError(f'unable to remove cache: {repr(path)}: {e.strerror}')
 
     ## support dictionary access methods
 
@@ -160,8 +160,7 @@ class Auth(object):
                     os.chmod(self.path, stat.S_IREAD | stat.S_IWRITE)
                     f.write(token)
             except (PermissionError, IsADirectoryError) as e:
-                raise BiteError('failed writing auth token to {!r}: {}'.format(
-                    self.path, e.strerror))
+                raise BiteError(f'failed writing auth token to {repr(self.path)}: {e.strerror}')
 
     def read(self):
         if self.path is not None:
@@ -183,7 +182,7 @@ class Auth(object):
             except FileNotFoundError:
                 pass
             except IOError as e:
-                raise BiteError('unable to remove cache: {!r}: {}'.format(self.path, e.strerror))
+                raise BiteError(f'unable to remove cache: {repr(self.path)}: {e.strerror}')
         self.token = None
 
     def __str__(self):
@@ -214,8 +213,7 @@ class Completion(object):
             with open(self.path, 'w+') as f:
                 f.write(data)
         except (PermissionError, IsADirectoryError) as e:
-            raise BiteError('failed writing completion data to {!r}: {}'.format(
-                self.path, e.strerror))
+            raise BiteError(f'failed writing completion data to {repr(self.path)}: {e.strerror}')
 
     def update(self, data):
         """Update completion data if not empty."""

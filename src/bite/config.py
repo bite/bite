@@ -97,9 +97,9 @@ def config_option(parser, get, section, option):
             if get(section, option) != '':
                 return get(section, option)
             else:
-                parser.error('{!r} is not set'.format(option))
+                parser.error(f'{repr(option)} is not set')
         except ValueError as e:
-            parser.error('option {!r} is not in the right format: {}'.format(option, str(e)))
+            parser.error(f'option {repr(option)} is not in the right format: {e}')
 
 def set_config_option(config_file, section, option, value, exists=False):
     """Save a config option and value to a specified config file.
@@ -113,13 +113,13 @@ def set_config_option(config_file, section, option, value, exists=False):
 
         for i in xrange(len(config)):
             # find the beginning of the matching section
-            if re.match(r'^\[{}\].*\n$'.format(section), config[i]):
+            if re.match(fr'^\[{section}\].*\n$', config[i]):
                 break
 
-        if i >= len(config)-1:
-            raise RuntimeError('Cannot find section {!r} in config file'.format(section))
+        if i >= len(config) - 1:
+            raise RuntimeError(f'Cannot find section {repr(section)} in config file')
 
-        config_option = '{}: {}\n'.format(option, value)
+        config_option = f'{option}: {value}\n'
 
         while True:
             i += 1
@@ -130,7 +130,7 @@ def set_config_option(config_file, section, option, value, exists=False):
                     break
             else:
                 # overwrite the existing option
-                if re.match(r'^{}: '.format(option), config[i]):
+                if re.match(fr'^{option}: ', config[i]):
                     config[i] = config_option
                     break
 
@@ -153,9 +153,9 @@ def get_config_option(config_file, section, option):
     try:
         value = parser.get(section, option)
     except configparser.NoOptionError:
-        raise ValueError('No option {!r} for section {!r}'.format(option, section))
+        raise ValueError(f'No option {repr(option)} for section {repr(section)}')
     except configparser.NoSectionError:
-        raise ValueError('No section {!r}'.format(section))
+        raise ValueError(f'No section {repr(section)}')
     return value
 
 def fill_config(args, parser, section):
@@ -199,7 +199,7 @@ def get_config(args, parser):
             config.read_file(f)
         config.read(user_config)
     except IOError as e:
-        raise BiteError('cannot load config file {!r}: {}'.format(e.filename, e.strerror))
+        raise BiteError(f'cannot load config file {repr(e.filename)}: {e.strerror}')
 
     aliases = configparser.ConfigParser(interpolation=BiteInterpolation())
     system_aliases = os.path.join(const.CONFIG_PATH, 'aliases')
@@ -209,7 +209,7 @@ def get_config(args, parser):
             aliases.read_file(f)
         aliases.read(user_aliases)
     except IOError as e:
-        raise BiteError('cannot load aliases file {!r}: {}'.format(e.filename, e.strerror))
+        raise BiteError(f'cannot load aliases file {repr(e.filename)}: {e.strerror}')
     except (configparser.DuplicateSectionError, configparser.DuplicateOptionError) as e:
         raise BiteError(e)
 
@@ -223,4 +223,4 @@ def get_config(args, parser):
     if config.has_section(args.connection):
         fill_config(args, config, args.connection)
     elif args.connection:
-        parser.error('unknown connection: {!r}'.format(args.connection, ))
+        parser.error(f'unknown connection: {repr(args.connection)}')

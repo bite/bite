@@ -272,7 +272,7 @@ class _GetRequest(Request):
                  get_attachments=False, **kw):
         """Construct a get request."""
         if not ids:
-            raise ValueError('No {} ID(s) specified'.format(service.item_name))
+            raise ValueError(f'No {service.item.type} ID(s) specified')
 
         reqs = []
         for i in ids:

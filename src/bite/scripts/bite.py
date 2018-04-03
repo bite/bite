@@ -108,15 +108,15 @@ def _ls(options, out, err):
         for section in (options.aliases.default_section, options.connection):
             for name, value in options.aliases.items(section):
                 if options.verbose:
-                    out.write('{}: {}'.format(name, value))
+                    out.write(f'{name}: {value}')
                 else:
                     out.write(name)
     elif options.item == 'connections':
         for connection in sorted(options.config.sections()):
             if options.verbose:
-                out.write('[{}]'.format(connection))
+                out.write(f'[{connection}]')
                 for (name, value) in options.config.items(connection):
-                    out.write('  {}: {}'.format(name, value))
+                    out.write(f'  {name}: {value}')
             else:
                 out.write(connection)
     elif options.item == 'services':
@@ -151,7 +151,7 @@ def _cache(options, out, err):
         try:
             client.cache(**fcn_args)
         except RequestError as e:
-            err.write('failed updating cached data: {}: {}'.format(connection, str(e)))
+            err.write(f'failed updating cached data: {connection}: {e}')
             return 1
         return 0
 

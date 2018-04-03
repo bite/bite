@@ -71,7 +71,7 @@ class Cli(object):
             if auth_requested:
                 self.login()
 
-        self.log('Service: {}'.format(self.service))
+        self.log(f'Service: {self.service}')
 
         # completion cache is only enabled for configured services
         if connection is not None:
@@ -106,23 +106,22 @@ class Cli(object):
     @login_retry
     def get(self, ids, dry_run=False, browser=False, **kw):
         if not ids:
-            raise RuntimeError('No {} ID(s) specified'.format(self.service.item.type))
+            raise RuntimeError(f'No {self.service.item.type} ID(s) specified')
 
         if browser:
             if self.service.item_endpoint is None:
-                raise BiteError("no web endpoint defined for {}s".format(self.service.item.type))
+                raise BiteError(f"no web endpoint defined for {self.service.item.type}s")
 
             for id in ids:
                 url = self.service.base.rstrip('/') + self.service.item_endpoint + str(id)
-                self.log_t('Launching {} in browser: {} {!r}'.format(
-                    self.service.item.type, const.BROWSER, url))
+                self.log_t(f'Launching {self.service.item.type} in browser: {const.BROWSER} {url}')
 
                 try:
                     subprocess.Popen(
-                        [const.BROWSER, "{}".format(url)],
+                        [const.BROWSER, url],
                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 except (PermissionError, FileNotFoundError) as e:
-                    raise BiteError('failed running browser {!r}: {}'.format(const.BROWSER, e.strerror))
+                    raise BiteError(f'failed running browser: {const.BROWSER}: {e.strerror}')
         else:
             request = self.service.GetRequest(ids, **kw)
             self.log_t('Getting {}{}: {}'.format(
@@ -149,7 +148,7 @@ class Cli(object):
 
         if item_id:
             request = self.service.AttachmentsRequest(ids=ids, get_data=get_data)
-            item_str = ' from {}'.format(self.service.item.type)
+            item_str = f' from {self.service.item.type}'
             plural = '(s)'
         else:
             request = self.service.AttachmentsRequest(attachment_ids=ids, get_data=get_data)
@@ -169,15 +168,14 @@ class Cli(object):
 
             for id in ids:
                 url = self.service.base.rstrip('/') + self.service.attachment_endpoint + str(id)
-                self.log_t('Launching attachment in browser: {} {!r}'.format(
-                    const.BROWSER, url))
+                self.log_t('Launching attachment in browser: {const.BROWSER} {url}')
 
                 try:
                     subprocess.Popen(
-                        [const.BROWSER, "{}".format(url)],
+                        [const.BROWSER, url],
                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 except (PermissionError, FileNotFoundError) as e:
-                    raise BiteError('failed running browser {!r}: {}'.format(const.BROWSER, e.strerror))
+                    raise BiteError(f'failed running browser: {const.BROWSER}: {e.strerror}')
 
         if not item_id and (output_url or browser):
             if output_url:
@@ -218,11 +216,11 @@ class Cli(object):
         compressed = ['x-bzip2', 'x-bzip', 'x-gzip', 'gzip', 'x-tar', 'x-xz']
         mime_type, mime_subtype = f.mimetype.split('/')
         if sys.stdout.isatty() and not (mime_type == 'text' or mime_subtype in compressed):
-            self.log(' ! Warning: The attachment {!r} has type {!r}'.format(f.filename, f.mimetype))
+            self.log(f' ! Warning: The attachment {repr(f.filename)} has type {f.mimetype}')
             if not confirm('Are you sure you want to view it?'):
                 return
 
-        self.log('Viewing file: {}'.format(f.filename))
+        self.log(f'Viewing file: {f.filename}')
 
         if mime_subtype == 'x-tar':
             tar_file = tarfile.open(fileobj=BytesIO(f.read()))
@@ -238,7 +236,7 @@ class Cli(object):
                         return
 
                     if temp is not None:
-                        prefix = '=== {} '.format(tarinfo_file.path)
+                        prefix = f'=== {tarinfo_file.path} '
                         print(prefix + '=' * (const.COLUMNS - len(prefix)))
                         sys.stdout.write(TarAttachment(tarfile=tar_file, cfile=tarinfo_file).data())
         else:
@@ -247,15 +245,15 @@ class Cli(object):
     def _save_attachment(self, f, path):
         """Save attachment to a specified path."""
         if os.path.exists(path):
-            print(' ! Warning: existing file: {!r}'.format(path))
+            print(f' ! Warning: existing file: {repr(path)}')
             if not confirm('Do you want to overwrite it?'):
                 return
 
-        self.log('Saving attachment: {!r}'.format(path))
+        self.log(f'Saving attachment: {repr(path)}')
         try:
             f.write(path)
         except IOError as e:
-            raise BiteError('error creating file: {!r}: {}'.format(path, e.strerror))
+            raise BiteError(f'error creating file: {repr(path)}: {e.strerror}')
 
     @login_retry
     @login_required
@@ -298,14 +296,14 @@ class Cli(object):
             raise BiteError(e)
 
         if sys.stdout.isatty():
-            self.log('Submitted {} {}'.format(self.service.item.type, data))
+            self.log(f'Submitted {self.service.item.type} {data}')
         else:
             sys.stdout.write(str(data))
 
     def search(self, dry_run=False, **kw):
         request = self.service.SearchRequest(**kw)
 
-        self.log('Searching for {}s with the following options:'.format(self.service.item.type))
+        self.log(f'Searching for {self.service.item.type}s with the following options:')
         self.log(request.options, prefix='   - ')
 
         if dry_run: return
@@ -314,7 +312,7 @@ class Cli(object):
         # cache results for completion usage when using default fields
         if self.completion_cache is not None and 'fields' not in kw:
             data = list(data)
-            self.completion_cache.update('\n'.join('{} {}'.format(x.id, x.summary) for x in data))
+            self.completion_cache.update('\n'.join(f'{x.id} {x.summary}' for x in data))
 
         if 'fields' not in kw:
             kw['fields'] = request.fields

@@ -22,7 +22,7 @@ class Subcmd(object):
         self.parser = parser.add_parser(
             name, verbose=False, quiet=False, color=False, description=desc)
         self.parser.set_defaults(fcn=name)
-        self.opts = self.parser.add_argument_group('{} options'.format(name.capitalize()))
+        self.opts = self.parser.add_argument_group(f'{name.capitalize()} options')
 
 
 class ServiceOpts(object):
@@ -72,14 +72,14 @@ class Search(ReceiveSubcmd):
 
     def __init__(self, *args, desc=None, **kw):
         if desc is None:
-            desc = 'search for {}s'.format(kw['service'].item.type)
+            desc = f"search for {kw['service'].item.type}s"
         super().__init__(*args, desc=desc, **kw)
 
         # positional args
         self.parser.add_argument(
             'terms', nargs='*',
             action=parse_stdin,
-            help='strings to search for in {} summary/title'.format(kw['service'].item.type))
+            help=f"strings to search for in {kw['service'].item.type} summary/title")
 
         # optional args
         self.opts.add_argument('--limit',
@@ -94,15 +94,14 @@ class Get(ReceiveSubcmd):
 
     def __init__(self, *args, desc=None, **kw):
         if desc is None:
-            desc = 'get {}(s)'.format(kw['service'].item.type)
+            desc = f"get {kw['service'].item.type}(s)"
         super().__init__(*args, desc=desc, **kw)
 
         # positional args
         self.parser.add_argument(
             'ids', type=id_list, metavar='ID',
             action=partial(parse_stdin, ids),
-            help='ID(s) or alias(es) of the {}(s) to retrieve'.format(
-                kw['service'].item.type))
+            help=f"ID(s) or alias(es) of the {kw['service'].item.type}(s) to retrieve")
 
         # optional args
         self.opts.add_argument('-B', '--browser',
@@ -122,15 +121,14 @@ class Attachments(Subcmd):
 
     def __init__(self, *args, desc=None, **kw):
         if desc is None:
-            desc = 'get attachment(s) from {}(s)'.format(kw['service'].item.type)
+            desc = f"get attachment(s) from {kw['service'].item.type}(s)"
         super().__init__(*args, desc=desc, **kw)
 
         # positional args
         self.parser.add_argument(
             'ids', metavar='ID',
             type=id_list, action=partial(parse_stdin, ids),
-            help='attachment ID(s) (or {} ID(s) when --item-id is used)'.format(
-                kw['service'].item.type))
+            help=f"attachment ID(s) (or {kw['service'].item.type} ID(s) when --item-id is used)")
 
         # optional args
         single_action = self.opts.add_mutually_exclusive_group()
@@ -156,7 +154,7 @@ class Attach(SendSubcmd):
 
     def __init__(self, *args, desc=None, **kw):
         if desc is None:
-            desc = 'attach file to {}(s)'.format(kw['service'].item.type)
+            desc = f"attach file to {kw['service'].item.type}(s)"
         super().__init__(*args, desc=desc, **kw)
 
         self.opts.add_argument('-d', '--description',
@@ -171,14 +169,14 @@ class Modify(SendSubcmd):
 
     def __init__(self, *args, desc=None, **kw):
         if desc is None:
-            desc = 'modify {}(s)'.format(kw['service'].item.type)
+            desc = f"modify {kw['service'].item.type}(s)"
         super().__init__(*args, desc=desc, **kw)
 
         # positional args
         self.parser.add_argument(
             'ids', type=id_list, metavar='ID',
             action=partial(parse_stdin, ids),
-            help='ID(s) of the {}(s) to modify'.format(kw['service'].item.type))
+            help=f"ID(s) of the {kw['service'].item.type}(s) to modify")
 
         # optional args
         self.opts.add_argument('-C', '--comment-editor',
@@ -193,7 +191,7 @@ class Create(SendSubcmd):
 
     def __init__(self, *args, desc=None, **kw):
         if desc is None:
-            desc = 'create a new {}'.format(kw['service'].item.type)
+            desc = f"create a new {kw['service'].item.type}"
         super().__init__(*args, desc=desc, **kw)
 
         self.opts.add_argument('-F' , '--description-from',

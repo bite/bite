@@ -34,7 +34,7 @@ class Bugzilla(Cli):
                 else:
                     kw['description'] = open(kw['description_from'], 'r').read()
             except IOError as e:
-                raise BiteError('Unable to read file: {}: {}'.format(kw['description_from'], e))
+                raise BiteError(f"Unable to read file: {kw['description_from']}: {e}")
 
         if kw.get('batch', False):
             self.log('Press Ctrl+C at any time to abort.')
@@ -43,37 +43,37 @@ class Bugzilla(Cli):
                 while not kw['product'] or len(kw['product']) < 1:
                     kw['product'] = get_input('Enter product: ')
             else:
-                self.log('Enter product: {}'.format(kw['product']))
+                self.log(f"Enter product: {kw['product']}")
 
             if not kw['component']:
                 while not kw['component'] or len(kw['component']) < 1:
                     kw['component'] = get_input('Enter component: ')
             else:
-                self.log('Enter component: {}'.format(kw['component']))
+                self.log(f"Enter component: {kw['component']}")
 
             if not kw['version']:
                 # assume default product has the lowest ID
                 default_product = self.service.cache['products'][0]
-                line = get_input('Enter version (default: {}): '.format(default_product))
+                line = get_input(f"Enter version (default: {default_product})")
                 if len(line):
                     kw['version'] = line
                 else:
                     kw['version'] = default_product
             else:
-                self.log('Enter version: {}'.format(kw['version']))
+                self.log(f"Enter version: {kw['version']}")
 
             if not kw['summary']:
                 while not kw['summary'] or len(kw['summary']) < 1:
                     kw['summary'] = get_input('Enter title: ')
             else:
-                self.log('Enter title: {}'.format(kw['summary']))
+                self.log(f"Enter title: {kw['summary']}")
 
             if not kw['description']:
                 line = block_edit('Enter bug description: ')
                 if len(line):
                     kw['description'] = line
             else:
-                self.log('Enter bug description: {}'.format(kw['description']))
+                self.log(f"Enter bug description: {kw['description']}")
 
             if not kw['op_sys']:
                 op_sys_msg = 'Enter operating system where this bug occurs: '
@@ -81,7 +81,7 @@ class Bugzilla(Cli):
                 if len(line):
                     kw['op_sys'] = line
             else:
-                self.log('Enter operating system: {}'.format(kw['op_sys']))
+                self.log(f"Enter operating system: {kw['op_sys']}")
 
             if not kw['platform']:
                 platform_msg = 'Enter hardware platform where this bug occurs: '
@@ -89,7 +89,7 @@ class Bugzilla(Cli):
                 if len(line):
                     kw['platform'] = line
             else:
-                self.log('Enter hardware platform: {}'.format(kw['platform']))
+                self.log(f"Enter hardware platform: {kw['platform']}")
 
             if kw['priority'] is None:
                 priority_msg = 'Enter priority (e.g. normal) (optional): '
@@ -97,7 +97,7 @@ class Bugzilla(Cli):
                 if len(line):
                     kw['priority'] = line
             else:
-                self.log('Enter priority (optional): {}'.format(kw['priority']))
+                self.log(f"Enter priority (optional): {kw['priority']}")
 
             if kw['severity'] is None:
                 severity_msg = 'Enter severity (e.g. normal) (optional): '
@@ -105,7 +105,7 @@ class Bugzilla(Cli):
                 if len(line):
                     kw['severity'] = line
             else:
-                self.log('Enter severity (optional): {}'.format(kw['severity']))
+                self.log(f"Enter severity (optional): {kw['severity']}")
 
             if kw['target_milestone'] is None:
                 milestone_msg = 'Enter target milestone (optional): '
@@ -113,7 +113,7 @@ class Bugzilla(Cli):
                 if len(line):
                     kw['target_milestone'] = line
             else:
-                self.log('Enter target milestone (optional): {}'.format(kw['target_milestone']))
+                self.log(f"Enter target milestone (optional): {kw['target_milestone']}")
 
             if kw['alias'] is None:
                 alias_msg = 'Enter alias (optional): '
@@ -121,7 +121,7 @@ class Bugzilla(Cli):
                 if len(line):
                     kw['alias'] = line
             else:
-                self.log('Enter alias (optional): {}'.format(kw['alias']))
+                self.log(f"Enter alias (optional): {kw['alias']}")
 
             if kw['assigned_to'] is None:
                 assign_msg = 'Enter assignee (e.g. dev@email.com) (optional): '
@@ -129,7 +129,7 @@ class Bugzilla(Cli):
                 if len(line):
                     kw['assigned_to'] = line
             else:
-                self.log('Enter assignee (optional): {}'.format(kw['assigned_to']))
+                self.log(f"Enter assignee (optional): {kw['assigned_to']}")
 
             if kw['status'] is None:
                 status_msg = 'Enter status (optional): '
@@ -137,7 +137,7 @@ class Bugzilla(Cli):
                 if len(line):
                     kw['status'] = line
             else:
-                self.log('Enter status (optional): {}'.format(kw['status']))
+                self.log(f"Enter status (optional): {kw['status']}")
 
             if kw['cc'] is None:
                 cc_msg = 'Enter CCs (comma separated) (optional): '
@@ -145,7 +145,7 @@ class Bugzilla(Cli):
                 if len(line):
                     kw['cc'] = line.split(',')
             else:
-                self.log('Enter CCs (optional): {}'.format(', '.join(kw['cc'])))
+                self.log(f"Enter CCs (optional): {kw['cc']}")
 
             # the API doesn't support setting keywords while creating a bug
             #if kw['keywords'] is None:
@@ -162,51 +162,52 @@ class Bugzilla(Cli):
                 if len(line):
                     kw['groups'] = line.split(',')
             else:
-                self.log('Enter groups (optional): {}'.format(', '.join(kw['groups'])))
+                self.log(f"Enter groups (optional): {kw['groups']}")
 
             if kw['append_command'] is None:
                 kw['append_command'] = get_input('Append the output of the following command (leave blank for none): ')
             else:
-                self.log('Append command (optional): {}'.format(kw['append_command']))
+                self.log(f"Append command (optional): {kw['append_command']}")
 
         # append the output from append_command to the description
         if kw['append_command'] is not None and kw['append_command'] != '':
             append_command_output = subprocess.check_output(kw['append_command'])
             kw['description'] = kw['description'] + '\n\n' + '$ ' + kw['append_command'] + '\n' + append_command_output
 
-        options_log = []
-        options_log.append('=' * const.COLUMNS)
-        options_log.append('{:<12}: {}'.format('Product', kw['product']))
-        options_log.append('{:<12}: {}'.format('Component', kw['component']))
-        options_log.append('{:<12}: {}'.format('Version', kw['version']))
-        options_log.append('{:<12}: {}'.format('Title', kw['summary']))
-        options_log.append('{:<12}: {}'.format('OS', kw['op_sys']))
-        options_log.append('{:<12}: {}'.format('Platform', kw['platform']))
-        options_log.append('{:<12}: {}'.format('Priority', kw['priority']))
-        options_log.append('{:<12}: {}'.format('Severity', kw['severity']))
+        options_log = [
+            '=' * const.COLUMNS,
+            f"Product: {kw['product']}",
+            f"Component: {kw['component']}",
+            f"Version: {kw['version']}",
+            f"Title: {kw['summary']}",
+            f"OS: {kw['op_sys']}",
+            f"Platform: {kw['platform']}",
+            f"Priority: {kw['priority']}",
+            f"Severity: {kw['severity']}",
+        ]
         if kw['target_milestone'] is not None:
-            options_log.append('{:<12}: {}'.format('Milestone', kw['target_milestone']))
+            options_log.append(f"Milestone: {kw['target_milestone']}")
         if kw['alias'] is not None:
-            options_log.append('{:<12}: {}'.format('Alias', kw['alias']))
+            options_log.append(f"Alias: {kw['alias']}")
         if kw['assigned_to'] is not None:
-            options_log.append('{:<12}: {}'.format('Assigned to', self.service._desuffix(kw['assigned_to'])))
+            options_log.append(f"Assigned to: {self.service._desuffix(kw['assigned_to'])}")
             # add potentially missing domain suffix
             kw['assigned_to'] = self.service._resuffix(kw['assigned_to'])
         if kw['status'] is not None:
-            options_log.append('{:<12}: {}'.format('Status', kw['status']))
+            options_log.append(f"Status: {kw['status']}")
         if kw['cc'] is not None:
-            options_log.append('{:<12}: {}'.format('CC', ', '.join(map(self.service._desuffix, kw['cc']))))
+            options_log.append(f"CC: {', '.join(map(self.service._desuffix, kw['cc']))}")
             # add potentially missing domain suffixes
             kw['cc'] = list(map(self.service._resuffix, kw['cc']))
         #if kw['keywords'] is not None:
         #    options_log.append('{:<12}: {}'.format('Keywords', ', '.join(kw['keywords'])))
         if kw['groups'] is not None:
-            options_log.append('{:<12}: {}'.format('Groups', ', '.join(kw['groups'])))
+            options_log.append(f"Groups: {', '.join(kw['groups'])}")
         options_log.append(self._header('-', 'Description'))
         if kw['description'] is not None:
             # interpret backslash escapes
             kw['description'] = kw['description'].decode('string_escape')
-            options_log.append('{}'.format(kw['description']))
+            options_log.append(kw['description'])
         options_log.append('=' * const.COLUMNS)
         kw['options_log'] = options_log
 
@@ -229,7 +230,7 @@ class Bugzilla(Cli):
         super().modify(*args, **kw)
 
     def _render_changes(self, bug, **kw):
-        yield self._header('=', 'Bug: {}'.format(str(bug['id'])))
+        yield self._header('=', f"Bug: {str(bug['id'])}")
         changes = bug['changes']
 
         if len(changes):
@@ -241,12 +242,12 @@ class Bugzilla(Cli):
                     field = k
 
                 if v['removed'] and v['added']:
-                    yield '{}: {} -> {}'.format(field, v['removed'], v['added'])
+                    yield f"{field}: {v['removed']} -> {v['added']}"
                 else:
                     if v['removed']:
-                        yield '{}: -{}'.format(field, v['removed'])
+                        yield f"{field}: -{v['removed']}"
                     elif v['added']:
-                        yield '{}: +{}'.format(field, v['added'])
+                        yield f"{field}: +{v['added']}"
         else:
             if 'comment-body' not in kw:
                 yield 'No changes made'
@@ -257,15 +258,15 @@ class Bugzilla(Cli):
 
     def version(self, dry_run=False):
         version = self.service.version()
-        print('Bugzilla version: {}'.format(version))
+        print(f'Bugzilla version: {version}')
 
     def extensions(self, dry_run=False):
         extensions = self.service.extensions()
         if extensions:
             print('Bugzilla extensions')
             print('-------------------')
-            for e, v in extensions.items():
-                print('{}: {}'.format(e, v['version']))
+            for ext, v in extensions.items():
+                print(f"{ext}: {v['version']}")
         else:
             print('No installed Bugzilla extensions')
 
@@ -306,13 +307,13 @@ class Bugzilla(Cli):
         data = self.service.send(request)
 
         for field in data:
-            print('{} ({})'.format(field['display_name'], field['name']))
+            print(f"{field['display_name']} ({field['name']})")
             if self.verbose or fields and len(fields) == 1:
                 for value in field.get('values', []):
                     if value.get('name', False):
-                        print('  {}'.format(value['name']))
+                        print(f"  {value['name']}")
                         if 'is_open' in value:
-                            print('    open: {}'.format(value['is_open']))
+                            print(f"    open: {value['is_open']}")
 
     def products(self, products=None, dry_run=False):
         params = {}
@@ -381,7 +382,7 @@ class Bugzilla(Cli):
             for u in users:
                 for k, v in print_fields.items():
                     if k in u:
-                        print('{}: {}'.format(v, u[k]))
+                        print(f'{v}: {u[k]}')
                 print('-' * const.COLUMNS)
         else:
             self.log('No matching users found')
@@ -399,7 +400,7 @@ class Bugzilla(Cli):
                     try:
                         value = getattr(bug, field)
                     except AttributeError:
-                        raise BiteError('{!r} is not a valid field'.format(field))
+                        raise BiteError(f'invalid field: {repr(field)}')
                     if value is None:
                         continue
                     if isinstance(value, list):
@@ -412,7 +413,7 @@ class Bugzilla(Cli):
                     for field in fields:
                         values.append(getattr(bug, field))
                 except AttributeError:
-                    raise BiteError('{!r} is not a valid field'.format(field))
+                    raise BiteError(f'invalid field: {repr(field)}')
                 yield from self._iter_lines(output.format(*values), wrap=False)
 
     def _match_change(self, change, fields):
@@ -504,7 +505,7 @@ class Bugzilla(Cli):
                     try:
                         value = getattr(change, field)
                     except AttributeError:
-                        raise BiteError('{!r} is not a valid bug field'.format(field))
+                        raise BiteError(f'invalid field: {repr(field)}')
                     if value is None:
                         continue
                     if isinstance(value, list):
@@ -518,12 +519,12 @@ class Bugzilla(Cli):
                     for field in fields:
                         values.append(getattr(change, field))
                 except AttributeError:
-                    raise BiteError('{!r} is not a valid field'.format(field))
+                    raise BiteError(f'invalid field: {repr(field)}')
                 yield from self._iter_lines(output.format(*values))
         else:
             changes = list(str(x) for x in changes)
             if changes:
-                yield self._header('=', 'Bug: {}'.format(bug_id))
+                yield self._header('=', f'Bug: {bug_id}')
                 yield from self._iter_lines(changes)
 
     def comments(self, ids, dry_run=False, **kw):
@@ -535,11 +536,12 @@ class Bugzilla(Cli):
         request = self.service.CommentsRequest(ids, created=creation_time)
 
         if creator is not None:
-            request.options.append('Creator{}: {}'.format(pluralism(creator), ', '.join(creator)))
+            request.options.append(f"Creator{pluralism(creator)}: {', '.join(creator)}")
         if attachment:
             request.options.append('Attachments: yes')
         if comment_num is not None:
-            request.options.append('Comment number{}: {}'.format(pluralism(comment_num), ', '.join(map(str, comment_num))))
+            request.options.append(
+                f"Comment number{pluralism(comment_num)}: {', '.join(map(str, comment_num))}")
 
         self.log('Getting comments matching the following options:')
         self.log_t(request.options, prefix='   - ')
@@ -581,7 +583,7 @@ class Bugzilla(Cli):
                     try:
                         value = getattr(comment, field)
                     except AttributeError:
-                        raise BiteError('{!r} is not a valid bug field'.format(field))
+                        raise BiteError(f'invalid field: {repr(field)}')
                     if value is None:
                         continue
                     if isinstance(value, list):
@@ -595,12 +597,12 @@ class Bugzilla(Cli):
                     for field in fields:
                         values.append(getattr(comment, field))
                 except AttributeError:
-                    raise BiteError('{!r} is not a valid field'.format(field))
+                    raise BiteError(f'invalid field: {repr(field)}')
                 yield from self._iter_lines(output.format(*values))
         else:
             comments = list(str(x) for x in comments)
             if comments:
-                yield self._header('=', 'Bug: {}'.format(bug_id))
+                yield self._header('=', f'Bug: {bug_id}')
                 yield from self._iter_lines(comments)
 
     def _render_item(self, bug, show_obsolete=False, **kw):

@@ -165,7 +165,7 @@ class BugzillaBug(Item):
             if isinstance(value, list):
                 value = ', '.join(map(str, value))
 
-            lines.append('{:<12}: {}'.format(title, value))
+            lines.append(f'{title:<12}: {value}')
 
         custom_fields = ((k, v) for (k, v) in vars(self).items()
                          if re.match(r'^cf_\w+$', k))
@@ -176,7 +176,7 @@ class BugzillaBug(Item):
                 value = v
             title = string.capwords(k[3:], '_')
             title = title.replace('_', ' ')
-            lines.append('{:<12}: {}'.format(title, value))
+            lines.append(f'{title:<12}: {value}')
 
         return '\n'.join(lines)
 
@@ -201,8 +201,8 @@ class BugzillaComment(Comment):
         self.comment_id = comment['id']
 
         if rest:
-            if 'real_name' in comment['creator'] and comment['creator']['real_name'] != '':
-                creator = '{} ({})'.format(comment['creator']['real_name'], comment['creator']['name'])
+            if comment['creator'].get('real_name', None):
+                creator = f"{comment['creator']['real_name']} ({comment['creator']['name']}"
             else:
                 creator = comment['creator']['name']
         else:
@@ -263,7 +263,7 @@ class BugzillaEvent(Change):
         }
         change_fields.update(BugzillaBug.attributes)
 
-        lines = ['Change #{} by {}, {}'.format(self.count, self.creator, self.date)]
+        lines = [f'Change #{self.count} by {self.creator}, {self.date}']
         lines.append('-' * const.COLUMNS)
         for change in self.changes:
             try:
@@ -275,15 +275,15 @@ class BugzillaEvent(Change):
                     field = field.replace('_', ' ')
 
             if change['field_name'] == 'attachments.isobsolete':
-                lines.append('{}: {}'.format(field, change['attachment_id']))
+                lines.append(f"{field}: {change['attachment_id']}")
             else:
                 if change['removed'] and change['added']:
-                    changes = '{} -> {}'.format(change['removed'], change['added'])
+                    changes = f"{change['removed']} -> {change['added']}"
                 elif change['removed']:
                     changes = ', '.join(['-' + c for c in change['removed'].split(', ')])
                 elif change['added']:
                     changes = ', '.join(['+' + c for c in change['added'].split(', ')])
-                lines.append('{}: {}'.format(field, changes))
+                lines.append(f'{field}: {changes}')
 
         return '\n'.join(lines)
 
@@ -307,14 +307,14 @@ class BugzillaAttachment(Attachment):
 
     def __str__(self):
         if self.size is not None:
-            if self.size < 1024*1024:
-                size = '{}K'.format(round(self.size / 1024.0, 2))
+            if self.size < 1024 * 1024:
+                size = f'{round(self.size / 1024.0, 2)}K'
             else:
-                size = '{}M'.format(round(self.size / 1024*1024.0, 2))
+                size = f'{round(self.size / 1024 * 1024.0, 2)}M'
 
-            return 'Attachment: [{}] [{}] ({}, {})'.format(self.id, self.summary, size, self.mimetype)
+            return f'Attachment: [{self.id}] [{self.summary}] ({size}, {self.mimetype})'
         else:
-            return 'Attachment: [{}] [{}]'.format(self.id, self.summary)
+            return f'Attachment: [{self.id}] [{self.summary}]'
 
     @decompress
     def read(self):
@@ -406,7 +406,7 @@ class Bugzilla(Service):
     def _failed_http_response(self, response):
         if response.status_code in (401, 403):
             data = self.parse_response(response)
-            raise AuthError('authentication failed: {}'.format(data.get('message', '')))
+            raise AuthError(f"authentication failed: {data.get('message', '')}")
         else:
             super()._failed_http_response(response)
 
@@ -443,10 +443,10 @@ class FieldsRequest(Request):
         if ids is not None:
             ids = list(map(str, ids))
             params['ids'] = ids
-            options_log.append('IDs: {}'.format(', '.join(ids)))
+            options_log.append(f"IDs: {', '.join(ids)}")
         if names is not None:
             params['names'] = names
-            options_log.append('Field names: {}'.format(', '.join(names)))
+            options_log.append(f"Field names: {', '.join(names)}")
 
         super().__init__(params=params, **kw)
         self.options = options_log
@@ -470,10 +470,10 @@ class ProductsRequest(Request):
         if ids is not None:
             ids = list(map(str, ids))
             params['ids'] = ids
-            options_log.append('IDs: {}'.format(', '.join(ids)))
+            options_log.append(f"IDs: {', '.join(ids)}")
         if names is not None:
             params['names'] = names
-            options_log.append('Product names: {}'.format(', '.join(names)))
+            options_log.append(f"Product names: {', '.join(names)}")
 
         super().__init__(params=params, **kw)
         self.options = options_log
@@ -495,13 +495,13 @@ class UsersRequest(Request):
         if ids is not None:
             ids = list(map(str, ids))
             params['ids'] = ids
-            options_log.append('IDs: {}'.format(', '.join(ids)))
+            options_log.append(f"IDs: {', '.join(ids)}")
         if names is not None:
             params['names'] = names
-            options_log.append('Login names: {}'.format(', '.join(names)))
+            options_log.append(f"Login names: {', '.join(names)}")
         if match is not None:
             params['match'] = match
-            options_log.append('Match patterns: {}'.format(', '.join(match)))
+            options_log.append(f"Match patterns: {', '.join(match)}")
 
         super().__init__(params=params, **kw)
         self.options = options_log
