@@ -9,12 +9,14 @@ import sys
 
 from dateutil.parser import parse as parsetime
 from snakeoil.strings import pluralism
+from snakeoil.demandload import demandload
 
 from .. import Cli
-from ... import const
 from ...exceptions import BiteError
 from ...utc import utc
 from ...utils import block_edit, confirm, get_input
+
+demandload('bite:const')
 
 
 class Bugzilla(Cli):

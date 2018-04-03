@@ -8,12 +8,15 @@ import string
 
 from dateutil.parser import parse as dateparse
 from snakeoil import klass
+from snakeoil.demandload import demandload
 
 from .. import Service, ContinuedRequest, NullRequest, Request
-from ... import const, utc
+from ... import utc
 from ...cache import Cache, csv2tuple
 from ...exceptions import RequestError, AuthError, BiteError
 from ...objects import Item, Change, Comment, Attachment, decompress
+
+demandload('bite:const')
 
 
 class BugzillaError(RequestError):

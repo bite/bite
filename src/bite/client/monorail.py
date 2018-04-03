@@ -11,10 +11,13 @@ from urllib.parse import urlencode
 
 import dateutil.parser
 from dateutil.relativedelta import *
+from snakeoil.demandload import demandload
 
 from . import Cli
-from .. import const
 from ..rfc3339 import datetimetostr
+
+demandload('bite:const')
+
 
 class Monorail(Cli):
     """CLI for Monorail service."""

@@ -1,13 +1,17 @@
 from itertools import groupby
 
+from snakeoil.demandload import demandload
+
 from . import (
     Bugzilla, BugzillaComment, BugzillaEvent,
     SearchRequest, HistoryRequest, CommentsRequest, AttachmentsRequest,
     GetItemRequest, GetRequest, ModifyRequest, AttachRequest, CreateRequest,
     ExtensionsRequest, VersionRequest, FieldsRequest, ProductsRequest, UsersRequest)
 from .. import Request, RPCRequest, req_cmd
-from ... import const, magic
+from ... import magic
 from ...exceptions import BiteError
+
+demandload('bite:const')
 
 
 class BugzillaRpc(Bugzilla):

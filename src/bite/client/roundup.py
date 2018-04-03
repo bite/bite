@@ -1,5 +1,9 @@
+from snakeoil.demandload import demandload
+
 from . import Cli
-from .. import const
+
+demandload('bite:const')
+
 
 class Roundup(Cli):
     """CLI for Roundup service."""

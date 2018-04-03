@@ -12,9 +12,12 @@ try:
     import cchardet as chardet
 except ImportError:
     import chardet
+from snakeoil.demandload import demandload
 
-from . import magic, const
+from . import magic
 from .utc import utc
+
+demandload('bite:const')
 
 
 def decompress(fcn):

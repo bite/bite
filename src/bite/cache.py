@@ -2,8 +2,11 @@ import configparser
 import os
 import stat
 
-from . import const
+from snakeoil.demandload import demandload
+
 from .exceptions import BiteError
+
+demandload('bite:const')
 
 
 def csv2tuple(s):
