@@ -155,7 +155,7 @@ class RoundupCache(Cache):
 class Roundup(LxmlXmlrpc):
     """Support Roundup's XML-RPC interface."""
 
-    _service = 'roundup'
+    #_service = 'roundup'
     _cache_cls = RoundupCache
 
     item = RoundupIssue
