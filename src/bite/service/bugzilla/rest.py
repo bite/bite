@@ -143,7 +143,6 @@ class _FieldsRequest(FieldsRequest, RESTRequest):
         super().__init__(endpoint='/field/bug', *args, **kw)
         # use the first parameter for the base url then add any leftovers
         if self.params:
-            self._params = self.params
             params = deque((k, i) for k, v in self.params.items() for i in v)
             self.endpoint = '{}/{}'.format(self.endpoint, params.popleft()[1])
             self.params = dict(params)
