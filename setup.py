@@ -92,7 +92,7 @@ setup(
     description='bug, issue, and ticket extraction library and command line tool',
     author='Tim Harder',
     author_email='radhermit@gmail.com',
-    url='https://github.com/radhermit/bite/',
+    url='https://github.com/bite/bite/',
     license='BSD',
     platforms=['any'],
     data_files=list(chain(

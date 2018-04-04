@@ -16,4 +16,4 @@ Reporting Bugs
 
 Please submit an issue via github:
 
-https://github.com/radhermit/bite/issues
+https://github.com/bite/bite/issues
