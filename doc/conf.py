@@ -64,7 +64,7 @@ master_doc = 'index'
 project = 'bite'
 authors_list = ['Tim Harder']
 authors = ', '.join(authors_list)
-copyright = '2015-2017, bite contributors'
+copyright = '2015-2018, bite contributors'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
