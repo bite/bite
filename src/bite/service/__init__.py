@@ -151,6 +151,7 @@ class RESTRequest(Request):
     def __init__(self, endpoint, method='GET', **kw):
         self.endpoint = endpoint
         super().__init__(method=method, **kw)
+        self._base_url = self._req.url
 
     def _finalize(self):
         super()._finalize()
@@ -163,7 +164,7 @@ class RESTRequest(Request):
                 params.append((k, v))
         params = '?' + urlencode(params) if params else ''
 
-        self._req.url = '{}/{}{}'.format(self._req.url, self.endpoint.lstrip('/'), params)
+        self._req.url = '{}/{}{}'.format(self._base_url, self.endpoint.lstrip('/'), params)
 
 
 class NullRequest(Request):
