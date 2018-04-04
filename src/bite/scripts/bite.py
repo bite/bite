@@ -61,19 +61,15 @@ connect_opts.add_argument('--timeout',
 
 auth_opts = argparser.add_argument_group('Authentication options')
 single_auth_opts = auth_opts.add_mutually_exclusive_group()
-single_auth_opts.add_argument('-a', '--auth-token',
-    help='use the specified token for authentication')
 single_auth_opts.add_argument('-S', '--skip-auth',
     action='store_true',
     help='skip authenticating to the specified service')
 single_auth_opts.add_argument('-u', '--user',
     help='username for authentication')
-auth_opts.add_argument('-p', '--password',
-    help='password for authentication')
 single_auth_opts.add_argument('--auth-file',
     help='load/save auth token using specified file')
 auth_opts.add_argument('--passwordcmd',
-    help='password command to evaluate authentication (overrides -p/--password)')
+    help='command to run for password')
 
 # stub for service specific arguments
 service_specific_opts = argparser.add_argument_group('Service specific options')
