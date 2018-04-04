@@ -54,7 +54,7 @@ class Cli(object):
     _service = None
 
     def __init__(self, service, quiet=False, verbose=False, color=False, connection=None,
-                 user=None, password=None, passwordcmd=None, skip_auth=True, **kw):
+                 passwordcmd=None, skip_auth=True, **kw):
         self.service = service
         self.quiet = quiet
         self.verbose = verbose
@@ -63,14 +63,12 @@ class Cli(object):
         self.skip_auth = skip_auth
         self.wrapper = textwrap.TextWrapper(width=const.COLUMNS - 3)
 
-        # Login if requested and not skipping; otherwise, credentials will be
-        # requested when needed.
+        # Login if all credentials provided on launch and not skipping;
+        # otherwise, credentials will be requested when needed.
         if self.skip_auth:
             self.service.auth.token = None
-        else:
-            auth_requested = any((passwordcmd, user, password))
-            if auth_requested:
-                self.login()
+        elif self.service.user is not None and any((self.service.password, self.passwordcmd)):
+            self.login()
 
         self.log(f'Service: {self.service}')
 
