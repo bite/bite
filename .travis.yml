@@ -1,0 +1,81 @@
+language: python
+python:
+- 3.6
+- 3.7-dev
+matrix:
+  fast_finish: true
+  allow_failures:
+  - python: 3.7-dev
+install:
+- pip install -U pip
+before_script:
+- git clone https://github.com/pkgcore/pkgdist.git
+- cp -R pkgdist/requirements/* requirements/
+- requirements/pip.sh -rrequirements/ci.txt
+- export PATH=$PWD/texinfo:$PATH
+script: tox -e travis
+after_success:
+# upload coverage data
+- tox -e coverage-report
+- codecov
+
+stages:
+  - name: test
+    if: NOT branch IN (lint, deploy)
+  - name: lint
+    if: branch = lint
+  - name: deploy
+    if: (type = api) OR (branch = deploy) OR (branch = master AND type IN (push, api) AND tag IS present)
+
+jobs:
+  include:
+    # do various lint scans
+    - stage: lint
+      python: 3.6
+      before_script:
+        - git clone https://github.com/pkgcore/pkgdist.git
+        - cp -R pkgdist/requirements/* requirements/
+        - pip install -r requirements/lint.txt
+      script: pkgdist/pylint src/bite
+      after_success:
+
+    # push tarball and wheels to pypi
+    - stage: deploy
+      python: 3.6
+      sudo: required
+      services:
+        - docker
+      env:
+        - secure: "Wdo1z0bjrcdBy1NPSSqMNJCgSmN+sJ73tdmpSLtAAOwnc7E4dqqPAKx6SlMkCnyhZo3RUH5byeNgq23hsbXuky5bDw96bdEQ5eqtRvZqDaq/Q0Ig6kiLSwzgILQmhZNL9c5q6LVYwdRFK+rPzsPU3A6FenngNC8PvK3QWJH4Xdc="
+        - secure: "SpkyxYOoiKbiBMbHFzLhp73VhpsoiPaUC5v3IiZqpFueCfLbwwieqR9ecY5lw/Jhn6KWkmj1sQq9rrK/lABCNaxXdeWEIGNgEnIFyhtbEDMXfa+PoEr7UlBUjqGFP2BIgMd1IO3p6mEzNH/vwkex2T1bk/N8HET3kPpuX8oN7uY="
+        - CIBW_PLATFORM=linux
+        - CIBW_SKIP="cp26-* cp27-* cp33-* cp34-* cp35-*"
+        - CIBW_BEFORE_BUILD="rpm -ivh --force /host/$HOME/downloads/\$(uname -m)/*.rpm && {pip} install -r requirements/wheel.txt -r requirements/test.txt"
+        - CIBW_ENVIRONMENT="PATH=/opt/bin:\$PATH"
+        - CIBW_TEST_COMMAND="py.test --pyargs bite"
+      before_script:
+        - git clone https://github.com/pkgcore/pkgdist.git
+        - cp -R pkgdist/requirements/* requirements/
+      script: pkgdist/build-dist-files.sh
+      after_success:
+
+    # push tarball to github
+    - stage: deploy
+      python: 3.6
+      before_script:
+        - git clone https://github.com/pkgcore/pkgdist.git
+        - cp -R pkgdist/requirements/* requirements/
+        - pip install -r requirements/sdist.txt
+      script: python setup.py sdist
+      after_success:
+        - tar -ztf dist/*.tar.gz | sort
+        - sha512sum dist/*.tar.gz
+      deploy:
+        provider: releases
+        api_key:
+          secure: eFVoXprxyumb/dQKOX/Oso5TNikUmY3kEaK45xPwk0ZzwmKuH7uDvMtPnr2Dx8UcAH5IAwkVyLgTr+p8rwqg4Mj6QcdqP/iEORWfwU2EC7FFRcZ+qmbsQQ6dS5kmIc88XO8D/XzCKEmhOE6mRpxYULTWP9nED4y8ZKoY5f1D48A=
+        file_glob: true
+        file: dist/*.tar.gz
+        skip_cleanup: true
+        on:
+          tags: true
