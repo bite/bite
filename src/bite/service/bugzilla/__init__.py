@@ -406,11 +406,20 @@ class Bugzilla(Service):
 
     @staticmethod
     def handle_error(code, msg):
+        """Handle bugzilla specific errors.
+
+        Bugzilla web service error codes and their descriptions can be found at:
+        https://github.com/bugzilla/bugzilla/blob/5.0/Bugzilla/WebService/Constants.pm#L56
+        """
+        # (-+)32000: fallback error code for unmapped/unknown errors, negative
+        # is fatal and positive is transient
         if code == 32000:
             if 'expired' in msg:
                 # assume the auth token has expired
                 raise AuthError(msg, expired=True)
-        elif code == 102:
+        # 102: bug access or query denied due to insufficient permissions
+        # 410: login required to perform this request
+        elif code in (102, 410):
             raise AuthError(msg=msg)
         raise BugzillaError(msg=msg, code=code)
 
