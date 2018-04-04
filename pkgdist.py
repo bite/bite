@@ -1025,7 +1025,7 @@ class pytest(Command):
         self.skip_build = False
         self.test_dir = None
         self.match = None
-        self.targets = ''
+        self.targets = None
         self.jobs = None
         self.report = None
 
