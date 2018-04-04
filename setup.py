@@ -88,6 +88,25 @@ def write_lookup_config(python_base, install_prefix):
             byte_compile([path], optimize=2, prefix=python_base)
 
 
+class test(pkgdist.pytest):
+    """Test wrapper to enforce testing against built version."""
+
+    def run(self):
+        # This is fairly hacky, but is done to ensure that the tests
+        # are ran purely from what's in build, reflecting back to the source
+        # only for misc bash scripts or config data.
+        key = 'BITE_OVERRIDE_DATA_PATH'
+        original = os.environ.get(key)
+        try:
+            os.environ[key] = os.path.dirname(os.path.realpath(__file__))
+            return super().run()
+        finally:
+            if original is not None:
+                os.environ[key] = original
+            else:
+                os.environ.pop(key, None)
+
+
 setup(
     description='bug, issue, and ticket extraction library and command line tool',
     author='Tim Harder',
@@ -102,7 +121,7 @@ setup(
     cmdclass=dict(
         pkgdist_cmds,
         install=install,
-        test=pkgdist.pytest),
+        test=test),
     classifiers=(
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
