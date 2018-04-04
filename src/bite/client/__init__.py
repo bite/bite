@@ -118,8 +118,7 @@ class Cli(object):
                     raise BiteError(f'failed running browser: {const.BROWSER}: {e.strerror}')
         else:
             request = self.service.GetRequest(ids, **kw)
-            self.log_t('Getting {}{}: {}'.format(
-                self.service.item.type, pluralism(ids), ', '.join(map(str, ids))))
+            self.log_t(f"Getting {self.service.item.type}{pluralism(ids)}: {', '.join(map(str, ids))}")
 
             if dry_run: return
             items = request.send()
@@ -132,8 +131,8 @@ class Cli(object):
         """Attach a file to a specified item given a filename."""
         if dry_run: return
         data = self.service.add_attachment(ids, **kw)
-        self.log_t('{!r} attached to {}{}: {}'.format(
-            filename, self.service.item.type, pluralism(ids), ', '.join(map(str, ids))))
+        self.log_t(f"{repr(filename)} attached to {self.service.item.type}{pluralism(ids)}: \
+                   {', '.join(map(str, ids))}")
 
     @login_retry
     def attachments(self, ids, dry_run=False, item_id=False, output_url=False, browser=False, **kw):
@@ -149,8 +148,7 @@ class Cli(object):
             item_str = ''
             plural = pluralism(ids)
 
-        self.log_t('Getting attachment{}{}: {}'.format(
-            plural, item_str, ', '.join(map(str, ids))))
+        self.log_t(f"Getting attachment{plural}{item_str}: {', '.join(map(str, ids))}")
 
         def _output_urls(ids):
             for id in ids:
@@ -254,13 +252,11 @@ class Cli(object):
     def modify(self, ids, ask=False, dry_run=False, **kw):
         request = self.service.ModifyRequest(ids, **kw)
 
-        self.log_t('Modifying {}{}: {}'.format(
-            self.service.item.type, pluralism(ids), ', '.join(map(str, ids))))
+        self.log_t(f"Modifying {self.service.item.type}{pluralism(ids)}: {', '.join(map(str, ids))}")
         self.log(request.options, prefix='')
 
         if ask:
-            if not confirm(prompt='Modify {}{}?'.format(
-                    self.service.item.type, pluralism(ids)), default=True):
+            if not confirm(prompt=f'Modify {self.service.item.type}{pluralism(ids)}?', default=True):
                 self.log('Modification aborted')
                 return
 
@@ -278,7 +274,7 @@ class Cli(object):
             self.log(line, prefix='')
 
         if ask or not batch:
-            if not confirm(prompt='Submit {}?'.format(self.service.item.type), default=True):
+            if not confirm(prompt=f'Submit {self.service.item.type}?', default=True):
                 self.log('Submission aborted')
                 return
 
@@ -313,7 +309,7 @@ class Cli(object):
         self.log(f"{count} {self.service.item.type}{pluralism(count)} found.")
 
     def _header(self, char, msg):
-        return '{} {} {}'.format(char * 3, msg, char * (const.COLUMNS - len(msg) - 5))
+        return f'{char * 3} {msg} {char * (const.COLUMNS - len(msg) - 5)}'
 
     def log(self, msg, newline=True, truncate=False, prefix=' * '):
         if isinstance(msg, list):
