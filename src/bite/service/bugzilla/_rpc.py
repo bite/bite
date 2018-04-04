@@ -1,15 +1,11 @@
-from itertools import groupby
-
 from snakeoil.demandload import demandload
 
 from . import (
-    Bugzilla, BugzillaComment, BugzillaEvent,
-    SearchRequest, HistoryRequest, CommentsRequest, AttachmentsRequest,
+    Bugzilla,
+    SearchRequest, HistoryRequest, CommentsRequest, AttachmentsRequest, LoginRequest,
     GetItemRequest, GetRequest, ModifyRequest, AttachRequest, CreateRequest,
     ExtensionsRequest, VersionRequest, FieldsRequest, ProductsRequest, UsersRequest)
-from .. import Request, RPCRequest, req_cmd
-from ... import magic
-from ...exceptions import BiteError
+from .. import RPCRequest, req_cmd
 
 demandload('bite:const')
 

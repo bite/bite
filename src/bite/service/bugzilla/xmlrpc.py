@@ -2,7 +2,7 @@ from . import BugzillaAttachment, BugzillaError
 from ._rpc import BugzillaRpc
 from .._xmlrpc import LxmlXmlrpc
 from ...objects import decompress
-from ...exceptions import AuthError, RequestError, ParsingError
+from ...exceptions import RequestError, ParsingError
 
 
 class BugzillaXmlrpc(BugzillaRpc, LxmlXmlrpc):

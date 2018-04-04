@@ -1,14 +1,12 @@
 from collections import deque
 
 from . import (
-    Bugzilla, BugzillaBug, BugzillaError, BugzillaAttachment, BugzillaComment, BugzillaEvent,
+    Bugzilla, BugzillaBug,
     SearchRequest, HistoryRequest, CommentsRequest, AttachmentsRequest,
     GetItemRequest, GetRequest, ModifyRequest, AttachRequest, CreateRequest,
     ExtensionsRequest, VersionRequest, FieldsRequest, ProductsRequest, UsersRequest)
-from .. import ContinuedRequest, RESTRequest, req_cmd
+from .. import RESTRequest, req_cmd
 from .._json import Json
-from ...exceptions import RequestError
-from ...objects import Item
 
 
 class BugzillaRest(Bugzilla, Json):

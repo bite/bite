@@ -1,7 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor
 from functools import wraps
-import os
-import types
 from urllib.parse import urlparse, urlunparse, urlencode
 
 import requests

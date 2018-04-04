@@ -1,10 +1,8 @@
 try: import simplejson as json
 except ImportError: import json
 
-from . import BugzillaError
 from ._rpc import BugzillaRpc, _SearchRequest as BugzillaSearchRequest
 from .._jsonrpc import Jsonrpc
-from ...exceptions import AuthError
 
 
 class BugzillaJsonrpc(BugzillaRpc, Jsonrpc):
