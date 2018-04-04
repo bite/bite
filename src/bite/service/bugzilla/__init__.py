@@ -10,7 +10,7 @@ from dateutil.parser import parse as dateparse
 from snakeoil import klass
 from snakeoil.demandload import demandload
 
-from .. import Service, ContinuedRequest, NullRequest, Request
+from .. import Service, PagedRequest, NullRequest, Request
 from ... import utc
 from ...cache import Cache, csv2tuple
 from ...exceptions import RequestError, AuthError, BiteError
@@ -422,7 +422,7 @@ class Bugzilla(Service):
             super()._failed_http_response(response)
 
 
-class SearchRequest(ContinuedRequest):
+class SearchRequest(PagedRequest):
 
     def __init__(self, service, **kw):
         """Construct a search request."""

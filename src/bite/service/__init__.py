@@ -108,7 +108,7 @@ class Request(object):
 
 
 # TODO: run these asynchronously
-class ContinuedRequest(Request):
+class PagedRequest(Request):
     """Keep requesting matching records until all relevant results are returned."""
 
     def __init__(self, *args, **kw):
