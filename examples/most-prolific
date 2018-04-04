@@ -1,0 +1,37 @@
+#!/usr/bin/env python3
+#
+# Show sorted listing of the top 10 users who made changes to Gentoo bugzilla
+# in the last week.
+
+import collections
+import datetime
+
+from dateutil.relativedelta import *
+from dateutil.parser import parse as parsetime
+from itertools import chain
+
+from bite.service.bugzilla.jsonrpc import BugzillaJsonrpc
+
+today = datetime.datetime.utcnow()
+previous = today + relativedelta(days=-1)
+
+bugz = BugzillaJsonrpc(base='https://bugs.gentoo.org/')
+params = {}
+
+params['status'] = 'all'
+params['last_change_time'] = previous
+params['include_fields'] = ['id']
+bugs = [bug.id for bug in bugz.search(**params)]
+comments = bugz.comments(bugs, new_since=params['last_change_time'])
+history = bugz.history(bugs)
+
+def filter_changes(change_list):
+    for bug_changes in change_list:
+        for change in bug_changes:
+            if change.date.replace(tzinfo=None) > previous:
+                yield change.creator.partition('@')[0]
+
+changes = chain(comments, history)
+c = collections.Counter(filter_changes(changes))
+for user, i in c.most_common(10):
+    print(f'{i}: {user}')
