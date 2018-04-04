@@ -99,6 +99,7 @@ class Cli(object):
 
     @login_retry
     def get(self, ids, dry_run=False, browser=False, **kw):
+        """Get item(s) from a service and all related info."""
         if not ids:
             raise RuntimeError(f'No {self.service.item.type} ID(s) specified')
 
@@ -136,6 +137,7 @@ class Cli(object):
 
     @login_retry
     def attachments(self, ids, dry_run=False, item_id=False, output_url=False, browser=False, **kw):
+        """Get attachments from a service."""
         # skip pulling data if we don't need it
         get_data = (not output_url and not browser)
 
@@ -204,7 +206,7 @@ class Cli(object):
                 self._save_attachment(f, path=path)
 
     def _view_attachment(self, f, show_metadata):
-        """Output attachment data."""
+        """Output attachment data to stdout."""
         compressed = ['x-bzip2', 'x-bzip', 'x-gzip', 'gzip', 'x-tar', 'x-xz']
         mime_type, mime_subtype = f.mimetype.split('/')
         if sys.stdout.isatty() and not (mime_type == 'text' or mime_subtype in compressed):
@@ -250,6 +252,7 @@ class Cli(object):
     @login_retry
     @login_required
     def modify(self, ids, ask=False, dry_run=False, **kw):
+        """Modify an item on the service."""
         request = self.service.ModifyRequest(ids, **kw)
 
         self.log_t(f"Modifying {self.service.item.type}{pluralism(ids)}: {', '.join(map(str, ids))}")
@@ -268,6 +271,7 @@ class Cli(object):
     @login_retry
     @login_required
     def create(self, ask=False, batch=False, dry_run=False, **kw):
+        """Create an item on the service."""
         options_log = kw.pop('options_log')
 
         for line in options_log:
@@ -291,6 +295,7 @@ class Cli(object):
             sys.stdout.write(str(data))
 
     def search(self, dry_run=False, **kw):
+        """Search for items on the service."""
         request = self.service.SearchRequest(**kw)
 
         self.log(f'Searching for {self.service.item.type}s with the following options:')
