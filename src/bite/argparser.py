@@ -531,7 +531,7 @@ class Tool(tool.Tool):
             if self.parser.debug:
                 raise e
             else:
-                msg = e.message if self.options.verbose else str(e)
+                msg = e.message if getattr(self.options, 'verbose', False) else str(e)
                 self.parser.error(e.msg)
             return 1
         else:
