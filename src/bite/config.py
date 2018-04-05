@@ -185,7 +185,7 @@ def fill_config(settings, parser, section):
 
 
 def get_config(args, parser):
-    config = configparser.ConfigParser(interpolation=BiteInterpolation())
+    config = configparser.ConfigParser()
     aliases = configparser.ConfigParser(interpolation=BiteInterpolation())
 
     config_settings = {
