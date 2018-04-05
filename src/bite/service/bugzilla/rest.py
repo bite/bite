@@ -6,10 +6,10 @@ from . import (
     GetItemRequest, GetRequest, ModifyRequest, AttachRequest, CreateRequest,
     ExtensionsRequest, VersionRequest, FieldsRequest, ProductsRequest, UsersRequest)
 from .. import RESTRequest, req_cmd
-from .._json import Json
+from .._jsonrest import JsonREST
 
 
-class BugzillaRest(Bugzilla, Json):
+class BugzillaRest(Bugzilla, JsonREST):
     """Support Bugzilla's REST interface.
 
     API docs: http://bugzilla.readthedocs.io/en/latest/api/index.html#apis
