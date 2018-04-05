@@ -186,14 +186,14 @@ def fill_config(settings, parser, section):
 
 def get_config(args, parser):
     config = configparser.ConfigParser(interpolation=BiteInterpolation())
+    aliases = configparser.ConfigParser(interpolation=BiteInterpolation())
 
-    # load system service settings and then user service settings --
-    # later settings override earlier ones
-    for service_dir in (os.path.join(const.DATA_PATH, 'services'),
-                        os.path.join(const.USER_DATA_PATH, 'services')):
-        for root, _, files in os.walk(service_dir):
-            config.read([os.path.join(root, f) for f in files if not f.startswith('.')])
+    config_settings = {
+        'config': config,
+        'aliases': aliases,
+    }
 
+    # load config files
     system_config = os.path.join(const.CONFIG_PATH, 'bite.conf')
     user_config = os.path.join(const.USER_CONFIG_PATH, 'bite.conf')
     try:
@@ -203,7 +203,28 @@ def get_config(args, parser):
     except IOError as e:
         raise BiteError(f'cannot load config file {repr(e.filename)}: {e.strerror}')
 
-    aliases = configparser.ConfigParser(interpolation=BiteInterpolation())
+    if args.service is None or args.base is None:
+        if args.connection is None:
+            args.connection = config.defaults().get('connection', None)
+            config_settings['connection'] = args.connection
+        if not any ((args.service, args.base)) and args.connection is None:
+            raise BiteError('no connection specified and no default connection set')
+
+    # Load system connection settings and then user connection settings --
+    # later settings override earlier ones. Note that only the service config
+    # files matching the name of the selected connection are loaded.
+    if args.connection is not None:
+        for service_dir in (os.path.join(const.DATA_PATH, 'services'),
+                            os.path.join(const.USER_DATA_PATH, 'services')):
+            for root, _, files in os.walk(service_dir):
+                config.read(os.path.join(root, f) for f in files if f == args.connection)
+
+    if config.has_section(args.connection):
+        fill_config(config_settings, config, args.connection)
+    elif args.connection:
+        parser.error(f'unknown connection: {repr(args.connection)}')
+
+    # load alias files
     system_aliases = os.path.join(const.CONFIG_PATH, 'aliases')
     user_aliases = os.path.join(const.USER_CONFIG_PATH, 'aliases')
     try:
@@ -214,20 +235,5 @@ def get_config(args, parser):
         raise BiteError(f'cannot load aliases file {repr(e.filename)}: {e.strerror}')
     except (configparser.DuplicateSectionError, configparser.DuplicateOptionError) as e:
         raise BiteError(e)
-
-    config_settings = {
-        'config': config,
-        'aliases': aliases,
-    }
-
-    if args.service is None or args.base is None:
-        if args.connection is None:
-            args.connection = config.defaults().get('connection', None)
-            config_settings['connection'] = args.connection
-
-    if config.has_section(args.connection):
-        fill_config(config_settings, config, args.connection)
-    elif args.connection:
-        parser.error(f'unknown connection: {repr(args.connection)}')
 
     return config_settings
