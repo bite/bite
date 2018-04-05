@@ -3,6 +3,7 @@ from functools import wraps
 from urllib.parse import urlparse, urlunparse, urlencode
 
 import requests
+from snakeoil import klass
 from snakeoil.sequences import iflatten_instance
 
 from .. import __title__, __version__
@@ -147,22 +148,34 @@ class RESTRequest(Request):
     """Construct a REST request."""
 
     def __init__(self, endpoint, method='GET', **kw):
+        self.method = method
         self.endpoint = endpoint
+        self.data = None
         super().__init__(method=method, **kw)
-        self._base_url = self._req.url
 
-    def _finalize(self):
-        super()._finalize()
-
-        params = []
+    @klass.jit_attr
+    def url(self):
+        """Construct a full resource URL with params encoded."""
+        l = []
         for k, v in self.params.items():
             if isinstance(v, (list, tuple)):
-                params.extend([(k, i) for i in v])
+                l.extend((k, i) for i in v)
             else:
-                params.append((k, v))
-        params = '?' + urlencode(params) if params else ''
+                l.append((k, v))
 
-        self._req.url = '{}/{}{}'.format(self._base_url, self.endpoint.lstrip('/'), params)
+        params_str = f'?{urlencode(l)}' if l else ''
+        return f"{self.service._base}/{self.endpoint.lstrip('/')}{params_str}"
+
+    def _finalize(self):
+        # inject auth params if available
+        super()._finalize()
+
+        # construct URL to resource with requested params
+        self._req.url = self.url
+
+        # encode additional params gb
+        if self.data:
+            self._req.data = self.service._encode_request(self.data)
 
 
 class NullRequest(Request):
