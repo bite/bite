@@ -1,7 +1,6 @@
 from argparse import (
     SUPPRESS, Action, ArgumentError, ArgumentTypeError,
     _get_action_name, _SubParsersAction, _)
-import fileinput
 from importlib import import_module
 import logging
 import os

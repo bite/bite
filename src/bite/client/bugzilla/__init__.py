@@ -1,9 +1,6 @@
-import base64
 from collections import OrderedDict
 from itertools import chain
-import os
 import re
-import stat
 import subprocess
 import sys
 

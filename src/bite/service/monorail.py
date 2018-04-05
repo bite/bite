@@ -2,9 +2,7 @@
 # https://chromium.googlesource.com/infra/infra/+/master/appengine/monorail/doc/api.md
 
 from itertools import chain
-import os
 import re
-import sys
 from types import GeneratorType
 from urllib.parse import urlparse
 
@@ -18,6 +16,7 @@ from ._jsonrpc import Jsonrpc
 from ..objects import decompress, Item, Comment, Attachment
 from ..exceptions import RequestError, AuthError, BadAuthToken
 from ..rfc3339 import parse_datetime as parsetime
+
 
 class Monorail(Jsonrpc):
 

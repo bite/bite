@@ -1,4 +1,3 @@
-import codecs
 from functools import wraps
 import getpass
 from io import BytesIO

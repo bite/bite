@@ -35,7 +35,7 @@ class BiteInterpolation(configparser.ExtendedInterpolation):
     def _interpolate_some(self, parser, option, accum, rest, section, map,
                           depth):
         if depth > configparser.MAX_INTERPOLATION_DEPTH:
-            raise InterpolationDepthError(option, section, rest)
+            raise configparser.InterpolationDepthError(option, section, rest)
         while rest:
             p = rest.find("%")
             if p < 0:
@@ -52,7 +52,8 @@ class BiteInterpolation(configparser.ExtendedInterpolation):
             elif c == "{":
                 m = self._KEYCRE.match(rest)
                 if m is None:
-                    raise InterpolationSyntaxError(option, section,
+                    raise configparser.InterpolationSyntaxError(
+                        option, section,
                         "bad interpolation variable reference %r" % rest)
                 path = m.group(1).split(':')
                 rest = rest[m.end():]
@@ -71,7 +72,7 @@ class BiteInterpolation(configparser.ExtendedInterpolation):
                         opt = parser.optionxform(path[1])
                         v = parser.get(sect, opt, raw=True)
                     else:
-                        raise InterpolationSyntaxError(
+                        raise configparser.InterpolationSyntaxError(
                             option, section,
                             "More than one ':' found: %r" % (rest,))
                 except (KeyError, configparser.NoSectionError, configparser.NoOptionError):
@@ -86,7 +87,7 @@ class BiteInterpolation(configparser.ExtendedInterpolation):
                         v = v[1:]
                     accum.append(v)
             else:
-                raise InterpolationSyntaxError(
+                raise configparser.InterpolationSyntaxError(
                     option, section,
                     "'%' must be followed by '%' or '{', "
                     "found: %r" % (rest,))
@@ -111,7 +112,7 @@ def set_config_option(config_file, section, option, value, exists=False):
     with open(config_file, 'r+') as f:
         config = f.readlines()
 
-        for i in xrange(len(config)):
+        for i in range(len(config)):
             # find the beginning of the matching section
             if re.match(fr'^\[{section}\].*\n$', config[i]):
                 break

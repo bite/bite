@@ -1,15 +1,8 @@
-import argparse
 from copy import deepcopy
-import datetime
 from itertools import chain
 from operator import attrgetter
-import os
-import re
-import stat
-import sys
 from urllib.parse import urlencode
 
-import dateutil.parser
 from dateutil.relativedelta import *
 from snakeoil.demandload import demandload
 

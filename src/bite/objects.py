@@ -3,9 +3,7 @@ import bz2
 import lzma
 import os
 import re
-import sys
 import stat
-import tarfile
 import zlib
 
 try:
