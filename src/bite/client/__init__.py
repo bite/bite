@@ -26,7 +26,7 @@ def login_retry(func):
         try:
             return func(self, *args, **kw)
         except AuthError as e:
-            if self.skip_auth:
+            if self.skip_auth or (self.service.authenticated and not e.expired):
                 raise e
             # don't show redundant output from retried commands
             self.quiet = True
