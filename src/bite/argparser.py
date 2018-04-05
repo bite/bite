@@ -464,10 +464,10 @@ class ArgumentParser(arghparse.ArgumentParser):
             initial_args.connection = os.path.basename(sys.argv[0])
 
         # load settings from the config file
-        config_settings = get_config(initial_args, self)
+        settings, _config, aliases = get_config(initial_args, self)
 
         # merge config options, command line options override these
-        for k, v in config_settings.items():
+        for k, v in settings.items():
             if getattr(initial_args, k, None) is None:
                 setattr(initial_args, k, v)
 
@@ -498,7 +498,7 @@ class ArgumentParser(arghparse.ArgumentParser):
 
         # check if unparsed args match any aliases
         if unparsed_args:
-            unparsed_args = substitute_alias(initial_args, unparsed_args)
+            unparsed_args = substitute_alias(initial_args.connection, aliases, unparsed_args)
 
         self.set_defaults(connection=initial_args.connection)
 

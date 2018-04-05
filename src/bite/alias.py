@@ -26,15 +26,15 @@ def get_alias(args, section, alias):
     return value
 
 
-def substitute_alias(args, unparsed_args):
+def substitute_alias(connection, aliases, unparsed_args):
     alias_name = unparsed_args[0]
     extra_cmds = unparsed_args[1:]
 
-    if args.connection is not None and args.aliases.has_section(args.connection):
-        section = args.connection
+    if connection is not None and aliases.has_section(connection):
+        section = connection
     else:
-        section = args.aliases.default_section
-    alias_cmd = args.aliases.get(section, alias_name, fallback=None)
+        section = aliases.default_section
+    alias_cmd = aliases.get(section, alias_name, fallback=None)
 
     if alias_cmd is None:
         return unparsed_args

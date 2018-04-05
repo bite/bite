@@ -187,11 +187,7 @@ def fill_config(settings, parser, section):
 def get_config(args, parser):
     config = configparser.ConfigParser()
     aliases = configparser.ConfigParser(interpolation=BiteInterpolation())
-
-    config_settings = {
-        'config': config,
-        'aliases': aliases,
-    }
+    settings = {}
 
     # load config files
     system_config = os.path.join(const.CONFIG_PATH, 'bite.conf')
@@ -206,7 +202,7 @@ def get_config(args, parser):
     if args.service is None or args.base is None:
         if args.connection is None:
             args.connection = config.defaults().get('connection', None)
-            config_settings['connection'] = args.connection
+            settings['connection'] = args.connection
         if not any ((args.service, args.base)) and args.connection is None:
             raise BiteError('no connection specified and no default connection set')
 
@@ -220,7 +216,7 @@ def get_config(args, parser):
                 config.read(os.path.join(root, f) for f in files if f == args.connection)
 
     if config.has_section(args.connection):
-        fill_config(config_settings, config, args.connection)
+        fill_config(settings, config, args.connection)
     elif args.connection:
         parser.error(f'unknown connection: {repr(args.connection)}')
 
@@ -236,4 +232,4 @@ def get_config(args, parser):
     except (configparser.DuplicateSectionError, configparser.DuplicateOptionError) as e:
         raise BiteError(e)
 
-    return config_settings
+    return settings, config, aliases
