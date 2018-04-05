@@ -11,7 +11,7 @@ from datetime import datetime
 from snakeoil.sequences import iflatten_instance
 
 from . import NullRequest, Request, RPCRequest, req_cmd, generator
-from ._xmlrpc import LxmlXmlrpc
+from ._xmlrpc import Xmlrpc
 from ..cache import Cache, csv2tuple
 from ..exceptions import AuthError, RequestError, ParsingError
 from ..objects import decompress, Item, Attachment, Comment
@@ -152,7 +152,7 @@ class RoundupCache(Cache):
         super().__init__(defaults=defaults, converters=converters, *args, **kw)
 
 
-class Roundup(LxmlXmlrpc):
+class Roundup(Xmlrpc):
     """Support Roundup's XML-RPC interface."""
 
     #_service = 'roundup'

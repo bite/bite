@@ -1,11 +1,11 @@
 from . import BugzillaAttachment, BugzillaError
 from ._rpc import BugzillaRpc
-from .._xmlrpc import LxmlXmlrpc
+from .._xmlrpc import Xmlrpc
 from ...objects import decompress
 from ...exceptions import RequestError, ParsingError
 
 
-class BugzillaXmlrpc(BugzillaRpc, LxmlXmlrpc):
+class BugzillaXmlrpc(BugzillaRpc, Xmlrpc):
     """Support Bugzilla's deprecated XML-RPC interface."""
 
     _service = 'bugzilla-xmlrpc'
