@@ -17,7 +17,7 @@ previous = today + relativedelta(weeks=-1)
 bugz = BugzillaJsonrpc(base='https://bugs.gentoo.org/')
 params = {}
 
-params['status'] = 'all'
+params['status'] = ['all']
 params['last_change_time'] = previous
 params['include_fields'] = ['id']
 bugs = [bug.id for bug in bugz.search(**params)]
