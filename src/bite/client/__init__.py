@@ -282,7 +282,7 @@ class Cli(object):
         if dry_run: return
 
         try:
-            data = self.service.create(**params)
+            data = self.service.create(**kw)
         except ValueError as e:
             raise BiteError(e)
 
