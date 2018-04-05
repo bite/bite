@@ -464,7 +464,7 @@ class ArgumentParser(arghparse.ArgumentParser):
             initial_args.connection = os.path.basename(sys.argv[0])
 
         # load settings from the config file
-        settings, _config, aliases = get_config(initial_args, self)
+        settings, config, aliases = get_config(initial_args, self)
 
         # merge config options, command line options override these
         for k, v in settings.items():
@@ -486,6 +486,10 @@ class ArgumentParser(arghparse.ArgumentParser):
 
         service_opts = get_service_cls(
             service, const.SERVICE_OPTS)(parser=self, service_name=service)
+
+        # add service config options
+        service_opts.add_config_opts(
+            args=initial_args, config_opts=config.items(initial_args.connection))
 
         # re-parse for any top level service-specific options that were just added
         initial_args, unparsed_args = self.parse_optionals(unparsed_args, initial_args)

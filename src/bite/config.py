@@ -159,30 +159,6 @@ def get_config_option(config_file, section, option):
         raise ValueError(f'No section {repr(section)}')
     return value
 
-def fill_config(settings, parser, section):
-    def fill_config_option(settings, parser, section, get, option, func=None):
-        func = func if func is not None else lambda x: x
-        value = config_option(parser, get, section, option)
-        if value is not None:
-            settings[option] = func(value)
-
-    parse_option = partial(fill_config_option, settings, parser, section)
-    parse_option(parser.get, 'service')
-    parse_option(parser.get, 'base')
-    parse_option(parser.get, 'user')
-    parse_option(parser.get, 'password')
-    parse_option(parser.get, 'passwordcmd')
-    parse_option(parser.get, 'auth_token')
-    parse_option(parser.get, 'auth_file')
-    parse_option(parser.getboolean, 'skip_auth')
-    parse_option(parser.getint, 'columns')
-    parse_option(parser.getint, 'concurrent')
-    parse_option(parser.getint, 'timeout')
-    parse_option(parser.getint, 'max_results')
-    parse_option(parser.getboolean, 'verify')
-    parse_option(parser.getboolean, 'quiet')
-    parse_option(parser.get, 'suffix')
-
 
 def get_config(args, parser):
     config = configparser.ConfigParser()
@@ -215,10 +191,12 @@ def get_config(args, parser):
             for root, _, files in os.walk(service_dir):
                 config.read(os.path.join(root, f) for f in files if f == args.connection)
 
-    if config.has_section(args.connection):
-        fill_config(settings, config, args.connection)
-    elif args.connection:
-        parser.error(f'unknown connection: {repr(args.connection)}')
+    if args.connection:
+        if not config.has_section(args.connection):
+            parser.error(f'unknown connection: {repr(args.connection)}')
+        else:
+            settings['base'] = config.get(args.connection, 'base', fallback=None)
+            settings['service'] = config.get(args.connection, 'service', fallback=None)
 
     # load alias files
     system_aliases = os.path.join(const.CONFIG_PATH, 'aliases')

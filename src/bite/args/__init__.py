@@ -1,5 +1,6 @@
 from functools import partial
 
+from ..exceptions import BiteError
 from ..argparser import parse_stdin, string_list, id_list, ids
 
 
@@ -33,6 +34,16 @@ class ServiceOpts(object):
     def __init__(self, parser, service_name):
         self.parser = parser
 
+        # type conversion mapping for config opts
+        self.config_map = {
+            'skip_auth': bool,
+            'verify': bool,
+            'quiet': bool,
+            'columns': int,
+            'concurrent': int,
+            'timeout': int,
+        }
+
         from ..scripts.bite import service_specific_opts
         self.service_opts = service_specific_opts
         self.service_opts.title = service_name.split('-')[0].capitalize() + ' specific options'
@@ -41,6 +52,14 @@ class ServiceOpts(object):
 
     def main_opts(self):
         """Add service specific top-level options."""
+
+    def add_config_opts(self, args, config_opts):
+        """Add service specific config options."""
+        try:
+            for k, v in config_opts:
+                setattr(args, k, self.config_map.get(k, str)(v))
+        except ValueError as e:
+            raise BiteError(f'invalid config value for {repr(k)}: {repr(v)}')
 
     def add_subcmds(self, service):
         subcmd_parser = self.parser.add_subparsers(help='help for subcommands')

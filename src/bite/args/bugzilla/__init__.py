@@ -61,6 +61,10 @@ def parse_date(s):
 
 class BugzillaOpts(args.ServiceOpts):
 
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
+        self.config_map.update({'max_results': int})
+
     def main_opts(self):
         """Add service specific arguments."""
         from ...scripts.bite import auth_opts
