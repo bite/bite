@@ -92,6 +92,16 @@ class BiteInterpolation(configparser.ExtendedInterpolation):
                     "found: %r" % (rest,))
 
 
+def service_files(connection):
+    """Return iterator of service files matching a given connection name."""
+    for service_dir in (os.path.join(const.DATA_PATH, 'services'),
+                        os.path.join(const.USER_DATA_PATH, 'services')):
+        for root, _, files in os.walk(service_dir):
+            for config_file in files:
+                if config_file == connection:
+                    yield os.path.join(root, config_file)
+
+
 def get_config(args, parser):
     config = configparser.ConfigParser()
     aliases = configparser.ConfigParser(interpolation=BiteInterpolation())
@@ -118,10 +128,12 @@ def get_config(args, parser):
     # later settings override earlier ones. Note that only the service config
     # files matching the name of the selected connection are loaded.
     if args.connection is not None:
-        for service_dir in (os.path.join(const.DATA_PATH, 'services'),
-                            os.path.join(const.USER_DATA_PATH, 'services')):
-            for root, _, files in os.walk(service_dir):
-                config.read(os.path.join(root, f) for f in files if f == args.connection)
+        for config_file in service_files(args.connection):
+            try:
+                with open(config_file) as f:
+                    config.read_file(f)
+            except IOError as e:
+                raise BiteError(f'cannot load config file {repr(e.filename)}: {e.strerror}')
 
     if args.connection:
         if not config.has_section(args.connection):
