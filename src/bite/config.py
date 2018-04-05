@@ -1,5 +1,4 @@
 import configparser
-from functools import partial
 import os
 import re
 
@@ -91,73 +90,6 @@ class BiteInterpolation(configparser.ExtendedInterpolation):
                     option, section,
                     "'%' must be followed by '%' or '{', "
                     "found: %r" % (rest,))
-
-def config_option(parser, get, section, option):
-    if parser.has_option(section, option):
-        try:
-            if get(section, option) != '':
-                return get(section, option)
-            else:
-                parser.error(f'{repr(option)} is not set')
-        except ValueError as e:
-            parser.error(f'option {repr(option)} is not in the right format: {e}')
-
-def set_config_option(config_file, section, option, value, exists=False):
-    """Save a config option and value to a specified config file.
-
-    This function doesn't use the ConfigParser class because that would remove
-    all comments and other non-functional lines from the config file on saving.
-    """
-
-    with open(config_file, 'r+') as f:
-        config = f.readlines()
-
-        for i in range(len(config)):
-            # find the beginning of the matching section
-            if re.match(fr'^\[{section}\].*\n$', config[i]):
-                break
-
-        if i >= len(config) - 1:
-            raise RuntimeError(f'Cannot find section {repr(section)} in config file')
-
-        config_option = f'{option}: {value}\n'
-
-        while True:
-            i += 1
-            if not exists:
-                # insert the option after the last line of the matching section
-                if re.match(r'^(\s*|#.*|\[\w+\])\n$', config[i]):
-                    config.insert(i, config_option)
-                    break
-            else:
-                # overwrite the existing option
-                if re.match(fr'^{option}: ', config[i]):
-                    config[i] = config_option
-                    break
-
-        f.seek(0)
-        f.truncate()
-        f.writelines(config)
-
-def get_matching_options(parser, section, regex):
-    values = []
-    for (name, value) in parser.items(section):
-        if re.match(regex, name):
-            values.append((name, value))
-    return values
-
-def get_config_option(config_file, section, option):
-    parser = configparser.ConfigParser()
-    with open(config_file, 'r+') as f:
-        parser.readfp(f)
-
-    try:
-        value = parser.get(section, option)
-    except configparser.NoOptionError:
-        raise ValueError(f'No option {repr(option)} for section {repr(section)}')
-    except configparser.NoSectionError:
-        raise ValueError(f'No section {repr(section)}')
-    return value
 
 
 def get_config(args, parser):
