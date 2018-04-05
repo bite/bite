@@ -277,7 +277,7 @@ class Service(object):
         raise NotImplementedError
 
     def inject_auth(self, request=None, params=None):
-        """Authenticate a request or session."""
+        """Stub for authenticating a request or session."""
         return request, params
 
     def parse_response(self, response):

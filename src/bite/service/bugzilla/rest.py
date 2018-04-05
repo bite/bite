@@ -18,7 +18,6 @@ class BugzillaRest(Bugzilla, JsonREST):
 
     def __init__(self, **kw):
         super().__init__(endpoint='/rest', **kw)
-        self.item = BugzillaBug
 
     def inject_auth(self, request, params):
         if len(self.auth) > 16:
@@ -44,9 +43,7 @@ class BugzillaRest(Bugzilla, JsonREST):
 
 @req_cmd(BugzillaRest, 'get')
 class _GetRequest(GetRequest):
-    def __init__(self, *args, **kw):
-        """Construct a get request."""
-        super().__init__(*args, **kw)
+    """Construct a get request."""
 
 
 @req_cmd(BugzillaRest, 'modify')
@@ -132,6 +129,7 @@ class _GetItemRequest(GetItemRequest, RESTRequest):
 @req_cmd(BugzillaRest)
 class _LoginRequest(LoginRequest, RESTRequest):
     def __init__(self, *args, **kw):
+        """Construct a login request."""
         super().__init__(endpoint='/login', *args, **kw)
 
 

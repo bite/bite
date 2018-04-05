@@ -1,8 +1,7 @@
 from snakeoil.demandload import demandload
 
 from . import (
-    Bugzilla,
-    SearchRequest, HistoryRequest, CommentsRequest, AttachmentsRequest, LoginRequest,
+    Bugzilla, SearchRequest, HistoryRequest, CommentsRequest, AttachmentsRequest, LoginRequest,
     GetItemRequest, GetRequest, ModifyRequest, AttachRequest, CreateRequest,
     ExtensionsRequest, VersionRequest, FieldsRequest, ProductsRequest, UsersRequest)
 from .. import RPCRequest, req_cmd
