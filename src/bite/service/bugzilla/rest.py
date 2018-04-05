@@ -1,7 +1,7 @@
 from collections import deque
 
 from . import (
-    Bugzilla, BugzillaBug,
+    Bugzilla, BugzillaBug, LoginRequest,
     SearchRequest, HistoryRequest, CommentsRequest, AttachmentsRequest,
     GetItemRequest, GetRequest, ModifyRequest, AttachRequest, CreateRequest,
     ExtensionsRequest, VersionRequest, FieldsRequest, ProductsRequest, UsersRequest)
@@ -116,9 +116,15 @@ class _AttachmentsRequest(AttachmentsRequest, RESTRequest):
 class _GetItemRequest(GetItemRequest, RESTRequest):
     def __init__(self, *args, **kw):
         """Construct a get request."""
-        super().__init__(endpoint='/bug', *args, **kw)
+        super().__init__(endpoint='/bug', method='GET', *args, **kw)
         # REST interface renames 'ids' param to 'id'
         self.params['id'] = self.params.pop('ids')
+
+
+@req_cmd(BugzillaRest)
+class _LoginRequest(LoginRequest, RESTRequest):
+    def __init__(self, *args, **kw):
+        super().__init__(endpoint='/login', *args, **kw)
 
 
 @req_cmd(BugzillaRest, 'extensions')

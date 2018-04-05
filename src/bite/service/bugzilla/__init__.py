@@ -887,6 +887,20 @@ class GetRequest(Request):
             yield self.service.item(self.service, **bug)
 
 
+class LoginRequest(Request):
+    def __init__(self, user, password, restrict_login=False, **kw):
+        """Log in as a user and get an auth token."""
+        params = {
+            'login': user,
+            'password': password,
+            'restrict_login': restrict_login,
+        }
+        super().__init__(params=params, **kw)
+
+    def parse(self, data):
+        return data['token']
+
+
 class ExtensionsRequest(Request):
 
     def parse(self, data):

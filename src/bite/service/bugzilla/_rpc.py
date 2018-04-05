@@ -15,18 +15,9 @@ class BugzillaRpc(Bugzilla):
 
 
 @req_cmd(BugzillaRpc)
-class _LoginRequest(RPCRequest):
-    def __init__(self, user, password, service, restrict_login=False):
-        """Log in as a user and get an auth token."""
-        params = {
-            'login': user,
-            'password': password,
-            'restrict_login': restrict_login,
-        }
-        super().__init__(service=service, command='User.login', params=params)
-
-    def parse(self, data):
-        return data['token']
+class _LoginRequest(LoginRequest, RPCRequest):
+    def __init__(self, *args, **kw):
+        super().__init__(command='User.login', *args, **kw)
 
 
 @req_cmd(BugzillaRpc, 'users')
