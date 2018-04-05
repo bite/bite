@@ -2,6 +2,7 @@ from functools import partial
 
 from ..exceptions import BiteError
 from ..argparser import parse_stdin, string_list, id_list, ids
+from ..utils import str2bool
 
 
 def subcmd(service_cls, name=None):
@@ -36,9 +37,9 @@ class ServiceOpts(object):
 
         # type conversion mapping for config opts
         self.config_map = {
-            'skip_auth': bool,
-            'verify': bool,
-            'quiet': bool,
+            'skip_auth': str2bool,
+            'verify': str2bool,
+            'quiet': str2bool,
             'columns': int,
             'concurrent': int,
             'timeout': int,

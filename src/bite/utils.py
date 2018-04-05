@@ -122,3 +122,11 @@ def id_generator(size=16, chars=string.ascii_uppercase + string.digits):
 
 def strikethrough(s):
     return ''.join([(char + r'\u0336') for char in s])
+
+def str2bool(s):
+    v = s.lower()
+    if v in ("yes", "true", "1"):
+        return True
+    if v in ("no", "false", "0"):
+        return False
+    raise ValueError(f'invalid boolean value {repr(s)}')
