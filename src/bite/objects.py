@@ -40,11 +40,6 @@ def decompress(fcn):
     return wrapper
 
 
-def flatten(list_of_lists):
-    "Flatten one level of nesting"
-    return list(chain.from_iterable(list_of_lists))
-
-
 class DateTime(object):
     """Object that stores a given date token and its corresponding datetime object."""
 
