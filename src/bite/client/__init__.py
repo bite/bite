@@ -119,8 +119,8 @@ class Cli(object):
             self.log_t(f"Getting {self.service.item.type}{pluralism(ids)}: {', '.join(map(str, ids))}")
 
             if dry_run: return
-            items = request.send()
-            lines = chain.from_iterable(self._render_item(item, **kw) for item in items)
+            data = request.send()
+            lines = chain.from_iterable(self._render_item(item, **kw) for item in data)
             print(*lines, sep='\n')
 
     @login_retry
@@ -262,7 +262,7 @@ class Cli(object):
 
         if dry_run: return
         data = request.send()
-        lines = chain.from_iterable(self._render_changes(bug, **kw) for bug in data)
+        lines = chain.from_iterable(self._render_changes(item, **kw) for item in data)
         print(*lines, sep='\n')
 
     @login_retry
@@ -371,7 +371,7 @@ class Cli(object):
     def _render_changes(self, data, **kw):
         raise NotImplementedError
 
-    def _render_search(self, bugs, fields=None, output=None, **kw):
+    def _render_search(self, data, fields=None, output=None, **kw):
         if output is None:
             if fields is None:
                 fields = ('id', 'owner', 'summary')
@@ -379,11 +379,11 @@ class Cli(object):
             else:
                 output = ' '.join('{}' for x in fields)
 
-        for bug in bugs:
+        for item in data:
             if output == '-':
                 for field in fields:
                     try:
-                        value = getattr(bug, field)
+                        value = getattr(item, field)
                     except AttributeError:
                         raise BiteError(f'invalid field: {repr(field)}')
                     if value is None:
@@ -393,7 +393,7 @@ class Cli(object):
                     else:
                         yield value
             else:
-                values = (getattr(bug, field) for field in fields)
+                values = (getattr(item, field) for field in fields)
                 yield from self._iter_lines(output.format(*values), wrap=False)
 
     def _render_item(self, data, **kw):
