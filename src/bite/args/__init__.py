@@ -57,8 +57,10 @@ class ServiceOpts(object):
     def add_config_opts(self, args, config_opts):
         """Add service specific config options."""
         try:
+            # merge config options, command line options override these
             for k, v in config_opts:
-                setattr(args, k, self.config_map.get(k, str)(v))
+                if getattr(args, k, None) is None:
+                    setattr(args, k, self.config_map.get(k, str)(v))
         except ValueError as e:
             raise BiteError(f'invalid config value for {repr(k)}: {repr(v)}')
 

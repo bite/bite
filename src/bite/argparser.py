@@ -466,7 +466,7 @@ class ArgumentParser(arghparse.ArgumentParser):
         # load settings from the config file
         settings, config, aliases = get_config(initial_args, self)
 
-        # merge config options, command line options override these
+        # merge connection/base/service config options, command line options override these
         for k, v in settings.items():
             if getattr(initial_args, k, None) is None:
                 setattr(initial_args, k, v)
