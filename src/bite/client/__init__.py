@@ -301,8 +301,6 @@ class Cli(object):
         if dry_run: return
         data = request.send()
 
-        if 'fields' not in kw:
-            kw['fields'] = request.fields
         lines = self._render_search(data, **kw)
         count = 0
         for line in lines:
@@ -373,8 +371,30 @@ class Cli(object):
     def _render_changes(self, data, **kw):
         raise NotImplementedError
 
-    def _render_search(self, data, **kw):
-        raise NotImplementedError
+    def _render_search(self, bugs, fields=None, output=None, **kw):
+        if output is None:
+            if fields is None:
+                fields = ('id', 'owner', 'summary')
+                output = '{} {:<20} {}'
+            else:
+                output = ' '.join('{}' for x in fields)
+
+        for bug in bugs:
+            if output == '-':
+                for field in fields:
+                    try:
+                        value = getattr(bug, field)
+                    except AttributeError:
+                        raise BiteError(f'invalid field: {repr(field)}')
+                    if value is None:
+                        continue
+                    if isinstance(value, list):
+                        yield from map(str, value)
+                    else:
+                        yield value
+            else:
+                values = (getattr(bug, field) for field in fields)
+                yield from self._iter_lines(output.format(*values), wrap=False)
 
     def _render_item(self, data, **kw):
         raise NotImplementedError

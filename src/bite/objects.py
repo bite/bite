@@ -84,6 +84,8 @@ class PrintableObject(object):
 
 class Item(PrintableObject):
 
+    attributes = {}
+    attribute_aliases = {}
     type = None
 
     def __init__(self, id=None, title=None, creator=None, owner=None, created=None,
@@ -103,6 +105,14 @@ class Item(PrintableObject):
         self.comments = comments # list of Comment objects
         self.attachments = attachments # dict of lists of Attachment objects
         self.changes = changes # list of Change objects
+
+    def __getattr__(self, name):
+        if name in self.attributes:
+            return None
+        elif name in self.attribute_aliases:
+            return getattr(self, self.attribute_aliases[name])
+        else:
+            raise AttributeError
 
 
 class Change(PrintableObject):

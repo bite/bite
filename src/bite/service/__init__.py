@@ -382,9 +382,3 @@ class Service(object):
         if self.suffix is not None and '@' not in s:
             s = s + self.suffix
         return s
-
-    def substitute_aliases(self, field):
-        try:
-            return self.attribute_aliases[field]
-        except KeyError:
-            return field

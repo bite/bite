@@ -386,30 +386,6 @@ class Bugzilla(Cli):
         else:
             self.log('No matching users found')
 
-    def _render_search(self, bugs, fields, output=None, **kw):
-        if output is None:
-            if fields == ['id', 'assigned_to', 'summary']:
-                output = '{} {:<20} {}'
-            else:
-                output = ' '.join('{}' for x in fields)
-
-        for bug in bugs:
-            if output == '-':
-                for field in fields:
-                    try:
-                        value = getattr(bug, field)
-                    except AttributeError:
-                        raise BiteError(f'invalid field: {repr(field)}')
-                    if value is None:
-                        continue
-                    if isinstance(value, list):
-                        yield from map(str, value)
-                    else:
-                        yield value
-            else:
-                values = (getattr(bug, field) for field in fields)
-                yield from self._iter_lines(output.format(*values), wrap=False)
-
     def _match_change(self, change, fields):
         change_aliases = {
             'attachment-description': 'attachments.description',

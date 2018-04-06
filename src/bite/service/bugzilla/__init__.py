@@ -194,12 +194,6 @@ class BugzillaBug(Item):
         else:
             return value
 
-    def __getattr__(self, name):
-        if name in self.attributes.keys():
-            return None
-        else:
-            raise AttributeError
-
 
 class BugzillaComment(Comment):
     def __init__(self, comment, id, count, rest=False, **kw):
