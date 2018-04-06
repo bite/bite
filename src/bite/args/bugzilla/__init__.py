@@ -13,7 +13,7 @@ from ...objects import DateTime
 from ...utc import utc
 
 
-def parse_bug_list(s):
+def bug_list(s):
     try:
         return [int(i) for i in s.split(',')]
     except ValueError:
@@ -21,40 +21,48 @@ def parse_bug_list(s):
 
 
 def parse_date(s):
-    if sys.stdin.isatty() or s != '-':
-        today = datetime.datetime.utcnow()
-        offset = re.match(r'^(\d+)([ymwdhs]|min)$', s)
+    today = datetime.datetime.utcnow()
+    offset = re.match(r'^(\d+)([ymwdhs]|min)$', s)
 
-        if offset:
-            units = {
-                'y': 'years',
-                'm': 'months',
-                'w': 'weeks',
-                'd': 'days',
-                'h': 'hours',
-                'min': 'minutes',
-                's': 'seconds',
-            }
-            unit = units[offset.group(2)]
-            value = -int(offset.group(1))
-            kw = {unit: value}
-            date = today + relativedelta(**kw)
-        elif re.match(r'^\d\d\d\d$', s):
-            date = parsetime(s) + relativedelta(yearday=1)
-        elif re.match(r'^\d\d\d\d[-/]\d\d$', s):
-            date = parsetime(s) + relativedelta(day=1)
-        elif re.match(r'^(\d\d)?\d\d[-/]\d\d[-/]\d\d$', s):
-            date = parsetime(s)
-        elif re.match(r'^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d(\+\d\d:\d\d)?$', s):
-            try:
-                # try converting timezone if one is specified
-                date = parsetime(s).astimezone(utc)
-            except ValueError:
-                # otherwise default to UTC if none is specified
-                date = parsetime(s).replace(tzinfo=utc)
-        else:
-            raise argparse.ArgumentTypeError(f'invalid date argument: {repr(s)}')
-        return DateTime(s, date)
+    if offset:
+        units = {
+            'y': 'years',
+            'm': 'months',
+            'w': 'weeks',
+            'd': 'days',
+            'h': 'hours',
+            'min': 'minutes',
+            's': 'seconds',
+        }
+        unit = units[offset.group(2)]
+        value = -int(offset.group(1))
+        kw = {unit: value}
+        date = today + relativedelta(**kw)
+    elif re.match(r'^\d\d\d\d$', s):
+        date = parsetime(s) + relativedelta(yearday=1)
+    elif re.match(r'^\d\d\d\d[-/]\d\d$', s):
+        date = parsetime(s) + relativedelta(day=1)
+    elif re.match(r'^(\d\d)?\d\d[-/]\d\d[-/]\d\d$', s):
+        date = parsetime(s)
+    elif re.match(r'^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d(\+\d\d:\d\d)?$', s):
+        try:
+            # try converting timezone if one is specified
+            date = parsetime(s).astimezone(utc)
+        except ValueError:
+            # otherwise default to UTC if none is specified
+            date = parsetime(s).replace(tzinfo=utc)
+    else:
+        raise ValueError(f'invalid date argument: {repr(s)}')
+
+    return date
+
+
+def date(s):
+    if sys.stdin.isatty() or s != '-':
+        try:
+            return DateTime(s, parse_date(s))
+        except ValueError as e:
+            raise argparse.ArgumentTypeError(e)
     else:
         return s
 
@@ -167,10 +175,10 @@ class Create(args.Create):
             '--groups', type=string_list,
             help='list of groups this bug should be put into')
         attr.add_argument(
-            '--blocks', type=parse_bug_list,
+            '--blocks', type=bug_list,
             help='list of bugs this bug blocks')
         attr.add_argument(
-            '--depends', type=parse_bug_list,
+            '--depends', type=bug_list,
             help='list of bugs this bug depends on')
         attr.add_argument(
             '-K', '--keywords', type=string_list,
@@ -357,14 +365,14 @@ class Search(args.Search):
             help='email of the QA contact for the bug')
         time = self.parser.add_argument_group('Time related')
         time.add_argument(
-            '-c', '--created', type=parse_date,
+            '-c', '--created', type=date,
             dest='creation_time', metavar='TIME',
-            action=partial(parse_stdin, parse_date),
+            action=partial(parse_stdin, date),
             help='bugs created at this time or later')
         time.add_argument(
-            '-m', '--modified', type=parse_date,
+            '-m', '--modified', type=date,
             dest='last_change_time', metavar='TIME',
-            action=partial(parse_stdin, parse_date),
+            action=partial(parse_stdin, date),
             help='bugs modified at this time or later')
         attr = self.parser.add_argument_group('Attribute related')
         attr.add_argument(
@@ -463,8 +471,8 @@ class Changes(args.ReceiveSubcmd):
         # optional args
         self.opts.add_argument(
             '-c', '--created', dest='creation_time',
-            metavar='TIME', type=parse_date,
-            action=partial(parse_stdin, parse_date),
+            metavar='TIME', type=date,
+            action=partial(parse_stdin, date),
             help='changes made at this time or later')
         self.opts.add_argument(
             '-m', '--match', type=string_list,
@@ -505,7 +513,7 @@ class Comments(args.ReceiveSubcmd):
             help='custom format for output')
         self.opts.add_argument(
             '-c', '--created', dest='creation_time',
-            metavar='TIME', type=parse_date,
+            metavar='TIME', type=date,
             help='comments made at this time or later')
         self.opts.add_argument(
             '-r', '--creator', type=string_list, action=parse_stdin,
