@@ -305,7 +305,7 @@ class Cli(object):
         count = 0
         for line in lines:
             count += 1
-            print(line)
+            print(line[:const.COLUMNS])
         self.log(f"{count} {self.service.item.type}{pluralism(count)} found.")
 
     def _header(self, char, msg):
@@ -394,7 +394,7 @@ class Cli(object):
                         yield value
             else:
                 values = (getattr(item, field) for field in fields)
-                yield from self._iter_lines(output.format(*values), wrap=False)
+                yield output.format(*values)
 
     def _render_item(self, item, **kw):
         yield '=' * const.COLUMNS
