@@ -396,5 +396,21 @@ class Cli(object):
                 values = (getattr(item, field) for field in fields)
                 yield from self._iter_lines(output.format(*values), wrap=False)
 
-    def _render_item(self, data, **kw):
-        raise NotImplementedError
+    def _render_item(self, item, **kw):
+        yield '=' * const.COLUMNS
+        for line in str(item).splitlines():
+            if len(line) <= const.COLUMNS:
+                yield line
+            else:
+                yield self.wrapper.fill(line)
+
+        if item.attachments:
+            attachments = [str(a) for a in item.attachments]
+            if attachments:
+                if str(item):
+                    yield ''
+                yield from attachments
+
+        if item.events and (str(item) or item.attachments):
+            yield ''
+        yield from self._iter_lines(str(x) for x in item.events)

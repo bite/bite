@@ -11,6 +11,7 @@ try:
 except ImportError:
     import chardet
 from snakeoil.demandload import demandload
+from snakeoil import klass
 
 from . import magic
 from .utc import utc
@@ -105,6 +106,12 @@ class Item(PrintableObject):
         self.comments = comments # list of Comment objects
         self.attachments = attachments # dict of lists of Attachment objects
         self.changes = changes # list of Change objects
+
+    @klass.jit_attr
+    def events(self):
+        comments = self.comments if self.comments is not None else ()
+        changes = self.changes if self.changes is not None else ()
+        return sorted(chain(comments, changes), key=lambda event: event.date)
 
     def __getattr__(self, name):
         if name in self.attributes:

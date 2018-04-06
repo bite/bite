@@ -83,7 +83,8 @@ class BugzillaBug(Item):
         'modified': 'last_change_time',
         'created': 'creation_time',
         'depends': 'depends_on',
-        'title': 'summary'
+        'title': 'summary',
+        'changes': 'history',
     }
 
     type = 'bug'
@@ -104,12 +105,6 @@ class BugzillaBug(Item):
                     setattr(self, k, parsetime(v))
                 else:
                     setattr(self, k, v)
-
-    @klass.jit_attr
-    def events(self):
-        comments = self.comments if self.comments is not None else ()
-        history = self.history if self.history is not None else ()
-        return sorted(chain(comments, history), key=lambda event: event.date)
 
     def __str__(self):
         lines = []
