@@ -77,13 +77,7 @@ class DateTime(object):
         return self._datetime <= x
 
 
-class PrintableObject(object):
-
-    def __str__(self):
-        raise NotImplementedError
-
-
-class Item(PrintableObject):
+class Item(object):
 
     attributes = {}
     attribute_aliases = {}
@@ -122,7 +116,7 @@ class Item(PrintableObject):
             raise AttributeError
 
 
-class Change(PrintableObject):
+class Change(object):
     def __init__(self, creator, date, changes, id=None, count=None):
         self.id = id # int
         self.creator = creator # string
@@ -150,7 +144,7 @@ class Comment(Change):
         return '\n'.join(lines)
 
 
-class Attachment(PrintableObject):
+class Attachment(object):
 
     def __init__(self, id=None, filename=None, url=None, size=None,
                  mimetype=None, data=None, creator=None, created=None, modified=None):
