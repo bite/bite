@@ -7,6 +7,7 @@ import stat
 import zlib
 
 try:
+    # use uchardet bindings if available
     import cchardet as chardet
 except ImportError:
     import chardet
@@ -20,6 +21,11 @@ demandload('bite:const')
 
 
 def decompress(fcn):
+    """Decorator that decompresses returned data.
+
+    libmagic is used to identify the MIME type of the data and the function
+    will keep decompressing until no supported compression format is identified.
+    """
     def wrapper(cls, raw=False, *args, **kw):
         data = fcn(cls)
 

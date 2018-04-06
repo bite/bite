@@ -60,6 +60,11 @@ class Request(object):
         yield from self._reqs
 
     def _finalize(self):
+        """Finalize a request object for sending.
+
+        For the generic case, authentication data is injected into the request
+        if available and required.
+        """
         self._finalized = True
         if not self.service.authenticated and self.service.auth:
             self._req, self.params = self.service.inject_auth(self._req, self.params)
@@ -91,9 +96,11 @@ class Request(object):
         return '\n\n'.join(reqs)
 
     def parse(self, data):
+        """Parse the data returned from a given request."""
         return data
 
     def send(self):
+        """Send a request object to the related service."""
         return self.service.send(self)
 
     def handle_exception(self, e):
@@ -140,6 +147,7 @@ class RPCRequest(Request):
         self.command = command
 
     def _finalize(self):
+        """Encode the data body of the request."""
         super()._finalize()
         self._req.data = self.service._encode_request(self.command, self.params)
 
@@ -167,18 +175,20 @@ class RESTRequest(Request):
         return f"{self.service._base}/{self.endpoint.lstrip('/')}{params_str}"
 
     def _finalize(self):
+        """Set the request URL using the specified params and encode the data body."""
         # inject auth params if available
         super()._finalize()
 
         # construct URL to resource with requested params
         self._req.url = self.url
 
-        # encode additional params gb
+        # encode additional params to data body
         if self.data:
             self._req.data = self.service._encode_request(self.data)
 
 
 class NullRequest(Request):
+    """Placeholder request that does nothing."""
 
     def __init__(self, generator=False):
         super().__init__(service=None)
@@ -197,6 +207,7 @@ class NullRequest(Request):
 
 
 class Service(object):
+    """Generic service support."""
 
     _service = None
     _cache_cls = Cache
