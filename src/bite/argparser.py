@@ -502,7 +502,9 @@ class ArgumentParser(arghparse.ArgumentParser):
 
         # check if unparsed args match any aliases
         if unparsed_args:
-            unparsed_args = substitute_alias(initial_args.connection, aliases, unparsed_args)
+            service_type = initial_args.service._service.split('-')[0]
+            unparsed_args = substitute_alias(
+                initial_args.connection, service_type, aliases, unparsed_args)
 
         self.set_defaults(connection=initial_args.connection)
 

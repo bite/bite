@@ -26,17 +26,20 @@ def get_alias(args, section, alias):
     return value
 
 
-def substitute_alias(connection, aliases, unparsed_args):
+def substitute_alias(connection, service_type, aliases, unparsed_args):
     alias_name = unparsed_args[0]
     extra_cmds = unparsed_args[1:]
 
-    if connection is not None and aliases.has_section(connection):
-        section = connection
-    else:
-        section = aliases.default_section
-    alias_cmd = aliases.get(section, alias_name, fallback=None)
+    # service sections use headers of the form:
+    # {:service:}, e.g. {:bugzilla:}
+    service_section = f":{service_type}:"
 
-    if alias_cmd is None:
+    for section in (connection, service_section, aliases.default_section):
+        if aliases.has_section(section):
+            alias_cmd = aliases.get(section, alias_name, fallback=None)
+            if alias_cmd is not None:
+                break
+    else:
         return unparsed_args
 
     alias_cmd = alias_cmd.strip()

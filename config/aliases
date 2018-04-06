@@ -16,7 +16,8 @@
 	# iterate over comma-separated values passed as the second argument
 	cloop: !cloop() { for i in $(echo $2 | tr "," " "); do $1 $i ${@:3}; done }; cloop
 
-[gentoo]:
+# aliases for all bugzilla services
+[:bugzilla:]
 	# output list of bug dependencies by ID
 	depends: !f() { bite -q search --id $1 --fields depends_on --output -; }; f
 	# output list of bug blockers by ID
