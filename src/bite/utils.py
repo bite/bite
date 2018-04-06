@@ -5,10 +5,11 @@ import string
 import subprocess
 import sys
 import tempfile
-import textwrap
 
-from . import __title__ as PROG
+from . import __title__ as prog
 from .exceptions import BiteError
+
+PROG = prog.upper()
 
 
 def raw_input_block():
@@ -20,13 +21,13 @@ def raw_input_block():
             raise StopIteration
 
 
-def launch_editor(initial_text, editor=None, comment_from='', prefix=PROG):
+def launch_editor(initial_text, editor=None, comment_from='', tool=PROG):
     """Use an editor for interactive text input."""
     if editor is None:
-        editor = os.environ.get(f'{prefix.upper()}_EDITOR', os.environ.get('EDITOR', None))
+        editor = os.environ.get(f'{tool}_EDITOR', os.environ.get('EDITOR', None))
 
     if editor:
-        tmpfile = tempfile.NamedTemporaryFile(mode='w+', prefix=prefix, delete=False)
+        tmpfile = tempfile.NamedTemporaryFile(mode='w+', prefix=prog, delete=False)
         with open(tmpfile.name, 'w') as f:
             f.write(comment_from)
             f.write(initial_text)
@@ -39,22 +40,21 @@ def launch_editor(initial_text, editor=None, comment_from='', prefix=PROG):
         with open(tmpfile.name, 'r') as f:
             text = f.read()
         os.unlink(tmpfile.name)
-        text = re.sub(f'(?m)^{prefix.upper()}:.*\n', '', text)
+        text = re.sub(f'(?m)^{tool}:.*\n', '', text)
         return text
     return ''
 
 
 def block_edit(comment, comment_from=''):
-    prog = PROG.upper()
-    comment = '\n'.join(f'{prog}: {line}' for line in comment.split('\n'))
-    initial_text = textwrap.dedent(f"""\
-        {prog}: ---------------------------------------------------
-        {comment}
-        {prog}: Any line beginning with '{prog}:' will be ignored.
-        {prog}: ---------------------------------------------------
-    """)
+    comment = '\n'.join(f'{PROG}: {line}' for line in comment.split('\n'))
+    initial_text = f"""\
+{PROG}: ---------------------------------------------------
+{comment}
+{PROG}: Any line beginning with '{PROG}:' will be ignored.
+{PROG}: ---------------------------------------------------
+"""
 
-    editor = os.environ.get(f'{prog}_EDITOR', os.environ.get('EDITOR', None))
+    editor = os.environ.get(f'{PROG}_EDITOR', os.environ.get('EDITOR', None))
     if not editor:
         print(f'{comment}: (Press Ctrl+D to end)')
         return '\n'.join(raw_input_block())
