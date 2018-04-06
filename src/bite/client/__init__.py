@@ -351,9 +351,9 @@ class Cli(object):
             sep = '\n\n'
 
         for line in sep.join(data).splitlines():
-            if line == '-' * const.COLUMNS:
-                yield '-' * const.COLUMNS
-            elif len(line) <= const.COLUMNS or not sys.stdout.isatty():
+            no_mod = (line == '-' * const.COLUMNS or len(line) <= const.COLUMNS or
+                      not sys.stdout.isatty())
+            if no_mod:
                 yield line
             elif wrap:
                 yield self.wrapper.fill(line)
