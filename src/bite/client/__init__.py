@@ -19,7 +19,11 @@ demandload('bite:const')
 
 
 def login_retry(func):
-    """Forces authentication on second request if the initial request was unauthenticated and failed due to insufficient permissions."""
+    """Decorator that forces authentication on retry.
+
+    The original function is run and if it fails with an authentication
+    failure, login privileges are forcibly enabled and the function is rerun.
+    """
     @wraps(func)
     def wrapper(self, *args, **kw):
         try:
@@ -39,7 +43,7 @@ def login_retry(func):
 
 
 def login_required(func):
-    """Authentication is required to use this functionality."""
+    """Decorator that forces authentication to be enabled."""
     @wraps(func)
     def wrapper(self, *args, **kw):
         self.login()
@@ -372,6 +376,7 @@ class Cli(object):
         raise NotImplementedError
 
     def _render_search(self, data, fields=None, output=None, **kw):
+        """Render search data for output."""
         if output is None:
             if fields is None:
                 fields = ('id', 'owner', 'title')
@@ -397,6 +402,7 @@ class Cli(object):
                 yield output.format(*values)
 
     def _render_item(self, item, **kw):
+        """Render item data for output."""
         yield '=' * const.COLUMNS
         for line in str(item).splitlines():
             if len(line) <= const.COLUMNS:

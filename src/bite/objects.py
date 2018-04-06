@@ -46,6 +46,7 @@ def flatten(list_of_lists):
 
 
 class DateTime(object):
+    """Object that stores a given date token and its corresponding datetime object."""
 
     def __init__(self, token, datetime):
         self.token = token
@@ -78,6 +79,7 @@ class DateTime(object):
 
 
 class Item(object):
+    """Generic bug/issue/ticket object used by a service."""
 
     attributes = {}
     attribute_aliases = {}
@@ -103,6 +105,10 @@ class Item(object):
 
     @klass.jit_attr
     def events(self):
+        """Sorted list of all item events.
+
+        Currently this relates to all comments and changes made to an item.
+        """
         comments = self.comments if self.comments is not None else ()
         changes = self.changes if self.changes is not None else ()
         return sorted(chain(comments, changes), key=lambda event: event.date)
@@ -117,6 +123,8 @@ class Item(object):
 
 
 class Change(object):
+    """Generic change event on a service."""
+
     def __init__(self, creator, date, changes, id=None, count=None):
         self.id = id # int
         self.creator = creator # string
@@ -129,6 +137,8 @@ class Change(object):
 
 
 class Comment(Change):
+    """Generic comment on a service."""
+
     def __init__(self, creator, date, id=None, count=None, changes=None, text=None):
         self.text = text
         super().__init__(id=id, creator=creator, date=date, changes=changes, count=count)
@@ -145,6 +155,7 @@ class Comment(Change):
 
 
 class Attachment(object):
+    """Generic attachment to an item on a service."""
 
     def __init__(self, id=None, filename=None, url=None, size=None,
                  mimetype=None, data=None, creator=None, created=None, modified=None):
