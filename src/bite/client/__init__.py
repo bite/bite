@@ -374,7 +374,7 @@ class Cli(object):
     def _render_search(self, data, fields=None, output=None, **kw):
         if output is None:
             if fields is None:
-                fields = ('id', 'owner', 'summary')
+                fields = ('id', 'owner', 'title')
                 output = '{} {:<20} {}'
             else:
                 output = ' '.join('{}' for x in fields)
