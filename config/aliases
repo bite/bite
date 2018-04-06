@@ -1,7 +1,29 @@
 [DEFAULT]
+	# command shortcuts
 	s: search
 	g: get
 	a: attachments
 	m: modify
 	c: create
 	at: attach
+
+	# meta alias takes a function as an argument and calls function for all other input
+	loop: !loop() { for i in "${@:2}"; do $1 $i; done }; loop
+
+	# iterate over whitespace-separated values passed as the second argument
+	sloop: !sloop() { for i in $2; do $1 $i ${@:3}; done }; sloop
+
+	# iterate over comma-separated values passed as the second argument
+	cloop: !cloop() { for i in $(echo $2 | tr "," " "); do $1 $i ${@:3}; done }; cloop
+
+[gentoo]:
+	# output list of bug dependencies by ID
+	depends: !f() { bite -q search --id $1 --fields depends_on --output -; }; f
+	# output list of bug blockers by ID
+	blocks: !f() { bite -q search --id $1 --fields blocks --output -; }; f
+	# output list of open bug dependencies
+	show-depends: !f() { %{depends} $1 | bite -q search --id - ${@:2}; }; %{cloop} f
+	# output list of open bug blockers
+	show-blocks: !f() { %{blocks} $1 | bite -q search --id - ${@:2}; }; %{cloop} f
+
+# vim: set ft=sh:
