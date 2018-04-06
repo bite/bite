@@ -92,30 +92,55 @@ class BiteInterpolation(configparser.ExtendedInterpolation):
                     "found: %r" % (rest,))
 
 
-def service_files(connection):
-    """Return iterator of service files matching a given connection name."""
-    for service_dir in (os.path.join(const.DATA_PATH, 'services'),
-                        os.path.join(const.USER_DATA_PATH, 'services')):
-        for root, _, files in os.walk(service_dir):
-            for config_file in files:
-                if config_file == connection:
-                    yield os.path.join(root, config_file)
-
-
-def get_config(args, parser):
+def load_config(config_name='bite.conf'):
+    """Load system and user configuration files."""
     config = configparser.ConfigParser()
-    aliases = configparser.ConfigParser(interpolation=BiteInterpolation())
-    settings = {}
 
-    # load config files
-    system_config = os.path.join(const.CONFIG_PATH, 'bite.conf')
-    user_config = os.path.join(const.USER_CONFIG_PATH, 'bite.conf')
+    system_config = os.path.join(const.CONFIG_PATH, config_name)
+    user_config = os.path.join(const.USER_CONFIG_PATH, config_name)
     try:
         with open(system_config) as f:
             config.read_file(f)
         config.read(user_config)
     except IOError as e:
         raise BiteError(f'cannot load config file {repr(e.filename)}: {e.strerror}')
+
+    return config
+
+
+def service_files(connection=None):
+    """Return iterator of service files optionally matching a given connection name."""
+    for service_dir in (os.path.join(const.DATA_PATH, 'services'),
+                        os.path.join(const.USER_DATA_PATH, 'services')):
+        for root, _, files in os.walk(service_dir):
+            for config_file in files:
+                if connection is None or config_file == connection:
+                    yield os.path.join(root, config_file)
+
+
+def load_service_files(connection=None, config=None):
+    """Load service specific configuration files."""
+    config = config if config is not None else configparser.ConfigParser()
+
+    for config_file in service_files(connection):
+        try:
+            with open(config_file) as f:
+                config.read_file(f)
+        except IOError as e:
+            raise BiteError(f'cannot load config file {repr(e.filename)}: {e.strerror}')
+
+    return config
+
+
+def load_full_config():
+    """Create a config object loaded with all known configuration files."""
+    return load_service_files(config=load_config())
+
+
+def get_config(args, parser):
+    """Load various config files for a selected connection/service."""
+    config = load_config()
+    settings = {}
 
     if args.service is None or args.base is None:
         if args.connection is None:
@@ -127,6 +152,8 @@ def get_config(args, parser):
     # Load system connection settings and then user connection settings --
     # later settings override earlier ones. Note that only the service config
     # files matching the name of the selected connection are loaded.
+    load_service_files(args.connection, config)
+
     if args.connection is not None:
         for config_file in service_files(args.connection):
             try:
@@ -143,6 +170,7 @@ def get_config(args, parser):
             settings['service'] = config.get(args.connection, 'service', fallback=None)
 
     # load alias files
+    aliases = configparser.ConfigParser(interpolation=BiteInterpolation())
     system_aliases = os.path.join(const.CONFIG_PATH, 'aliases')
     user_aliases = os.path.join(const.USER_CONFIG_PATH, 'aliases')
     try:

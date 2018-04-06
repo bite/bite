@@ -12,6 +12,7 @@ import os
 from snakeoil.demandload import demandload
 
 from ..argparser import ArgumentParser, parse_file, override_attr
+from ..config import load_full_config
 from ..exceptions import RequestError
 
 demandload('bite:get_service_cls,const')
@@ -108,10 +109,11 @@ def _ls(options, out, err):
                 else:
                     out.write(name)
     elif options.item == 'connections':
-        for connection in sorted(options.config.sections()):
+        config = load_full_config()
+        for connection in sorted(config.sections()):
             if options.verbose:
                 out.write(f'[{connection}]')
-                for (name, value) in options.config.items(connection):
+                for (name, value) in config.items(connection):
                     out.write(f'  {name}: {value}')
             else:
                 out.write(connection)
@@ -129,15 +131,16 @@ def _validate_args(parser, namespace):
 
 @cache.bind_main_func
 def _cache(options, out, err):
+    config = load_full_config()
     connections = options.pop('connections')
     if not connections:
         connections = [options.connection]
     elif connections == ['all']:
-        connections = options.config.sections()
+        connections = config.sections()
 
     def _cache_update(options, connection):
-        service = options.config.get(connection, 'service', fallback=None)
-        base = options.config.get(connection, 'base', fallback=None)
+        service = config.get(connection, 'service', fallback=None)
+        base = config.get(connection, 'base', fallback=None)
         if service is None or base is None:
             return 1
         options.connection = connection
