@@ -18,58 +18,67 @@ from ..exceptions import RequestError
 demandload('bite:get_service_cls,const')
 
 
-argparser = ArgumentParser(
-    description=__doc__, script=(__file__, __name__))
-
-options = argparser.add_argument_group('Options')
-options.add_argument('-i', '--input',
-    type=argparse.FileType('r'),
-    action=parse_file,
-    help='read data from an input file')
-options.add_argument('--config-file',
+config_opts_parser = ArgumentParser(suppress=True)
+config_opts = config_opts_parser.add_argument_group('Config options')
+config_opts.add_argument(
+    '-c', '--connection',
+    help='use a configured connection')
+config_opts.add_argument(
+    '--config-file',
     help='read an alternate configuration file')
-options.add_argument('--columns',
-    type=int,
+
+service_opts = config_opts_parser.add_argument_group('Service options')
+service_opts.add_argument(
+    '-b', '--base',
+    help='base URL of service')
+service_opts.add_argument(
+    '-s', '--service',
+    help='service type')
+
+argparser = ArgumentParser(
+    description=__doc__, script=(__file__, __name__),
+    parents=(config_opts_parser,))
+
+argparser.add_argument(
+    '-i', '--input',
+    type=argparse.FileType('r'), action=parse_file,
+    help='read data from an input file')
+argparser.add_argument(
+    '--columns', type=int,
     action=partial(override_attr, 'bite.const.COLUMNS'),
     help='maximum number of columns output should use')
-options.add_argument('--suffix',
+argparser.add_argument(
+    '--suffix',
     help='domain suffix to strip or add when displaying or searching '
          '(e.g. "@domain.com")')
 
-service_opts = argparser.add_argument_group('Service options')
-service_opts.add_argument('-b', '--base',
-    help='base URL of service')
-service_opts.add_argument('-s', '--service',
-    help='service type')
-service_opts.add_argument('-c', '--connection',
-    help='use a configured connection')
-
 connect_opts = argparser.add_argument_group('Connection options')
-connect_opts.add_argument('-k', '--insecure',
-    action='store_false',
-    dest='verify',
+connect_opts.add_argument(
+    '-k', '--insecure', action='store_false', dest='verify',
     help='skip SSL certificate verification')
-connect_opts.add_argument('-n', '--dry-run',
-    action='store_true',
+connect_opts.add_argument(
+    '-n', '--dry-run', action='store_true',
     help='do everything except requesting or sending data')
-connect_opts.add_argument('-C', '--concurrent',
-    type=int,
+connect_opts.add_argument(
+    '-C', '--concurrent', type=int,
     help='maximum number of allowed concurrent requests to a service')
-connect_opts.add_argument('--timeout',
-    type=int,
-    metavar='SECONDS',
+connect_opts.add_argument(
+    '--timeout', type=int, metavar='SECONDS',
     help='amount of time to wait before timing out requests (defaults to 30 seconds)')
 
 auth_opts = argparser.add_argument_group('Authentication options')
 single_auth_opts = auth_opts.add_mutually_exclusive_group()
-single_auth_opts.add_argument('-S', '--skip-auth',
-    action='store_true',
+single_auth_opts.add_argument(
+    '-S', '--skip-auth', action='store_true',
     help='skip authenticating to the specified service')
-single_auth_opts.add_argument('-u', '--user',
+single_auth_opts.add_argument(
+    '-u', '--user',
     help='username for authentication')
-single_auth_opts.add_argument('--auth-file',
+single_auth_opts.add_argument(
+    '--auth-file',
     help='load/save auth token using specified file')
-auth_opts.add_argument('--passwordcmd',
+auth_opts.add_argument(
+    '--passwordcmd',
     help='command to run for password')
 
 # stub for service specific arguments
@@ -83,12 +92,15 @@ ls.add_argument(
 
 cache = subparsers.add_parser('cache', description='various cache related options')
 cache.add_argument(
-    'connections', nargs='*', help='connection cache(s) to update')
+    'connections', nargs='*',
+    help='connection cache(s) to update')
 cache_opts = cache.add_argument_group('Cache options')
 cache_opts.add_argument(
-    '-u', '--update', action='store_true', help='update various data caches')
+    '-u', '--update', action='store_true',
+    help='update various data caches')
 cache_opts.add_argument(
-    '-r', '--remove', action='store_true', help='remove various data caches')
+    '-r', '--remove', action='store_true',
+    help='remove various data caches')
 
 
 def get_cli(args):

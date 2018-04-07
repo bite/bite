@@ -457,19 +457,13 @@ class ArgumentParser(arghparse.ArgumentParser):
                 raise RuntimeError(f'nonexistent replacement {repr(s)}, only {len(input_list)} values exist')
 
     def parse_args(self, args=None, namespace=None):
-        initial_args, unparsed_args = self.parse_optionals(args, namespace)
+        # pull config and service settings from args if they exist
+        from .scripts.bite import config_opts_parser
+        initial_args, unparsed_args = config_opts_parser.parse_optionals(args, namespace)
+        config_file = initial_args.pop('config_file')
 
-
-        # load settings from the config file
-        settings, config, aliases = get_config(initial_args, self)
-
-        # merge connection/base/service config options, command line options override these
-        for k, v in settings.items():
-            if getattr(initial_args, k, None) is None:
-                setattr(initial_args, k, v)
-
-        logger = logging.getLogger(__name__)
-        #logger.setLevel(logging.DEBUG)
+        # load config files
+        config, aliases = get_config(initial_args, config_file=config_file)
 
         if initial_args.base is None or initial_args.service is None:
             self.error('both arguments -b/--base and -s/--service are required '
@@ -484,9 +478,12 @@ class ArgumentParser(arghparse.ArgumentParser):
         service_opts = get_service_cls(
             service, const.SERVICE_OPTS)(parser=self, service_name=service)
 
-        # add service config options
+        # add service config options to args namespace
         service_opts.add_config_opts(
             args=initial_args, config_opts=config.items(initial_args.connection))
+
+        logger = logging.getLogger(__name__)
+        #logger.setLevel(logging.DEBUG)
 
         # re-parse for any top level service-specific options that were just added
         initial_args, unparsed_args = self.parse_optionals(unparsed_args, initial_args)
