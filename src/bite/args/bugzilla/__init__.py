@@ -11,6 +11,7 @@ from ... import args
 from ...argparser import parse_stdin, string_list, id_list, ids
 from ...objects import DateTime
 from ...utc import utc
+from ...utils import str2bool
 
 
 def bug_list(s):
@@ -71,7 +72,10 @@ class BugzillaOpts(args.ServiceOpts):
 
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
-        self.config_map.update({'max_results': int})
+        self.config_map.update({
+            'max_results': int,
+            'restrict_login': str2bool,
+        })
 
     def main_opts(self):
         """Add service specific arguments."""
