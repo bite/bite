@@ -108,16 +108,17 @@ class Cli(object):
             if self.service.item_endpoint is None:
                 raise BiteError(f"no web endpoint defined for {self.service.item.type}s")
 
-            for id in ids:
-                url = self.service.base.rstrip('/') + self.service.item_endpoint + str(id)
-                self.log_t(f'Launching {self.service.item.type} in browser: {const.BROWSER} {url}')
+            item_url = self.service.base.rstrip('/') + self.service.item_endpoint
+            urls = [f"{item_url}{id}" for id in ids]
+            self.log_t(f'Launching {self.service.item.type}{pluralism(ids)} in browser: {const.BROWSER}')
+            self.log(urls, prefix='   - ')
 
-                try:
-                    subprocess.Popen(
-                        [const.BROWSER, url],
-                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                except (PermissionError, FileNotFoundError) as e:
-                    raise BiteError(f'failed running browser: {const.BROWSER}: {e.strerror}')
+            try:
+                subprocess.Popen(
+                    [const.BROWSER] + urls,
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            except (PermissionError, FileNotFoundError) as e:
+                raise BiteError(f'failed running browser: {const.BROWSER}: {e.strerror}')
         else:
             request = self.service.GetRequest(ids, **kw)
             self.log_t(f"Getting {self.service.item.type}{pluralism(ids)}: {', '.join(map(str, ids))}")
