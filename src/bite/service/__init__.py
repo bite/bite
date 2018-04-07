@@ -4,12 +4,18 @@ from urllib.parse import urlparse, urlunparse, urlencode
 
 import requests
 from snakeoil import klass
+from snakeoil.demandload import demandload
 from snakeoil.sequences import iflatten_instance
 
 from .. import __title__, __version__
 from ..cache import Cache, Auth
 from ..exceptions import RequestError, AuthError, BiteError
 from ..objects import Item, Attachment
+
+demandload(
+    'warnings',
+    'urllib3',
+)
 
 
 def req_cmd(service_cls, cmd_name=None):
@@ -249,6 +255,12 @@ class Service(object):
         s.mount('https://', a)
         s.mount('http://', a)
         self.session = s
+
+        # Suppress insecure request warnings if SSL cert verification is
+        # disabled. Since it's enabled by default we assume when it's disabled
+        # the user knows what they're doing.
+        if not self.verify:
+            warnings.simplefilter('ignore', urllib3.exceptions.InsecureRequestWarning)
 
         self.session.headers['User-Agent'] = f'{__title__}-{__version__}'
         self.session.headers['Accept-Encoding'] = ', '.join(('gzip', 'deflate', 'compress'))
