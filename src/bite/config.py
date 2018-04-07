@@ -92,9 +92,9 @@ class BiteInterpolation(configparser.ExtendedInterpolation):
                     "found: %r" % (rest,))
 
 
-def load_config(config_name='bite.conf'):
+def load_config(config_name='bite.conf', config=None):
     """Load system and user configuration files."""
-    config = configparser.ConfigParser()
+    config = config if config is not None else configparser.ConfigParser()
 
     system_config = os.path.join(const.CONFIG_PATH, config_name)
     user_config = os.path.join(const.USER_CONFIG_PATH, config_name)
@@ -105,7 +105,11 @@ def load_config(config_name='bite.conf'):
     except IOError as e:
         raise BiteError(f'cannot load config file {repr(e.filename)}: {e.strerror}')
 
-    return config
+    connection = config.defaults().get('connection', None)
+    if connection is not None:
+        config.remove_option('DEFAULT', 'connection')
+
+    return config, connection
 
 
 def service_files(connection=None):
@@ -134,40 +138,43 @@ def load_service_files(connection=None, config=None):
 
 def load_full_config():
     """Create a config object loaded with all known configuration files."""
-    return load_service_files(config=load_config())
+    config, connection = load_config()
+    return load_service_files(config=config)
 
 
 def get_config(args, parser):
     """Load various config files for a selected connection/service."""
-    config = load_config()
+    config, connection = load_config()
     settings = {}
 
     if args.service is None or args.base is None:
-        if args.connection is None:
-            args.connection = config.defaults().get('connection', None)
-            settings['connection'] = args.connection
-        if not any ((args.service, args.base)) and args.connection is None:
+        # command line connection option overrides config if it exists
+        if args.connection is not None:
+            connection = args.connection
+        else:
+            settings['connection'] = connection
+        if not any ((args.service, args.base)) and connection is None:
             raise BiteError('no connection specified and no default connection set')
 
     # Load system connection settings and then user connection settings --
     # later settings override earlier ones. Note that only the service config
     # files matching the name of the selected connection are loaded.
-    load_service_files(args.connection, config)
+    load_service_files(connection, config)
 
-    if args.connection is not None:
-        for config_file in service_files(args.connection):
+    if connection is not None:
+        for config_file in service_files(connection):
             try:
                 with open(config_file) as f:
                     config.read_file(f)
             except IOError as e:
                 raise BiteError(f'cannot load config file {repr(e.filename)}: {e.strerror}')
 
-    if args.connection:
-        if not config.has_section(args.connection):
-            parser.error(f'unknown connection: {repr(args.connection)}')
+    if connection:
+        if not config.has_section(connection):
+            parser.error(f'unknown connection: {repr(connection)}')
         else:
-            settings['base'] = config.get(args.connection, 'base', fallback=None)
-            settings['service'] = config.get(args.connection, 'service', fallback=None)
+            settings['base'] = config.get(connection, 'base', fallback=None)
+            settings['service'] = config.get(connection, 'service', fallback=None)
 
     # load alias files
     aliases = configparser.ConfigParser(interpolation=BiteInterpolation())
