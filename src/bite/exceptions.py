@@ -1,3 +1,6 @@
+import lxml.html
+
+
 class BiteError(Exception):
     """Generic bite exceptions."""
 
@@ -23,14 +26,8 @@ class RequestError(BiteError):
     def message(self):
         if not self.text:
             return self.msg
-
-        # use beautifulsoup if it exists to render server response
-        try:
-            from bs4 import BeautifulSoup
-            soup = BeautifulSoup(self.text, "lxml")
-            text = soup.get_text().strip()
-        except ImportError:
-            text = self.text
+        doc = lxml.html.document_fromstring(self.text)
+        text = doc.text_content().strip()
         return self.msg + ' -- (see server response below)\n\n' + text
 
 
