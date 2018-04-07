@@ -99,20 +99,24 @@ class Cli(object):
             self.service.login(user, password)
 
     @login_retry
-    def get(self, ids, dry_run=False, browser=False, **kw):
+    def get(self, ids, dry_run=False, browser=False, output_url=False, **kw):
         """Get item(s) from a service and all related info."""
         if not ids:
             raise RuntimeError(f'No {self.service.item.type} ID(s) specified')
 
-        if browser:
+        def _item_urls(ids):
             if self.service.item_endpoint is None:
                 raise BiteError(f"no web endpoint defined for {self.service.item.type}s")
-
             item_url = self.service.base.rstrip('/') + self.service.item_endpoint
-            urls = [f"{item_url}{id}" for id in ids]
+            return (f"{item_url}{id}" for id in ids)
+
+        if browser:
+            urls = list(_item_urls(ids))
             self.log_t(f'Launching {self.service.item.type}{pluralism(ids)} in browser: {const.BROWSER}')
             self.log(urls, prefix='   - ')
             launch_browser(urls)
+        elif output_url:
+            print(*_item_urls(ids), sep='\n')
         else:
             request = self.service.GetRequest(ids, **kw)
             self.log_t(f"Getting {self.service.item.type}{pluralism(ids)}: {', '.join(map(str, ids))}")

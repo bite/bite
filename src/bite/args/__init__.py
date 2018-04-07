@@ -126,9 +126,13 @@ class Get(ReceiveSubcmd):
             help=f"ID(s) or alias(es) of the {kw['service'].item.type}(s) to retrieve")
 
         # optional args
-        self.opts.add_argument(
+        single_action = self.opts.add_mutually_exclusive_group()
+        single_action.add_argument(
             '-B', '--browser', action='store_true',
-            help="open item page in a browser")
+            help="open item URL(s) in a browser")
+        single_action.add_argument(
+            '-U', '--url', dest='output_url', action='store_true',
+            help='output the URL(s) of the item(s)')
         self.opts.add_argument(
             '-A', '--no-attachments', action='store_false',
             help='do not show attachments',
@@ -155,20 +159,20 @@ class Attachments(Subcmd):
         # optional args
         single_action = self.opts.add_mutually_exclusive_group()
         single_action.add_argument(
+            '-B', '--browser', action='store_true',
+            help="open attachment URL(s) in a browser")
+        single_action.add_argument(
             '-U', '--url', dest='output_url', action='store_true',
-            help='output the URL of the attachment')
+            help='output the URL(s) of the attachment(s)')
         single_action.add_argument(
             '-V', '--view', action='store_true', dest='view_attachment',
             help='output attachment data')
-        single_action.add_argument(
-            '-B', '--browser', action='store_true',
-            help="open item page in a browser")
         self.opts.add_argument(
             '-I', '--item-id', action='store_true',
             help='search by item ID(s) rather than attachment ID(s)')
         self.opts.add_argument(
             '--save-to',
-            help='save attachments into a specified dir')
+            help='save attachment(s) into a specified dir')
 
 
 class Attach(SendSubcmd):
