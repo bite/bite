@@ -1,3 +1,8 @@
+"""Support Bugzilla's deprecated JSON-RPC interface.
+
+API docs: https://www.bugzilla.org/docs/4.4/en/html/api/Bugzilla/WebService/Server/JSONRPC.html
+"""
+
 try: import simplejson as json
 except ImportError: import json
 
@@ -6,10 +11,8 @@ from .._jsonrpc import Jsonrpc
 
 
 class BugzillaJsonrpc(BugzillaRpc, Jsonrpc):
-    """Support Bugzilla's deprecated JSON-RPC interface.
+    """Service supporting Bugzilla's deprecated JSON-RPC interface."""
 
-    API docs: https://www.bugzilla.org/docs/4.4/en/html/api/Bugzilla/WebService/Server/JSONRPC.html
-    """
     _service = 'bugzilla-jsonrpc'
 
     def __init__(self, **kw):

@@ -1,5 +1,7 @@
-# Support for the Google Code issue tracker
-# https://chromium.googlesource.com/infra/infra/+/master/appengine/monorail/doc/api.md
+"""Support Monorail's (Google Code issue tracker) API.
+
+API docs: https://chromium.googlesource.com/infra/infra/+/master/appengine/monorail/doc/api.md
+"""
 
 from itertools import chain
 import re
@@ -19,6 +21,7 @@ from ..rfc3339 import parse_datetime as parsetime
 
 
 class Monorail(Jsonrpc):
+    """Service supporting Monorail (Google Code issue tracker)."""
 
     #_service = 'monorail'
 

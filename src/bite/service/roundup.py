@@ -1,6 +1,6 @@
-"""XML-RPC access to Roundup
+"""XML-RPC access to Roundup.
 
-http://www.roundup-tracker.org/docs/xmlrpc.html
+API docs: http://www.roundup-tracker.org/docs/xmlrpc.html
 """
 
 from base64 import b64encode
@@ -153,7 +153,7 @@ class RoundupCache(Cache):
 
 
 class Roundup(Xmlrpc):
-    """Support Roundup's XML-RPC interface."""
+    """Service supporting the Roundup issue tracker."""
 
     #_service = 'roundup'
     _cache_cls = RoundupCache

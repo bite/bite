@@ -1,3 +1,8 @@
+"""Support Bugzilla's REST interface.
+
+API docs: http://bugzilla.readthedocs.io/en/latest/api/index.html#apis
+"""
+
 from collections import deque
 
 from . import (
@@ -10,10 +15,8 @@ from .._jsonrest import JsonREST
 
 
 class BugzillaRest(Bugzilla, JsonREST):
-    """Support Bugzilla's REST interface.
+    """Service supporting Bugzilla's REST interface."""
 
-    API docs: http://bugzilla.readthedocs.io/en/latest/api/index.html#apis
-    """
     _service = 'bugzilla-rest'
 
     def __init__(self, **kw):
