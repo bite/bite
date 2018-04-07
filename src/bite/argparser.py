@@ -459,9 +459,6 @@ class ArgumentParser(arghparse.ArgumentParser):
     def parse_args(self, args=None, namespace=None):
         initial_args, unparsed_args = self.parse_optionals(args, namespace)
 
-        # allow symlinks to override the connection type
-        if os.path.basename(sys.argv[0]) != __title__:
-            initial_args.connection = os.path.basename(sys.argv[0])
 
         # load settings from the config file
         settings, config, aliases = get_config(initial_args, self)
