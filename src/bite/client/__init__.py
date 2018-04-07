@@ -13,7 +13,7 @@ from snakeoil.demandload import demandload
 
 from ..exceptions import AuthError, BiteError
 from ..objects import TarAttachment
-from ..utils import confirm, get_input
+from ..utils import confirm, get_input, launch_browser
 
 demandload('bite:const')
 
@@ -112,13 +112,7 @@ class Cli(object):
             urls = [f"{item_url}{id}" for id in ids]
             self.log_t(f'Launching {self.service.item.type}{pluralism(ids)} in browser: {const.BROWSER}')
             self.log(urls, prefix='   - ')
-
-            try:
-                subprocess.Popen(
-                    [const.BROWSER] + urls,
-                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            except (PermissionError, FileNotFoundError) as e:
-                raise BiteError(f'failed running browser: {const.BROWSER}: {e.strerror}')
+            launch_browser(urls)
         else:
             request = self.service.GetRequest(ids, **kw)
             self.log_t(f"Getting {self.service.item.type}{pluralism(ids)}: {', '.join(map(str, ids))}")
@@ -154,24 +148,20 @@ class Cli(object):
 
         self.log_t(f"Getting attachment{plural}{item_str}: {', '.join(map(str, ids))}")
 
-        def _output_urls(ids):
-            for id in ids:
-                print(self.service.base.rstrip('/') + self.service.attachment_endpoint + str(id))
-
-        def _launch_browser(ids):
+        def _attachment_urls(ids):
             if self.service.attachment_endpoint is None:
                 raise BiteError("no web endpoint defined for attachments")
+            attachment_url = self.service.base.rstrip('/') + self.service.attachment_endpoint
+            return (f"{attachment_url}{id}" for id in ids)
 
-            for id in ids:
-                url = self.service.base.rstrip('/') + self.service.attachment_endpoint + str(id)
-                self.log_t('Launching attachment in browser: {const.BROWSER} {url}')
+        def _output_urls(ids):
+            print(*_attachment_urls(ids), sep='\n')
 
-                try:
-                    subprocess.Popen(
-                        [const.BROWSER, url],
-                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                except (PermissionError, FileNotFoundError) as e:
-                    raise BiteError(f'failed running browser: {const.BROWSER}: {e.strerror}')
+        def _launch_browser(ids):
+            urls = list(_attachment_urls(ids))
+            self.log_t(f'Launching attachment{pluralism(ids)} in browser: {const.BROWSER}')
+            self.log(urls, prefix='   - ')
+            launch_browser(urls)
 
         if not item_id and (output_url or browser):
             if output_url:

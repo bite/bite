@@ -6,8 +6,13 @@ import subprocess
 import sys
 import tempfile
 
+from snakeoil.demandload import demandload
+from snakeoil.sequences import iflatten_instance
+
 from . import __title__ as prog
 from .exceptions import BiteError
+
+demandload('bite:const')
 
 PROG = prog.upper()
 
@@ -19,6 +24,17 @@ def raw_input_block():
             yield get_input()
         except EOFError:
             raise StopIteration
+
+
+def launch_browser(urls, browser=const.BROWSER):
+    """Launch URLs in a browser."""
+    urls = list(iflatten_instance(urls))
+    try:
+        subprocess.Popen(
+            [browser] + urls,
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except (PermissionError, FileNotFoundError) as e:
+        raise BiteError(f'failed running browser: {browser}: {e.strerror}')
 
 
 def launch_editor(initial_text, editor=None, comment_from='', tool=PROG):
