@@ -317,10 +317,9 @@ class Cli(object):
         return f'{char * 3} {msg} {char * (const.COLUMNS - len(msg) - 5)}'
 
     def log(self, msg, newline=True, truncate=False, prefix=' * '):
-        if isinstance(msg, list):
-            for i, line in enumerate(msg):
-                if i > 0:
-                    msg[i] = prefix + msg[i]
+        if isinstance(msg, (list, tuple)):
+            if prefix:
+                msg = [prefix + line if i > 0 else line for i, line in enumerate(msg)]
             msg = '\n'.join(msg)
 
         if sys.stdout.isatty():
