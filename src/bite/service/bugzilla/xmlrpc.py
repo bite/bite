@@ -6,8 +6,10 @@ from ...exceptions import RequestError, ParsingError
 
 
 class BugzillaXmlrpc(BugzillaRpc, Xmlrpc):
-    """Support Bugzilla's deprecated XML-RPC interface."""
+    """Support Bugzilla's deprecated XML-RPC interface.
 
+    API docs: https://www.bugzilla.org/docs/4.4/en/html/api/Bugzilla/WebService/Server/XMLRPC.html
+    """
     _service = 'bugzilla-xmlrpc'
 
     def __init__(self, **kw):
