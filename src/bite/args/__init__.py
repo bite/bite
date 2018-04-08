@@ -1,9 +1,12 @@
 from functools import partial
 
+from snakeoil.demandload import demandload
+
 from ..exceptions import BiteError
 from ..argparser import parse_stdin, string_list, id_list, ids
 from ..utils import str2bool
 
+demandload('bite:const')
 
 def subcmd(service_cls, name=None):
     """Register service subcommands."""
@@ -40,7 +43,7 @@ class ServiceOpts(object):
             'skip_auth': str2bool,
             'verify': str2bool,
             'quiet': str2bool,
-            'columns': int,
+            'columns': lambda x: setattr(const, 'COLUMNS', int(x)),
             'concurrent': int,
             'timeout': int,
         }
