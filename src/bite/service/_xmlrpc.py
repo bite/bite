@@ -1,5 +1,8 @@
 from xmlrpc.client import dumps, loads, Fault
 
+from snakeoil.klass import steal_docs
+
+from . import Service
 from ._xml import LxmlXml
 from ..exceptions import RequestError
 
@@ -11,6 +14,7 @@ class Xmlrpc(LxmlXml):
     """
 
     @staticmethod
+    @steal_docs(Service)
     def _encode_request(method, params=None):
         encoding = 'utf-8'
         if isinstance(params, list):
@@ -21,6 +25,7 @@ class Xmlrpc(LxmlXml):
                      allow_none=True).encode(encoding, 'xmlcharrefreplace')
 
     @staticmethod
+    @steal_docs(Service)
     def _decode_request(request):
         params, method = loads(request.data)
         if not params:
@@ -29,6 +34,7 @@ class Xmlrpc(LxmlXml):
             params = params[0]
         return method, params
 
+    @steal_docs(Service)
     def parse_response(self, response):
         try:
             data = super().parse_response(response)

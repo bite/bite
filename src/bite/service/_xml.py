@@ -2,6 +2,7 @@ from xmlrpc.client import getparser, Unmarshaller
 from xml.parsers.expat import ExpatError
 
 from lxml.etree import XMLPullParser, XMLSyntaxError
+from snakeoil.klass import steal_docs
 
 from . import Service
 from ..exceptions import ParsingError, RequestError
@@ -17,6 +18,7 @@ class Xml(Service):
             'Content-Type': 'text/xml'
         })
 
+    @steal_docs(Service)
     def parse_response(self, response):
         try:
             return self._parse_xml(response)[0]

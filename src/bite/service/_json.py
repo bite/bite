@@ -1,6 +1,8 @@
 try: import simplejson as json
 except ImportError: import json
 
+from snakeoil.klass import steal_docs
+
 from . import Service
 from ..exceptions import ParsingError, RequestError
 
@@ -15,6 +17,7 @@ class Json(Service):
             'Content-Type': 'application/json'
         })
 
+    @steal_docs(Service)
     def parse_response(self, response):
         try:
             return response.json()

@@ -6,6 +6,7 @@ import string
 
 from dateutil.parser import parse as dateparse
 from snakeoil.demandload import demandload
+from snakeoil.klass import steal_docs
 
 from .. import Service, PagedRequest, NullRequest, Request
 from ... import utc
@@ -375,10 +376,11 @@ class Bugzilla(Service):
 
         return config_updates
 
+    @steal_docs(Service)
     def login(self, user, password, restrict_login=False, **kw):
-        """Authenticate a session."""
         super().login(user, password, restrict_login=restrict_login)
 
+    @steal_docs(Service)
     def inject_auth(self, request, params):
         if params is None:
             params = {}
