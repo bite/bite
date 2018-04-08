@@ -624,29 +624,27 @@ class ModifyRequest(Request):
                 params[k] = v
                 options_log.append('{:<10}: {}'.format(service.item.attributes[k], v))
             elif '-' in k:
-                keys = k.split('-')
-                if len(keys) != 2:
-                    raise RuntimeError('Argument parsing error')
+                try:
+                    key, action = k.split('-')
+                except ValueError:
+                    raise RuntimeError('argument parsing error')
+
+                if key == 'cc':
+                    v = list(map(service._resuffix, v))
+                if k == 'comment-body':
+                    v = codecs.getdecoder('unicode_escape')(v)[0]
+
+                params.setdefault(key, {})[action] = v
+
+                if action in ['add', 'remove', 'set']:
+                    options_log.append((key, action, v))
+                elif key == 'comment':
+                    pass
                 else:
-                    if keys[0] == 'cc':
-                        v = list(map(service._resuffix, v))
-                    if k == 'comment-body':
-                        v = codecs.getdecoder('unicode_escape')(v)[0]
-
-                    if keys[0] not in kw:
-                        params[keys[0]] = {}
-
-                    params[keys[0]][keys[1]] = v
-
-                    if keys[1] in ['add', 'remove', 'set']:
-                        options_log.append((keys[0], keys[1], v))
-                    elif keys[0] == 'comment':
-                        pass
-                    else:
-                        try:
-                            options_log.append('{:<10}: {}'.format(service.item.attributes[keys[0]], v))
-                        except KeyError:
-                            options_log.append('{:<10}: {}'.format(keys[0].capitalize(), v))
+                    try:
+                        options_log.append('{:<10}: {}'.format(service.item.attributes[key], v))
+                    except KeyError:
+                        options_log.append('{:<10}: {}'.format(key.capitalize(), v))
             else:
                 if k == 'fixed':
                     params['status'] = 'RESOLVED'
