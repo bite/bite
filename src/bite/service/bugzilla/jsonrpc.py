@@ -18,17 +18,8 @@ class BugzillaJsonrpc(BugzillaRpc, Jsonrpc):
     def __init__(self, **kw):
         super().__init__(endpoint='/jsonrpc.cgi', **kw)
 
-    def _encode_request(self, method, params):
-        """Encode the data body for a JSON-RPC request."""
-        return super()._encode_request(method=method, params=params, id=0)
-
-    def parse_response(self, response):
-        data = super().parse_response(response)
-        error = data.get('error')
-        if error is None:
-            return data['result']
-        else:
-            self.handle_error(code=error['code'], msg=error['message'])
+    def handle_error(error):
+        super().handle_error(code=error['code'], msg=error['message'])
 
 
 class _StreamingBugzillaJsonrpc(BugzillaJsonrpc):

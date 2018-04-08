@@ -5,14 +5,20 @@ from ._json import Json
 
 
 class Jsonrpc(Json):
-    """Support generic JSON-RPC services."""
+    """Support generic JSON-RPC 1.0 services.
+
+    Spec: http://www.jsonrpc.org/specification_v1
+    """
 
     @staticmethod
-    def _encode_request(method, params=None, **kw):
+    def _encode_request(method, params, id=0):
         """Encode the data body for a JSON-RPC request."""
-        if params is None:
-            params = {}
-        return json.dumps({'method': method, 'params': [params], **kw})
+        data = {
+            'method': method,
+            'params': [params if params is not None else {}],
+            'id': id,
+        }
+        return json.dumps(data)
 
     @staticmethod
     def _decode_request(request):
@@ -20,4 +26,13 @@ class Jsonrpc(Json):
         data = json.loads(request.data)
         params = data['params']
         method = data['method']
-        return method, params
+        id = data['id']
+        return method, params, id
+
+    def parse_response(self, response):
+        data = super().parse_response(response)
+        error = data.get('error', None)
+        if error is None:
+            return data['result']
+        else:
+            self.handle_error(error)
