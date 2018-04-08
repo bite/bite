@@ -532,7 +532,7 @@ class Tool(tool.Tool):
                 raise e
             else:
                 msg = e.message if getattr(self.options, 'verbose', False) else str(e)
-                self.parser.error(e.msg)
+                self.parser.error(msg)
             return 1
         else:
             # exception is unhandled here, fallback to generic handling
