@@ -92,7 +92,7 @@ ls.add_argument(
 
 cache = subparsers.add_parser('cache', description='various cache related options')
 cache.add_argument(
-    'connections', nargs='*',
+    'connections', nargs='*', metavar='connection',
     help='connection cache(s) to update')
 cache_opts = cache.add_argument_group('Cache options')
 cache_opts.add_argument(
