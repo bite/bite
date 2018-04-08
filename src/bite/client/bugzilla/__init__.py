@@ -4,14 +4,12 @@ import re
 import subprocess
 import sys
 
-from dateutil.parser import parse as parsetime
 from snakeoil.strings import pluralism
 from snakeoil.demandload import demandload
 
 from .. import Cli
 from ...exceptions import BiteError
-from ...utc import utc
-from ...utils import block_edit, confirm, get_input
+from ...utils import block_edit, get_input
 
 demandload('bite:const')
 

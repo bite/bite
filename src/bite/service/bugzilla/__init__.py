@@ -1,13 +1,10 @@
 import base64
-import codecs
 import datetime
-from itertools import chain
 import os
 import re
 import string
 
 from dateutil.parser import parse as dateparse
-from snakeoil import klass
 from snakeoil.demandload import demandload
 
 from .. import Service, PagedRequest, NullRequest, Request

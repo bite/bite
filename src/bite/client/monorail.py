@@ -1,13 +1,10 @@
 from copy import deepcopy
-from itertools import chain
 from operator import attrgetter
 from urllib.parse import urlencode
 
-from dateutil.relativedelta import *
 from snakeoil.demandload import demandload
 
 from . import Cli
-from ..rfc3339 import datetimetostr
 
 demandload('bite:const')
 

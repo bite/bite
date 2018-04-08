@@ -12,7 +12,7 @@ from snakeoil.cli import arghparse, tool
 from snakeoil.demandload import demandload
 from snakeoil.sequences import iflatten_instance
 
-from . import __title__, get_service_cls
+from . import get_service_cls
 from .alias import substitute_alias
 from .config import get_config
 from .exceptions import BiteError
