@@ -490,7 +490,6 @@ class SearchRequest(PagedRequest):
         params['include_fields'] = fields
 
         super().__init__(service=service, params=params, **kw)
-        self.params = params
         self.fields = fields
         self.options = options_log
 
@@ -517,7 +516,6 @@ class HistoryRequest(Request):
             options_log.append(f'Created: {created} (since {repr(created)} UTC)')
 
         super().__init__(service=service, params=params, **kw)
-        self.params = params
         self.options = options_log
 
     def parse(self, data):
@@ -553,7 +551,6 @@ class CommentsRequest(Request):
         self.ids = ids
 
         super().__init__(service=service, params=params, **kw)
-        self.params = params
         self.options = options_log
 
     def parse(self, data):
@@ -692,7 +689,6 @@ class ModifyRequest(Request):
         params['ids'] = ids
 
         super().__init__(service=service, params=params, **kw)
-        self.params = params
         self.options = options_log
 
     def parse(self, data):
@@ -777,7 +773,6 @@ class AttachRequest(Request):
         params['is_patch'] = is_patch
 
         super().__init__(service=service, params=params, **kw)
-        self.params = params
 
     def parse(self, data):
         return data['attachments']
@@ -821,7 +816,6 @@ class CreateRequest(Request):
             params['status'] = status
 
         super().__init__(service=service, params=params, **kw)
-        self.params = params
 
     def parse(self, data):
         return data['id']

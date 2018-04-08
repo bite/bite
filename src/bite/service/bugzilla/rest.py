@@ -165,14 +165,12 @@ class _FieldsRequest(FieldsRequest, RESTRequest):
 class _ProductsRequest(ProductsRequest, RESTRequest):
     def __init__(self, *args, **kw):
         super().__init__(endpoint='/product', *args, **kw)
-        self.params = [(k, i) for k, v in self.params.items() for i in v]
 
 
 @req_cmd(BugzillaRest, 'users')
 class _UsersRequest(UsersRequest, RESTRequest):
     def __init__(self, *args, **kw):
         super().__init__(endpoint='/user', *args, **kw)
-        self.params = [(k, i) for k, v in self.params.items() for i in v]
 
 
 class RestBug(BugzillaBug):
