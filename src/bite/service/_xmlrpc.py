@@ -1,14 +1,17 @@
-from xmlrpc.client import dumps, loads
+from xmlrpc.client import dumps, loads, Fault
 
 from ._xml import LxmlXml
+from ..exceptions import RequestError
 
 
 class Xmlrpc(LxmlXml):
-    """Support generic XML-RPC services."""
+    """Support generic XML-RPC services.
+    
+    Spec: http://xmlrpc.scripting.com/spec.html
+    """
 
     @staticmethod
     def _encode_request(method, params=None):
-        """Encode the data body for an XML-RPC request."""
         encoding = 'utf-8'
         if isinstance(params, list):
             params = tuple(params)
@@ -19,10 +22,21 @@ class Xmlrpc(LxmlXml):
 
     @staticmethod
     def _decode_request(request):
-        """Decode the data body of a request."""
         params, method = loads(request.data)
         if not params:
             params = None
         else:
             params = params[0]
         return method, params
+
+    def parse_response(self, response):
+        try:
+            data = super().parse_response(response)
+        except Fault as e:
+            raise RequestError(msg=e.faultString, code=e.faultCode)
+
+        faults = data.get('faults', None)
+        if not faults:
+            return data
+        else:
+            self.handle_error(code=faults[0]['faultCode'], msg=faults[0]['faultString'])

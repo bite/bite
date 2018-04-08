@@ -1,4 +1,4 @@
-from xmlrpc.client import getparser, Fault, Unmarshaller
+from xmlrpc.client import getparser, Unmarshaller
 from xml.parsers.expat import ExpatError
 
 from lxml.etree import XMLPullParser, XMLSyntaxError
@@ -18,11 +18,16 @@ class Xml(Service):
         })
 
     def parse_response(self, response):
-        """Send request object and perform checks on the response."""
         try:
             return self._parse_xml(response)[0]
-        except Fault as e:
-            raise RequestError(msg=e.faultString, code=e.faultCode)
+        except (ExpatError, XMLSyntaxError) as e:
+            # The default XML parser in python (expat) has issues with badly
+            # formed XML. This is alleviated somewhat by providing an
+            # alternative class that uses lxml for parsing which allows
+            # recovering from certain types of broken XML.
+            if not response.headers['Content-Type'].startswith('text/xml'):
+                raise RequestError('non-XML response, service interface likely disabled on server')
+            raise ParsingError(msg='failed parsing XML', text=str(e)) from e
 
     def _getparser(self, use_datetime=True):
         return getparser(use_datetime=use_datetime)
@@ -33,17 +38,12 @@ class Xml(Service):
 
         p, u = self._getparser(use_datetime=True)
 
-        try:
-            while 1:
-                data = stream.read(64*1024)
-                if not data:
-                    break
-                p.feed(data)
-            p.close()
-        except (ExpatError, XMLSyntaxError) as e:
-            if not response.headers['Content-Type'].startswith('text/xml'):
-                raise RequestError('non-XML response, service interface likely disabled on server')
-            raise ParsingError(msg='failed parsing XML', text=str(e)) from e
+        while 1:
+            data = stream.read(64*1024)
+            if not data:
+                break
+            p.feed(data)
+        p.close()
 
         return u.close()
 
