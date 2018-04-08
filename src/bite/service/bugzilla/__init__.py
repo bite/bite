@@ -631,8 +631,6 @@ class ModifyRequest(Request):
 
                 if key == 'cc':
                     v = list(map(service._resuffix, v))
-                if k == 'comment-body':
-                    v = codecs.getdecoder('unicode_escape')(v)[0]
 
                 params.setdefault(key, {})[action] = v
 
