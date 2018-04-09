@@ -14,13 +14,6 @@ from ...utc import utc
 from ...utils import str2bool
 
 
-def bug_list(s):
-    try:
-        return [int(i) for i in s.split(',')]
-    except ValueError:
-        raise argparse.ArgumentTypeError(f'invalid bug ID: {repr(i)}')
-
-
 def parse_date(s):
     today = datetime.datetime.utcnow()
     offset = re.match(r'^(\d+)([ymwdhs]|min)$', s)
@@ -179,10 +172,10 @@ class Create(args.Create):
             '--groups', type=string_list,
             help='list of groups this bug should be put into')
         attr.add_argument(
-            '--blocks', type=bug_list,
+            '--blocks', type=id_list,
             help='list of bugs this bug blocks')
         attr.add_argument(
-            '--depends', type=bug_list,
+            '--depends', type=id_list,
             help='list of bugs this bug depends on')
         attr.add_argument(
             '-K', '--keywords', type=string_list,
