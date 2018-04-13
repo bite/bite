@@ -7,6 +7,9 @@
 	c: create
 	at: attach
 
+	# search for items assigned to the configured user
+	me: search -a %{CONFIG:user}
+
 	# meta alias takes a function as an argument and calls function for all other input
 	loop: !loop() { for i in "${@:2}"; do $1 $i; done }; loop
 
