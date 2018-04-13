@@ -38,7 +38,7 @@ def id_list(s):
             if item == '-':
                 raise ArgumentTypeError("'-' is only valid when piping data in")
             else:
-                raise ArgumentTypeError(f'invalid ID value: {repr(item)}')
+                raise ArgumentTypeError(f'invalid ID value: {item!r}')
     else:
         return s
 
@@ -51,14 +51,14 @@ def ids(s):
             if s == '-':
                 raise ArgumentTypeError("'-' is only valid when piping data in")
             else:
-                raise ArgumentTypeError(f'invalid ID value: {repr(s)}')
+                raise ArgumentTypeError(f'invalid ID value: {s!r}')
     else:
         return s
 
 
 def existing_file(s):
     if not os.path.exists(s):
-        raise ArgumentTypeError(f'nonexistent file: {repr(s)}')
+        raise ArgumentTypeError(f'nonexistent file: {s!r}')
     return s
 
 
@@ -131,7 +131,7 @@ class override_attr(Action):
         try:
             setattr(import_module(self.module), self.attr, values)
         except ImportError:
-            raise ArgumentTypeError(f"couldn't import module: {repr(self.module)}")
+            raise ArgumentTypeError(f"couldn't import module: {self.module!r}")
 
 
 class parse_append(Action):
@@ -454,7 +454,7 @@ class ArgumentParser(arghparse.ArgumentParser):
                         line.append(s)
                 yield line
             except IndexError:
-                raise RuntimeError(f'nonexistent replacement {repr(s)}, only {len(input_list)} values exist')
+                raise RuntimeError(f'nonexistent replacement {s!r}, only {len(input_list)} values exist')
 
     def parse_args(self, args=None, namespace=None):
         # pull config and service settings from args if they exist
@@ -469,11 +469,11 @@ class ArgumentParser(arghparse.ArgumentParser):
             self.error('both arguments -b/--base and -s/--service are required '
                        'or must be specified in the config file for a connection')
         elif not re.match(r'^http(s)?://.+', initial_args.base):
-            self.error(f'invalid base: {repr(initial_args.base)}')
+            self.error(f'invalid base: {initial_args.base!r}')
 
         service = initial_args.service
         if service not in const.SERVICES:
-            self.error(f"invalid service: {repr(service)} (available services: {', '.join(const.SERVICES)}")
+            self.error(f"invalid service: {service!r} (available services: {', '.join(const.SERVICES)}")
 
         service_opts = get_service_cls(
             service, const.SERVICE_OPTS)(parser=self, service_name=service)

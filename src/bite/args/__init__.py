@@ -65,7 +65,7 @@ class ServiceOpts(object):
                 if getattr(args, k, None) is None:
                     setattr(args, k, self.config_map.get(k, str)(v))
         except ValueError as e:
-            raise BiteError(f'invalid config value for {repr(k)}: {repr(v)}')
+            raise BiteError(f'invalid config value for {k!r}: {v!r}')
 
     def add_subcmds(self, service):
         subcmd_parser = self.parser.add_subparsers(help='help for subcommands')

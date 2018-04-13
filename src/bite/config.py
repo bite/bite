@@ -108,7 +108,7 @@ def load_config(config=None, config_file=None):
             config.read_file(f)
         config.read(user_config)
     except IOError as e:
-        raise BiteError(f'cannot load config file {repr(e.filename)}: {e.strerror}')
+        raise BiteError(f'cannot load config file {e.filename!r}: {e.strerror}')
 
     connection = config.defaults().get('connection', None)
     if connection is not None:
@@ -136,7 +136,7 @@ def load_service_files(connection=None, config=None):
             with open(config_file) as f:
                 config.read_file(f)
         except IOError as e:
-            raise BiteError(f'cannot load config file {repr(e.filename)}: {e.strerror}')
+            raise BiteError(f'cannot load config file {e.filename!r}: {e.strerror}')
 
     return config
 
@@ -168,11 +168,11 @@ def get_config(args, config_file=None):
                 with open(config_file) as f:
                     config.read_file(f)
             except IOError as e:
-                raise BiteError(f'cannot load config file {repr(e.filename)}: {e.strerror}')
+                raise BiteError(f'cannot load config file {e.filename!r}: {e.strerror}')
 
     if connection:
         if not config.has_section(connection):
-            raise BiteError(f'unknown connection: {repr(connection)}')
+            raise BiteError(f'unknown connection: {connection!r}')
 
     # pop base and service settings from the config and add them to parsed args
     # if not already specified on the command line
@@ -190,7 +190,7 @@ def get_config(args, config_file=None):
             aliases.read_file(f)
         aliases.read(user_aliases)
     except IOError as e:
-        raise BiteError(f'cannot load aliases file {repr(e.filename)}: {e.strerror}')
+        raise BiteError(f'cannot load aliases file {e.filename!r}: {e.strerror}')
     except (configparser.DuplicateSectionError, configparser.DuplicateOptionError) as e:
         raise BiteError(e)
 

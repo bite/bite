@@ -51,7 +51,7 @@ def launch_editor(initial_text, editor=None, comment_from='', tool=PROG):
         try:
             subprocess.check_call([editor, tmpfile.name])
         except subprocess.CalledProcessError as e:
-            raise BiteError(f'unable to launch editor {repr(editor)}: {e}')
+            raise BiteError(f'unable to launch editor {editor!r}: {e}')
 
         with open(tmpfile.name, 'r') as f:
             text = f.read()
@@ -141,4 +141,4 @@ def str2bool(s):
         return True
     if v in ("no", "false", "0"):
         return False
-    raise ValueError(f'invalid boolean value {repr(s)}')
+    raise ValueError(f'invalid boolean value: {s!r}')

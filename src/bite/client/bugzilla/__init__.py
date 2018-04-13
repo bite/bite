@@ -474,7 +474,7 @@ class Bugzilla(Cli):
                     try:
                         value = getattr(change, field)
                     except AttributeError:
-                        raise BiteError(f'invalid field: {repr(field)}')
+                        raise BiteError(f'invalid field: {field!r}')
                     if value is None:
                         continue
                     if isinstance(value, list):
@@ -547,7 +547,7 @@ class Bugzilla(Cli):
                     try:
                         value = getattr(comment, field)
                     except AttributeError:
-                        raise BiteError(f'invalid field: {repr(field)}')
+                        raise BiteError(f'invalid field: {field!r}')
                     if value is None:
                         continue
                     if isinstance(value, list):

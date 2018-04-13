@@ -46,7 +46,7 @@ def parse_date(s):
             # otherwise default to UTC if none is specified
             date = parsetime(s).replace(tzinfo=utc)
     else:
-        raise ValueError(f'invalid date argument: {repr(s)}')
+        raise ValueError(f'invalid date argument: {s!r}')
 
     return date
 

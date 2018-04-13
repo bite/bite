@@ -132,7 +132,7 @@ class Cli(object):
         """Attach a file to a specified item given a filename."""
         if dry_run: return
         data = self.service.add_attachment(ids, **kw)
-        self.log_t(f"{repr(filename)} attached to {self.service.item.type}{pluralism(ids)}: \
+        self.log_t(f"{filename!r} attached to {self.service.item.type}{pluralism(ids)}: \
                    {', '.join(map(str, ids))}")
 
     @login_retry
@@ -206,7 +206,7 @@ class Cli(object):
         compressed = ['x-bzip2', 'x-bzip', 'x-gzip', 'gzip', 'x-tar', 'x-xz']
         mime_type, mime_subtype = f.mimetype.split('/')
         if sys.stdout.isatty() and not (mime_type == 'text' or mime_subtype in compressed):
-            self.log(f' ! Warning: The attachment {repr(f.filename)} has type {f.mimetype}')
+            self.log(f' ! Warning: The attachment {f.filename!r} has type {f.mimetype}')
             if not confirm('Are you sure you want to view it?'):
                 return
 
@@ -235,7 +235,7 @@ class Cli(object):
     def _save_attachment(self, f, path):
         """Save attachment to a specified path."""
         if os.path.exists(path):
-            print(f' ! Warning: existing file: {repr(path)}')
+            print(f' ! Warning: existing file: {path!r}')
             if not confirm('Do you want to overwrite it?'):
                 return
 
@@ -384,7 +384,7 @@ class Cli(object):
                     try:
                         value = getattr(item, field)
                     except AttributeError:
-                        raise BiteError(f'invalid field: {repr(field)}')
+                        raise BiteError(f'invalid field: {field!r}')
                     if value is None:
                         continue
                     if isinstance(value, list):

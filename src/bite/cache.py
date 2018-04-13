@@ -89,7 +89,7 @@ class Cache(object):
             except FileNotFoundError:
                 pass
             except IOError as e:
-                raise BiteError(f'unable to remove cache: {repr(path)}: {e.strerror}')
+                raise BiteError(f'unable to remove cache: {path!r}: {e.strerror}')
 
     ## support dictionary access methods
 
@@ -163,7 +163,7 @@ class Auth(object):
                     os.chmod(self.path, stat.S_IREAD | stat.S_IWRITE)
                     f.write(token)
             except (PermissionError, IsADirectoryError) as e:
-                raise BiteError(f'failed writing auth token to {repr(self.path)}: {e.strerror}')
+                raise BiteError(f'failed writing auth token to {self.path!r}: {e.strerror}')
 
     def read(self):
         if self.path is not None:
@@ -185,7 +185,7 @@ class Auth(object):
             except FileNotFoundError:
                 pass
             except IOError as e:
-                raise BiteError(f'unable to remove cache: {repr(self.path)}: {e.strerror}')
+                raise BiteError(f'unable to remove cache: {self.path!r}: {e.strerror}')
         self.token = None
 
     def __str__(self):
