@@ -1,6 +1,6 @@
 import argparse
 
-from . import BugzillaOpts
+from . import Bugzilla5_0_Opts, BugzillaOpts
 
 
 def person_search(s):
@@ -20,6 +20,11 @@ def person_search(s):
         raise argparse.ArgumentTypeError(error)
     else:
         return (search_type, name)
+
+
+class Bugzilla5_0RestOpts(Bugzilla5_0_Opts):
+
+    _service = 'bugzilla5.0-rest'
 
 
 class BugzillaRestOpts(BugzillaOpts):

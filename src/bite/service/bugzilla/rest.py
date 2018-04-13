@@ -14,10 +14,10 @@ from .. import RESTRequest, req_cmd
 from .._jsonrest import JsonREST
 
 
-class BugzillaRest(Bugzilla, JsonREST):
-    """Service supporting Bugzilla's REST interface."""
+class Bugzilla5_0Rest(Bugzilla, JsonREST):
+    """Service for Bugzilla 5.0 REST interface."""
 
-    _service = 'bugzilla-rest'
+    _service = 'bugzilla5.0-rest'
 
     def __init__(self, **kw):
         super().__init__(endpoint='/rest', **kw)
@@ -42,6 +42,12 @@ class BugzillaRest(Bugzilla, JsonREST):
         if response.status_code in (404,):
             self.parse_response(response)
         super()._failed_http_response(response)
+
+
+class BugzillaRest(Bugzilla5_0Rest):
+    """Service for Bugzilla latest REST interface."""
+
+    _service = 'bugzilla-rest'
 
 
 @req_cmd(BugzillaRest, 'get')

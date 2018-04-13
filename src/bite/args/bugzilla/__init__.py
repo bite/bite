@@ -61,7 +61,8 @@ def date(s):
         return s
 
 
-class BugzillaOpts(args.ServiceOpts):
+class Bugzilla4_4_Opts(args.ServiceOpts):
+    """Bugzilla 4.4 options."""
 
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
@@ -76,6 +77,14 @@ class BugzillaOpts(args.ServiceOpts):
         auth_opts.add_argument(
             '--restrict', action='store_true', dest='restrict_login',
             help='restrict the login to your IP address')
+
+
+class Bugzilla5_0_Opts(Bugzilla4_4_Opts):
+    """Bugzilla 5.0 options."""
+
+
+class BugzillaOpts(Bugzilla5_0_Opts):
+    """Bugzilla latest options."""
 
 
 @args.subcmd(BugzillaOpts)

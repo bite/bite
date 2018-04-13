@@ -10,16 +10,28 @@ from ._rpc import BugzillaRpc, _SearchRequest as BugzillaSearchRequest
 from .._jsonrpc import Jsonrpc
 
 
-class BugzillaJsonrpc(BugzillaRpc, Jsonrpc):
-    """Service supporting Bugzilla's deprecated JSON-RPC interface."""
+class Bugzilla4_4Jsonrpc(BugzillaRpc, Jsonrpc):
+    """Service for Bugzilla 4.4 JSON-RPC interface."""
 
-    _service = 'bugzilla-jsonrpc'
+    _service = 'bugzilla4.4-jsonrpc'
 
     def __init__(self, **kw):
         super().__init__(endpoint='/jsonrpc.cgi', **kw)
 
     def handle_error(error):
         super().handle_error(code=error['code'], msg=error['message'])
+
+
+class Bugzilla5_0Jsonrpc(Bugzilla4_4Jsonrpc):
+    """Service for Bugzilla 5.0 JSON-RPC interface."""
+
+    _service = 'bugzilla5.0-jsonrpc'
+
+
+class BugzillaJsonrpc(Bugzilla4_4Jsonrpc):
+    """Service for Bugzilla latest JSON-RPC interface."""
+
+    _service = 'bugzilla-jsonrpc'
 
 
 class _StreamingBugzillaJsonrpc(BugzillaJsonrpc):
