@@ -4,28 +4,32 @@ API docs: https://www.bugzilla.org/docs/4.4/en/html/api/Bugzilla/WebService/Serv
 """
 
 from . import BugzillaAttachment
-from ._rpc import BugzillaRpc
+from ._rpc import Bugzilla4_4Rpc, Bugzilla5_0Rpc
 from .._xmlrpc import Xmlrpc
 from ...objects import decompress
 
 
-class Bugzilla4_4Xmlrpc(BugzillaRpc, Xmlrpc):
-    """Service for Bugzilla 4.4 XML-RPC interface."""
-
-    _service = 'bugzilla4.4-xmlrpc'
+class _BugzillaXmlrpcBase(Xmlrpc):
+    """Base service class for Bugzilla XML-RPC interface."""
 
     def __init__(self, **kw):
         super().__init__(endpoint='/xmlrpc.cgi', **kw)
         self.attachment = BugzillaAttachmentXml
 
 
-class Bugzilla5_0Xmlrpc(Bugzilla4_4Xmlrpc):
+class Bugzilla4_4Xmlrpc(_BugzillaXmlrpcBase, Bugzilla4_4Rpc):
+    """Service for Bugzilla 4.4 XML-RPC interface."""
+
+    _service = 'bugzilla4.4-xmlrpc'
+
+
+class Bugzilla5_0Xmlrpc(_BugzillaXmlrpcBase, Bugzilla5_0Rpc):
     """Service for Bugzilla 5.0 XML-RPC interface."""
 
     _service = 'bugzilla5.0-xmlrpc'
 
 
-class BugzillaXmlrpc(Bugzilla4_4Xmlrpc):
+class BugzillaXmlrpc(_BugzillaXmlrpcBase, Bugzilla5_0Rpc):
     """Service for Bugzilla latest XML-RPC interface."""
 
     _service = 'bugzilla-xmlrpc'

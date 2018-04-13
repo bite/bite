@@ -7,17 +7,15 @@ from collections import deque
 
 from . import (
     Bugzilla, BugzillaBug, LoginRequest,
-    SearchRequest, HistoryRequest, CommentsRequest, AttachmentsRequest,
+    SearchRequest5_0, HistoryRequest, CommentsRequest, AttachmentsRequest,
     GetItemRequest, GetRequest, ModifyRequest, AttachRequest, CreateRequest,
     ExtensionsRequest, VersionRequest, FieldsRequest, ProductsRequest, UsersRequest)
 from .. import RESTRequest, req_cmd
 from .._jsonrest import JsonREST
 
 
-class Bugzilla5_0Rest(Bugzilla, JsonREST):
-    """Service for Bugzilla 5.0 REST interface."""
-
-    _service = 'bugzilla5.0-rest'
+class _BugzillaRestBase(Bugzilla, JsonREST):
+    """Base service class for Bugzilla REST interface."""
 
     def __init__(self, **kw):
         super().__init__(endpoint='/rest', **kw)
@@ -42,6 +40,12 @@ class Bugzilla5_0Rest(Bugzilla, JsonREST):
         if response.status_code in (404,):
             self.parse_response(response)
         super()._failed_http_response(response)
+
+
+class Bugzilla5_0Rest(_BugzillaRestBase):
+    """Service for Bugzilla 5.0 REST interface."""
+
+    _service = 'bugzilla5.0-rest'
 
 
 class BugzillaRest(Bugzilla5_0Rest):
@@ -88,8 +92,8 @@ class _CreateRequest(CreateRequest, RESTRequest):
         self.params = None
 
 
-@req_cmd(BugzillaRest, 'search')
-class _SearchRequest(SearchRequest, RESTRequest):
+@req_cmd(Bugzilla5_0Rest, 'search')
+class _SearchRequest5_0(SearchRequest5_0, RESTRequest):
     def __init__(self, *args, **kw):
         """Construct a search request."""
         super().__init__(endpoint='/bug', *args, **kw)

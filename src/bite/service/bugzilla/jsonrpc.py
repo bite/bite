@@ -6,14 +6,12 @@ API docs: https://www.bugzilla.org/docs/4.4/en/html/api/Bugzilla/WebService/Serv
 try: import simplejson as json
 except ImportError: import json
 
-from ._rpc import BugzillaRpc, _SearchRequest as BugzillaSearchRequest
+from ._rpc import Bugzilla4_4Rpc, Bugzilla5_0Rpc, _SearchRequest5_0 as BugzillaSearchRequest
 from .._jsonrpc import Jsonrpc
 
 
-class Bugzilla4_4Jsonrpc(BugzillaRpc, Jsonrpc):
-    """Service for Bugzilla 4.4 JSON-RPC interface."""
-
-    _service = 'bugzilla4.4-jsonrpc'
+class _BugzillaJsonrpcBase(Jsonrpc):
+    """Base service class for Bugzilla JSON-RPC interface."""
 
     def __init__(self, **kw):
         super().__init__(endpoint='/jsonrpc.cgi', **kw)
@@ -22,13 +20,19 @@ class Bugzilla4_4Jsonrpc(BugzillaRpc, Jsonrpc):
         super().handle_error(code=error['code'], msg=error['message'])
 
 
-class Bugzilla5_0Jsonrpc(Bugzilla4_4Jsonrpc):
+class Bugzilla4_4Jsonrpc(_BugzillaJsonrpcBase, Bugzilla4_4Rpc):
+    """Service for Bugzilla 4.4 JSON-RPC interface."""
+
+    _service = 'bugzilla4.4-jsonrpc'
+
+
+class Bugzilla5_0Jsonrpc(_BugzillaJsonrpcBase, Bugzilla5_0Rpc):
     """Service for Bugzilla 5.0 JSON-RPC interface."""
 
     _service = 'bugzilla5.0-jsonrpc'
 
 
-class BugzillaJsonrpc(Bugzilla4_4Jsonrpc):
+class BugzillaJsonrpc(_BugzillaJsonrpcBase, Bugzilla5_0Rpc):
     """Service for Bugzilla latest JSON-RPC interface."""
 
     _service = 'bugzilla-jsonrpc'
