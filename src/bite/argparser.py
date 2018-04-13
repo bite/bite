@@ -490,14 +490,21 @@ class ArgumentParser(arghparse.ArgumentParser):
         # replace service attr with service object
         initial_args.service = get_service_cls(service, const.SERVICES)(**vars(initial_args))
 
-        # add subcommands
-        service_opts.add_subcmds(service=initial_args.service)
-
         # check if unparsed args match any aliases
         if unparsed_args:
             service_type = initial_args.service._service.split('-')[0]
-            unparsed_args = substitute_alias(
+            alias_unparsed_args = substitute_alias(
                 initial_args.connection, service_type, aliases, unparsed_args)
+            # re-parse optionals to catch any added by aliases
+            if unparsed_args != alias_unparsed_args:
+                initial_args, unparsed_args = self.parse_optionals(alias_unparsed_args, initial_args)
+
+        # add selected subcommand options
+        try:
+            subcmd = unparsed_args[0]
+            service_opts.add_subcmd_opts(service=initial_args.service, subcmd=subcmd)
+        except IndexError:
+            pass
 
         self.set_defaults(connection=initial_args.connection)
 

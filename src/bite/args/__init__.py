@@ -12,10 +12,7 @@ def subcmd(service_cls, name=None):
     """Register service subcommands."""
     def wrapped(cls, *args, **kwds):
         subcmd_name = name if name is not None else cls.__name__.lower()
-        if service_cls._subcmds is None:
-            service_cls._subcmds = [(subcmd_name, cls)]
-        else:
-            service_cls._subcmds.append((subcmd_name, cls))
+        setattr(service_cls, subcmd_name, cls)
         return cls
     return wrapped
 
@@ -33,7 +30,6 @@ class Subcmd(object):
 class ServiceOpts(object):
 
     _service = None
-    _subcmds = None
 
     def __init__(self, parser, service_name):
         self.parser = parser
@@ -67,11 +63,12 @@ class ServiceOpts(object):
         except ValueError as e:
             raise BiteError(f'invalid config value for {k!r}: {v!r}')
 
-    def add_subcmds(self, service):
+    def add_subcmd_opts(self, service, subcmd):
+        """Add subcommand specific options."""
         subcmd_parser = self.parser.add_subparsers(help='help for subcommands')
-        if self._subcmds is not None:
-            for name, cls in self._subcmds:
-                cls(parser=subcmd_parser, service=service, name=name)
+        cls = getattr(self, subcmd, None)
+        if cls is not None:
+            cls(parser=subcmd_parser, service=service, name=subcmd)
 
 
 class SendSubcmd(Subcmd):
