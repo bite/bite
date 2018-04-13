@@ -1,4 +1,4 @@
-snakeoil>=0.7.5
+snakeoil>=0.8.0
 requests>=2
 chardet
 python-dateutil>=2.1
