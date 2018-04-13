@@ -609,22 +609,21 @@ class AttachmentsRequest(Request):
 
 
 class ModifyRequest(Request):
+
+    # parameters support add, remove, and possibly set actions
+    add_remove = {'groups', 'see_also', 'cc'}
+    add_remove_set = {'alias', 'blocks', 'depends', 'keywords'}
+
+    # other params requiring object values
+    obj_params = {'comment-{x}' for x in ('body', 'is_private', 'is_markdown')}
+
     def __init__(self, ids, service, *args, **kw):
         """Construct a modify request."""
         options_log = []
         params = {}
 
-        # parameters support add, remove, and possibly set actions
-        add_remove = {'groups', 'see_also', 'cc'}
-        add_remove_set = {'alias', 'blocks', 'depends', 'keywords'}
-
         for k, v in ((k, v) for (k, v) in kw.items() if v):
-            if k in service.item.attributes:
-                if k == 'assigned_to':
-                    v = service._resuffix(v)
-                params[k] = v
-                options_log.append('{:<10}: {}'.format(service.item.attributes[k], v))
-            elif k in add_remove:
+            if k in self.add_remove:
                 try:
                     remove, add = v
                 except ValueError:
@@ -644,7 +643,7 @@ class ModifyRequest(Request):
 
                 options_log.append(
                     '{:<10}: {}'.format(service.item.attributes[k], ', '.join(values)))
-            elif k in add_remove_set:
+            elif k in self.add_remove_set:
                 if k == 'alias' and len(ids) > 1:
                     raise ValueError('unable to set aliases on multiple bugs at once')
 
@@ -669,6 +668,14 @@ class ModifyRequest(Request):
 
                 options_log.append(
                     '{:<10}: {}'.format(service.item.attributes[k], ', '.join(values)))
+            elif k in self.obj_params:
+                key1, key2 = k.split('-')
+                params.setdefault(key1, {})[key2] = v
+            elif k in service.item.attributes:
+                if k == 'assigned_to':
+                    v = service._resuffix(v)
+                params[k] = v
+                options_log.append('{:<10}: {}'.format(service.item.attributes[k], v))
             else:
                 raise ValueError(f'unknown parameter: {k!r}')
 
