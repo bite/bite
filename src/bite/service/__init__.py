@@ -1,6 +1,7 @@
 from concurrent.futures import ThreadPoolExecutor
 from functools import wraps
 from urllib.parse import urlparse, urlunparse, urlencode
+import re
 
 import requests
 from snakeoil import klass
@@ -22,7 +23,10 @@ def req_cmd(service_cls, cmd_name=None):
     """Register service request and command functions."""
     def wrapped(cls, *args, **kwds):
         req_func = lambda self, *args, **kw: cls(*args, service=self, **kw)
-        setattr(service_cls, cls.__name__.lstrip('_'), req_func)
+        name = re.match(r'^_?([a-zA-Z]+).*$', cls.__name__)
+        if not name:
+            raise ValueError(f'invalid request name: {cls.__name__!r}')
+        setattr(service_cls, name.group(1), req_func)
         if cmd_name is not None:
             send = getattr(service_cls, 'send')
             send_func = lambda self, *args, **kw: send(self, cls(*args, service=self, **kw))
