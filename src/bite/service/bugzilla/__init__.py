@@ -670,16 +670,7 @@ class ModifyRequest(Request):
                 options_log.append(
                     '{:<10}: {}'.format(service.item.attributes[k], ', '.join(values)))
             else:
-                if k == 'fixed':
-                    params['status'] = 'RESOLVED'
-                    params['resolution'] = 'FIXED'
-                    options_log.append('Status    : RESOLVED')
-                    options_log.append('Resolution: FIXED')
-                elif k == 'invalid':
-                    params['status'] = 'RESOLVED'
-                    params['resolution'] = 'INVALID'
-                    options_log.append('Status    : RESOLVED')
-                    options_log.append('Resolution: INVALID')
+                raise ValueError(f'unknown parameter: {k!r}')
 
         if not params:
             raise ValueError('No changes specified')

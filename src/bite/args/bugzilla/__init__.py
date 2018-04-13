@@ -207,14 +207,8 @@ class Modify(args.Modify):
             '-c', '--comment', metavar='COMMENT', dest='comment-body',
             help='add comment from command line')
         attr.add_argument(
-            '-R', '--resolution',
-            help='set new resolution (only if status = RESOLVED)')
-        attr.add_argument(
             '-S', '--severity',
             help='set severity for this bug')
-        attr.add_argument(
-            '-s', '--status',
-            help='set new status of bug (e.g. RESOLVED)')
         attr.add_argument(
             '-t', '--title', dest='summary',
             help='set title of bug')
@@ -346,15 +340,15 @@ class Modify(args.Modify):
             help='change the QA contact for this bug')
         status = self.parser.add_argument_group('Status related')
         status.add_argument(
+            '-s', '--status',
+            help='set new status of bug (e.g. RESOLVED)')
+        status.add_argument(
+            '-R', '--resolution',
+            help='set new resolution')
+        status.add_argument(
             '-d', '--duplicate', type=int,
             metavar='BUG_ID', dest='dupe_of',
             help='mark bug as a duplicate')
-        status.add_argument(
-            '--fixed', action='store_true',
-            help='mark bug as RESOLVED, FIXED')
-        status.add_argument(
-            '--invalid', action='store_true',
-            help='mark bug as RESOLVED, INVALID')
         time = self.parser.add_argument_group('Time related')
         time.add_argument(
             '--deadline',
