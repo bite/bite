@@ -419,55 +419,11 @@ class Bugzilla(Service):
             super()._failed_http_response(response)
 
 
-class SearchRequest(PagedRequest):
+class SearchRequest4_4(PagedRequest):
 
     def __init__(self, service, **kw):
         """Construct a search request."""
-        params = {}
-        options_log = []
-        for k, v in ((k, v) for (k, v) in kw.items() if v):
-            if k in service.item.attributes:
-                if k in ['creation_time', 'last_change_time']:
-                    params[k] = v.isoformat()
-                    options_log.append(f'{service.item.attributes[k]}: {v} (since {v!r} UTC)')
-                elif k in ['assigned_to', 'creator']:
-                    params[k] = list(map(service._resuffix, v))
-                    options_log.append(f"{service.item.attributes[k]}: {', '.join(map(str, v))}")
-                elif k == 'status':
-                    status_alias = []
-                    status_map = {
-                        'open': service.cache['open_status'],
-                        'closed': service.cache['closed_status'],
-                        'all': service.cache['open_status'] + service.cache['closed_status'],
-                    }
-                    for status in v:
-                        if status_map.get(status.lower(), False):
-                            status_alias.append(status)
-                            params.setdefault(k, []).extend(status_map[status.lower()])
-                        else:
-                            params.setdefault(k, []).append(status)
-                    if status_alias:
-                        options_log.append(f"{service.item.attributes[k]}: {', '.join(status_alias)} ({', '.join(params[k])})")
-                    else:
-                        options_log.append(f"{service.item.attributes[k]}: {', '.join(params[k])}")
-                else:
-                    params[k] = v
-                    options_log.append(f"{service.item.attributes[k]}: {', '.join(map(str, v))}")
-            else:
-                if k == 'terms':
-                    params['summary'] = v
-                    options_log.append(f"Summary: {', '.join(map(str, v))}")
-                elif k == 'commenter':
-                    # XXX: probably fragile since it uses custom search URL params
-                    # only works with >=bugzilla-5, previous versions return invalid parameter errors
-                    for i, val in enumerate(v):
-                        i = str(i + 1)
-                        params['f' + i] = 'commenter'
-                        params['o' + i] = 'substring'
-                        params['v' + i] = val
-                    options_log.append(f"Commenter: {', '.join(map(str, v))}")
-                elif k in ['limit', 'offset', 'votes']:
-                    params[k] = v
+        params, options = self.parse_params(service=service, **kw)
 
         if not params:
             raise BiteError('no supported search terms or options specified')
@@ -487,18 +443,77 @@ class SearchRequest(PagedRequest):
             unknown_fields = set(fields).difference(service.item.attributes.keys())
             if unknown_fields:
                 raise BiteError(f"unknown fields: {', '.join(unknown_fields)}")
-            options_log.append(f"Fields: {' '.join(fields)}")
+            options.append(f"Fields: {' '.join(fields)}")
 
         params['include_fields'] = fields
 
         super().__init__(service=service, params=params, **kw)
         self.fields = fields
-        self.options = options_log
+        self.options = options
+
+    def parse_params(self, service, params=None, options=None, **kw):
+        params = params if params is not None else {}
+        options = options if options is not None else []
+
+        for k, v in ((k, v) for (k, v) in kw.items() if v):
+            if k in service.item.attributes:
+                if k in ['creation_time', 'last_change_time']:
+                    params[k] = v.isoformat()
+                    options.append(f'{service.item.attributes[k]}: {v} (since {v!r} UTC)')
+                elif k in ['assigned_to', 'creator']:
+                    params[k] = list(map(service._resuffix, v))
+                    options.append(f"{service.item.attributes[k]}: {', '.join(map(str, v))}")
+                elif k == 'status':
+                    status_alias = []
+                    status_map = {
+                        'open': service.cache['open_status'],
+                        'closed': service.cache['closed_status'],
+                        'all': service.cache['open_status'] + service.cache['closed_status'],
+                    }
+                    for status in v:
+                        if status_map.get(status.lower(), False):
+                            status_alias.append(status)
+                            params.setdefault(k, []).extend(status_map[status.lower()])
+                        else:
+                            params.setdefault(k, []).append(status)
+                    if status_alias:
+                        options.append(f"{service.item.attributes[k]}: {', '.join(status_alias)} ({', '.join(params[k])})")
+                    else:
+                        options.append(f"{service.item.attributes[k]}: {', '.join(params[k])}")
+                else:
+                    params[k] = v
+                    options.append(f"{service.item.attributes[k]}: {', '.join(map(str, v))}")
+            else:
+                if k == 'terms':
+                    params['summary'] = v
+                    options.append(f"Summary: {', '.join(map(str, v))}")
+                elif k in ['limit', 'offset', 'votes']:
+                    params[k] = v
+
+        return params, options
 
     def parse(self, data):
         bugs = data['bugs']
         for bug in bugs:
             yield self.service.item(self.service, **bug)
+
+
+class SearchRequest5_0(SearchRequest4_4):
+
+    def parse_params(self, service, params=None, options=None, **kw):
+        params, options = super().parse_params(service, params, options, **kw)
+        for k, v in ((k, v) for (k, v) in kw.items() if v):
+            if k == 'commenter':
+                # uses custom search URL params
+                for i, val in enumerate(v):
+                    i = str(i + 1)
+                    params['f' + i] = 'commenter'
+                    params['o' + i] = 'substring'
+                    params['v' + i] = val
+                options.append(f"Commenter: {', '.join(map(str, v))}")
+
+        return params, options
+
 
 
 class HistoryRequest(Request):
