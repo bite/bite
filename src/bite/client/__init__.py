@@ -239,11 +239,8 @@ class Cli(object):
             if not confirm('Do you want to overwrite it?'):
                 return
 
-        self.log(f'Saving attachment: {repr(path)}')
-        try:
-            f.write(path)
-        except IOError as e:
-            raise BiteError(f'error creating file: {repr(path)}: {e.strerror}')
+        self.log(f'Saving attachment: {path!r}')
+        f.write(path)
 
     @login_retry
     @login_required

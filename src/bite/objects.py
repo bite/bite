@@ -15,6 +15,7 @@ from snakeoil.demandload import demandload
 from snakeoil import klass
 
 from . import magic
+from .exceptions import BiteError
 from .utc import utc
 
 demandload('bite:const')
@@ -196,9 +197,12 @@ class Attachment(object):
         return self.data
 
     def write(self, path):
-        with open(path, 'wb+') as f:
-            os.chmod(path, stat.S_IREAD | stat.S_IWRITE)
-            f.write(self.read(raw=True))
+        try:
+            with open(path, 'wb+') as f:
+                os.chmod(path, stat.S_IREAD | stat.S_IWRITE)
+                f.write(self.read(raw=True))
+        except IOError as e:
+            raise BiteError(f'failed writing file: {path!r}: {e.strerror}')
 
 
 class TarAttachment(object):
