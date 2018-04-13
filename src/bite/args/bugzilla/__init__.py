@@ -228,47 +228,23 @@ class Modify(args.Modify):
             '-w', '--whiteboard',
             help='set status whiteboard'),
         attr.add_argument(
-            '--alias',
-            help='change the alias for this bug')
+            '--alias', action='csv_elements',
+            help='add/remove/set bug alias(es)')
         attr.add_argument(
-            '--add-blocks', type=id_list,
-            metavar='BUG_ID', dest='blocks-add',
-            help='add a bug to the blocked list')
-        attr.add_argument(
-            '--remove-blocks', type=id_list,
-            metavar='BUG_ID', dest='blocks-remove',
-            help='remove a bug from the blocked list')
+            '--blocks', action='csv_elements', metavar='BUG_ID',
+            help='add/remove/set bug(s) to/from the blocked list')
         attr.add_argument(
             '--component',
             help='change the component for this bug')
         attr.add_argument(
-            '--add-depends', type=id_list,
-            metavar='BUG_ID', dest='depends_on-add',
-            help='add a bug to the depends list')
+            '--depends', action='csv_elements', metavar='BUG_ID',
+            help='add/remove/set bug(s) to/from the depends list')
         attr.add_argument(
-            '--remove-depends', type=id_list,
-            metavar='BUG_ID', dest='depends_on-remove',
-            help='remove a bug from the depends list')
+            '--groups', action='csv_negations', metavar='GROUP',
+            help='add/remove group(s) to/from bug(s)')
         attr.add_argument(
-            '--add-groups', type=string_list,
-            metavar='GROUP', dest='groups-add',
-            help='add a group to this bug')
-        attr.add_argument(
-            '--remove-groups', type=string_list,
-            metavar='GROUP', dest='groups-remove',
-            help='remove a group from this bug')
-        attr.add_argument(
-            '-K', '--keywords', type=string_list,
-            metavar='KEYWORDS', dest='keywords-set',
-            help='set the keywords of this bug')
-        attr.add_argument(
-            '--add-keywords', type=string_list,
-            metavar='KEYWORD', dest='keywords-add',
-            help='add a keyword to the bug')
-        attr.add_argument(
-            '--remove-keywords', type=string_list,
-            metavar='KEYWORD', dest='keywords-remove',
-            help='remove a keyword from this bug')
+            '-K', '--keywords', action='csv_elements', metavar='KEYWORDS',
+            help='add/remove/set keyword(s) to/from this bug')
         attr.add_argument(
             '--target-milestone',
             help='set a target milestone for this bug')
@@ -285,23 +261,15 @@ class Modify(args.Modify):
             '--product',
             help='change the product for this bug')
         attr.add_argument(
-            '--add-see-also', type=string_list,
-            metavar='URL', dest='see_also-add',
-            help='add a "see also" URL to this bug')
-        attr.add_argument(
-            '--remove-see-also', type=string_list,
-            metavar='URL', dest='see_also-remove',
-            help='remove a "see also" URL from this bug')
+            '--see-also', action='csv_negations', metavar='URL',
+            help='add/remove "see also" URL(s) to/from this bug')
         person = self.parser.add_argument_group('Person related')
         person.add_argument(
             '-a', '--assigned-to',
             help='change assignee for this bug')
         person.add_argument(
-            '--add-cc', type=string_list, dest='cc-add',
-            help='add emails to the CC list')
-        person.add_argument(
-            '--remove-cc', type=string_list, dest='cc-remove',
-            help='remove emails from the CC list')
+            '--cc', action='csv_negations',
+            help='add/remove emails to/from the CC list')
         person.add_argument(
             '--qa-contact',
             help='change the QA contact for this bug')

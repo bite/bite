@@ -613,32 +613,62 @@ class ModifyRequest(Request):
         """Construct a modify request."""
         options_log = []
         params = {}
+
+        # parameters support add, remove, and possibly set actions
+        add_remove = {'groups', 'see_also', 'cc'}
+        add_remove_set = {'alias', 'blocks', 'depends', 'keywords'}
+
         for k, v in ((k, v) for (k, v) in kw.items() if v):
             if k in service.item.attributes:
                 if k == 'assigned_to':
                     v = service._resuffix(v)
                 params[k] = v
                 options_log.append('{:<10}: {}'.format(service.item.attributes[k], v))
-            elif '-' in k:
+            elif k in add_remove:
                 try:
-                    key, action = k.split('-')
+                    remove, add = v
                 except ValueError:
-                    raise RuntimeError('argument parsing error')
+                    raise ValueError(f"invalid add/remove values for '{k}'")
 
                 if key == 'cc':
-                    v = list(map(service._resuffix, v))
+                    remove = list(map(service._resuffix, remove))
+                    add = list(map(service._resuffix, add))
 
-                params.setdefault(key, {})[action] = v
+                values = []
+                if remove:
+                    params.setdefault(k, {})['remove'] = remove
+                    values.extend([f'-{x}' for x in remove])
+                if add:
+                    params.setdefault(k, {})['add'] = add
+                    values.extend([f'+{x}' for x in add])
 
-                if action in ['add', 'remove', 'set']:
-                    options_log.append((key, action, v))
-                elif key == 'comment':
-                    pass
+                options_log.append(
+                    '{:<10}: {}'.format(service.item.attributes[k], ', '.join(values)))
+            elif k in add_remove_set:
+                if k == 'alias' and len(ids) > 1:
+                    raise ValueError('unable to set aliases on multiple bugs at once')
+
+                # fields supporting add/remove/set actions
+                try:
+                    remove, set, add = v
+                except ValueError:
+                    raise ValueError(f"invalid add/remove/set values for '{k}'")
+
+                values = []
+                # set overrides add/remove actions
+                if set:
+                    params.setdefault(k, {})['set'] = set
+                    values = set
                 else:
-                    try:
-                        options_log.append('{:<10}: {}'.format(service.item.attributes[key], v))
-                    except KeyError:
-                        options_log.append('{:<10}: {}'.format(key.capitalize(), v))
+                    if remove:
+                        params.setdefault(k, {})['remove'] = remove
+                        values.extend([f'-{x}' for x in remove])
+                    if add:
+                        params.setdefault(k, {})['add'] = add
+                        values.extend([f'+{x}' for x in add])
+
+                options_log.append(
+                    '{:<10}: {}'.format(service.item.attributes[k], ', '.join(values)))
             else:
                 if k == 'fixed':
                     params['status'] = 'RESOLVED'
@@ -650,27 +680,6 @@ class ModifyRequest(Request):
                     params['resolution'] = 'INVALID'
                     options_log.append('Status    : RESOLVED')
                     options_log.append('Resolution: INVALID')
-
-        merge_targets = ((i, x) for i, x in enumerate(options_log) if isinstance(x, tuple))
-        merge_targets = sorted(merge_targets, key=lambda x: x[1][0])
-        old_indices = [i for (i, x) in merge_targets]
-        for key, group in groupby(merge_targets, lambda x: x[1][0]):
-            value = []
-            for (_, (key, action, values)) in group:
-                if action == 'add':
-                    value.extend(['+' + str(x) for x in values])
-                elif action == 'remove':
-                    value.extend(['-' + str(x) for x in values])
-                elif action == 'set':
-                    value = values
-                    break
-            try:
-                options_log.append('{:<10}: {}'.format(service.item.attributes[key], ', '.join(value)))
-            except KeyError:
-                options_log.append('{:<10}: {}'.format(key.capitalize(), ', '.join(value)))
-
-        # remove old entries
-        options_log = [x for i, x in enumerate(options_log) if i not in old_indices]
 
         if not params:
             raise ValueError('No changes specified')
