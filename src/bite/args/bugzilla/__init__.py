@@ -229,22 +229,79 @@ class Modify(args.Modify):
             help='set status whiteboard'),
         attr.add_argument(
             '--alias', action='csv_elements',
-            help='add/remove/set bug alias(es)')
+            help='add/remove/set aliases',
+            docs="""
+                Add, remove, or set bug aliases.
+
+                Use comma-separated values to add, remove, or set aliases for a
+                given bug. Use the prefixes '+' and '-' for each value to add
+                and remove aliases, respectively. In order to set aliases for a
+                bug, don't use any prefixes for the passed values.
+
+                Note that setting aliases overrides the current aliases for the
+                bug as well as any passed add/remove values.
+
+                In addition, this action can only be performed on a single bug
+                at a time so passing multiple bug ID targets will cause an
+                error.
+            """)
         attr.add_argument(
             '--blocks', action='csv_elements', metavar='BUG_ID',
-            help='add/remove/set bug(s) to/from the blocked list')
+            help='add/remove/set blockers',
+            docs="""
+                Add, remove, or set bug blockers.
+
+                Use comma-separated bug IDS to add, remove, or set blockers for a
+                given bug. Use the prefixes '+' and '-' for each ID to add
+                and remove blockers, respectively. In order to set blockers for a
+                bug, don't use any prefixes for the passed IDs.
+
+                Note that setting blockers overrides the current blockers for the
+                bug as well as any passed add/remove values.
+            """)
         attr.add_argument(
             '--component',
             help='change the component for this bug')
         attr.add_argument(
             '--depends', action='csv_elements', metavar='BUG_ID',
-            help='add/remove/set bug(s) to/from the depends list')
+            help='add/remove/set dependencies',
+            docs="""
+                Add, remove, or set bug dependencies.
+
+                Use comma-separated bug IDS to add, remove, or set dependencies
+                for a given bug. Use the prefixes '+' and '-' for each ID to
+                add and remove dependencies, respectively. In order to set
+                dependencies for a bug, don't use any prefixes for the passed
+                IDs.
+
+                Note that setting dependencies overrides the current
+                dependencies for the bug as well as any passed add/remove
+                values.
+            """)
         attr.add_argument(
             '--groups', action='csv_negations', metavar='GROUP',
-            help='add/remove group(s) to/from bug(s)')
+            help='add/remove groups',
+            docs="""
+                Add or remove bug groups.
+
+                Use comma-separated values to add or remove groups for a given
+                bug. Use the prefixes '+' and '-' for each ID to add and remove
+                groups, respectively.
+            """)
         attr.add_argument(
             '-K', '--keywords', action='csv_elements', metavar='KEYWORDS',
-            help='add/remove/set keyword(s) to/from this bug')
+            help='add/remove/set keywords',
+            docs="""
+                Add, remove, or set bug keywords.
+
+                Use comma-separated values to add, remove, or set keywords for
+                a given bug. Use the prefixes '+' and '-' for each value to add
+                and remove keywords, respectively. In order to set keywords for
+                a bug, don't use any prefixes for the passed values.
+
+                Note that setting keywords overrides the current keywords for
+                the bug as well as any passed add/remove values.
+            """)
         attr.add_argument(
             '--target-milestone',
             help='set a target milestone for this bug')
@@ -262,14 +319,28 @@ class Modify(args.Modify):
             help='change the product for this bug')
         attr.add_argument(
             '--see-also', action='csv_negations', metavar='URL',
-            help='add/remove "see also" URL(s) to/from this bug')
+            help='add/remove "see also" URLs',
+            docs="""
+                Add or remove "See Also" URLs.
+
+                Use comma-separated values to add or remove URLs for a given
+                bug. Use the prefixes '+' and '-' for each value to add and
+                remove entries, respectively.
+            """)
         person = self.parser.add_argument_group('Person related')
         person.add_argument(
             '-a', '--assigned-to',
             help='change assignee for this bug')
         person.add_argument(
             '--cc', action='csv_negations',
-            help='add/remove emails to/from the CC list')
+            help='add/remove CCs',
+            docs="""
+                Add or remove users from the CC list.
+
+                Use comma-separated values to add or remove CCs for a given
+                bug. Use the prefixes '+' and '-' for each user to add and
+                remove entries, respectively.
+            """)
         person.add_argument(
             '--qa-contact',
             help='change the QA contact for this bug')
