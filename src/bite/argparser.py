@@ -463,7 +463,7 @@ class ArgumentParser(arghparse.ArgumentParser):
         config_file = initial_args.pop('config_file')
 
         # load config files
-        config, aliases = get_config(initial_args, config_file=config_file)
+        config, config_opts, aliases = get_config(initial_args, config_file=config_file)
 
         if initial_args.base is None or initial_args.service is None:
             self.error('both arguments -b/--base and -s/--service are required '
@@ -479,8 +479,7 @@ class ArgumentParser(arghparse.ArgumentParser):
             service, const.SERVICE_OPTS)(parser=self, service_name=service)
 
         # add service config options to args namespace
-        service_opts.add_config_opts(
-            args=initial_args, config_opts=config.items(initial_args.connection))
+        service_opts.add_config_opts(args=initial_args, config_opts=config_opts)
 
         logger = logging.getLogger(__name__)
         #logger.setLevel(logging.DEBUG)

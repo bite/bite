@@ -61,7 +61,7 @@ class ServiceOpts(object):
         """Add service specific config options."""
         try:
             # merge config options, command line options override these
-            for k, v in config_opts:
+            for k, v in config_opts.items():
                 if getattr(args, k, None) is None:
                     setattr(args, k, self.config_map.get(k, str)(v))
         except ValueError as e:
