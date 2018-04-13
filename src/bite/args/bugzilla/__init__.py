@@ -87,7 +87,7 @@ class BugzillaOpts(Bugzilla5_0_Opts):
     """Bugzilla latest options."""
 
 
-@args.subcmd(BugzillaOpts)
+@args.subcmd(Bugzilla4_4_Opts)
 class Attach(args.Attach):
 
     def __init__(self, *args, **kw):
@@ -110,7 +110,7 @@ class Attach(args.Attach):
             help='attachment is a patch')
 
 
-@args.subcmd(BugzillaOpts)
+@args.subcmd(Bugzilla4_4_Opts)
 class Attachments(args.Attachments):
 
     def __init__(self, *args, **kw):
@@ -121,7 +121,7 @@ class Attachments(args.Attachments):
             help='list attachment metadata')
 
 
-@args.subcmd(BugzillaOpts)
+@args.subcmd(Bugzilla4_4_Opts)
 class Create(args.Create):
 
     def __init__(self, *args, **kw):
@@ -191,7 +191,7 @@ class Create(args.Create):
             help='set the keywords of this bug')
 
 
-@args.subcmd(BugzillaOpts)
+@args.subcmd(Bugzilla4_4_Opts)
 class Get(args.Get):
 
     def __init__(self, *args, **kw):
@@ -205,7 +205,7 @@ class Get(args.Get):
             help='show obsolete attachments')
 
 
-@args.subcmd(BugzillaOpts)
+@args.subcmd(Bugzilla4_4_Opts)
 class Modify(args.Modify):
 
     def __init__(self, *args, **kw):
@@ -373,7 +373,7 @@ class Modify(args.Modify):
             help='set number of hours worked on this bug as part of this change'),
 
 
-@args.subcmd(BugzillaOpts)
+@args.subcmd(Bugzilla4_4_Opts)
 class Search(args.Search):
 
     def __init__(self, *args, **kw):
@@ -382,24 +382,14 @@ class Search(args.Search):
         self.opts.add_argument(
             '--output',
             help='custom format for search output')
-        person = self.parser.add_argument_group('Person related')
-        person.add_argument(
+        self.person = self.parser.add_argument_group('Person related')
+        self.person.add_argument(
             '-a', '--assigned-to', type=string_list, action=parse_stdin,
             help='email of the person the bug is assigned to')
-        person.add_argument(
+        self.person.add_argument(
             '-r', '--creator', type=string_list, action=parse_stdin,
             help='email of the person who created the bug')
-        # XXX: undocumented in the Bugzilla Webservice API
-        # only works with >= bugzilla-5
-        person.add_argument(
-            '--cc', type=string_list, action=parse_stdin,
-            help='email in the CC list for the bug')
-        # XXX: undocumented in the Bugzilla Webservice API, uses advanced search URL params
-        # only works with >= bugzilla-5
-        person.add_argument(
-            '--commenter', type=string_list, action=parse_stdin,
-            help='commenter in the bug')
-        person.add_argument(
+        self.person.add_argument(
             '--qa-contact',
             help='email of the QA contact for the bug')
         time = self.parser.add_argument_group('Time related')
@@ -413,89 +403,94 @@ class Search(args.Search):
             dest='last_change_time', metavar='TIME',
             action=partial(parse_stdin, date),
             help='bugs modified at this time or later')
-        attr = self.parser.add_argument_group('Attribute related')
-        attr.add_argument(
+        self.attr = self.parser.add_argument_group('Attribute related')
+        self.attr.add_argument(
             '-s', '--status', type=string_list,
             action=parse_stdin,
             help='restrict by status (one or more)')
-        attr.add_argument(
+        self.attr.add_argument(
             '-v', '--version', type=string_list,
             action=parse_stdin,
             help='restrict by version (one or more)')
-        attr.add_argument(
+        self.attr.add_argument(
             '-w', '--whiteboard', type=string_list,
             action=parse_stdin,
             help='status whiteboard')
-        attr.add_argument(
+        self.attr.add_argument(
             '-C', '--component', type=string_list,
             action=parse_stdin,
             help='restrict by component (one or more)')
-        # XXX: undocumented in the Bugzilla Webservice API
-        # only works with >= bugzilla-5
-        attr.add_argument(
-            '-K', '--keywords', type=string_list,
-            action=parse_stdin,
-            help='restrict by keywords (one or more)')
-        # XXX: undocumented in the Bugzilla Webservice API
-        # only works with >= bugzilla-5
-        attr.add_argument(
-            '--blocks', type=id_list,
-            action=partial(parse_stdin, ids),
-            help='restrict by bug blocks')
-        # XXX: undocumented in the Bugzilla Webservice API
-        # only works with >= bugzilla-5
-        attr.add_argument(
-            '--depends', type=id_list, dest='depends_on',
-            action=partial(parse_stdin, ids),
-            help='restrict by bug depends')
-        # XXX: used to be documented in the Bugzilla 3.6 Webservice API, but is now undocumented
-        # assumes Bugzilla instance uses votes, otherwise returns odd results
-        attr.add_argument(
-            '--votes',
-            help='restrict bugs by the specified number of votes or greater')
-        attr.add_argument(
+        self.attr.add_argument(
             '--alias', type=string_list,
             action=parse_stdin,
             help='unique alias for this bug')
-        attr.add_argument(
+        self.attr.add_argument(
             '--id', type=id_list,
             action=partial(parse_stdin, ids),
             help='restrict by bug ID(s)')
-        attr.add_argument(
+        self.attr.add_argument(
             '--op-sys', type=string_list,
             action=parse_stdin,
             help='restrict by operating system (one or more)')
-        attr.add_argument(
+        self.attr.add_argument(
             '--platform', type=string_list,
             action=parse_stdin,
             help='restrict by platform (one or more)')
-        attr.add_argument(
+        self.attr.add_argument(
             '--priority', type=string_list,
             action=parse_stdin,
             help='restrict by priority (one or more)')
-        attr.add_argument(
+        self.attr.add_argument(
             '--product', type=string_list,
             action=parse_stdin,
             help='restrict by product (one or more)')
-        attr.add_argument(
+        self.attr.add_argument(
             '--resolution', type=string_list,
             action=parse_stdin,
             help='restrict by resolution')
-        attr.add_argument(
+        self.attr.add_argument(
             '--severity', type=string_list,
             action=parse_stdin,
             help='restrict by severity (one or more)')
-        attr.add_argument(
+        self.attr.add_argument(
             '--target-milestone', type=string_list,
             action=parse_stdin,
             help='restrict by target milestone (one or more)')
-        attr.add_argument(
+        self.attr.add_argument(
             '--url', type=string_list,
             action=parse_stdin,
             help='restrict by url (one or more)')
 
 
-@args.subcmd(BugzillaOpts)
+@args.subcmd(Bugzilla5_0_Opts, 'search')
+class Search5_0(Search):
+
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
+        self.person.add_argument(
+            '--cc', type=string_list, action=parse_stdin,
+            help='email in the CC list for the bug')
+        self.person.add_argument(
+            '--commenter', type=string_list, action=parse_stdin,
+            help='commenter in the bug')
+        self.attr.add_argument(
+            '-K', '--keywords', type=string_list,
+            action=parse_stdin,
+            help='restrict by keywords (one or more)')
+        self.attr.add_argument(
+            '--blocks', type=id_list,
+            action=partial(parse_stdin, ids),
+            help='restrict by bug blocks')
+        self.attr.add_argument(
+            '--depends', type=id_list, dest='depends_on',
+            action=partial(parse_stdin, ids),
+            help='restrict by bug depends')
+        self.attr.add_argument(
+            '--votes',
+            help='restrict bugs by the specified number of votes or greater')
+
+
+@args.subcmd(Bugzilla4_4_Opts)
 class Changes(args.ReceiveSubcmd):
 
     def __init__(self, *args, **kw):
@@ -530,7 +525,7 @@ class Changes(args.ReceiveSubcmd):
             help='restrict by person who made the change')
 
 
-@args.subcmd(BugzillaOpts)
+@args.subcmd(Bugzilla4_4_Opts)
 class Comments(args.ReceiveSubcmd):
 
     def __init__(self, *args, **kw):
@@ -562,21 +557,21 @@ class Comments(args.ReceiveSubcmd):
             help='restrict by comments that include attachments')
 
 
-@args.subcmd(BugzillaOpts)
+@args.subcmd(Bugzilla4_4_Opts)
 class Version(args.Subcmd):
 
     def __init__(self, *args, **kw):
         super().__init__(*args, desc='get bugzilla version', **kw)
 
 
-@args.subcmd(BugzillaOpts)
+@args.subcmd(Bugzilla4_4_Opts)
 class Extensions(args.Subcmd):
 
     def __init__(self, *args, **kw):
         super().__init__(*args, desc='get bugzilla extensions', **kw)
 
 
-@args.subcmd(BugzillaOpts)
+@args.subcmd(Bugzilla4_4_Opts)
 class Products(args.Subcmd):
 
     def __init__(self, *args, **kw):
@@ -588,7 +583,7 @@ class Products(args.Subcmd):
             help='either ID or name')
 
 
-@args.subcmd(BugzillaOpts)
+@args.subcmd(Bugzilla4_4_Opts)
 class Users(args.Subcmd):
 
     def __init__(self, *args, **kw):
@@ -599,7 +594,7 @@ class Users(args.Subcmd):
             help='either ID, login, or matching string')
 
 
-@args.subcmd(BugzillaOpts)
+@args.subcmd(Bugzilla4_4_Opts)
 class Fields(args.Subcmd):
 
     def __init__(self, *args, **kw):
