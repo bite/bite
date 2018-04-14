@@ -229,12 +229,14 @@ class Service(object):
 
     def __init__(self, base, endpoint='', connection=None, verify=True, user=None, password=None,
                  auth_file=None, auth_token=None, suffix=None, timeout=None, concurrent=None,
-                 max_results=None, **kw):
+                 max_results=None, debug=None, verbose=None, **kw):
         self.base = base
         self.user = user
         self.password = password
         self.suffix = suffix
         self.verify = verify
+        self.verbose = verbose
+        self.debug = debug
         self.timeout = timeout if timeout is not None else 30
         self.max_results = max_results
 
