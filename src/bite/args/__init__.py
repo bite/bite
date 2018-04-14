@@ -99,9 +99,8 @@ class Search(ReceiveSubcmd):
 
         # positional args
         self.parser.add_argument(
-            'terms', nargs='*',
-            action=parse_stdin,
-            help=f"strings to search for in {kw['service'].item.type} summary/title")
+            'terms', nargs='*', metavar='TERM', action=parse_stdin,
+            help=f"string(s) to search for in {kw['service'].item.type} summary/title")
 
         # optional args
         self.opts.add_argument(
