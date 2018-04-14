@@ -522,6 +522,35 @@ class SearchRequest5_0(SearchRequest4_4):
     API docs: https://bugzilla.readthedocs.io/en/5.0/api/core/v1/bug.html#search-bugs
     """
 
+    # map of allowed sorting input values to the names bugzilla expects as parameters
+    sorting_map = {
+        'alias': 'alias',
+        'blocks': 'blocked',
+        'comments': 'longdescs.count',
+        'component': 'component',
+        'created': 'opendate',
+        'creator': 'reporter',
+        'deadline': 'deadline',
+        'depends': 'dependson',
+        'id': 'bug_id',
+        'keywords': 'keywords',
+        'milestone': 'target_milestone',
+        'modified': 'changeddate',
+        'os': 'op_sys',
+        'owner': 'assigned_to',
+        'platform': 'rep_platform',
+        'priority': 'priority',
+        'product': 'product',
+        'resolution': 'resolution',
+        'severity': 'bug_severity',
+        'status': 'bug_status',
+        'summary': 'short_desc',
+        'version': 'version',
+        'visited': 'last_visit_ts',
+        'votes': 'votes',
+        'whiteboard': 'status_whiteboard',
+    }
+
     def parse_params(self, service, params=None, options=None, **kw):
         params = params if params is not None else {}
         options = options if options is not None else []
@@ -536,7 +565,20 @@ class SearchRequest5_0(SearchRequest4_4):
                 options.append(f"{k.capitalize()}: {', '.join(map(str, v))}")
             elif k == 'sort':
                 v = kw.pop(k)
-                params['order'] = ','.join(f'{x[1:]} DESC' if x[0] == '-' else x for x in v)
+                sorting_terms = []
+                for x in v:
+                    inverse = ''
+                    if x[0] == '-':
+                        x = x[1:]
+                        inverse = ' DESC'
+                    try:
+                        order_var = self.sorting_map[x]
+                    except KeyError:
+                        choices = ', '.join(sorted(self.sorting_map.keys()))
+                        raise BiteError(
+                            f'unable to sort by: {x!r} (available choices: {choices}')
+                    sorting_terms.append(f'{order_var}{inverse}')
+                params['order'] = ','.join(sorting_terms)
                 options.append(f"Sort order: {', '.join(v)}")
 
         return super().parse_params(service, params, options, **kw)
