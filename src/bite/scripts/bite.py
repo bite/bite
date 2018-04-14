@@ -74,6 +74,10 @@ single_auth_opts.add_argument(
 single_auth_opts.add_argument(
     '-u', '--user',
     help='username for authentication')
+auth_opts.add_argument('-p', '--password',
+    help='password for authentication')
+single_auth_opts.add_argument('-a', '--auth-token',
+    help='use the specified token for authentication')
 single_auth_opts.add_argument(
     '--auth-file',
     help='load/save auth token using specified file')
