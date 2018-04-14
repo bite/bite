@@ -396,9 +396,13 @@ class Service(object):
             try:
                 raise response.raise_for_status()
             except requests.exceptions.HTTPError:
-                status = response.status_code
+                error_str = f'HTTP Error {response.status_code}'
                 reason = response.reason.lower()
-                raise RequestError(f'HTTP Error {status}: {reason}', text=response.text)
+                if reason:
+                    error_str += f': {reason}'
+                elif not self.verbose:
+                    error_str += ' (enable verbose mode to see server response)'
+                raise RequestError(error_str, text=response.text)
 
     def _desuffix(self, s):
         if self.suffix is not None:
