@@ -499,7 +499,7 @@ class SearchRequest4_4(PagedRequest):
                 if k == 'terms':
                     params['summary'] = v
                     options.append(f"Summary: {', '.join(map(str, v))}")
-                elif k in ['limit', 'offset', 'votes']:
+                elif k in ('limit', 'offset'):
                     params[k] = v
 
         return params, options
@@ -580,7 +580,11 @@ class SearchRequest5_0(SearchRequest4_4):
                     sorting_terms.append(f'{order_var}{inverse}')
                 params['order'] = ','.join(sorting_terms)
                 options.append(f"Sort order: {', '.join(v)}")
-            elif k == 'quicksearch':
+            elif k in ('keywords', 'blocks', 'depends_on'):
+                v = kw.pop(k)
+                params[k] = v
+                options.append(f"{service.item.attributes[k]}: {', '.join(map(str, v))}")
+            elif k in ('quicksearch', 'votes'):
                 v = kw.pop(k)
                 params[k] = v
                 options.append(f"{k.capitalize()}: {v}")
