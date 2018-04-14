@@ -265,27 +265,20 @@ class Cli(object):
     @login_required
     def create(self, ask=False, batch=False, dry_run=False, **kw):
         """Create an item on the service."""
-        options_log = kw.pop('options_log')
+        request = self.service.CreateRequest(**kw)
 
-        for line in options_log:
-            self.log(line, prefix='')
+        self.log_t(f"Creating {self.service.item.type}")
+        self.log(request.options, prefix='')
 
         if ask or not batch:
             if not confirm(prompt=f'Submit {self.service.item.type}?', default=True):
-                self.log('Submission aborted')
+                self.log('Creation aborted')
                 return
 
         if dry_run: return
-
-        try:
-            data = self.service.create(**kw)
-        except ValueError as e:
-            raise BiteError(e)
-
-        if sys.stdout.isatty():
-            self.log(f'Submitted {self.service.item.type} {data}')
-        else:
-            sys.stdout.write(str(data))
+        data = request.send()
+        print(data)
+        # print(*lines, sep='\n')
 
     def search(self, dry_run=False, **kw):
         """Search for items on the service."""
