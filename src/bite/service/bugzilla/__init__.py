@@ -420,9 +420,9 @@ class Bugzilla(Service):
 
 
 class SearchRequest4_4(PagedRequest):
+    """Construct a bugzilla-4.4 compatible search request."""
 
     def __init__(self, service, **kw):
-        """Construct a search request."""
         params, options = self.parse_params(service=service, **kw)
 
         if not params:
@@ -499,6 +499,7 @@ class SearchRequest4_4(PagedRequest):
 
 
 class SearchRequest5_0(SearchRequest4_4):
+    """Construct a bugzilla-5.0 compatible search request."""
 
     def parse_params(self, service, params=None, options=None, **kw):
         params, options = super().parse_params(service, params, options, **kw)
@@ -517,6 +518,8 @@ class SearchRequest5_0(SearchRequest4_4):
 
 
 class HistoryRequest(Request):
+    """Construct a history request."""
+
     def __init__(self, ids, created=None, service=None, **kw):
         if not ids:
             raise ValueError('No bug ID(s) specified')
@@ -543,8 +546,9 @@ class HistoryRequest(Request):
 
 
 class CommentsRequest(Request):
+    """Construct a comments request."""
+
     def __init__(self, ids=None, comment_ids=None, created=None, fields=None, service=None, **kw):
-        """Construct a comments request."""
         if ids is None and comment_ids is None:
             raise ValueError(f'No {service.item.type} or comment ID(s) specified')
 
@@ -578,9 +582,10 @@ class CommentsRequest(Request):
 
 
 class AttachmentsRequest(Request):
+    """Construct an attachments request."""
+
     def __init__(self, service, ids=None, attachment_ids=None, fields=None,
                  get_data=False, *args, **kw):
-        """Construct an attachments request."""
         if ids is None and attachment_ids is None:
             raise ValueError(f'No {service.item.type} or attachment ID(s) specified')
 
@@ -624,6 +629,7 @@ class AttachmentsRequest(Request):
 
 
 class ModifyRequest(Request):
+    """Construct a modify request."""
 
     # parameters support add, remove, and possibly set actions
     add_remove = {'groups', 'see_also', 'cc'}
@@ -633,7 +639,6 @@ class ModifyRequest(Request):
     obj_params = {'comment-{x}' for x in ('body', 'is_private', 'is_markdown')}
 
     def __init__(self, ids, service, *args, **kw):
-        """Construct a modify request."""
         options_log = []
         params = {}
 
@@ -846,8 +851,9 @@ class CreateRequest(Request):
 
 
 class GetItemRequest(Request):
+    """Construct a get request."""
+
     def __init__(self, ids, service, fields=None, **kw):
-        """Construct a get request."""
         if not ids:
             raise ValueError('No bug ID(s) specified')
 
@@ -863,9 +869,10 @@ class GetItemRequest(Request):
 
 
 class GetRequest(Request):
+    """Construct requests to retrieve all known data for given bug IDs."""
+
     def __init__(self, ids, service, get_comments=False, get_attachments=False,
                  get_history=False, *args, **kw):
-        """Construct requests to retrieve all known data for given bug IDs."""
         if not ids:
             raise ValueError('No bug ID(s) specified')
 
@@ -888,8 +895,9 @@ class GetRequest(Request):
 
 
 class LoginRequest(Request):
+    """Construct a login request."""
+
     def __init__(self, user, password, restrict_login=False, **kw):
-        """Log in as a user and get an auth token."""
         params = {
             'login': user,
             'password': password,
@@ -946,9 +954,9 @@ class FieldsRequest(Request):
 
 
 class ProductsRequest(Request):
+    """Query bugzilla for product data."""
 
     def __init__(self, ids=None, names=None, match=None, **kw):
-        """Query bugzilla for product data."""
         params = {}
         options_log = []
 
@@ -973,9 +981,9 @@ class ProductsRequest(Request):
 
 
 class UsersRequest(Request):
+    """Query bugzilla for user data."""
 
     def __init__(self, ids=None, names=None, match=None, **kw):
-        """Query bugzilla for user data."""
         if not any((ids, names, match)):
             raise ValueError('No user ID(s), name(s), or match(es) specified')
 
