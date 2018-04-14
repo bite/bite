@@ -514,6 +514,10 @@ class SearchRequest5_0(SearchRequest4_4):
                     params[f'o{i + 1}'] = 'substring'
                     params[f'v{i + 1}'] = val
                 options.append(f"{k.capitalize()}: {', '.join(map(str, v))}")
+            elif k == 'sort':
+                v = kw.pop(k)
+                params['order'] = ','.join(f'{x[1:]} DESC' if x[0] == '-' else x for x in v)
+                options.append(f"Sort order: {', '.join(v)}")
 
         return super().parse_params(service, params, options, **kw)
 
