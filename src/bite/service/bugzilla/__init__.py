@@ -502,19 +502,20 @@ class SearchRequest5_0(SearchRequest4_4):
     """Construct a bugzilla-5.0 compatible search request."""
 
     def parse_params(self, service, params=None, options=None, **kw):
-        params, options = super().parse_params(service, params, options, **kw)
-        for k, v in ((k, v) for (k, v) in kw.items() if v):
-            if k == 'commenter':
+        params = params if params is not None else {}
+        options = options if options is not None else []
+
+        for k, v in ((k, v) for (k, v) in dict(kw).items() if v):
+            if k in ('cc', 'commenter'):
                 # uses custom search URL params
+                v = kw.pop(k)
                 for i, val in enumerate(v):
-                    i = str(i + 1)
-                    params['f' + i] = 'commenter'
-                    params['o' + i] = 'substring'
-                    params['v' + i] = val
-                options.append(f"Commenter: {', '.join(map(str, v))}")
+                    params[f'f{i + 1}'] = k
+                    params[f'o{i + 1}'] = 'substring'
+                    params[f'v{i + 1}'] = val
+                options.append(f"{k.capitalize()}: {', '.join(map(str, v))}")
 
-        return params, options
-
+        return super().parse_params(service, params, options, **kw)
 
 
 class HistoryRequest(Request):
