@@ -580,6 +580,10 @@ class SearchRequest5_0(SearchRequest4_4):
                     sorting_terms.append(f'{order_var}{inverse}')
                 params['order'] = ','.join(sorting_terms)
                 options.append(f"Sort order: {', '.join(v)}")
+            elif k == 'quicksearch':
+                v = kw.pop(k)
+                params[k] = v
+                options.append(f"{k.capitalize()}: {v}")
 
         return super().parse_params(service, params, options, **kw)
 

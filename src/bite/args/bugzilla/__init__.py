@@ -483,6 +483,16 @@ class Search5_0(Search):
                 Note that if an invalid sorting request is made, bugzilla will
                 fall back to its default which is sorting by bug ID.
             """)
+        self.opts.add_argument(
+            '-q', '--quicksearch',
+            help='search for bugs using quicksearch syntax',
+            docs="""
+                Search for bugs using quicksearch syntax.
+
+                See https://bugzilla.mozilla.org/page.cgi?id=quicksearch.html
+                and http://www.squarefree.com/bugzilla/quicksearch-help.html
+                for a description of the syntax and various examples.
+            """)
         self.person.add_argument(
             '--cc', type=string_list, action=parse_stdin,
             help='email in the CC list for the bug')
