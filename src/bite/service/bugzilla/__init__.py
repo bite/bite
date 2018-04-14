@@ -18,6 +18,7 @@ demandload('bite:const')
 
 
 class BugzillaError(RequestError):
+    """Bugzilla service specific error."""
 
     def __init__(self, msg, code=None, text=None):
         msg = 'Bugzilla error: ' + msg
@@ -32,6 +33,7 @@ def parsetime(time):
 
 
 class BugzillaBug(Item):
+    """Bugzilla bug object."""
 
     attributes = {
         'actual_time': 'Actual time',
@@ -189,6 +191,8 @@ class BugzillaBug(Item):
 
 
 class BugzillaComment(Comment):
+    """Bugzilla comment object."""
+
     def __init__(self, comment, id, count, rest=False, **kw):
         self.comment_id = comment['id']
 
@@ -218,6 +222,8 @@ class BugzillaComment(Comment):
 
 
 class BugzillaEvent(Change):
+    """Bugzilla change object."""
+
     def __init__(self, change, id, alias=None, count=None, rest=False, **kw):
         self.alias = alias
         if rest:
@@ -281,6 +287,7 @@ class BugzillaEvent(Change):
 
 
 class BugzillaAttachment(Attachment):
+    """Bugzilla attachment object."""
 
     def __init__(self, id, file_name, size=None, content_type=None,
                  data=None, creator=None, creation_time=None, last_change_time=None, **kw):
@@ -331,6 +338,7 @@ class BugzillaCache(Cache):
 
 
 class Bugzilla(Service):
+    """Generic bugzilla service support."""
 
     _cache_cls = BugzillaCache
 
@@ -420,7 +428,10 @@ class Bugzilla(Service):
 
 
 class SearchRequest4_4(PagedRequest):
-    """Construct a bugzilla-4.4 compatible search request."""
+    """Construct a bugzilla-4.4 compatible search request.
+
+    API docs: https://www.bugzilla.org/docs/4.4/en/html/api/Bugzilla/WebService/Bug.html#search
+    """
 
     def __init__(self, service, **kw):
         params, options = self.parse_params(service=service, **kw)
@@ -436,6 +447,7 @@ class SearchRequest4_4(PagedRequest):
         if 'limit' not in params and service.max_results is not None:
             params['limit'] = service.max_results
 
+        # limit fields by default to decrease requested data size and speed up response
         if 'fields' not in kw:
             fields = ['id', 'assigned_to', 'summary']
         else:
@@ -499,7 +511,16 @@ class SearchRequest4_4(PagedRequest):
 
 
 class SearchRequest5_0(SearchRequest4_4):
-    """Construct a bugzilla-5.0 compatible search request."""
+    """Construct a bugzilla-5.0 compatible search request.
+
+    Bugzilla 5.0+ allows using any parameters able to be set in the advanced
+    search screen of the web UI to be used via the webserver API as well.
+    Advanced search field names and the formats bugzilla expects them in can be
+    determined by constructing queries using the web UI and looking at the
+    resulting URL.
+
+    API docs: https://bugzilla.readthedocs.io/en/5.0/api/core/v1/bug.html#search-bugs
+    """
 
     def parse_params(self, service, params=None, options=None, **kw):
         params = params if params is not None else {}
@@ -507,7 +528,6 @@ class SearchRequest5_0(SearchRequest4_4):
 
         for k, v in ((k, v) for (k, v) in dict(kw).items() if v):
             if k in ('cc', 'commenter'):
-                # uses custom search URL params
                 v = kw.pop(k)
                 for i, val in enumerate(v):
                     params[f'f{i + 1}'] = k
@@ -730,10 +750,11 @@ class ModifyRequest(Request):
 
 
 class AttachRequest(Request):
+    """Construct an attach request."""
+
     def __init__(self, service, ids, data=None, filepath=None, filename=None, mimetype=None,
                  is_patch=False, is_private=False, comment=None, summary=None, **kw):
-        """Add an attachment to a bug
-
+        """
         :param ids: The ids or aliases of bugs that you want to add the attachment to.
         :type ids: list of ints and/or strings
         :param data: Raw attachment data
@@ -813,11 +834,12 @@ class AttachRequest(Request):
 
 
 class CreateRequest(Request):
+    """Construct a bug creation request."""
+
     def __init__(self, service, product, component, version, summary, description=None, op_sys=None,
                  platform=None, priority=None, severity=None, alias=None, assigned_to=None,
                  cc=None, target_milestone=None, groups=None, status=None, **kw):
-        """Create a new bug given a list of parameters
-
+        """
         :returns: ID of the newly created bug
         :rtype: int
         """
@@ -915,27 +937,28 @@ class LoginRequest(Request):
 
 
 class ExtensionsRequest(Request):
+    """Construct an extensions request."""
 
     def parse(self, data):
         return data['extensions']
 
 
 class VersionRequest(Request):
+    """Construct a version request."""
 
     def parse(self, data):
         return data['version']
 
 
 class FieldsRequest(Request):
+    """Construct a fields request."""
 
     def __init__(self, ids=None, names=None, **kw):
-        """Get information about valid bug fields.
-
+        """
         :param ids: fields IDs
         :type ids: list of ints
         :param names: field names
         :type names: list of strings
-
         """
         params = {}
         options_log = []
@@ -959,7 +982,7 @@ class FieldsRequest(Request):
 
 
 class ProductsRequest(Request):
-    """Query bugzilla for product data."""
+    """Construct a products request."""
 
     def __init__(self, ids=None, names=None, match=None, **kw):
         params = {}
@@ -986,7 +1009,7 @@ class ProductsRequest(Request):
 
 
 class UsersRequest(Request):
-    """Query bugzilla for user data."""
+    """Construct a users request."""
 
     def __init__(self, ids=None, names=None, match=None, **kw):
         if not any((ids, names, match)):
