@@ -65,10 +65,7 @@ def _clients():
     from . import client as mod
     clients = []
     for imp, name, _ in pkgutil.walk_packages(mod.__path__, mod.__name__ + '.'):
-        try:
-            module = import_module(name)
-        except ImportError as e:
-            raise ValueError(name) from e
+        module = import_module(name)
         for name, cls in inspect.getmembers(module, _service_cls):
             clients.append((cls._service, '.'.join([module.__name__, cls.__name__])))
     return clients
@@ -78,10 +75,7 @@ def _services():
     from . import service as mod
     services = []
     for imp, name, _ in pkgutil.walk_packages(mod.__path__, mod.__name__ + '.'):
-        try:
-            module = import_module(name)
-        except ImportError as e:
-            raise ValueError(name) from e
+        module = import_module(name)
         for name, cls in inspect.getmembers(module, _service_cls):
             services.append((cls._service, '.'.join([module.__name__, cls.__name__])))
     return services
@@ -91,10 +85,7 @@ def _service_opts():
     from . import args as mod
     opts = []
     for imp, name, _ in pkgutil.walk_packages(mod.__path__, mod.__name__ + '.'):
-        try:
-            module = import_module(name)
-        except ImportError as e:
-            raise ValueError(name) from e
+        module = import_module(name)
         for name, cls in inspect.getmembers(module, _service_cls):
             opts.append((cls._service, '.'.join([module.__name__, cls.__name__])))
     return opts
@@ -108,6 +99,9 @@ def _GET_VALS(attr, func):
     return result
 
 
-CLIENTS = mappings.ImmutableDict(_GET_VALS('CLIENTS', _clients))
-SERVICES = mappings.ImmutableDict(_GET_VALS('SERVICES', _services))
-SERVICE_OPTS = mappings.ImmutableDict(_GET_VALS('SERVICE_OPTS', _service_opts))
+try:
+    CLIENTS = mappings.ImmutableDict(_GET_VALS('CLIENTS', _clients))
+    SERVICES = mappings.ImmutableDict(_GET_VALS('SERVICES', _services))
+    SERVICE_OPTS = mappings.ImmutableDict(_GET_VALS('SERVICE_OPTS', _service_opts))
+except SyntaxError as e:
+    raise SyntaxError(f'invalid syntax: {e.filename}, line {e.lineno}')
