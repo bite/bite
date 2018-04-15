@@ -157,13 +157,19 @@ class BugzillaBug(Item):
         custom_fields = ((k, v) for (k, v) in vars(self).items()
                          if re.match(r'^cf_\w+$', k))
         for k, v in custom_fields:
-            if isinstance(v, list):
-                value = ', '.join(v)
-            else:
-                value = v
             title = string.capwords(k[3:], '_')
             title = title.replace('_', ' ')
-            lines.append(f'{title:<12}: {value}')
+
+            value = v
+            if isinstance(v, str):
+                value = v.splitlines()
+            if len(value) > 1:
+                # output indented list for multiline custom fields
+                prefix = '\n  '
+            else:
+                prefix = ''
+            v = prefix + f'{prefix}'.join(value)
+            lines.append(f'{title:<12}: {v}')
 
         return '\n'.join(lines)
 
