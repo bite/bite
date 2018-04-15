@@ -8,11 +8,15 @@ from ..utils import str2bool
 
 demandload('bite:const')
 
+
 def subcmd(service_cls, name=None):
     """Register service subcommands."""
     def wrapped(cls, *args, **kwds):
         subcmd_name = name if name is not None else cls.__name__.lower()
+        # add subcommand to its related service class
         setattr(service_cls, subcmd_name, cls)
+        # store the subcommand name inside its class for consistent help output
+        setattr(cls, '_subcmd_name', subcmd_name)
         return cls
     return wrapped
 
@@ -20,7 +24,7 @@ def subcmd(service_cls, name=None):
 class Subcmd(object):
 
     def __init__(self, parser, service, name=None, desc=None):
-        name = name if name is not None else self.__class__.__name__.lower()
+        name = name if name is not None else getattr(self, '_subcmd_name')
         self.parser = parser.add_parser(
             name, verbose=False, quiet=False, color=False, description=desc)
         self.parser.set_defaults(fcn=name)
