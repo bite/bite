@@ -66,9 +66,16 @@ class ServiceOpts(object):
     def add_subcmd_opts(self, service, subcmd):
         """Add subcommand specific options."""
         subcmd_parser = self.parser.add_subparsers(help='help for subcommands')
-        cls = getattr(self, subcmd, None)
-        if cls is not None:
+        # try to only add the options for the single subcmd
+        try:
+            cls = getattr(self, subcmd)
             cls(parser=subcmd_parser, service=service, name=subcmd)
+        # fallback to adding all subcmd options, since the user is
+        # requesting help output (-h/--help) or entering unknown input
+        except AttributeError:
+            for cls in (getattr(self, attr) for attr in dir(self)):
+                if isinstance(cls, type) and issubclass(cls, Subcmd):
+                    cls(parser=subcmd_parser, service=service)
 
 
 class SendSubcmd(Subcmd):
