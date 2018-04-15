@@ -39,4 +39,5 @@ class Jsonrpc(Json):
         if error is None:
             return data['result']
         else:
-            self.handle_error(error)
+            # assume error object follows json-rpc 2.0 spec formatting
+            self.handle_error(code=error['code'], msg=error['message'])

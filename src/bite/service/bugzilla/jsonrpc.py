@@ -16,9 +16,6 @@ class _BugzillaJsonrpcBase(Jsonrpc):
     def __init__(self, **kw):
         super().__init__(endpoint='/jsonrpc.cgi', **kw)
 
-    def handle_error(error):
-        super().handle_error(code=error['code'], msg=error['message'])
-
 
 class Bugzilla4_4Jsonrpc(_BugzillaJsonrpcBase, Bugzilla4_4Rpc):
     """Service for Bugzilla 4.4 JSON-RPC interface."""
