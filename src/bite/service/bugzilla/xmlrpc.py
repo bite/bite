@@ -1,10 +1,7 @@
-"""Support Bugzilla's deprecated XML-RPC interface.
-
-API docs: https://www.bugzilla.org/docs/4.4/en/html/api/Bugzilla/WebService/Server/XMLRPC.html
-"""
+"""Support Bugzilla's deprecated XML-RPC interface."""
 
 from . import BugzillaAttachment
-from ._rpc import Bugzilla4_4Rpc, Bugzilla5_0Rpc
+from ._rpc import Bugzilla4_4Rpc, Bugzilla5_0Rpc, Bugzilla5_2Rpc
 from .._xmlrpc import Xmlrpc
 from ...objects import decompress
 
@@ -18,8 +15,10 @@ class _BugzillaXmlrpcBase(Xmlrpc):
 
 
 class Bugzilla4_4Xmlrpc(_BugzillaXmlrpcBase, Bugzilla4_4Rpc):
-    """Service for Bugzilla 4.4 XML-RPC interface."""
+    """Service for Bugzilla 4.4 XML-RPC interface.
 
+    API docs: https://www.bugzilla.org/docs/4.4/en/html/api/Bugzilla/WebService/Server/XMLRPC.html
+    """
     _service = 'bugzilla4.4-xmlrpc'
 
 
@@ -29,10 +28,10 @@ class Bugzilla5_0Xmlrpc(_BugzillaXmlrpcBase, Bugzilla5_0Rpc):
     _service = 'bugzilla5.0-xmlrpc'
 
 
-class BugzillaXmlrpc(_BugzillaXmlrpcBase, Bugzilla5_0Rpc):
-    """Service for Bugzilla latest XML-RPC interface."""
+class BugzillaXmlrpc(_BugzillaXmlrpcBase, Bugzilla5_2Rpc):
+    """Service for Bugzilla 5.2 XML-RPC interface."""
 
-    _service = 'bugzilla-xmlrpc'
+    _service = 'bugzilla5.2-xmlrpc'
 
 
 class BugzillaAttachmentXml(BugzillaAttachment):

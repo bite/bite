@@ -428,8 +428,8 @@ class Bugzilla(Service):
             super()._failed_http_response(response)
 
 
-class BugzillaLatest(Bugzilla):
-    """Generic bugzilla latest master service support."""
+class Bugzilla5_2(Bugzilla):
+    """Generic bugzilla 5.2 service support."""
 
     # setting auth tokens via headers is supported in >=bugzilla-5.1
     def inject_auth(self, request, params):

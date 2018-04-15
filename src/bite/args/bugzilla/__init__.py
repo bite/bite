@@ -83,8 +83,8 @@ class Bugzilla5_0_Opts(Bugzilla4_4_Opts):
     """Bugzilla 5.0 options."""
 
 
-class BugzillaOpts(Bugzilla5_0_Opts):
-    """Bugzilla latest options."""
+class Bugzilla5_2_Opts(Bugzilla5_0_Opts):
+    """Bugzilla 5.2 options."""
 
 
 @args.subcmd(Bugzilla4_4_Opts)

@@ -1,12 +1,9 @@
-"""Support Bugzilla's deprecated JSON-RPC interface.
-
-API docs: https://www.bugzilla.org/docs/4.4/en/html/api/Bugzilla/WebService/Server/JSONRPC.html
-"""
+"""Support Bugzilla's deprecated JSON-RPC interface."""
 
 try: import simplejson as json
 except ImportError: import json
 
-from ._rpc import Bugzilla4_4Rpc, Bugzilla5_0Rpc, BugzillaRpc, _SearchRequest5_0
+from ._rpc import Bugzilla4_4Rpc, Bugzilla5_0Rpc, Bugzilla5_2Rpc, _SearchRequest5_0
 from .._jsonrpc import Jsonrpc
 
 
@@ -18,8 +15,10 @@ class _BugzillaJsonrpcBase(Jsonrpc):
 
 
 class Bugzilla4_4Jsonrpc(_BugzillaJsonrpcBase, Bugzilla4_4Rpc):
-    """Service for Bugzilla 4.4 JSON-RPC interface."""
+    """Service for Bugzilla 4.4 JSON-RPC interface.
 
+    API docs: https://www.bugzilla.org/docs/4.4/en/html/api/Bugzilla/WebService/Server/JSONRPC.html
+    """
     _service = 'bugzilla4.4-jsonrpc'
 
 
@@ -29,10 +28,10 @@ class Bugzilla5_0Jsonrpc(_BugzillaJsonrpcBase, Bugzilla5_0Rpc):
     _service = 'bugzilla5.0-jsonrpc'
 
 
-class BugzillaJsonrpc(_BugzillaJsonrpcBase, BugzillaRpc):
-    """Service for Bugzilla latest JSON-RPC interface."""
+class BugzillaJsonrpc(_BugzillaJsonrpcBase, Bugzilla5_2Rpc):
+    """Service for Bugzilla 5.2 JSON-RPC interface."""
 
-    _service = 'bugzilla-jsonrpc'
+    _service = 'bugzilla5.2-jsonrpc'
 
 
 class _StreamingBugzillaJsonrpc(BugzillaJsonrpc):

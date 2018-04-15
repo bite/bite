@@ -1,6 +1,6 @@
 import argparse
 
-from . import Bugzilla5_0_Opts, BugzillaOpts
+from . import Bugzilla5_0_Opts, Bugzilla5_2_Opts
 
 
 def person_search(s):
@@ -27,6 +27,6 @@ class Bugzilla5_0RestOpts(Bugzilla5_0_Opts):
     _service = 'bugzilla5.0-rest'
 
 
-class BugzillaRestOpts(BugzillaOpts):
+class Bugzilla5_2RestOpts(Bugzilla5_2_Opts):
 
-    _service = 'bugzilla-rest'
+    _service = 'bugzilla5.2-rest'

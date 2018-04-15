@@ -1,4 +1,4 @@
 [gentoo]
 base: https://bugs.gentoo.org/
-service: bugzilla-rest
+service: bugzilla5.0-rest
 suffix: @gentoo.org

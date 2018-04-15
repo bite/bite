@@ -13,7 +13,7 @@ class Bugzilla5_0Jsonrpc(Bugzilla):
     _service = 'bugzilla5.0-jsonrpc'
 
 
-class BugzillaJsonrpc(Bugzilla):
-    """CLI for Bugzilla latest JSON-RPC interface."""
+class Bugzilla5_2Jsonrpc(Bugzilla):
+    """CLI for Bugzilla 5.2 JSON-RPC interface."""
 
-    _service = 'bugzilla-jsonrpc'
+    _service = 'bugzilla5.2-jsonrpc'
