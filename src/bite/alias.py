@@ -133,13 +133,17 @@ def substitute_alias(connection, service_type, aliases, unparsed_args):
     # {:service:}, e.g. {:bugzilla:}
     service_section = f":{service_type}:"
 
-    for section in (connection, service_section, aliases.default_section):
+    # first check for connection specific aliases, then service specific aliases
+    for section in (connection, service_section):
         if aliases.has_section(section):
             alias_cmd = aliases.get(section, alias_name, fallback=None)
             if alias_cmd is not None:
                 break
     else:
-        return unparsed_args
+        # finally fallback to checking global aliases
+        alias_cmd = aliases.defaults().get(alias_name, None)
+        if alias_cmd is None:
+            return unparsed_args
 
     alias_cmd = alias_cmd.strip()
 
