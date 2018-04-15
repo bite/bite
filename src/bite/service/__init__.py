@@ -4,7 +4,6 @@ from urllib.parse import urlparse, urlunparse, urlencode
 import re
 
 import requests
-from snakeoil import klass
 from snakeoil.demandload import demandload
 from snakeoil.sequences import iflatten_instance
 
@@ -171,7 +170,7 @@ class RESTRequest(Request):
         self.data = None
         super().__init__(method=method, **kw)
 
-    @klass.jit_attr
+    @property
     def url(self):
         """Construct a full resource URL with params encoded."""
         l = []
