@@ -169,7 +169,7 @@ class Auth(object):
         if self.path is not None:
             try:
                 with open(self.path, 'r') as f:
-                    self.token = f.read()
+                    self.token = f.read().strip()
             except IOError:
                 self.token = None
 
