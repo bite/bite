@@ -471,12 +471,12 @@ class ArgumentParser(arghparse.ArgumentParser):
         elif not re.match(r'^http(s)?://.+', initial_args.base):
             self.error(f'invalid base: {initial_args.base!r}')
 
-        service = initial_args.service
-        if service not in const.SERVICES:
-            self.error(f"invalid service: {service!r} (available services: {', '.join(const.SERVICES)}")
+        service_name = initial_args.service
+        if service_name not in const.SERVICES:
+            self.error(f"invalid service: {service_name!r} (available services: {', '.join(const.SERVICES)}")
 
         service_opts = get_service_cls(
-            service, const.SERVICE_OPTS)(parser=self, service_name=service)
+            service_name, const.SERVICE_OPTS)(parser=self, service_name=service_name)
 
         # add service config options to args namespace
         service_opts.add_config_opts(args=initial_args, config_opts=config_opts)
@@ -488,11 +488,11 @@ class ArgumentParser(arghparse.ArgumentParser):
         initial_args, unparsed_args = self.parse_optionals(unparsed_args, initial_args)
 
         # replace service attr with service object
-        initial_args.service = get_service_cls(service, const.SERVICES)(**vars(initial_args))
+        initial_args.service = get_service_cls(service_name, const.SERVICES)(**vars(initial_args))
 
         # check if unparsed args match any aliases
         if unparsed_args:
-            service_type = initial_args.service._service.split('-')[0]
+            service_type = service_name.split('-')[0]
             alias_unparsed_args = substitute_alias(
                 initial_args.connection, service_type, aliases, unparsed_args)
             # re-parse optionals to catch any added by aliases
