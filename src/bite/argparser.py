@@ -487,9 +487,6 @@ class ArgumentParser(arghparse.ArgumentParser):
         # re-parse for any top level service-specific options that were just added
         initial_args, unparsed_args = self.parse_optionals(unparsed_args, initial_args)
 
-        # replace service attr with service object
-        initial_args.service = get_service_cls(service_name, const.SERVICES)(**vars(initial_args))
-
         # check if unparsed args match any aliases
         if unparsed_args:
             alias_unparsed_args = substitute_alias(
@@ -497,6 +494,9 @@ class ArgumentParser(arghparse.ArgumentParser):
             # re-parse optionals to catch any added by aliases
             if unparsed_args != alias_unparsed_args:
                 initial_args, unparsed_args = self.parse_optionals(alias_unparsed_args, initial_args)
+
+        # replace service attr with service object
+        initial_args.service = get_service_cls(service_name, const.SERVICES)(**vars(initial_args))
 
         # add selected subcommand options
         try:
