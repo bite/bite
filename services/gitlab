@@ -1,0 +1,3 @@
+[gitlab]
+base: https://gitlab.com/gitlab-org/gitlab-ce/
+service: gitlab
