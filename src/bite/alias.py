@@ -70,7 +70,13 @@ class BiteInterpolation(configparser.ExtendedInterpolation):
                     elif len(path) == 2:
                         # try to pull value from config
                         if path[0] == 'CONFIG':
-                            v = self.config_opts[path[1]]
+                            try:
+                                v = self.config_opts[path[1]]
+                            except KeyError:
+                                msg = (
+                                    f"{option}: {section} config section doesn't contain "
+                                    f"{path[1]!r} (from config lookup '%{{{':'.join(path)}}}')")
+                                raise configparser.InterpolationError(option, section, msg)
                         else:
                             sect = path[0]
                             opt = parser.optionxform(path[1])
