@@ -138,17 +138,21 @@ def substitute_alias(aliases, unparsed_args, connection=None, service_name=None)
     extra_cmds = unparsed_args[1:]
 
     # Build alias section precendence list,
-    # connection -> versioned service -> generic service
+    # connection -> full service name -> versioned service -> generic service
     #
-    # Note that service sections use headers of the form: {:service:},
-    # e.g. {:bugzilla:} or {:bugzilla5.0:} for a version specific section.
+    # Note that service sections use headers of the form: [:service:],
+    # e.g. [:bugzilla:] for a generic service
+    #      [:bugzilla5.0:] for a version specific section
+    #      [:bugzilla5.0-jsonrpc:] for a full service name section
     sections = [connection] if connection is not None else []
     if service_name is not None:
+        sections.append(f":{service_name}:")
         service_versioned = service_name.split('-')[0]
-        sections.append(f":{service_versioned}:")
-        service_match = re.match(r'([a-z]+)[\d.]+', service_versioned)
-        if service_match:
-            sections.append(f":{service_match.group(1)}:")
+        if service_versioned != service_name:
+            sections.append(f":{service_versioned}:")
+            service_match = re.match(r'([a-z]+)[\d.]+', service_versioned)
+            if service_match:
+                sections.append(f":{service_match.group(1)}:")
 
     # first check for connection specific aliases, then service specific aliases
     for section in sections:
