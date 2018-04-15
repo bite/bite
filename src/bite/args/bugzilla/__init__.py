@@ -481,7 +481,9 @@ class Search5_0(Search):
                 ascending fashion by default.
 
                 Note that if an invalid sorting request is made, bugzilla will
-                fall back to its default which is sorting by bug ID.
+                fall back to its default which is sorting by bug ID. Also, some
+                sorting methods such as last-visited require an authenticated
+                session to work properly.
             """)
         self.opts.add_argument(
             '-q', '--quicksearch',

@@ -547,7 +547,7 @@ class SearchRequest5_0(SearchRequest4_4):
         'status': 'bug_status',
         'summary': 'short_desc',
         'version': 'version',
-        'visited': 'last_visit_ts',
+        'last-visited': 'last_visit_ts',
         'votes': 'votes',
         'whiteboard': 'status_whiteboard',
     }
