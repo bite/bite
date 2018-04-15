@@ -4,6 +4,8 @@ import shlex
 import subprocess
 import sys
 
+from .exceptions import BiteError
+
 
 class BiteInterpolation(configparser.ExtendedInterpolation):
     """Modified version of ExtendedInterpolation.
@@ -144,7 +146,10 @@ def substitute_alias(connection, service_name, aliases, unparsed_args):
     # first check for connection specific aliases, then service specific aliases
     for section in sections:
         if aliases.has_section(section):
-            alias_cmd = aliases.get(section, alias_name, fallback=None)
+            try:
+                alias_cmd = aliases.get(section, alias_name, fallback=None)
+            except configparser.InterpolationError as e: 
+                raise BiteError(f'failed parsing alias: {e}')
             if alias_cmd is not None:
                 break
     else:
