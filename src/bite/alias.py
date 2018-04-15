@@ -127,7 +127,7 @@ def get_alias(args, section, alias):
     return value
 
 
-def substitute_alias(connection, service_name, aliases, unparsed_args):
+def substitute_alias(aliases, unparsed_args, connection=None, service_name=None):
     alias_name = unparsed_args[0]
     extra_cmds = unparsed_args[1:]
 
@@ -136,12 +136,13 @@ def substitute_alias(connection, service_name, aliases, unparsed_args):
     #
     # Note that service sections use headers of the form: {:service:},
     # e.g. {:bugzilla:} or {:bugzilla5.0:} for a version specific section.
-    sections = [connection]
-    service_versioned = service_name.split('-')[0]
-    sections.append(f":{service_versioned}:")
-    service_match = re.match(r'([a-z]+)[\d.]+', service_versioned)
-    if service_match:
-        sections.append(f":{service_match.group(1)}:")
+    sections = [connection] if connection is not None else []
+    if service_name is not None:
+        service_versioned = service_name.split('-')[0]
+        sections.append(f":{service_versioned}:")
+        service_match = re.match(r'([a-z]+)[\d.]+', service_versioned)
+        if service_match:
+            sections.append(f":{service_match.group(1)}:")
 
     # first check for connection specific aliases, then service specific aliases
     for section in sections:

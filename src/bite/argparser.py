@@ -493,7 +493,7 @@ class ArgumentParser(arghparse.ArgumentParser):
         # check if unparsed args match any aliases
         if unparsed_args:
             alias_unparsed_args = substitute_alias(
-                initial_args.connection, service_name, aliases, unparsed_args)
+                aliases, unparsed_args, initial_args.connection, service_name)
             # re-parse optionals to catch any added by aliases
             if unparsed_args != alias_unparsed_args:
                 initial_args, unparsed_args = self.parse_optionals(alias_unparsed_args, initial_args)
