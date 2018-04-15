@@ -1,9 +1,10 @@
-from . import (
-    Bugzilla, Bugzilla5_2,
+from . import Bugzilla, Bugzilla5_2
+from .requests import (
     SearchRequest4_4, SearchRequest5_0, HistoryRequest, CommentsRequest,
     AttachmentsRequest, LoginRequest, GetItemRequest, GetRequest, ModifyRequest,
     AttachRequest, CreateRequest, ExtensionsRequest, VersionRequest, FieldsRequest,
-    ProductsRequest, UsersRequest)
+    ProductsRequest, UsersRequest,
+)
 from .. import RPCRequest, req_cmd
 
 

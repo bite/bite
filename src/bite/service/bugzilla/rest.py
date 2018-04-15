@@ -2,11 +2,13 @@
 
 from collections import deque
 
-from . import (
-    Bugzilla, Bugzilla5_2, BugzillaBug,
+from . import Bugzilla, Bugzilla5_2
+from .objects import BugzillaBug
+from .requests import (
     LoginRequest, SearchRequest5_0, HistoryRequest, CommentsRequest, AttachmentsRequest,
     GetItemRequest, GetRequest, ModifyRequest, AttachRequest, CreateRequest,
-    ExtensionsRequest, VersionRequest, FieldsRequest, ProductsRequest, UsersRequest)
+    ExtensionsRequest, VersionRequest, FieldsRequest, ProductsRequest, UsersRequest,
+)
 from .. import RESTRequest, req_cmd
 from .._jsonrest import JsonREST
 
