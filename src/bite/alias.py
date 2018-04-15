@@ -125,16 +125,24 @@ def get_alias(args, section, alias):
     return value
 
 
-def substitute_alias(connection, service_type, aliases, unparsed_args):
+def substitute_alias(connection, service_name, aliases, unparsed_args):
     alias_name = unparsed_args[0]
     extra_cmds = unparsed_args[1:]
 
-    # service sections use headers of the form:
-    # {:service:}, e.g. {:bugzilla:}
-    service_section = f":{service_type}:"
+    # Build alias section precendence list,
+    # connection -> versioned service -> generic service
+    #
+    # Note that service sections use headers of the form: {:service:},
+    # e.g. {:bugzilla:} or {:bugzilla5.0:} for a version specific section.
+    sections = [connection]
+    service_versioned = service_name.split('-')[0]
+    sections.append(f":{service_versioned}:")
+    service_match = re.match(r'([a-z]+)[\d.]+', service_versioned)
+    if service_match:
+        sections.append(f":{service_match.group(1)}:")
 
     # first check for connection specific aliases, then service specific aliases
-    for section in (connection, service_section):
+    for section in sections:
         if aliases.has_section(section):
             alias_cmd = aliases.get(section, alias_name, fallback=None)
             if alias_cmd is not None:
