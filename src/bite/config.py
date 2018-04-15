@@ -66,13 +66,18 @@ def load_full_config(config_file=None):
 
 def get_config(args, config_file=None):
     """Load various config files for a selected connection/service."""
-    config, connection = load_config(config_file)
+    config, default_connection = load_config(config_file)
 
-    # use default connection setting from config if not specified on the command line
+    # Fallback to using the default connection setting from the config if not
+    # specified on the command line and --base/--service options are also
+    # unspecified.
     if args.connection is not None:
         connection = args.connection
+    elif args.base is None and args.service is None:
+        args.connection = default_connection
+        connection = default_connection
     else:
-        args.connection = connection
+        connection = None
 
     # Load system connection settings and then user connection settings --
     # later settings override earlier ones. Note that only the service config
@@ -98,7 +103,10 @@ def get_config(args, config_file=None):
             setattr(args, attr, config.get(connection, attr, fallback=None))
         config.remove_option(connection, attr)
 
-    config_opts = dict(config.items(connection))
+    if connection is not None:
+        config_opts = dict(config.items(connection))
+    else:
+        config_opts = config.defaults()
 
     # load alias files
     aliases = AliasConfigParser(config_opts=config_opts)
