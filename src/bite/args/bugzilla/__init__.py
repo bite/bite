@@ -493,6 +493,19 @@ class Search5_0(Search):
                 and http://www.squarefree.com/bugzilla/quicksearch-help.html
                 for a description of the syntax and various examples.
             """)
+        self.opts.add_argument(
+            '--advanced-url', metavar='URL',
+            help='search for bugs using an advanced search URL',
+            docs="""
+                Search for bugs using URLs from the web UI's advanced search.
+
+                Using this, one can construct any custom search by the advanced
+                search interface in the regular web UI and then use the
+                resulting URL to peform the same query on the command line.
+
+                Note that options specified on the command line will override
+                any matching URL parameters.
+            """)
         self.person.add_argument(
             '--cc', type=string_list, action=parse_stdin,
             help='email in the CC list for the bug')

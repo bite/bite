@@ -3,6 +3,7 @@ import datetime
 import os
 import re
 import string
+from urllib.parse import parse_qs
 
 from dateutil.parser import parse as dateparse
 from snakeoil.demandload import demandload
@@ -588,6 +589,16 @@ class SearchRequest5_0(SearchRequest4_4):
                 v = kw.pop(k)
                 params[k] = v
                 options.append(f"{k.capitalize()}: {v}")
+            elif k == 'advanced_url':
+                v = kw.pop(k)
+                base, url_params = v.split('?', 1)
+                if base != f"{service.base.rstrip('/')}/buglist.cgi":
+                    raise BiteError(f'invalid advanced search URL: {v!r}')
+                # command line options take precedence over URL parameters
+                for k, v in parse_qs(url_params).items():
+                    if k not in params:
+                        params[k] = v
+                options.append('Using advanced search URL')
 
         return super().parse_params(service, params, options, **kw)
 
