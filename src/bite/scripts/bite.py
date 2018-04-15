@@ -18,8 +18,10 @@ from ..exceptions import RequestError
 demandload('bite:get_service_cls,const')
 
 
-config_opts_parser = ArgumentParser(suppress=True)
-config_opts = config_opts_parser.add_argument_group('Config options')
+argparser = ArgumentParser(
+    description=__doc__, script=(__file__, __name__))
+
+config_opts = argparser.add_argument_group('Config options')
 config_opts.add_argument(
     '-c', '--connection',
     help='use a configured connection')
@@ -27,17 +29,13 @@ config_opts.add_argument(
     '--config-file',
     help='read an alternate configuration file')
 
-service_opts = config_opts_parser.add_argument_group('Service options')
+service_opts = argparser.add_argument_group('Service options')
 service_opts.add_argument(
     '-b', '--base',
     help='base URL of service')
 service_opts.add_argument(
     '-s', '--service',
     help='service type')
-
-argparser = ArgumentParser(
-    description=__doc__, script=(__file__, __name__),
-    parents=(config_opts_parser,))
 
 argparser.add_argument(
     '-i', '--input',

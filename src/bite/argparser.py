@@ -458,8 +458,7 @@ class ArgumentParser(arghparse.ArgumentParser):
 
     def parse_args(self, args=None, namespace=None):
         # pull config and service settings from args if they exist
-        from .scripts.bite import config_opts_parser
-        initial_args, unparsed_args = config_opts_parser.parse_optionals(args, namespace)
+        initial_args, unparsed_args = self.parse_optionals(args, namespace)
         config_file = initial_args.pop('config_file')
 
         # load config files
