@@ -529,6 +529,9 @@ class Search5_0(Search):
         self.attr.add_argument(
             '--votes',
             help='restrict bugs by the specified number of votes or greater')
+        self.attr.add_argument(
+            '--comments', type=int,
+            help='restrict bugs by the specified number of comments or greater')
 
 
 @args.subcmd(Bugzilla4_4_Opts)

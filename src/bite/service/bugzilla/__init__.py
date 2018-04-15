@@ -568,15 +568,25 @@ class SearchRequest5_0(SearchRequest4_4):
     def parse_params(self, service, params=None, options=None, **kw):
         params = params if params is not None else {}
         options = options if options is not None else []
+        # current advanced search field number
+        advanced_num = 1
 
         for k, v in ((k, v) for (k, v) in dict(kw).items() if v):
             if k in ('cc', 'commenter'):
                 v = kw.pop(k)
-                for i, val in enumerate(v):
-                    params[f'f{i + 1}'] = k
-                    params[f'o{i + 1}'] = 'substring'
-                    params[f'v{i + 1}'] = val
+                for val in v:
+                    params[f'f{advanced_num}'] = k
+                    params[f'o{advanced_num}'] = 'substring'
+                    params[f'v{advanced_num}'] = val
+                    advanced_num += 1
                 options.append(f"{k.capitalize()}: {', '.join(map(str, v))}")
+            elif k == 'comments':
+                v = kw.pop(k)
+                params[f'f{advanced_num}'] = 'longdescs.count'
+                params[f'o{advanced_num}'] = 'greaterthaneq'
+                params[f'v{advanced_num}'] = v
+                advanced_num += 1
+                options.append(f"{k.capitalize()}: {v}")
             elif k == 'sort':
                 v = kw.pop(k)
                 sorting_terms = []
