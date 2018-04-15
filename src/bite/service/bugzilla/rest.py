@@ -6,8 +6,8 @@ API docs: http://bugzilla.readthedocs.io/en/latest/api/index.html#apis
 from collections import deque
 
 from . import (
-    Bugzilla, BugzillaBug, LoginRequest,
-    SearchRequest5_0, HistoryRequest, CommentsRequest, AttachmentsRequest,
+    Bugzilla, BugzillaLatest, BugzillaBug,
+    LoginRequest, SearchRequest5_0, HistoryRequest, CommentsRequest, AttachmentsRequest,
     GetItemRequest, GetRequest, ModifyRequest, AttachRequest, CreateRequest,
     ExtensionsRequest, VersionRequest, FieldsRequest, ProductsRequest, UsersRequest)
 from .. import RESTRequest, req_cmd
@@ -19,14 +19,6 @@ class _BugzillaRestBase(Bugzilla, JsonREST):
 
     def __init__(self, **kw):
         super().__init__(endpoint='/rest', **kw)
-
-    def inject_auth(self, request, params):
-        if len(self.auth) > 16:
-            self.session.headers['X-Bugzilla-Api-Key'] = str(self.auth)
-        else:
-            self.session.headers['X-Bugzilla-Token'] = str(self.auth)
-        self.authenticated = True
-        return request, params
 
     def parse_response(self, response):
         data = super().parse_response(response)
@@ -48,7 +40,7 @@ class Bugzilla5_0Rest(_BugzillaRestBase):
     _service = 'bugzilla5.0-rest'
 
 
-class BugzillaRest(Bugzilla5_0Rest):
+class BugzillaRest(BugzillaLatest, Bugzilla5_0Rest):
     """Service for Bugzilla latest REST interface."""
 
     _service = 'bugzilla-rest'

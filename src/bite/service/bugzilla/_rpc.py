@@ -1,7 +1,8 @@
 from snakeoil.demandload import demandload
 
 from . import (
-    Bugzilla, SearchRequest4_4, SearchRequest5_0, HistoryRequest, CommentsRequest,
+    Bugzilla, BugzillaLatest,
+    SearchRequest4_4, SearchRequest5_0, HistoryRequest, CommentsRequest,
     AttachmentsRequest, LoginRequest, GetItemRequest, GetRequest, ModifyRequest,
     AttachRequest, CreateRequest, ExtensionsRequest, VersionRequest, FieldsRequest,
     ProductsRequest, UsersRequest)
@@ -18,7 +19,7 @@ class Bugzilla5_0Rpc(Bugzilla4_4Rpc):
     """Support bugzilla 5.0 RPC calls."""
 
 
-class BugzillaRpc(Bugzilla5_0Rpc):
+class BugzillaRpc(BugzillaLatest, Bugzilla5_0Rpc):
     """Support bugzilla latest RPC calls."""
 
 

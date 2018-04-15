@@ -428,6 +428,19 @@ class Bugzilla(Service):
             super()._failed_http_response(response)
 
 
+class BugzillaLatest(Bugzilla):
+    """Generic bugzilla latest master service support."""
+
+    # setting auth tokens via headers is supported in >=bugzilla-5.1
+    def inject_auth(self, request, params):
+        if len(self.auth) > 16:
+            self.session.headers['X-BUGZILLA-API-KEY'] = str(self.auth)
+        else:
+            self.session.headers['X-BUGZILLA-TOKEN'] = str(self.auth)
+        self.authenticated = True
+        return request, params
+
+
 class SearchRequest4_4(PagedRequest):
     """Construct a bugzilla-4.4 compatible search request.
 

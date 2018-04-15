@@ -6,7 +6,7 @@ API docs: https://www.bugzilla.org/docs/4.4/en/html/api/Bugzilla/WebService/Serv
 try: import simplejson as json
 except ImportError: import json
 
-from ._rpc import Bugzilla4_4Rpc, Bugzilla5_0Rpc, _SearchRequest5_0 as BugzillaSearchRequest
+from ._rpc import Bugzilla4_4Rpc, Bugzilla5_0Rpc, BugzillaRpc, _SearchRequest5_0
 from .._jsonrpc import Jsonrpc
 
 
@@ -29,7 +29,7 @@ class Bugzilla5_0Jsonrpc(_BugzillaJsonrpcBase, Bugzilla5_0Rpc):
     _service = 'bugzilla5.0-jsonrpc'
 
 
-class BugzillaJsonrpc(_BugzillaJsonrpcBase, Bugzilla5_0Rpc):
+class BugzillaJsonrpc(_BugzillaJsonrpcBase, BugzillaRpc):
     """Service for Bugzilla latest JSON-RPC interface."""
 
     _service = 'bugzilla-jsonrpc'
@@ -42,7 +42,7 @@ class _StreamingBugzillaJsonrpc(BugzillaJsonrpc):
     def parse_response(self, response):
         return self._IterContent(response)
 
-    class SearchRequest(BugzillaSearchRequest):
+    class SearchRequest(_SearchRequest5_0):
 
         def __init__(self, *args, **kw):
             """Construct a search request."""
