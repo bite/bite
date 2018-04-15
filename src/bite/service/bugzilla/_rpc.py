@@ -1,5 +1,3 @@
-from snakeoil.demandload import demandload
-
 from . import (
     Bugzilla, Bugzilla5_2,
     SearchRequest4_4, SearchRequest5_0, HistoryRequest, CommentsRequest,
@@ -7,8 +5,6 @@ from . import (
     AttachRequest, CreateRequest, ExtensionsRequest, VersionRequest, FieldsRequest,
     ProductsRequest, UsersRequest)
 from .. import RPCRequest, req_cmd
-
-demandload('bite:const')
 
 
 class Bugzilla4_4Rpc(Bugzilla):
