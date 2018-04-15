@@ -534,6 +534,31 @@ class Search5_0(Search):
             help='restrict bugs by the specified number of comments or greater')
 
 
+@args.subcmd(Bugzilla5_0_Opts)
+class APIKeys(args.Subcmd):
+    """Interface to working with bugzilla apikeys."""
+
+    def __init__(self, *args, **kw):
+        super().__init__(*args, desc='generate or check API keys', **kw)
+        single_action = self.parser.add_mutually_exclusive_group()
+        single_action.add_argument(
+            '-l', '--list', action='store_true',
+            help='list available apikeys')
+        single_action.add_argument(
+            '-g', '--generate', nargs='?', const='bite', metavar='DESCRIPTION',
+            help='generate an apikey')
+        single_action.add_argument(
+            '-r', '--revoke', action='csv_negations', metavar='KEY',
+            help='toggle apikey(s) revoked status',
+            docs="""
+                Add/remove apikeys from the revoked list using their
+                descriptions or values.
+
+                To revoke multiple keys at once, use a comma-separated list.
+                Also, prefix an argument with '-' to unrevoke the related key.
+            """)
+
+
 @args.subcmd(Bugzilla4_4_Opts)
 class Changes(args.ReceiveSubcmd):
 

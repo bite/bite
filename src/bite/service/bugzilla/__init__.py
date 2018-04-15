@@ -1,6 +1,8 @@
+from dateutil.parser import parse as parsetime
 import lxml.html
 import requests
 from snakeoil.klass import steal_docs
+from snakeoil.sequences import namedtuple
 
 from .objects import BugzillaBug, BugzillaAttachment
 from .. import Service
@@ -154,6 +156,106 @@ class Bugzilla(Service):
 
 class Bugzilla5_0(Bugzilla):
     """Generic bugzilla 5.0 service support."""
+
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
+        self.apikeys = self.ApiKeys(self)
+
+    class ApiKeys(object):
+        """Provide access to web service API keys."""
+
+        _ApiKey = namedtuple("_ApiKey", ['key', 'desc', 'used', 'revoked'])
+
+        def __init__(self, service):
+            self._service = service
+            self._userprefs_url = f"{self._service.base.rstrip('/')}/userprefs.cgi"
+            self._doc = None
+
+        @property
+        def _keys(self):
+            with self._service.web_session() as session:
+                # get the apikeys page
+                r = session.get(f'{self._userprefs_url}?tab=apikey')
+                self._doc = lxml.html.fromstring(r.text)
+                # verify API keys table still has the same id
+                table = self._doc.xpath('//table[@id="email_prefs"]')
+                if not table:
+                    raise BiteError('failed to extract API keys table')
+
+                # extract API key info from table
+                apikeys = self._doc.xpath('//table[@id="email_prefs"]/tr/td[1]/text()')
+                descriptions = self._doc.xpath('//table[@id="email_prefs"]/tr/td[2]/input/@value')
+                last_used = self._doc.xpath('//table[@id="email_prefs"]/tr/td[3]//text()')
+                revoked = self._doc.xpath('//table[@id="email_prefs"]/tr/td[4]/input')
+                revoked = [bool(getattr(x, 'checked', False)) for x in revoked]
+
+                existing_keys = []
+                for desc, key, used, revoked in zip(descriptions, apikeys, last_used, revoked):
+                    if used != 'never used':
+                        used = parsetime(used)
+                    existing_keys.append(self._ApiKey(key, desc, used, revoked))
+
+            return existing_keys
+
+        def __iter__(self):
+            return iter(self._keys)
+
+        def generate(self, description=None):
+            """Generate API keys."""
+            with self._service.web_session() as session:
+                # check for existing keys with matching descriptions
+                try:
+                    match = next(k for k in self if k.desc == description)
+                    raise BugzillaError(
+                        f'{description!r} key already exists: '
+                        f'{match.key} ({match.used})')
+                except StopIteration:
+                    pass
+
+                params = {f'description_{i + 1}': x.desc for i, x in enumerate(self)}
+                # add new key fields
+                params.update({
+                    'new_key': 'on',
+                    'new_description': description,
+                })
+
+                r = session.post(self._userprefs_url, data=self.add_form_params(params))
+                self.verify_changes(r)
+
+        def verify_changes(self, response):
+            """Verify that apikey changes worked as expected."""
+            doc = lxml.html.fromstring(response.text)
+            msg = doc.xpath('//div[@id="message"]/text()')[0].strip()
+            if msg != 'The changes to your api keys have been saved.':
+                raise BiteError('failed generating apikey', text=msg)
+
+        def add_form_params(self, params):
+            """Extract required token data from apikey generation form."""
+            apikeys_form = self._doc.xpath('//form[@name="userprefsform"]/input')
+            if not apikeys_form:
+                # TODO: change to BugzillaError
+                raise ValueError('missing form data')
+            for x in apikeys_form:
+                params[x.name] = x.value
+            return params
+
+        def revoke(self, disable=(), enable=()):
+            """Revoke and/or unrevoke API keys."""
+            with self._service.web_session() as session:
+                params = {}
+                for i, x in enumerate(self):
+                    params[f'description_{i + 1}'] = x.desc
+                    if x.revoked:
+                        if x.key in enable or x.desc in enable:
+                            params[f'revoked_{i + 1}'] = 0
+                        else:
+                            # have to resubmit already revoked keys
+                            params[f'revoked_{i + 1}'] = 1
+                    if x.key in disable or x.desc in disable:
+                        params[f'revoked_{i + 1}'] = 1
+
+                r = session.post(self._userprefs_url, data=self.add_form_params(params))
+                self.verify_changes(r)
 
 
 class Bugzilla5_2(Bugzilla5_0):

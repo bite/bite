@@ -4,10 +4,10 @@ import re
 import subprocess
 import sys
 
-from snakeoil.strings import pluralism
 from snakeoil.demandload import demandload
+from snakeoil.strings import pluralism
 
-from .. import Cli
+from .. import Cli, login_required
 from ...exceptions import BiteError
 from ...utils import block_edit, get_input
 
@@ -598,3 +598,25 @@ class Bugzilla(Cli):
             # TODO check key
             fields.append(change)
         return fields
+
+
+class Bugzilla5_0(Bugzilla):
+    """CLI for Bugzilla 5.0 service."""
+
+    def apikeys(self, list=False, generate=None, revoke=None, *args, **kw):
+        if list:
+            keys = [x for x in self.service.apikeys]
+            if self.verbose and keys:
+                print('{:<41} {:<16} {:<26} {:<8}'.format(
+                    'API key', 'Description', 'Last used', 'Revoked'))
+                print('-' * const.COLUMNS)
+                for k in keys:
+                    print(f'{k.key:<41} {k.desc[:15]:<16} {str(k.used):<26} {k.revoked}')
+            else:
+                for k in keys:
+                    print(k.key)
+        elif generate is not None:
+            self.service.apikeys.generate(generate)
+        elif revoke is not None:
+            unrevoke, revoke = revoke
+            self.service.apikeys.revoke(disable=revoke, enable=unrevoke)
