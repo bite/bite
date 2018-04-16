@@ -1,5 +1,5 @@
-from . import Bugzilla, Bugzilla5_2
-from .requests import (
+from . import Bugzilla, Bugzilla5_0, Bugzilla5_2
+from .reqs import (
     SearchRequest4_4, SearchRequest5_0, HistoryRequest, CommentsRequest,
     AttachmentsRequest, LoginRequest, GetItemRequest, GetRequest, ModifyRequest,
     AttachRequest, CreateRequest, ExtensionsRequest, VersionRequest, FieldsRequest,
@@ -12,7 +12,7 @@ class Bugzilla4_4Rpc(Bugzilla):
     """Support bugzilla 4.4 RPC calls."""
 
 
-class Bugzilla5_0Rpc(Bugzilla4_4Rpc):
+class Bugzilla5_0Rpc(Bugzilla5_0, Bugzilla4_4Rpc):
     """Support bugzilla 5.0 RPC calls."""
 
 

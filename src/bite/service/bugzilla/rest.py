@@ -2,9 +2,9 @@
 
 from collections import deque
 
-from . import Bugzilla, Bugzilla5_2
+from . import Bugzilla5_0, Bugzilla5_2
 from .objects import BugzillaBug
-from .requests import (
+from .reqs import (
     LoginRequest, SearchRequest5_0, HistoryRequest, CommentsRequest, AttachmentsRequest,
     GetItemRequest, GetRequest, ModifyRequest, AttachRequest, CreateRequest,
     ExtensionsRequest, VersionRequest, FieldsRequest, ProductsRequest, UsersRequest,
@@ -13,7 +13,7 @@ from .. import RESTRequest, req_cmd
 from .._jsonrest import JsonREST
 
 
-class _BugzillaRestBase(Bugzilla, JsonREST):
+class _BugzillaRestBase(Bugzilla5_0, JsonREST):
     """Base service class for Bugzilla REST interface."""
 
     def __init__(self, **kw):

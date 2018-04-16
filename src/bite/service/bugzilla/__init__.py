@@ -121,7 +121,11 @@ class Bugzilla(Service):
             super()._failed_http_response(response)
 
 
-class Bugzilla5_2(Bugzilla):
+class Bugzilla5_0(Bugzilla):
+    """Generic bugzilla 5.0 service support."""
+
+
+class Bugzilla5_2(Bugzilla5_0):
     """Generic bugzilla 5.2 service support."""
 
     # setting auth tokens via headers is supported in >=bugzilla-5.1
