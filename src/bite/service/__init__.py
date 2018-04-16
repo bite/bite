@@ -292,7 +292,7 @@ class Service(object):
         return self.send(self.LoginRequest(user=user, password=password, **kw))
 
     def __str__(self):
-        return f'{self._service} -- {self.base}'
+        return f'{self.base} -- {self._service}'
 
     @staticmethod
     def _encode_request(method, params=None):
