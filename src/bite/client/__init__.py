@@ -75,6 +75,23 @@ class Cli(object):
 
         self.log(f'Service: {self.service}')
 
+    def get_user_pass(self):
+        """Request user/password info from the user if not available."""
+        user = self.service.user
+        password = self.service.password
+        if user is None:
+            self.log('No username given.')
+            user = get_input('Username: ')
+        if password is None:
+            if not self.passwordcmd:
+                self.log('No password given.')
+                password = getpass.getpass()
+            else:
+                process = subprocess.Popen(
+                    self.passwordcmd.split(), shell=False, stdout=subprocess.PIPE)
+                password, _ = process.communicate()
+        return user, password
+
     def login(self):
         """Login to a service and try to cache the authentication token."""
         if self.skip_auth:
@@ -82,20 +99,7 @@ class Cli(object):
 
         # fallback to manual user/pass login
         if not self.service.auth:
-            user = self.service.user
-            password = self.service.password
-            if user is None:
-                self.log('No username given.')
-                user = get_input('Username: ')
-            if password is None:
-                if not self.passwordcmd:
-                    self.log('No password given.')
-                    password = getpass.getpass()
-                else:
-                    process = subprocess.Popen(
-                        self.passwordcmd.split(), shell=False, stdout=subprocess.PIPE)
-                    password, _ = process.communicate()
-
+            user, password = self.get_user_pass()
             self.service.login(user, password)
 
     @login_retry
