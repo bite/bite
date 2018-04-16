@@ -1,3 +1,5 @@
+import lxml.html
+import requests
 from snakeoil.klass import steal_docs
 
 from .objects import BugzillaBug, BugzillaAttachment
@@ -93,6 +95,35 @@ class Bugzilla(Service):
         else:
             params['Bugzilla_token'] = str(self.auth)
         return request, params
+
+    class WebSession(Service.WebSession):
+
+        def add_params(self, user, password):
+            self.params.update({
+                'Bugzilla_login': user,
+                'Bugzilla_password': password,
+            })
+
+        def login(self):
+            # extract auth token to bypass CSRF protection
+            # https://bugzilla.mozilla.org/show_bug.cgi?id=713926
+            auth_token_name = 'Bugzilla_login_token'
+            r = self.session.get(self.service.base)
+            doc = lxml.html.fromstring(r.text)
+            token = doc.xpath(f'//input[@name="{auth_token_name}"]/@value')[0]
+            if not token:
+                raise BugzillaError(
+                    'failed to extract login token, '
+                    f'underlying token name may have changed from {auth_token_name}')
+
+            # login via web form
+            self.params[auth_token_name] = token
+            r = self.session.post(self.service.base, data=self.params)
+            # check that login was successful
+            doc = lxml.html.fromstring(r.text)
+            login_form = doc.xpath('//input[@name="Bugzilla_login"]')
+            if login_form:
+                raise AuthError('bad username or password')
 
     @staticmethod
     def handle_error(code, msg):

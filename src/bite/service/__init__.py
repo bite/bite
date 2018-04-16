@@ -312,6 +312,42 @@ class Service(object):
         """Parse the returned response."""
         raise NotImplementedError
 
+    def web_session(self, *args, **kw):
+        """Start an authenticated session with the service's website.
+
+        Useful for automating screen scraping when absolutely required.
+        """
+        return self.WebSession(self, *args, **kw)
+
+    class WebSession(object):
+        """Context manager for a requests session targeting the service's website."""
+
+        def __init__(self, service, user=None, password=None):
+            self.service = service
+            self.session = requests.Session()
+            self.params = {}
+            self.authenticated = all((user, password))
+            if self.authenticated:
+                self.add_params(user, password)
+
+        def add_params(self, user, password):
+            """Add login params to send to the service."""
+            raise NotImplementedError
+
+        def login(self):
+            """Login via the web UI for the service."""
+            raise NotImplementedError
+
+        def __enter__(self):
+            # pull site to set any required cookies
+            self.session.get(self.service.base)
+            if self.authenticated:
+                self.login()
+            return self.session
+
+        def __exit__(self, *args):
+            self.session.close()
+
     def send(self, *reqs):
         """Send requests and return parsed response data."""
         if not reqs:
