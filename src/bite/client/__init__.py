@@ -69,7 +69,7 @@ class Cli(object):
         # Login if all credentials provided on launch and not skipping;
         # otherwise, credentials will be requested when needed.
         if self.skip_auth:
-            self.service.auth.token = None
+            self.service.auth.reset()
         elif self.service.user is not None and any((self.service.password, self.passwordcmd)):
             self.login()
 

@@ -186,6 +186,10 @@ class Auth(object):
                 pass
             except IOError as e:
                 raise BiteError(f'unable to remove cache: {self.path!r}: {e.strerror}')
+        self.reset()
+
+    def reset(self):
+        """Reset an authentication token."""
         self.token = None
 
     def __str__(self):
