@@ -354,10 +354,10 @@ class Service(object):
 
         def __enter__(self):
             # pull site to set any required cookies
-            if not self.authenticated:
+            if not self.session.cookies:
                 self.session.get(self.service.base)
-                if self.authenticate:
-                    self.login()
+            if not self.authenticated and self.authenticate:
+                self.login()
             return self.session
 
         def __exit__(self, *args):
