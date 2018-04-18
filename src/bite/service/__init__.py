@@ -260,6 +260,7 @@ class Service(object):
         s.mount('https://', a)
         s.mount('http://', a)
         self.session = s
+        self._web_session = None
 
         # Suppress insecure request warnings if SSL cert verification is
         # disabled. Since it's enabled by default we assume when it's disabled
@@ -312,22 +313,32 @@ class Service(object):
         """Parse the returned response."""
         raise NotImplementedError
 
-    def web_session(self, *args, **kw):
-        """Start an authenticated session with the service's website.
+    def web_session(self, login=True):
+        """Start a session with the service's website.
 
         Useful for automating screen scraping when absolutely required.
         """
-        return self.WebSession(self, *args, **kw)
+        if self._web_session is not None:
+            return self._web_session
+
+        if login:
+            user, password = self.get_user_pass()
+        else:
+            user, password = None, None
+        self._web_session = self.WebSession(self, user, password)
+        return self._web_session
 
     class WebSession(object):
         """Context manager for a requests session targeting the service's website."""
 
         def __init__(self, service, user=None, password=None):
             self.service = service
+            # TODO: cache/reload cookies across runs?
             self.session = requests.Session()
             self.params = {}
-            self.authenticated = all((user, password))
-            if self.authenticated:
+            self.authenticate = all((user, password))
+            self.authenticated = False
+            if self.authenticate:
                 self.add_params(user, password)
 
         def add_params(self, user, password):
@@ -336,16 +347,22 @@ class Service(object):
 
         def login(self):
             """Login via the web UI for the service."""
-            raise NotImplementedError
+            self.authenticated = True
 
         def __enter__(self):
             # pull site to set any required cookies
-            self.session.get(self.service.base)
-            if self.authenticated:
-                self.login()
+            if not self.authenticated:
+                self.session.get(self.service.base)
+                if self.authenticate:
+                    self.login()
             return self.session
 
         def __exit__(self, *args):
+            pass
+
+        def __del__(self):
+            # close during removal instead of __exit__ so we can reuse the
+            # context handler
             self.session.close()
 
     def send(self, *reqs):

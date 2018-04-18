@@ -127,6 +127,8 @@ class Bugzilla(Service):
             if login_form:
                 raise AuthError('bad username or password')
 
+            super().login()
+
     @staticmethod
     def handle_error(code, msg):
         """Handle bugzilla specific errors.
