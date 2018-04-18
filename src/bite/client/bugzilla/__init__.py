@@ -622,3 +622,14 @@ class Bugzilla5_0(Bugzilla):
             else:
                 for k in (x for x in keys if not x.revoked):
                     print(f'{k.key} {k.desc}')
+
+    def savedsearches(self, save=None, remove=None, *args, **kw):
+        if save is not None:
+            name, url = save
+            self.service.saved_searches.save(name, url)
+        elif remove is not None:
+            self.service.saved_searches.remove(remove)
+        else:
+            # fallback to listing available saved searches
+            for k in self.service.saved_searches.keys():
+                print(k)

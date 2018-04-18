@@ -1,4 +1,4 @@
-from urllib.parse import parse_qs
+from urllib.parse import parse_qs, urlencode
 
 from dateutil.parser import parse as parsetime
 import lxml.html
@@ -224,17 +224,17 @@ class Bugzilla5_0(Bugzilla):
                     'new_description': description,
                 })
 
-                r = session.post(self._userprefs_url, data=self.add_form_params(params))
-                self.verify_changes(r)
+                r = session.post(self._userprefs_url, data=self._add_form_params(params))
+                self._verify_changes(r)
 
-        def verify_changes(self, response):
+        def _verify_changes(self, response):
             """Verify that apikey changes worked as expected."""
             doc = lxml.html.fromstring(response.text)
             msg = doc.xpath('//div[@id="message"]/text()')[0].strip()
             if msg != 'The changes to your api keys have been saved.':
                 raise RequestError('failed generating apikey', text=msg)
 
-        def add_form_params(self, params):
+        def _add_form_params(self, params):
             """Extract required token data from apikey generation form."""
             apikeys_form = self._doc.xpath('//form[@name="userprefsform"]/input')
             if not apikeys_form:
@@ -258,8 +258,8 @@ class Bugzilla5_0(Bugzilla):
                     if x.key in disable or x.desc in disable:
                         params[f'revoked_{i + 1}'] = 1
 
-                r = session.post(self._userprefs_url, data=self.add_form_params(params))
-                self.verify_changes(r)
+                r = session.post(self._userprefs_url, data=self._add_form_params(params))
+                self._verify_changes(r)
 
     class SavedSearches(object):
         """Provide access to web service saved searches."""
@@ -267,6 +267,7 @@ class Bugzilla5_0(Bugzilla):
         def __init__(self, service):
             self._service = service
             self._userprefs_url = f"{self._service.base.rstrip('/')}/userprefs.cgi"
+            self._search_url = f"{self._service.base.rstrip('/')}/buglist.cgi"
             self._doc = None
 
         @property
@@ -288,42 +289,99 @@ class Bugzilla5_0(Bugzilla):
 
                     # extract saved searches from tables
                     names = self._doc.xpath(f'//table[@id="{table}"]/tr/td[1]/text()')
-                    # determine the column number for the Edit column and pull
-                    # elements from it
+                    forgets = [None] * len(names)
+                    # determine the column number pull elements from it
                     edit_col_num = len(self._doc.xpath(
                         f'//table[@id="{table}"]/tr/th[.="Edit"][1]/preceding-sibling::th')) + 1
                     query_col = self._doc.xpath(
                         f'//table[@id="{table}"]/tr/td[{edit_col_num}]')
+                    forget_col_num = len(self._doc.xpath(
+                        f'//table[@id="{table}"]/tr/th[.="Forget"][1]/preceding-sibling::th')) + 1
+                    forget_col = self._doc.xpath(
+                        f'//table[@id="{table}"]/tr/td[{forget_col_num}]')
 
                     queries = []
-                    for x in query_col:
+                    for i, (q, f) in enumerate(zip(query_col, forget_col)):
                         try:
                             # find the query edit link
-                            queries.append(next(x.iterlinks())[2])
+                            queries.append(next(q.iterlinks())[2])
+                            forgets[i] = next(f.iterlinks())[2]
                         except StopIteration:
                             # skip searches that don't have advanced search edit links
                             # (usually only the default "My Bugs" search)
                             queries.append(None)
+                            forgets[i] = None
 
-                    for name, query in zip(names, queries):
+
+                    for name, query, forget in zip(names, queries, forgets):
+                        # skip the default "My Bugs" search which is uneditable
+                        # and not removable
                         if query is None:
                             continue
+                        if forget is not None:
+                            forget = forget.split('?', 1)[1]
                         url_params = query.split('?', 1)[1]
-                        existing_searches[name.strip()] = parse_qs(url_params)
+                        existing_searches[name.strip()] = {
+                            'params': parse_qs(url_params),
+                            'forget': forget,
+                        }
 
             return existing_searches
 
-        def verify_changes(self, response):
-            """Verify that saved search changes worked as expected."""
-
-        def add_form_params(self, params):
-            """Extract required token data from saved search form."""
-
-        def save(self, name):
+        def save(self, name, data):
             """Save a given search."""
+            if isinstance(data, str):
+                base, _url_params = data.split('?', 1)
+                if base != self._search_url:
+                    raise RequestError(f'invalid advanced search URL: {v!r}')
+                search_url = data
+            else:
+                if not data:
+                    raise RequestError('missing search parameters')
+                search_url = f"{self._search_url}?{urlencode(data)}"
 
-        def remove(self, name):
+            with self._service.web_session() as session:
+                r = session.get(search_url)
+                doc = lxml.html.fromstring(r.text)
+
+                # extract saved search form params
+                save_search = doc.xpath(
+                    '//div[@class="bz_query_remember"]/form/input[@type="hidden"]')
+                if not save_search:
+                    raise BugzillaError('missing save search option')
+
+                params = {}
+                for x in save_search:
+                    params[x.name] = x.value
+                params['newqueryname'] = name
+
+                r = session.get(self._search_url, params=params)
+                doc = lxml.html.fromstring(r.text)
+                msg = doc.xpath('//div[@id="bugzilla-body"]/div//a/text()')
+                if not msg or msg[0] != name:
+                    raise RequestError(f'failed saving search: {name!r}')
+
+        def remove(self, names):
             """Remove a given saved search."""
+            searches = dict(self._searches.items())
+            removals = []
+            for name in names:
+                search = searches.get(name, None)
+                if search is None:
+                    raise RequestError(f'nonexistent saved search: {name!r}')
+                forget = search['forget']
+                if forget is None:
+                    raise RequestError(f'unable to remove saved search: {name!r}')
+                removals.append(f"{self._search_url}?{forget}")
+
+            # TODO: send these reqs in parallel
+            with self._service.web_session() as session:
+                for name, remove_url in zip(names, removals):
+                    r = session.get(remove_url)
+                    doc = lxml.html.fromstring(r.text)
+                    msg = doc.xpath('//div[@id="bugzilla-body"]/div/b/text()')
+                    if not msg or msg[0] != name:
+                        raise RequestError(f'failed removing search: {name!r}')
 
         def __iter__(self):
             return iter(self._searches)
@@ -333,6 +391,15 @@ class Bugzilla5_0(Bugzilla):
 
         def get(self, name, default):
             return self._searches.get(name, default)
+
+        def items(self):
+            return self._searches.items()
+
+        def keys(self):
+            return self._searches.keys()
+
+        def values(self):
+            return self._searches.values()
 
 
 class Bugzilla5_2(Bugzilla5_0):

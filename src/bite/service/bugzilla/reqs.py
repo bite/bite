@@ -199,7 +199,7 @@ class SearchRequest5_0(SearchRequest4_4):
                 if saved_search_params is None:
                     raise BiteError(f'no matching saved search: {v!r}')
                 options.append(f'Using saved search: {v}')
-                for k, v in saved_search_params.items():
+                for k, v in saved_search_params['params'].items():
                     if k not in params:
                         params[k] = v if len(v) > 1 else v[0]
 

@@ -542,7 +542,7 @@ class APIKeys(args.Subcmd):
     """Interface to working with bugzilla apikeys."""
 
     def __init__(self, *args, **kw):
-        super().__init__(*args, desc='generate or check API keys', **kw)
+        super().__init__(*args, desc='generate, revoke, or list API keys', **kw)
         single_action = self.parser.add_mutually_exclusive_group()
         single_action.add_argument(
             '-l', '--list', action='store_true',
@@ -560,6 +560,24 @@ class APIKeys(args.Subcmd):
                 To revoke multiple keys at once, use a comma-separated list.
                 Also, prefix an argument with '-' to unrevoke the related key.
             """)
+
+
+@args.subcmd(Bugzilla5_0_Opts)
+class SavedSearches(args.Subcmd):
+    """Interface to working with bugzilla saved searches."""
+
+    def __init__(self, *args, **kw):
+        super().__init__(*args, desc='save, remove, or list saved searches', **kw)
+        single_action = self.parser.add_mutually_exclusive_group()
+        single_action.add_argument(
+            '-l', '--list', action='store_true',
+            help='list available saved searches')
+        single_action.add_argument(
+            '-s', '--save', nargs=2, metavar='NAME URL',
+            help='create a saved search')
+        single_action.add_argument(
+            '-r', '--remove', action='csv', metavar='NAME',
+            help='remove saved search(es)')
 
 
 @args.subcmd(Bugzilla4_4_Opts)
