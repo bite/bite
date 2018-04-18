@@ -185,7 +185,7 @@ class Bugzilla5_0(Bugzilla):
                 # verify API keys table still has the same id
                 table = self._doc.xpath('//table[@id="email_prefs"]')
                 if not table:
-                    raise BiteError('failed to extract API keys table')
+                    raise RequestError('failed to extract API keys table')
 
                 # extract API key info from table
                 apikeys = self._doc.xpath('//table[@id="email_prefs"]/tr/td[1]/text()')
@@ -232,14 +232,13 @@ class Bugzilla5_0(Bugzilla):
             doc = lxml.html.fromstring(response.text)
             msg = doc.xpath('//div[@id="message"]/text()')[0].strip()
             if msg != 'The changes to your api keys have been saved.':
-                raise BiteError('failed generating apikey', text=msg)
+                raise RequestError('failed generating apikey', text=msg)
 
         def add_form_params(self, params):
             """Extract required token data from apikey generation form."""
             apikeys_form = self._doc.xpath('//form[@name="userprefsform"]/input')
             if not apikeys_form:
-                # TODO: change to BugzillaError
-                raise ValueError('missing form data')
+                raise BugzillaError('missing form data')
             for x in apikeys_form:
                 params[x.name] = x.value
             return params
@@ -285,7 +284,7 @@ class Bugzilla5_0(Bugzilla):
                     # verify saved search table exists, shared searches might not
                     if (table == 'saved_search_prefs' and
                             not self._doc.xpath(f'//table[@id="{table}"]')):
-                        raise BiteError('failed to extract saved search table')
+                        raise RequestError('failed to extract saved search table')
 
                     # extract saved searches from tables
                     names = self._doc.xpath(f'//table[@id="{table}"]/tr/td[1]/text()')
