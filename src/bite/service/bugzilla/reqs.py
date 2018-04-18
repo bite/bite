@@ -190,7 +190,9 @@ class SearchRequest5_0(SearchRequest4_4):
                 # command line options take precedence over URL parameters
                 for k, v in parse_qs(url_params).items():
                     if k not in params:
-                        params[k] = v
+                        # Assume lists with one element are supposed to be sent as strings
+                        # otherwise the jsonrpc/xmlrpc backends error out.
+                        params[k] = v if len(v) > 1 else v[0]
                 options.append('Using advanced search URL')
 
         return super().parse_params(service, params, options, **kw)
