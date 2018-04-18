@@ -220,6 +220,7 @@ class Service(object):
 
     _service = None
     _cache_cls = Cache
+    _client_callbacks = []
 
     item = Item
     item_endpoint = None
@@ -322,7 +323,7 @@ class Service(object):
             return self._web_session
 
         if login:
-            user, password = self.get_user_pass()
+            user, password = self.client.get_user_pass()
         else:
             user, password = None, None
         self._web_session = self.WebSession(self, user, password)

@@ -13,6 +13,7 @@ from snakeoil.demandload import demandload
 
 from ..exceptions import AuthError, BiteError
 from ..objects import TarAttachment
+from ..service import Service
 from ..utils import confirm, get_input, launch_browser
 
 demandload('bite:const')
@@ -51,14 +52,38 @@ def login_required(func):
     return wrapper
 
 
-class Cli(object):
+def register_callback(func):
+    """Decorator that registers client callbacks for the service class."""
+    @wraps(func)
+    def wrapper(self, *args, **kw):
+        return func(self, *args, **kw)
+    Service._client_callbacks.append(func)
+    return wrapper
+
+
+class Client(object):
+    """Generic client for a service."""
+
+    _service = None
+
+    def __init__(self, service):
+        self.service = service 
+        # register client callbacks for service obj
+        class client: pass
+        self.service.client = client()
+        for func in self.service._client_callbacks:
+            func = getattr(self, func.__name__, func)
+            setattr(self.service.client, func.__name__, func)
+
+
+class Cli(Client):
     """Generic commandline interface for a service."""
 
     _service = None
 
     def __init__(self, service, quiet=False, verbose=False, color=False, connection=None,
                  passwordcmd=None, skip_auth=True, **kw):
-        self.service = service
+        super().__init__(service)
         self.quiet = quiet
         self.verbose = verbose
         self.color = color
@@ -75,6 +100,7 @@ class Cli(object):
 
         self.log(f'Service: {self.service}')
 
+    @register_callback
     def get_user_pass(self):
         """Request user/password info from the user if not available."""
         user = self.service.user
@@ -91,6 +117,10 @@ class Cli(object):
                     self.passwordcmd.split(), shell=False, stdout=subprocess.PIPE)
                 password, _ = process.communicate()
         return user, password
+
+    @register_callback
+    def confirm(self, *args, **kw):
+        return confirm(*args, **kw)
 
     def login(self):
         """Login to a service and try to cache the authentication token."""

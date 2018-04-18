@@ -208,9 +208,9 @@ class Bugzilla5_0(Bugzilla):
                 # check for existing keys with matching descriptions
                 try:
                     match = next(k for k in self if k.desc == description)
-                    raise BugzillaError(
-                        f'{description!r} key already exists: '
-                        f'{match.key} ({match.used})')
+                    if not self._service.client.confirm(
+                            f'{description!r} key already exists, continue?'):
+                        return
                 except StopIteration:
                     pass
 
