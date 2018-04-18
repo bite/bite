@@ -276,27 +276,41 @@ class Bugzilla5_0(Bugzilla):
                 # get the saved searches page
                 r = session.get(f'{self._userprefs_url}?tab=saved-searches')
                 self._doc = lxml.html.fromstring(r.text)
-                # verify saved search table still has the same id
-                table = self._doc.xpath('//table[@id="saved_search_prefs"]')
-                if not table:
-                    raise BiteError('failed to extract saved search table')
-
-                # extract saved searches from tables
-                names = self._doc.xpath('//table[@id="saved_search_prefs"]/tr/td[1]/text()')
-                query_col = self._doc.xpath('//table[@id="saved_search_prefs"]/tr/td[3]')
-                queries = []
-                for x in query_col:
-                    try:
-                        queries.append(next(x.iterlinks())[2])
-                    except StopIteration:
-                        queries.append(None)
 
                 existing_searches = {}
-                for name, query in zip(names, queries):
-                    if query is None:
-                        continue
-                    url_params = query.split('?', 1)[1]
-                    existing_searches[name] = parse_qs(url_params)
+
+                # Scan for both personal and shared searches, personal searches
+                # override shared if names collide.
+                for table in ('shared_search_prefs', 'saved_search_prefs'):
+                    # verify saved search table exists, shared searches might not
+                    if (table == 'saved_search_prefs' and
+                            not self._doc.xpath(f'//table[@id="{table}"]')):
+                        raise BiteError('failed to extract saved search table')
+
+                    # extract saved searches from tables
+                    names = self._doc.xpath(f'//table[@id="{table}"]/tr/td[1]/text()')
+                    # determine the column number for the Edit column and pull
+                    # elements from it
+                    edit_col_num = len(self._doc.xpath(
+                        f'//table[@id="{table}"]/tr/th[.="Edit"][1]/preceding-sibling::th')) + 1
+                    query_col = self._doc.xpath(
+                        f'//table[@id="{table}"]/tr/td[{edit_col_num}]')
+
+                    queries = []
+                    for x in query_col:
+                        try:
+                            # find the query edit link
+                            queries.append(next(x.iterlinks())[2])
+                        except StopIteration:
+                            # skip searches that don't have advanced search edit links
+                            # (usually only the default "My Bugs" search)
+                            queries.append(None)
+
+                    for name, query in zip(names, queries):
+                        if query is None:
+                            continue
+                        url_params = query.split('?', 1)[1]
+                        existing_searches[name.strip()] = parse_qs(url_params)
 
             return existing_searches
 
