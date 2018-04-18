@@ -603,8 +603,15 @@ class Bugzilla(Cli):
 class Bugzilla5_0(Bugzilla):
     """CLI for Bugzilla 5.0 service."""
 
-    def apikeys(self, list=False, generate=None, revoke=None, *args, **kw):
-        if list:
+    def apikeys(self, generate=None, revoke=None, *args, **kw):
+        if generate is not None:
+            # TODO: cache generated key for use with bite if it's named 'bite'
+            self.service.apikeys.generate(generate)
+        elif revoke is not None:
+            unrevoke, revoke = revoke
+            self.service.apikeys.revoke(disable=revoke, enable=unrevoke)
+        else:
+            # fallback to listing available apikeys
             keys = [x for x in self.service.apikeys]
             if self.verbose and keys:
                 print('{:<41} {:<16} {:<26} {:<8}'.format(
@@ -613,10 +620,5 @@ class Bugzilla5_0(Bugzilla):
                 for k in keys:
                     print(f'{k.key:<41} {k.desc[:15]:<16} {str(k.used):<26} {k.revoked}')
             else:
-                for k in keys:
-                    print(k.key)
-        elif generate is not None:
-            self.service.apikeys.generate(generate)
-        elif revoke is not None:
-            unrevoke, revoke = revoke
-            self.service.apikeys.revoke(disable=revoke, enable=unrevoke)
+                for k in (x for x in keys if not x.revoked):
+                    print(f'{k.key} {k.desc}')
