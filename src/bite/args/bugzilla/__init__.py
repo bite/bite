@@ -508,6 +508,9 @@ class Search5_0(Search):
                 Note that options specified on the command line will override
                 any matching URL parameters.
             """)
+        self.opts.add_argument(
+            '-S', '--saved-search',
+            help='search for bugs using a saved search')
         self.person.add_argument(
             '--cc', type=string_list, action=parse_stdin,
             help='email in the CC list for the bug')

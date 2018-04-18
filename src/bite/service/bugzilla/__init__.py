@@ -1,3 +1,5 @@
+from urllib.parse import parse_qs
+
 from dateutil.parser import parse as parsetime
 import lxml.html
 import requests
@@ -162,6 +164,7 @@ class Bugzilla5_0(Bugzilla):
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
         self.apikeys = self.ApiKeys(self)
+        self.saved_searches = self.SavedSearches(self)
 
     class ApiKeys(object):
         """Provide access to web service API keys."""
@@ -258,6 +261,65 @@ class Bugzilla5_0(Bugzilla):
 
                 r = session.post(self._userprefs_url, data=self.add_form_params(params))
                 self.verify_changes(r)
+
+    class SavedSearches(object):
+        """Provide access to web service saved searches."""
+
+        def __init__(self, service):
+            self._service = service
+            self._userprefs_url = f"{self._service.base.rstrip('/')}/userprefs.cgi"
+            self._doc = None
+
+        @property
+        def _searches(self):
+            with self._service.web_session() as session:
+                # get the saved searches page
+                r = session.get(f'{self._userprefs_url}?tab=saved-searches')
+                self._doc = lxml.html.fromstring(r.text)
+                # verify saved search table still has the same id
+                table = self._doc.xpath('//table[@id="saved_search_prefs"]')
+                if not table:
+                    raise BiteError('failed to extract saved search table')
+
+                # extract saved searches from tables
+                names = self._doc.xpath('//table[@id="saved_search_prefs"]/tr/td[1]/text()')
+                query_col = self._doc.xpath('//table[@id="saved_search_prefs"]/tr/td[3]')
+                queries = []
+                for x in query_col:
+                    try:
+                        queries.append(next(x.iterlinks())[2])
+                    except StopIteration:
+                        queries.append(None)
+
+                existing_searches = {}
+                for name, query in zip(names, queries):
+                    if query is None:
+                        continue
+                    url_params = query.split('?', 1)[1]
+                    existing_searches[name] = parse_qs(url_params)
+
+            return existing_searches
+
+        def verify_changes(self, response):
+            """Verify that saved search changes worked as expected."""
+
+        def add_form_params(self, params):
+            """Extract required token data from saved search form."""
+
+        def save(self, name):
+            """Save a given search."""
+
+        def remove(self, name):
+            """Remove a given saved search."""
+
+        def __iter__(self):
+            return iter(self._searches)
+
+        def __contains__(self, name):
+            return name in self._searches
+
+        def get(self, name, default):
+            return self._searches.get(name, default)
 
 
 class Bugzilla5_2(Bugzilla5_0):

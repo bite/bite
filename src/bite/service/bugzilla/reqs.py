@@ -187,13 +187,21 @@ class SearchRequest5_0(SearchRequest4_4):
                 base, url_params = v.split('?', 1)
                 if base != f"{service.base.rstrip('/')}/buglist.cgi":
                     raise BiteError(f'invalid advanced search URL: {v!r}')
+                options.append('Using advanced search URL')
                 # command line options take precedence over URL parameters
                 for k, v in parse_qs(url_params).items():
                     if k not in params:
                         # Assume lists with one element are supposed to be sent as strings
                         # otherwise the jsonrpc/xmlrpc backends error out.
                         params[k] = v if len(v) > 1 else v[0]
-                options.append('Using advanced search URL')
+            elif k == 'saved_search':
+                saved_search_params = service.saved_searches.get(v, None)
+                if saved_search_params is None:
+                    raise BiteError(f'no matching saved search: {v!r}')
+                options.append(f'Using saved search: {v}')
+                for k, v in saved_search_params.items():
+                    if k not in params:
+                        params[k] = v if len(v) > 1 else v[0]
 
         return super().parse_params(service, params, options, **kw)
 
