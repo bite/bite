@@ -1,5 +1,6 @@
 from .bugzilla import date
 from .. import args
+from ..argparser import parse_stdin, string_list
 
 
 class LaunchpadOpts(args.ServiceOpts):
@@ -48,6 +49,10 @@ class Search(args.Search):
             dest='modified_since', metavar='TIME',
             help='bugs modified at this time or later')
         attr = self.parser.add_argument_group('Attribute related')
+        attr.add_argument(
+            '-s', '--status', type=string_list,
+            action=parse_stdin,
+            help='restrict by status (one or more)')
         attr.add_argument(
             '--has-patch', action='store_true',
             help='restrict by bugs that have patches')

@@ -147,6 +147,25 @@ class _SearchRequest(LaunchpadPagedRequest, RESTRequest):
         'heat': 'heat',
     }
 
+    # Map of allowed status input values to launchpad parameters determined by
+    # submitting an invalid value which returns an error message listing the
+    # valid choices.
+    status_map = {
+        'new': 'New',
+        'incomplete': 'Incomplete',
+        'opinion': 'Opinion',
+        'invalid': 'Invalid',
+        'wont-fix': "Won't Fix",
+        'expired': 'Expired',
+        'confirmed': 'Confirmed',
+        'triaged': 'Triaged',
+        'in-progress': 'In Progress',
+        'committed': 'Fix Committed',
+        'released': 'Fix Released',
+        'incomplete-response': 'Incomplete (with response)',
+        'incomplete-noresponse': 'Incomplete (without response)',
+    }
+
     def __init__(self, service, **kw):
         params, options = self.parse_params(service=service, **kw)
         if not params:
@@ -181,6 +200,18 @@ class _SearchRequest(LaunchpadPagedRequest, RESTRequest):
                 # launchpad is particular about the boolean values it receives
                 params[k] = str(v).lower()
                 options.append(f"{LaunchpadBugTask.attributes[k]}: {v}")
+            elif k == 'status':
+                statuses = []
+                for status in v:
+                    try:
+                        status_var = self.status_map[status]
+                    except KeyError:
+                        choices = ', '.join(sorted(self.status_map.keys()))
+                        raise BiteError(
+                            f'invalid status: {status!r} (available choices: {choices}')
+                    statuses.append(status_var)
+                params[k] = statuses
+                options.append(f"{k.capitalize()}: {', '.join(v)}")
             elif k == 'sort':
                 sorting_terms = []
                 for sort in v:
