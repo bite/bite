@@ -26,7 +26,7 @@ class Subcmd(object):
     def __init__(self, parser, service, name=None, desc=None):
         name = name if name is not None else getattr(self, '_subcmd_name')
         self.parser = parser.add_parser(
-            name, verbose=False, quiet=False, color=False, description=desc)
+            name, quiet=False, color=False, description=desc)
         self.parser.set_defaults(fcn=name)
         self.opts = self.parser.add_argument_group(f'{name.capitalize()} options')
 

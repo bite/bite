@@ -225,10 +225,10 @@ class Modify(args.Modify):
             '-u', '--url',
             help='set URL field of bug')
         attr.add_argument(
-            '-v', '--version',
+            '-V', '--version',
             help='set the version for this bug'),
         attr.add_argument(
-            '-w', '--whiteboard',
+            '-W', '--whiteboard',
             help='set status whiteboard'),
         attr.add_argument(
             '--alias', action='csv_elements',
@@ -409,11 +409,11 @@ class Search(args.PagedSearch):
             action=parse_stdin,
             help='restrict by status (one or more)')
         self.attr.add_argument(
-            '-v', '--version', type=string_list,
+            '-V', '--version', type=string_list,
             action=parse_stdin,
             help='restrict by version (one or more)')
         self.attr.add_argument(
-            '-w', '--whiteboard', type=string_list,
+            '-W', '--whiteboard', type=string_list,
             action=parse_stdin,
             help='status whiteboard')
         self.attr.add_argument(
