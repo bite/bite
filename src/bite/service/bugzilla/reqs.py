@@ -17,6 +17,9 @@ class SearchRequest4_4(PagedRequest):
     API docs: https://www.bugzilla.org/docs/4.4/en/html/api/Bugzilla/WebService/Bug.html#search
     """
 
+    _offset_key = 'offset'
+    _size_key = 'limit'
+
     def __init__(self, service, **kw):
         params, options = self.parse_params(service=service, **kw)
 

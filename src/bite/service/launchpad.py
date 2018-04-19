@@ -113,21 +113,16 @@ class Launchpad(JsonREST):
         self.webbase = base
 
 
-class LaunchpadPagedRequest(PagedRequest):
-    """Keep requesting matching records until all relevant results are returned."""
-
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
-        self._offset_key = 'ws.start'
-
-
 @req_cmd(Launchpad, 'search')
-class _SearchRequest(LaunchpadPagedRequest, RESTRequest):
+class _SearchRequest(PagedRequest, RESTRequest):
     """Construct a search request.
 
     API docs: https://launchpad.net/+apidoc/1.0.html#bugs under the 'searchTasks'
     for custom GET methods.
     """
+
+    _offset_key = 'ws.start'
+    _size_key = 'ws.size'
 
     # Map of allowed sorting input values to launchpad parameters determined by
     # looking at available values on the web interface.

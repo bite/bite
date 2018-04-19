@@ -126,14 +126,23 @@ class Request(object):
 class PagedRequest(Request):
     """Keep requesting matching records until all relevant results are returned."""
 
+    # offset and query size parameter keys for a related service query
+    _offset_key = None
+    _size_key = None
+
     def __init__(self, *args, **kw):
-        self._offset_key = 'offset'
         super().__init__(*args, **kw)
+
+        if not all((self._offset_key, self._size_key)):
+            raise BiteError('offset and size keys must be set')
+
         # total number of elements parsed
         self._seen = 0
-        # total number of potential elements to request, some services don't
-        # return the number of matching elements so this is optional
-        # TODO: for services that return total number of matches, send async requests
+
+        # Total number of potential elements to request, some services don't
+        # return the number of matching elements so this is optional.
+        # TODO: For services that return total number of matches on the first
+        # request, send the remaining requests asynchronously.
         self._total = None
 
     def send(self):
