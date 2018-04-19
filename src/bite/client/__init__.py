@@ -228,7 +228,7 @@ class Cli(Client):
 
     def _view_attachment(self, f, show_metadata):
         """Output attachment data to stdout."""
-        compressed = ['x-bzip2', 'x-bzip', 'x-gzip', 'gzip', 'x-tar', 'x-xz']
+        compressed = set(['x-bzip2', 'x-bzip', 'x-gzip', 'gzip', 'x-tar', 'x-xz'])
         mime_type, mime_subtype = f.mimetype.split('/')
         if sys.stdout.isatty() and not (mime_type == 'text' or mime_subtype in compressed):
             self.log(f' ! Warning: The attachment {f.filename!r} has type {f.mimetype}')
