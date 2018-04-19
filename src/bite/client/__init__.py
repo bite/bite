@@ -52,15 +52,6 @@ def login_required(func):
     return wrapper
 
 
-def register_callback(func):
-    """Decorator that registers client callbacks for the service class."""
-    @wraps(func)
-    def wrapper(self, *args, **kw):
-        return func(self, *args, **kw)
-    Service._client_callbacks.append(func)
-    return wrapper
-
-
 class Client(object):
     """Generic client for a service."""
 
@@ -68,18 +59,18 @@ class Client(object):
 
     def __init__(self, service):
         self.service = service 
-        # register client callbacks for service obj
-        class client: pass
-        self.service.client = client()
-        for func in self.service._client_callbacks:
-            func = getattr(self, func.__name__, func)
-            setattr(self.service.client, func.__name__, func)
+
+        # Register client callbacks for service obj. We want this to explode if
+        # a Client child doesn't implement all the callbacks requested by the
+        # Service class.
+        callbacks = (f for f in dir(self.service.client) if not f.startswith('__'))
+        for func_name in callbacks:
+            func = getattr(self, func_name)
+            setattr(self.service.client, func_name, func)
 
 
 class Cli(Client):
     """Generic commandline interface for a service."""
-
-    _service = None
 
     def __init__(self, service, quiet=False, verbose=False, color=False, connection=None,
                  passwordcmd=None, skip_auth=True, **kw):
@@ -100,7 +91,6 @@ class Cli(Client):
 
         self.log(f'Service: {self.service}')
 
-    @register_callback
     def get_user_pass(self):
         """Request user/password info from the user if not available."""
         user = self.service.user
@@ -118,7 +108,6 @@ class Cli(Client):
                 password, _ = process.communicate()
         return user, password
 
-    @register_callback
     def confirm(self, *args, **kw):
         return confirm(*args, **kw)
 

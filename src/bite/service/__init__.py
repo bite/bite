@@ -230,12 +230,23 @@ class NullRequest(Request):
             yield None
 
 
+class ClientCallbacks(object):
+    """Client callback stubs used by services."""
+
+    def get_user_pass(self):
+        """Request user/password info from the user if not available."""
+        raise NotImplementedError
+
+    def confirm(self, *args, **kw):
+        """Prompts for yes or no response from the user."""
+        raise NotImplementedError
+
+
 class Service(object):
     """Generic service support."""
 
     _service = None
     _cache_cls = Cache
-    _client_callbacks = []
 
     item = Item
     item_endpoint = None
@@ -255,6 +266,8 @@ class Service(object):
         self.debug = debug
         self.timeout = timeout if timeout is not None else 30
         self.max_results = max_results
+
+        self.client = ClientCallbacks()
 
         # max workers defaults to system CPU count * 5 if concurrent is None
         self.executor = ThreadPoolExecutor(max_workers=concurrent)
