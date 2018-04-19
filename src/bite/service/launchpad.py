@@ -121,8 +121,6 @@ class LaunchpadPagedRequest(PagedRequest):
         self._offset_key = 'ws.start'
 
 
-# TODO:
-#  - handle/show output messages from invalid searches better (HTTP 400s)
 @req_cmd(Launchpad, 'search')
 class _SearchRequest(LaunchpadPagedRequest, RESTRequest):
     """Construct a search request.
@@ -174,3 +172,8 @@ class _SearchRequest(LaunchpadPagedRequest, RESTRequest):
         bugs = data['entries']
         for bug in bugs:
             yield LaunchpadBugTask(self.service, **bug)
+
+    def handle_exception(self, e):
+        if e.code == 400:
+            raise LaunchpadError(msg=e.text, code=e.code)
+        raise e
