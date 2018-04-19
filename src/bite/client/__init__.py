@@ -398,7 +398,7 @@ class Cli(Client):
         if output is None:
             if fields is None:
                 fields = ('id', 'owner', 'title')
-                output = '{} {:<20} {}'
+                output = '{:<8} {:<20} {}'
             else:
                 output = ' '.join('{}' for x in fields)
 
