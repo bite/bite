@@ -463,7 +463,8 @@ class Service(object):
                     error_str += f': {reason}'
                 elif not self.verbose:
                     error_str += ' (enable verbose mode to see server response)'
-                raise RequestError(error_str, text=response.text)
+                raise RequestError(
+                    error_str, text=response.text, code=response.status_code)
 
     def _desuffix(self, s):
         if self.suffix is not None:
