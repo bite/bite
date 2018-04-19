@@ -237,6 +237,7 @@ class Service(object):
                  auth_file=None, auth_token=None, suffix=None, timeout=None, concurrent=None,
                  max_results=None, debug=None, verbose=None, **kw):
         self.base = base
+        self.webbase = base
         self.user = user
         self.password = password
         self.suffix = suffix
@@ -300,7 +301,7 @@ class Service(object):
         return self.send(self.LoginRequest(user=user, password=password, **kw))
 
     def __str__(self):
-        return f'{self.base} -- {self._service}'
+        return f'{self.webbase} -- {self._service}'
 
     @staticmethod
     def _encode_request(method, params=None):
@@ -361,7 +362,7 @@ class Service(object):
         def __enter__(self):
             # pull site to set any required cookies
             if not self.session.cookies:
-                self.session.get(self.service.base)
+                self.session.get(self.service.webbase)
             if not self.authenticated and self.authenticate:
                 self.login()
             return self.session
