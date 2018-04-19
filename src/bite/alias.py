@@ -123,33 +123,38 @@ def get_alias(args, section, alias):
     return value
 
 
+def get_sections(connection, service_name):
+    """Generator for alias section precendence.
+
+    connection -> full service name -> versioned service -> generic service
+
+    Note that service sections use headers of the form: [:service:],
+    e.g. [:bugzilla:] for a generic service
+         [:bugzilla5.0:] for a version specific section
+         [:bugzilla5.0-jsonrpc:] for a full service name section
+    """
+    if connection is not None:
+        yield connection
+    if service_name is not None:
+        yield f":{service_name}:"
+        service_versioned = service_name.split('-')[0]
+        if service_versioned != service_name:
+            yield f":{service_versioned}:"
+            service_match = re.match(r'([a-z]+)[\d.]+', service_versioned)
+            if service_match:
+                yield f":{service_match.group(1)}:"
+
+
 def substitute_alias(aliases, unparsed_args, connection=None, service_name=None):
     alias_name = unparsed_args[0]
     extra_cmds = unparsed_args[1:]
 
-    # Build alias section precendence list,
-    # connection -> full service name -> versioned service -> generic service
-    #
-    # Note that service sections use headers of the form: [:service:],
-    # e.g. [:bugzilla:] for a generic service
-    #      [:bugzilla5.0:] for a version specific section
-    #      [:bugzilla5.0-jsonrpc:] for a full service name section
-    sections = [connection] if connection is not None else []
-    if service_name is not None:
-        sections.append(f":{service_name}:")
-        service_versioned = service_name.split('-')[0]
-        if service_versioned != service_name:
-            sections.append(f":{service_versioned}:")
-            service_match = re.match(r'([a-z]+)[\d.]+', service_versioned)
-            if service_match:
-                sections.append(f":{service_match.group(1)}:")
-
     # first check for connection specific aliases, then service specific aliases
-    for section in sections:
+    for section in get_sections(connection, service_name):
         if aliases.has_section(section):
             try:
                 alias_cmd = aliases.get(section, alias_name, fallback=None)
-            except configparser.InterpolationError as e: 
+            except configparser.InterpolationError as e:
                 raise BiteError(f'failed parsing alias: {e}')
             if alias_cmd is not None:
                 break
