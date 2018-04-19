@@ -9,7 +9,7 @@ from dateutil.parser import parse as dateparse
 
 from . import RESTRequest, PagedRequest, req_cmd
 from ..cache import Cache
-from ..exceptions import RequestError
+from ..exceptions import RequestError, BiteError
 from ._jsonrest import JsonREST
 from ..objects import Item, Attachment, Comment
 
@@ -129,6 +129,24 @@ class _SearchRequest(LaunchpadPagedRequest, RESTRequest):
     for custom GET methods.
     """
 
+    # Map of allowed sorting input values to launchpad parameters determined by
+    # looking at available values on the web interface.
+    sorting_map = {
+        'importance': 'importance',
+        'status': 'status',
+        'info-type': 'information_type',
+        'id': 'id',
+        'title': 'title',
+        'target': 'targetname',
+        'milestone': 'milestone_name',
+        'modified': 'date_last_updated',
+        'assignee': 'assignee',
+        'creator': 'reporter',
+        'created': 'datecreated',
+        'tag': 'tag',
+        'heat': 'heat',
+    }
+
     def __init__(self, service, **kw):
         params, options = self.parse_params(service=service, **kw)
         if not params:
@@ -163,6 +181,24 @@ class _SearchRequest(LaunchpadPagedRequest, RESTRequest):
                 # launchpad is particular about the boolean values it receives
                 params[k] = str(v).lower()
                 options.append(f"{LaunchpadBugTask.attributes[k]}: {v}")
+            elif k == 'sort':
+                sorting_terms = []
+                for sort in v:
+                    if sort[0] == '-':
+                        key = sort[1:]
+                        inverse = '-'
+                    else:
+                        key = sort
+                        inverse = ''
+                    try:
+                        order_var = self.sorting_map[key]
+                    except KeyError:
+                        choices = ', '.join(sorted(self.sorting_map.keys()))
+                        raise BiteError(
+                            f'unable to sort by: {sort!r} (available choices: {choices}')
+                    sorting_terms.append(f'{inverse}{order_var}')
+                params['order_by'] = sorting_terms
+                options.append(f"Sort order: {', '.join(v)}")
 
         return params, options
 
