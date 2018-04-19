@@ -127,24 +127,30 @@ class PagedRequest(Request):
     """Keep requesting matching records until all relevant results are returned."""
 
     def __init__(self, *args, **kw):
+        self._offset_key = 'offset'
         super().__init__(*args, **kw)
-        self._count = 0
+        # total number of elements parsed
+        self._seen = 0
+        # total number of potential elements to request, some services don't
+        # return the number of matching elements so this is optional
+        # TODO: for services that return total number of matches, send async requests
+        self._total = None
 
     def send(self):
         while True:
             data = self.service.send(self)
-            count = 0
+            seen = 0
             for x in data:
-                count += 1
+                seen += 1
                 yield x
 
             # no more results exist, stop requesting them
-            if self.service.max_results is None or count < self.service.max_results:
+            if self.service.max_results is None or seen < self.service.max_results:
                 break
 
             # set offset and send new request
-            self._count += count
-            self.params['offset'] = self._count
+            self._seen += seen
+            self.params[self._offset_key] = self._seen
             self._finalized = False
 
 
