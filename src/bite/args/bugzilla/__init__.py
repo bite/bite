@@ -374,7 +374,7 @@ class Modify(args.Modify):
 
 
 @args.subcmd(Bugzilla4_4_Opts)
-class Search(args.Search):
+class Search(args.PagedSearch):
 
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)

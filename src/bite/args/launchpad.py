@@ -9,7 +9,7 @@ class LaunchpadOpts(args.ServiceOpts):
 
 
 @args.subcmd(LaunchpadOpts)
-class Search(args.Search):
+class Search(args.PagedSearch):
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
         # optional args

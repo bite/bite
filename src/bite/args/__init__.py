@@ -113,13 +113,18 @@ class Search(ReceiveSubcmd):
             'terms', nargs='*', metavar='TERM', action=parse_stdin,
             help=f"string(s) to search for in {kw['service'].item.type} summary/title")
 
+
+class PagedSearch(Search):
+
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
         # optional args
         self.opts.add_argument(
             '--limit', type=int,
-            help='Limit the number of records returned in a search')
+            help='limit the number of records returned in a search')
         self.opts.add_argument(
             '--offset', type=int,
-            help='Set the start position for a search')
+            help='set the start position for a search')
 
 
 class Get(ReceiveSubcmd):
