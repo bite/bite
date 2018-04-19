@@ -54,34 +54,30 @@ def write_lookup_config(python_base, install_prefix):
         os.chmod(path, 0o644)
         # write more dynamic file for wheel installs
         if install_prefix != os.path.abspath(sys.prefix):
-            f.write(textwrap.dedent("""\
+            f.write(textwrap.dedent(f"""\
                 import os.path as osp
                 import sys
 
                 INSTALL_PREFIX = osp.abspath(sys.prefix)
-                DATA_PATH = osp.join(INSTALL_PREFIX, {!r})
-                CONFIG_PATH = osp.join(INSTALL_PREFIX, {!r})
+                DATA_PATH = osp.join(INSTALL_PREFIX, {DATA_INSTALL_OFFSET!r})
+                CONFIG_PATH = osp.join(INSTALL_PREFIX, {CONFIG_INSTALL_OFFSET!r})
 
-                CLIENTS = {}
-                SERVICES = {}
-                SERVICE_OPTS = {}
-            """.format(
-                DATA_INSTALL_OFFSET, CONFIG_INSTALL_OFFSET,
-                clients, services, service_opts)))
+                CLIENTS = {clients}
+                SERVICES = {services}
+                SERVICE_OPTS = {service_opts}
+            """))
         else:
-            f.write(textwrap.dedent("""\
-                INSTALL_PREFIX = {!r}
-                DATA_PATH = {!r}
-                CONFIG_PATH = {!r}
+            data_path = os.path.join(install_prefix, DATA_INSTALL_OFFSET),
+            config_path = os.path.join(install_prefix, CONFIG_INSTALL_OFFSET),
+            f.write(textwrap.dedent(f"""\
+                INSTALL_PREFIX = {install_prefix!r}
+                DATA_PATH = {data_path!r}
+                CONFIG_PATH = {config_path!r}
 
-                CLIENTS = {!r}
-                SERVICES = {!r}
-                SERVICE_OPTS = {!r}
-            """.format(
-                install_prefix,
-                os.path.join(install_prefix, DATA_INSTALL_OFFSET),
-                os.path.join(install_prefix, CONFIG_INSTALL_OFFSET),
-                clients, services, service_opts)))
+                CLIENTS = {clients!r}
+                SERVICES = {services!r}
+                SERVICE_OPTS = {service_opts!r}
+            """))
 
             f.close()
             byte_compile([path], prefix=python_base)
