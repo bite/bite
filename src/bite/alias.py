@@ -116,16 +116,6 @@ def shell_split(string):
     return list(lex)
 
 
-#def inner_alias(args, section, inner_alias):
-#    # TODO: check for arguments
-#    try:
-#        alias = args.config[section]['alias'][inner_alias[1:]]
-#    except KeyError:
-#        raise RuntimeError('Unknown alias "{}"'.format(inner_alias[1:]))
-#    if alias_list[i][0] == '$':
-#        alias_list[i] = alias_list[i][1:]
-
-
 def get_alias(args, section, alias):
     value = args.config[section]['alias'][alias]
     if value[0] == '$':
@@ -172,16 +162,6 @@ def substitute_alias(aliases, unparsed_args, connection=None, service_name=None)
     alias_cmd = alias_cmd.strip()
 
     if alias_cmd[0] == '!':
-        #print(alias_cmd[0])
-        #if extra_cmds[0] == '-':
-        #    import codecs
-        #    sys.stdin = codecs.getreader('utf-8')(sys.stdin)
-        #    if len(extra_cmds) > 1:
-        #        extra_args = ' '.join(pipes.quote(s) for s in extra_cmds[1:])
-        #        extra_cmds = ['{} {}'.format(s.strip(), extra_args) for s in sys.stdin.readlines() if s.strip() != '']
-        #    else:
-        #        extra_cmds = [s.strip() for s in sys.stdin.readlines() if s.strip() != '']
-        #    sys.stdin = open('/dev/tty')
         run_shell_cmd(alias_cmd[1:] + ' ' + ' '.join(shlex.quote(s) for s in extra_cmds))
 
     params = shell_split(alias_cmd)
@@ -190,7 +170,6 @@ def substitute_alias(aliases, unparsed_args, connection=None, service_name=None)
 
 
 def run_shell_cmd(cmd):
-    #print(cmd)
     # TODO: handle failures, errors, and keyboard interrupts better
     p = subprocess.Popen(cmd, shell=True)
     p.communicate()
