@@ -159,9 +159,9 @@ class Roundup(Xmlrpc):
     _cache_cls = RoundupCache
 
     item = RoundupIssue
-    item_endpoint = '/issue'
+    item_endpoint = '/issue{id}'
     attachment = RoundupAttachment
-    attachment_endpoint = '/file'
+    attachment_endpoint = '/file{id}'
 
     def __init__(self, **kw):
         super().__init__(endpoint='/xmlrpc', **kw)

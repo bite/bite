@@ -43,9 +43,9 @@ class Bugzilla(Service):
     _cache_cls = BugzillaCache
 
     item = BugzillaBug
-    item_endpoint = '/show_bug.cgi?id='
+    item_endpoint = '/show_bug.cgi?id={id}'
     attachment = BugzillaAttachment
-    attachment_endpoint = '/attachment.cgi?id='
+    attachment_endpoint = '/attachment.cgi?id={id}'
 
     def __init__(self, max_results=None, *args, **kw):
         # most bugzilla instances default to 10k results per req
