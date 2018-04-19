@@ -121,7 +121,7 @@ class Item(object):
         elif name in self.attribute_aliases:
             return getattr(self, self.attribute_aliases[name])
         else:
-            raise AttributeError
+            raise AttributeError(f'missing field: {name}')
 
 
 class Change(object):
