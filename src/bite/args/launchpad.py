@@ -54,3 +54,23 @@ class Search(args.Search):
         attr.add_argument(
             '--has-cve', action='store_true',
             help='restrict by bugs that have CVEs')
+        attr.add_argument(
+            '--tags', action='csv',
+            help='search by bug tags',
+            docs="""
+                Search for bugs by tags.
+
+                Multiple tags can be provided using a comma-separated or
+                space-separated list. A string of comma-separated tags is
+                searched for any matches while a string of space-separated tags
+                is searched for all matches. Note that the string-separated
+                list must be surrounded with quotes.
+
+                In order to exclude tags use the '-' prefix, e.g. searching for
+                bugs with tags matching '-test' would return bugs that don't
+                have the 'test' tag.
+
+                To search for tag existence, use the '*' argument to find all
+                bugs with one or more tags. Conversely, use the '-*' argument
+                to find all bugs with no tags.
+            """)

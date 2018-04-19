@@ -199,6 +199,16 @@ class _SearchRequest(LaunchpadPagedRequest, RESTRequest):
                     sorting_terms.append(f'{inverse}{order_var}')
                 params['order_by'] = sorting_terms
                 options.append(f"Sort order: {', '.join(v)}")
+            elif k == 'tags':
+                tags = [x.lower() for x in v]
+                if len(tags) > 1:
+                    combine = 'Any'
+                else:
+                    tags = tags[0].split()
+                    combine = 'All'
+                params[k] = tags
+                params['tags_combinator'] = combine
+                options.append(f"{k.capitalize()}: {combine} tags matching: {', '.join(tags)}")
 
         return params, options
 
