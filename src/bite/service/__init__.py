@@ -8,7 +8,7 @@ from snakeoil.demandload import demandload
 from snakeoil.sequences import iflatten_instance
 
 from .. import __title__, __version__
-from ..cache import Cache, Auth
+from ..cache import Cache, Auth, Cookies
 from ..exceptions import RequestError, AuthError, BiteError
 from ..objects import Item, Attachment
 
@@ -284,6 +284,9 @@ class Service(object):
         self.cache = self._cache_cls(connection)
         self.auth = Auth(connection, path=auth_file, token=auth_token)
 
+        self.cookies = Cookies(connection)
+        self.cookies.load()
+
         # block when urllib3 connection pool is full
         s = requests.Session()
         a = requests.adapters.HTTPAdapter(pool_maxsize=self.concurrent, pool_block=True)
@@ -350,43 +353,64 @@ class Service(object):
         """
         if self._web_session is not None:
             return self._web_session
-
-        if login:
-            user, password = self.user, self.password
-            while not all((user, password)):
-                user, password = self.client.get_user_pass()
-        else:
-            user, password = None, None
-        self._web_session = self.WebSession(self, user, password)
+        self._web_session = self.WebSession(self, login)
         return self._web_session
 
     class WebSession(object):
         """Context manager for a requests session targeting the service's website."""
 
-        def __init__(self, service, user=None, password=None):
+        def __init__(self, service, login=True):
             self.service = service
-            # TODO: cache/reload cookies across runs?
-            self.session = requests.Session()
-            self.params = {}
-            self.authenticate = all((user, password))
+            self.authenticate = login
             self.authenticated = False
-            if self.authenticate:
-                self.add_params(user, password)
+            self.session = requests.Session()
+            self.session.cookies = self.service.cookies
+            self.params = {}
 
         def add_params(self, user, password):
             """Add login params to send to the service."""
+            raise NotImplementedError
+
+        def interactive_login(self, msg=None):
+            """Force an interactive login using user/password info."""
+            user, password = self.service.user, self.service.password
+            while not all((user, password)):
+                user, password = self.service.client.get_user_pass(msg)
+            self.add_params(user, password)
+
+        def logged_in(self, r):
+            """Check if we're logged in to the service."""
             raise NotImplementedError
 
         def login(self):
             """Login via the web UI for the service."""
             self.authenticated = True
 
-        def __enter__(self):
-            # pull site to set any required cookies
-            if not self.session.cookies:
-                self.session.get(self.service.webbase)
-            if not self.authenticated and self.authenticate:
+        def try_login(self, msg=None):
+            """Repeatedly try to login until successful."""
+            orig_cookies = list(self.session.cookies)
+            # Pull site to set any required cookies and check login status if
+            # cookies were set.
+            r = self.session.get(self.service.webbase)
+            if self.logged_in(r):
+                return True
+            # cookies are bad, force login and refresh them
+            if orig_cookies:
+                self.session.cookies.clear()
+                for x in r.cookies:
+                    self.session.cookies.set_cookie(x)
+            self.interactive_login(msg)
+            try:
                 self.login()
+            except AuthError as e:
+                self.try_login(str(e))
+
+        def __enter__(self):
+            # If we're not logged in and require it, perform a login sequence.
+            msg = None
+            if self.authenticate:
+                while not self.authenticated:
+                    self.try_login()
             return self.session
 
         def __exit__(self, *args):
@@ -395,6 +419,7 @@ class Service(object):
         def __del__(self):
             # close during removal instead of __exit__ so we can reuse the
             # context handler
+            self.session.cookies.save()
             self.session.close()
 
     def send(self, *reqs):

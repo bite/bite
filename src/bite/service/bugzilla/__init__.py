@@ -3,6 +3,7 @@ from urllib.parse import parse_qs, urlencode
 from dateutil.parser import parse as parsetime
 import lxml.html
 import requests
+from snakeoil.demandload import demandload
 from snakeoil.klass import steal_docs
 from snakeoil.sequences import namedtuple
 
@@ -10,6 +11,8 @@ from .objects import BugzillaBug, BugzillaAttachment
 from .. import Service
 from ...cache import Cache, csv2tuple
 from ...exceptions import RequestError, AuthError
+
+demandload('textwrap')
 
 
 class BugzillaError(RequestError):
@@ -108,6 +111,12 @@ class Bugzilla(Service):
                 'Bugzilla_password': password,
             })
 
+        def logged_in(self, r):
+            doc = lxml.html.fromstring(r.text)
+            login_form = doc.xpath('//input[@name="Bugzilla_login"]')
+            self.authenticated = not login_form
+            return self.authenticated
+
         def login(self):
             # extract auth token to bypass CSRF protection
             # https://bugzilla.mozilla.org/show_bug.cgi?id=713926
@@ -127,6 +136,12 @@ class Bugzilla(Service):
             doc = lxml.html.fromstring(r.text)
             login_form = doc.xpath('//input[@name="Bugzilla_login"]')
             if login_form:
+                # check for error message, e.g. account temporarily banned due
+                # to login failures
+                error_msg = doc.xpath('//div[@id="error_msg"]/text()')
+                if error_msg:
+                    error_msg = textwrap.dedent(error_msg[0]).strip()
+                    raise AuthError(error_msg)
                 raise AuthError('bad username or password')
 
             super().login()

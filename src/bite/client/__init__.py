@@ -91,16 +91,16 @@ class Cli(Client):
 
         self.log(f'Service: {self.service}')
 
-    def get_user_pass(self):
-        """Request user/password info from the user if not available."""
+    def get_user_pass(self, msg=None):
+        """Request user/password info from the user."""
         user = self.service.user
         password = self.service.password
+        if msg is not None:
+            self.log(msg)
         if user is None:
-            self.log('No username given.')
             user = get_input('Username: ')
         if password is None:
             if not self.passwordcmd:
-                self.log('No password given.')
                 password = getpass.getpass()
             else:
                 process = subprocess.Popen(

@@ -1,4 +1,5 @@
 import configparser
+from http.cookiejar import LWPCookieJar
 import os
 import stat
 
@@ -202,3 +203,28 @@ class Auth(object):
 
     def __len__(self):
         return len(self.token)
+
+
+class Cookies(LWPCookieJar):
+
+    def __init__(self, connection):
+        super().__init__()
+        if connection is not None:
+            self._path = os.path.join(const.USER_CACHE_PATH, 'cookies', connection)
+        else:
+            self._path = None
+
+    def save(self, filename=None, *args, **kw):
+        if self._path is not None:
+            try:
+                os.makedirs(os.path.dirname(self._path))
+            except FileExistsError:
+                pass
+        super().save(filename=self._path, *args, **kw)
+        os.chmod(self._path, stat.S_IREAD | stat.S_IWRITE)
+
+    def load(self, filename=None, *args, **kw):
+        try:
+            super().load(filename=self._path, *args, **kw)
+        except FileNotFoundError:
+            pass
