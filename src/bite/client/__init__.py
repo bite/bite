@@ -141,7 +141,7 @@ class Cli(Client):
         def _item_urls(ids):
             if self.service.item_endpoint is None:
                 raise BiteError(f"no web endpoint defined for {self.service.item.type}s")
-            item_url = self.service.base.rstrip('/') + self.service.item_endpoint
+            item_url = self.service.webbase.rstrip('/') + self.service.item_endpoint
             return (f"{item_url}{id}" for id in ids)
 
         if browser:
@@ -189,7 +189,7 @@ class Cli(Client):
         def _attachment_urls(ids):
             if self.service.attachment_endpoint is None:
                 raise BiteError("no web endpoint defined for attachments")
-            attachment_url = self.service.base.rstrip('/') + self.service.attachment_endpoint
+            attachment_url = self.service.webbase.rstrip('/') + self.service.attachment_endpoint
             return (f"{attachment_url}{id}" for id in ids)
 
         def _output_urls(ids):
