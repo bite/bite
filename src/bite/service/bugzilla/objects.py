@@ -271,9 +271,9 @@ class BugzillaEvent(Change):
                 if change['removed'] and change['added']:
                     changes = f"{change['removed']} -> {change['added']}"
                 elif change['removed']:
-                    changes = ', '.join(['-' + c for c in change['removed'].split(', ')])
+                    changes = ', '.join([f'-{c}' for c in change['removed'].split(', ')])
                 elif change['added']:
-                    changes = ', '.join(['+' + c for c in change['added'].split(', ')])
+                    changes = ', '.join([f'+{c}' for c in change['added'].split(', ')])
                 lines.append(f'{field}: {changes}')
 
         return '\n'.join(lines)

@@ -396,11 +396,11 @@ class ModifyRequest(Request):
 
         if options_log:
             prefix = '--- Modifying fields '
-            options_log.insert(0, prefix + '-' * (const.COLUMNS - len(prefix)))
+            options_log.insert(0, f'{prefix}-' * (const.COLUMNS - len(prefix)))
 
         if 'comment' in params:
             prefix = '--- Adding comment '
-            options_log.append(prefix + '-' * (const.COLUMNS - len(prefix)))
+            options_log.append(f'{prefix}-' * (const.COLUMNS - len(prefix)))
             options_log.append(params['comment']['body'])
 
         options_log.append('-' * const.COLUMNS)
@@ -572,8 +572,8 @@ class GetRequest(Request):
 
         reqs = [service.GetItemRequest(ids=ids)]
         for call in ('attachments', 'comments', 'history'):
-            if locals()['get_' + call]:
-                reqs.append(getattr(service, call.capitalize() + 'Request')(ids=ids))
+            if locals()[f'get_{call}']:
+                reqs.append(getattr(service, f'{call.capitalize()}Request')(ids=ids))
             else:
                 reqs.append(NullRequest(generator=True))
 

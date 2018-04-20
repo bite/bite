@@ -19,7 +19,7 @@ class BugzillaError(RequestError):
     """Bugzilla service specific error."""
 
     def __init__(self, msg, code=None, text=None):
-        msg = 'Bugzilla error: ' + msg
+        msg = f'Bugzilla error: {msg}'
         super().__init__(msg, code, text)
 
 

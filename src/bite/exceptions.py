@@ -16,7 +16,7 @@ class BiteError(Exception):
     def message(self):
         if not self.text:
             return self.msg
-        return ' -- '.join((self.msg, self.text))
+        return f'{self.msg} -- {self.text}'
 
 
 class RequestError(BiteError):
@@ -26,9 +26,9 @@ class RequestError(BiteError):
     def message(self):
         if not self.text:
             return self.msg
-        doc = lxml.html.document_fromstring(self.text)
+        doc = lxml.html.fromstring(self.text)
         text = doc.text_content().strip()
-        return self.msg + ' -- (see server response below)\n\n' + text
+        return f"{self.msg} -- (see server response below)\n\n{text}"
 
 
 class ParsingError(BiteError):
