@@ -83,12 +83,16 @@ def block_edit(comment, comment_from=''):
         return ''
 
 
-def get_input(prompt=''):
+def get_input(prompt='', strip=True):
     if sys.stdout.isatty():
-        return input(prompt)
+        data = input(prompt)
     else:
         print(prompt, end='', file=sys.stderr)
-        return input()
+        data = input()
+
+    if strip:
+        data = data.strip()
+    return data
 
 
 def confirm(prompt='Confirm', default=False):
