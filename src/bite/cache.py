@@ -124,6 +124,9 @@ class Cache(object):
     def has_key(self, k):
         return k in self._settings
 
+    def get(self, key):
+        return self._settings.get(key)
+
     def keys(self):
         return self._settings.keys()
 

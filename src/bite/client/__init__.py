@@ -302,8 +302,8 @@ class Cli(Client):
 
         if dry_run: return
         data = request.send()
-        print(data)
-        # print(*lines, sep='\n')
+        lines = self._render_create(data, **kw)
+        print(*lines, sep='\n')
 
     def search(self, dry_run=False, **kw):
         """Search for items on the service."""
@@ -383,6 +383,9 @@ class Cli(Client):
 
     def _render_changes(self, data, **kw):
         raise NotImplementedError
+
+    def _render_create(self, data, **kw):
+        yield f"Created {self.service.item.type} #{data}"
 
     def _render_search(self, data, fields=None, output=None, **kw):
         """Render search data for output."""

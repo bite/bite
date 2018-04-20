@@ -510,35 +510,60 @@ class CreateRequest(Request):
         :returns: ID of the newly created bug
         :rtype: int
         """
-        params = {}
-        params['product'] = product
-        params['component'] = component
-        params['version'] = version
-        params['summary'] = summary
-        if description is not None:
-            params['description'] = description
-        if op_sys is not None:
+        params = {
+            'product': product,
+            'component': component,
+            'version': version,
+            'summary': summary,
+        }
+        options_log = [
+            '=' * const.COLUMNS,
+            f"Product: {product}",
+            f"Component: {component}",
+            f"Version: {version}",
+            f"Title: {summary}",
+        ]
+
+        if op_sys:
             params['op_sys'] = op_sys
-        if platform is not None:
+            options_log.append(f"OS: {op_sys}")
+        if platform:
             params['platform'] = platform
-        if priority is not None:
+            options_log.append(f"Platform: {platform}")
+        if priority:
             params['priority'] = priority
-        if severity is not None:
+            options_log.append(f"Priority: {priority}")
+        if severity:
             params['severity'] = severity
-        if alias is not None:
+            options_log.append(f"Severity: {severity}")
+        if alias:
             params['alias'] = alias
-        if assigned_to is not None:
-            params['assigned_to'] = assigned_to
-        if cc is not None:
-            params['cc'] = cc
-        if target_milestone is not None:
+            options_log.append(f"Alias: {alias}")
+        if assigned_to:
+            params['assigned_to'] = list(map(service._resuffix, assigned_to))
+            options_log.append(f"Assigned to: {service._desuffix(assigned_to)}")
+        if cc:
+            params['cc'] = list(map(service._resuffix, cc))
+            options_log.append(f"CC: {', '.join(map(service._desuffix, cc))}")
+        if target_milestone:
             params['target_milestone'] = target_milestone
-        if groups is not None:
+            options_log.append(f"Milestone: {target_milestone}")
+        if groups:
             params['groups'] = groups
-        if status is not None:
+            options_log.append(f"Groups: {', '.join(groups)}")
+        if status:
             params['status'] = status
+            options_log.append(f"Status: {status}")
+
+        if description:
+            params['description'] = description
+            msg = 'Description'
+            options_log.append(f'{"-" * 3} {msg} {"-" * (const.COLUMNS - len(msg) - 5)}')
+            options_log.append(description)
+        options_log.append('=' * const.COLUMNS)
 
         super().__init__(service=service, params=params, **kw)
+        self.options = options_log
 
     def parse(self, data):
         return data['id']

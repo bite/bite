@@ -23,190 +23,107 @@ class Bugzilla(Cli):
         super().attach(*args, **kw)
 
     def create(self, *args, **kw):
+        # TODO: check if cache exists, if it doesn't pull a copy
         # load description from file or stdin
-        if kw['description_from']:
+        description_from = kw.get('description_from')
+        if description_from:
             try:
-                if kw['description_from'] == '-':
+                if description_from == '-':
                     kw['description'] = sys.stdin.read()
                 else:
-                    kw['description'] = open(kw['description_from'], 'r').read()
+                    with open(description_from, 'r') as f:
+                        kw['description'] = f.read()
             except IOError as e:
-                raise BiteError(f"Unable to read file: {kw['description_from']}: {e}")
+                raise BiteError(f"Unable to read file: {description_from}: {e}")
 
-        if kw.get('batch', False):
+        if not kw.get('batch'):
             self.log('Press Ctrl+C at any time to abort.')
 
-            if not kw['product']:
-                while not kw['product'] or len(kw['product']) < 1:
-                    kw['product'] = get_input('Enter product: ')
-            else:
-                self.log(f"Enter product: {kw['product']}")
+            while not kw.get('summary') or not kw['summary']:
+                kw['summary'] = get_input('Title: ')
 
-            if not kw['component']:
-                while not kw['component'] or len(kw['component']) < 1:
-                    kw['component'] = get_input('Enter component: ')
-            else:
-                self.log(f"Enter component: {kw['component']}")
+            if not kw.get('description'):
+                data = block_edit('Bug description: ').strip()
+                if data:
+                    kw['description'] = data
 
-            if not kw['version']:
-                # assume default product has the lowest ID
-                default_product = self.service.cache['products'][0]
-                line = get_input(f"Enter version (default: {default_product})")
-                if len(line):
-                    kw['version'] = line
+            while not kw.get('product') or not kw['product']:
+                kw['product'] = get_input('Product: ')
+
+            while not kw.get('component') or not kw['component']:
+                kw['component'] = get_input('Component: ')
+
+            if not kw.get('version'):
+                cached_versions = self.service.cache.get('versions')
+                default_str = ''
+                if cached_versions:
+                    # assume default version has the lowest ID
+                    default_version = cached_versions[0]
+                    default_str = f' (default: {default_version})'
+                version = get_input(f"Version{default_str}: ")
+                if version:
+                    kw['version'] = version
                 else:
-                    kw['version'] = default_product
-            else:
-                self.log(f"Enter version: {kw['version']}")
+                    kw['version'] = default_version
 
-            if not kw['summary']:
-                while not kw['summary'] or len(kw['summary']) < 1:
-                    kw['summary'] = get_input('Enter title: ')
-            else:
-                self.log(f"Enter title: {kw['summary']}")
+            if not kw.get('op_sys'):
+                data = get_input('OS: ')
+                if data:
+                    kw['op_sys'] = data
 
-            if not kw['description']:
-                line = block_edit('Enter bug description: ')
-                if len(line):
-                    kw['description'] = line
-            else:
-                self.log(f"Enter bug description: {kw['description']}")
+            if not kw.get('platform'):
+                data = get_input('Hardware: ')
+                if data:
+                    kw['platform'] = data
 
-            if not kw['op_sys']:
-                op_sys_msg = 'Enter operating system where this bug occurs: '
-                line = get_input(op_sys_msg)
-                if len(line):
-                    kw['op_sys'] = line
-            else:
-                self.log(f"Enter operating system: {kw['op_sys']}")
+            if not kw.get('priority'):
+                data = get_input('Priority (optional): ')
+                if data:
+                    kw['priority'] = data
 
-            if not kw['platform']:
-                platform_msg = 'Enter hardware platform where this bug occurs: '
-                line = get_input(platform_msg)
-                if len(line):
-                    kw['platform'] = line
-            else:
-                self.log(f"Enter hardware platform: {kw['platform']}")
+            if not kw.get('severity'):
+                data = get_input('Severity (optional): ')
+                if data:
+                    kw['severity'] = data
 
-            if kw['priority'] is None:
-                priority_msg = 'Enter priority (e.g. normal) (optional): '
-                line = get_input(priority_msg)
-                if len(line):
-                    kw['priority'] = line
-            else:
-                self.log(f"Enter priority (optional): {kw['priority']}")
+            if not kw.get('target_milestone'):
+                data = get_input('Target milestone (optional): ')
+                if data:
+                    kw['target_milestone'] = data
 
-            if kw['severity'] is None:
-                severity_msg = 'Enter severity (e.g. normal) (optional): '
-                line = get_input(severity_msg)
-                if len(line):
-                    kw['severity'] = line
-            else:
-                self.log(f"Enter severity (optional): {kw['severity']}")
+            if not kw.get('alias'):
+                data = get_input('Alias (optional): ')
+                if data:
+                    kw['alias'] = data
 
-            if kw['target_milestone'] is None:
-                milestone_msg = 'Enter target milestone (optional): '
-                line = get_input(milestone_msg)
-                if len(line):
-                    kw['target_milestone'] = line
-            else:
-                self.log(f"Enter target milestone (optional): {kw['target_milestone']}")
+            if not kw.get('assigned_to'):
+                data = get_input('Assignee (e.g. dev@email.com) (optional): ')
+                if data:
+                    kw['assigned_to'] = data
 
-            if kw['alias'] is None:
-                alias_msg = 'Enter alias (optional): '
-                line = get_input(alias_msg)
-                if len(line):
-                    kw['alias'] = line
-            else:
-                self.log(f"Enter alias (optional): {kw['alias']}")
+            if not kw.get('status'):
+                data = get_input('Status (optional): ')
+                if data:
+                    kw['status'] = data
 
-            if kw['assigned_to'] is None:
-                assign_msg = 'Enter assignee (e.g. dev@email.com) (optional): '
-                line = get_input(assign_msg)
-                if len(line):
-                    kw['assigned_to'] = line
-            else:
-                self.log(f"Enter assignee (optional): {kw['assigned_to']}")
+            if not kw.get('cc'):
+                data = get_input('CCs (comma separated) (optional): ')
+                if data:
+                    kw['cc'] = data.split(',')
 
-            if kw['status'] is None:
-                status_msg = 'Enter status (optional): '
-                line = get_input(status_msg)
-                if len(line):
-                    kw['status'] = line
-            else:
-                self.log(f"Enter status (optional): {kw['status']}")
-
-            if kw['cc'] is None:
-                cc_msg = 'Enter CCs (comma separated) (optional): '
-                line = get_input(cc_msg)
-                if len(line):
-                    kw['cc'] = line.split(',')
-            else:
-                self.log(f"Enter CCs (optional): {kw['cc']}")
-
-            # the API doesn't support setting keywords while creating a bug
-            #if kw['keywords'] is None:
-            #    keywords_msg = 'Enter keywords (comma separated) (optional): '
-            #    line = get_input(keywords_msg)
-            #    if len(line):
-            #        kw['keywords'] = line.split(',')
-            #else:
-            #    self.log('Enter keywords (optional): {}'.format(', '.join(kw['keywords'])))
-
-            if kw['groups'] is None:
-                groups_msg = 'Enter groups (comma separated) (optional): '
-                line = get_input(groups_msg)
-                if len(line):
-                    kw['groups'] = line.split(',')
-            else:
-                self.log(f"Enter groups (optional): {kw['groups']}")
-
-            if kw['append_command'] is None:
-                kw['append_command'] = get_input('Append the output of the following command (leave blank for none): ')
-            else:
-                self.log(f"Append command (optional): {kw['append_command']}")
+            if not kw.get('groups'):
+                data = get_input('Groups (comma separated) (optional): ')
+                if data:
+                    kw['groups'] = data.split(',')
 
         # append the output from append_command to the description
-        if kw['append_command'] is not None and kw['append_command'] != '':
-            append_command_output = subprocess.check_output(kw['append_command'])
-            kw['description'] = kw['description'] + '\n\n' + '$ ' + kw['append_command'] + '\n' + append_command_output
-
-        options_log = [
-            '=' * const.COLUMNS,
-            f"Product: {kw['product']}",
-            f"Component: {kw['component']}",
-            f"Version: {kw['version']}",
-            f"Title: {kw['summary']}",
-            f"OS: {kw['op_sys']}",
-            f"Platform: {kw['platform']}",
-            f"Priority: {kw['priority']}",
-            f"Severity: {kw['severity']}",
-        ]
-        if kw['target_milestone'] is not None:
-            options_log.append(f"Milestone: {kw['target_milestone']}")
-        if kw['alias'] is not None:
-            options_log.append(f"Alias: {kw['alias']}")
-        if kw['assigned_to'] is not None:
-            options_log.append(f"Assigned to: {self.service._desuffix(kw['assigned_to'])}")
-            # add potentially missing domain suffix
-            kw['assigned_to'] = self.service._resuffix(kw['assigned_to'])
-        if kw['status'] is not None:
-            options_log.append(f"Status: {kw['status']}")
-        if kw['cc'] is not None:
-            options_log.append(f"CC: {', '.join(map(self.service._desuffix, kw['cc']))}")
-            # add potentially missing domain suffixes
-            kw['cc'] = list(map(self.service._resuffix, kw['cc']))
-        #if kw['keywords'] is not None:
-        #    options_log.append('{:<12}: {}'.format('Keywords', ', '.join(kw['keywords'])))
-        if kw['groups'] is not None:
-            options_log.append(f"Groups: {', '.join(kw['groups'])}")
-        options_log.append(self._header('-', 'Description'))
-        if kw['description'] is not None:
-            # interpret backslash escapes
-            kw['description'] = kw['description'].decode('string_escape')
-            options_log.append(kw['description'])
-        options_log.append('=' * const.COLUMNS)
-        kw['options_log'] = options_log
+        append_command = kw.get('append_command')
+        if append_command:
+            try:
+                append_command_output = subprocess.check_output(append_command).strip()
+                kw['description'] = kw['description'] + '\n\n' + '$ ' + append_command + '\n' + append_command_output
+            except (subprocess.CalledProcessError, FileNotFoundError) as e:
+                self.log(f'Command failed: {str(e)}')
 
         super().create(*args, **kw)
 
