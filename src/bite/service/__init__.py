@@ -419,7 +419,8 @@ class Service(object):
         def __del__(self):
             # close during removal instead of __exit__ so we can reuse the
             # context handler
-            self.session.cookies.save()
+            if self.authenticated:
+                self.session.cookies.save()
             self.session.close()
 
     def send(self, *reqs):
