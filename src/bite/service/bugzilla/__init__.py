@@ -164,8 +164,9 @@ class Bugzilla(Service):
                 # assume the auth token has expired
                 raise AuthError(msg, expired=True)
         # 102: bug access or query denied due to insufficient permissions
+        # 300: invalid login or password
         # 410: login required to perform this request
-        elif code in (102, 410):
+        elif code in (102, 300, 410):
             raise AuthError(msg=msg)
         raise BugzillaError(msg=msg, code=code)
 
