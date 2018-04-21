@@ -1,4 +1,5 @@
 from urllib.parse import parse_qs, urlencode
+import re
 
 from dateutil.parser import parse as parsetime
 import lxml.html
@@ -141,7 +142,10 @@ class Bugzilla(Service):
                 error_msg = doc.xpath('//div[@id="error_msg"]/text()')
                 if error_msg:
                     error_msg = textwrap.dedent(error_msg[0]).strip()
-                    raise AuthError(error_msg)
+                    # check for disabled/locked accounts
+                    if re.match(r'.+ locked out .+', error_msg):
+                        raise BugzillaError(f'account locked\n{error_msg}')
+                    raise AuthError(f'login failed\n{error_msg}')
                 raise AuthError('bad username or password')
 
             super().login()
