@@ -47,8 +47,12 @@ def login_required(func):
     """Decorator that forces authentication to be enabled."""
     @wraps(func)
     def wrapper(self, *args, **kw):
-        self.login()
-        return func(self, *args, **kw)
+        while True:
+            try:
+                self.login()
+                return func(self, *args, **kw)
+            except AuthError as e:
+                continue
     return wrapper
 
 
