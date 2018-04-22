@@ -208,6 +208,10 @@ class _SearchRequest(PagedRequest, RESTRequest):
                 # launchpad is particular about the boolean values it receives
                 params[k] = str(v).lower()
                 options.append(f"{LaunchpadBugTask.attributes[k]}: {v}")
+            elif k == 'omit_duplicates':
+                # launchpad is particular about the boolean values it receives
+                params[k] = str(v).lower()
+                options.append(f"Show duplicates: {v}")
             elif k == 'importance':
                 importances = []
                 for importance in v:

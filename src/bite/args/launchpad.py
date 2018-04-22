@@ -57,6 +57,9 @@ class Search(args.PagedSearch):
             action=parse_stdin,
             help='restrict by status (one or more)')
         attr.add_argument(
+            '--omit-duplicates', action='store_true',
+            help='hide bugs marked as duplicates (shown by default)')
+        attr.add_argument(
             '--has-patch', action='store_true',
             help='restrict by bugs that have patches')
         attr.add_argument(
