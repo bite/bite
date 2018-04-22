@@ -88,3 +88,8 @@ class Search(args.PagedSearch):
                 bugs with one or more tags. Conversely, use the '-*' argument
                 to find all bugs with no tags.
             """)
+
+
+@args.subcmd(LaunchpadOpts)
+class Get(args.Get):
+    pass

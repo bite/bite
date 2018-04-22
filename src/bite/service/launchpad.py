@@ -7,11 +7,11 @@ API docs:
 
 from dateutil.parser import parse as dateparse
 
-from . import RESTRequest, PagedRequest, req_cmd
+from . import RESTRequest, PagedRequest, Request, NullRequest, req_cmd, generator
 from ..cache import Cache
 from ..exceptions import RequestError, BiteError
 from ._jsonrest import JsonREST
-from ..objects import Item, Attachment, Comment
+from ..objects import Item, Attachment, Comment, Change
 
 
 class LaunchpadError(RequestError):
@@ -22,11 +22,6 @@ class LaunchpadError(RequestError):
 
 
 class LaunchpadBug(Item):
-
-    type = 'bug'
-
-
-class LaunchpadBugTask(Item):
 
     attributes = {
         'owner': 'Assignee',
@@ -43,42 +38,59 @@ class LaunchpadBugTask(Item):
 
     attribute_aliases = {
         'created': 'date_created',
+        'modified': 'date_last_updated',
     }
 
     type = 'bug'
 
-    def __init__(self, service, comments=None, attachments=None, **kw):
-        self.service = service
+    def __init__(self, service, **kw):
+        # Bug task objects are different from bug objects but both need to be
+        # combined for full bug info. Searches return collections of bug tasks,
+        # but performing 'get' actions needs to combine both bug and bug task
+        # objects.
+        if 'bug_link' in kw:
+            bug_task = True
+        else:
+            bug_task = False
+
         for k, v in kw.items():
-            if k in ('date_created',):
+            if k in ('date_created', 'date_last_updated'):
                 setattr(self, k, dateparse(v))
             elif k == 'owner_link':
                 setattr(self, 'owner', v[len(service.base) + 2:])
-            elif k == 'bug_link':
+            elif bug_task and k == 'bug_link':
                 setattr(self, 'id', v.rsplit('/', 1)[1])
-            elif k == 'title':
+            elif bug_task and k == 'title':
                 setattr(self, k, v.split(': ', 1)[1].strip('"'))
             else:
                 setattr(self, k, v)
 
-        self.attachments = attachments if attachments is not None else []
-        self.comments = comments if comments is not None else []
-
     def __str__(self):
         lines = []
-        print_fields = [
+        print_fields = (
             ('title', 'Title'),
-            ('date_created', 'Created'),
-        ]
+            ('id', 'ID'),
+            ('created', 'Reported'),
+            ('modified', 'Updated'),
+        )
 
         for field, title in print_fields:
             value = getattr(self, field)
             if value is None:
                 continue
-            lines.append('{:<12}: {}'.format(title, value))
+
+            if field in ('changes', 'comments', 'attachments'):
+                value = len(value)
+
+            # Initial comment is the bug description
+            if field == 'comments': value -= 1
+
+            if isinstance(value, list):
+                value = ', '.join(map(str, value))
+
+            lines.append(f'{title:<12}: {value}')
 
         return '\n'.join(lines)
-
 
 
 class LaunchpadComment(Comment):
@@ -86,6 +98,18 @@ class LaunchpadComment(Comment):
 
 
 class LaunchpadAttachment(Attachment):
+
+    def __init__(self, data_link, self_link, message_link, title, **kw):
+        super().__init__(id=self_link.rsplit('/', 1)[1], filename=title)
+        self.comment = message_link.rsplit('/', 1)[1]
+        self.data_link = data_link
+
+    def read(self):
+        # need to pull data from the data_link attr here
+        raise NotImplementedError
+
+
+class LaunchpadEvent(Change):
     pass
 
 
@@ -103,15 +127,15 @@ class Launchpad(JsonREST):
 
     item = LaunchpadBug
     item_endpoint = '/+bug/{id}'
-    #attachment = LaunchpadAttachment
+    attachment = LaunchpadAttachment
     # attachment_endpoint = '/file'
 
     def __init__(self, base, **kw):
         # launchpad supports up to 300, but often times out for higher values
         kw['max_results'] = 100
         project = base.rstrip('/').rsplit('/', 1)[1]
-        api_base = f"https://api.launchpad.net/1.0"
-        super().__init__(endpoint=f"/{project}", base=api_base, **kw)
+        self._api_base = f"https://api.launchpad.net/1.0"
+        super().__init__(endpoint=f"/{project}", base=self._api_base, **kw)
         self.webbase = base
 
 
@@ -202,14 +226,14 @@ class _SearchRequest(PagedRequest, RESTRequest):
                 # query to find people first which would solve the validation
                 # issue as well.
                 params[k] = f"{service.base}/~{v}"
-                options.append(f"{LaunchpadBugTask.attributes[k]}: {v}")
+                options.append(f"{service.item.attributes[k]}: {v}")
             elif k in ('created_since', 'modified_since'):
                 params[k] = v.isoformat()
-                options.append(f'{LaunchpadBugTask.attributes[k]}: {v} (since {v!r} UTC)')
+                options.append(f'{service.item.attributes[k]}: {v} (since {v!r} UTC)')
             elif k in ('has_cve', 'has_patch'):
                 # launchpad is particular about the boolean values it receives
                 params[k] = str(v).lower()
-                options.append(f"{LaunchpadBugTask.attributes[k]}: {v}")
+                options.append(f"{service.item.attributes[k]}: {v}")
             elif k == 'omit_duplicates':
                 # launchpad is particular about the boolean values it receives
                 params[k] = str(v).lower()
@@ -278,9 +302,127 @@ class _SearchRequest(PagedRequest, RESTRequest):
             self._total = data['total_size']
         bugs = data['entries']
         for bug in bugs:
-            yield LaunchpadBugTask(self.service, **bug)
+            yield self.service.item(self.service, **bug)
 
     def handle_exception(self, e):
         if e.code == 400:
             raise LaunchpadError(msg=e.text, code=e.code)
         raise e
+
+
+@req_cmd(Launchpad)
+class _GetItemRequest(Request):
+    """Construct a bug request."""
+
+    def __init__(self, ids, service, **kw):
+        if ids is None:
+            raise ValueError(f'No {service.item.type} specified')
+
+        params = {}
+        options_log = []
+
+        reqs = []
+        for i in ids:
+            endpoint = f'{service._api_base}/bugs/{i}'
+            reqs.append(RESTRequest(
+                service=service, endpoint=endpoint, params=params))
+
+        super().__init__(service=service, reqs=reqs)
+        self.ids = ids
+        self.options = options_log
+
+    def parse(self, data):
+        # TODO: hack, rework the http send parsing rewapper to be more
+        # intelligent about unwrapping responses
+        if len(self.ids) == 1:
+            data = [data]
+        for i, bug in enumerate(data):
+            yield self.service.item(service=self.service, **bug)
+
+
+@req_cmd(Launchpad, 'comments')
+class _CommentsRequest(Request):
+    """Construct a comments request."""
+
+    def __init__(self, ids=None, created=None, service=None, **kw):
+        if ids is None:
+            raise ValueError(f'No {service.item.type} specified')
+
+        params = {}
+        options_log = []
+
+        reqs = []
+        for i in ids:
+            endpoint = f'{service._api_base}/bugs/{i}/messages'
+            reqs.append(RESTRequest(
+                service=service, endpoint=endpoint, params=params))
+
+        super().__init__(service=service, reqs=reqs)
+        self.ids = ids
+        self.options = options_log
+
+    @generator
+    def parse(self, data):
+        for comments in data:
+            comments = comments['entries']
+            yield [LaunchpadComment(
+                id=c['self_link'][len(self.service.base) + 1:],
+                count=i, text=c['content'],
+                date=dateparse(c['date_created']),
+                creator=c['owner_link'][len(self.service.base) + 2:])
+                for i, c in enumerate(comments)]
+
+
+@req_cmd(Launchpad, 'attachments')
+class _AttachmentsRequest(Request):
+    """Construct an attachments request."""
+
+    def __init__(self, service, ids=None, get_data=False, *args, **kw):
+        if ids is None:
+            raise ValueError(f'No {service.item.type} specified')
+
+        params = {}
+        options_log = []
+
+        reqs = []
+        for i in ids:
+            endpoint = f'{service._api_base}/bugs/{i}/attachments'
+            reqs.append(RESTRequest(
+                service=service, endpoint=endpoint, params=params))
+
+        super().__init__(service=service, reqs=reqs)
+        self.ids = ids
+        self.options = options_log
+
+    @generator
+    def parse(self, data):
+        for attachments in data:
+            attachments = attachments['entries']
+            yield [self.service.attachment(**a) for a in attachments]
+
+
+@req_cmd(Launchpad, 'get')
+class _GetRequest(Request):
+    """Construct requests to retrieve all known data for given bug IDs."""
+
+    def __init__(self, ids, service, get_comments=False, get_attachments=False,
+                 get_changes=False, *args, **kw):
+        if not ids:
+            raise ValueError('No bug ID(s) specified')
+
+        reqs = [service.GetItemRequest(ids=ids)]
+        for call in ('attachments', 'comments', 'changes'):
+            if locals()[f'get_{call}']:
+                reqs.append(getattr(service, f'{call.capitalize()}Request')(ids=ids))
+            else:
+                reqs.append(NullRequest(generator=True))
+
+        super().__init__(service=service, reqs=reqs)
+
+    def parse(self, data):
+        bugs, attachments, comments, changes = data
+        for bug in bugs:
+            bug.comments = next(comments)
+            bug.attachments = next(attachments)
+            bug.changes = next(changes)
+            yield bug
