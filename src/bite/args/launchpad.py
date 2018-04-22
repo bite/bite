@@ -50,6 +50,9 @@ class Search(args.PagedSearch):
             help='bugs modified at this time or later')
         attr = self.parser.add_argument_group('Attribute related')
         attr.add_argument(
+            '-i', '--importance', action='csv',
+            help='restrict by importance (one or more)')
+        attr.add_argument(
             '-s', '--status', type=string_list,
             action=parse_stdin,
             help='restrict by status (one or more)')

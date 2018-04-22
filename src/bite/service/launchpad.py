@@ -161,6 +161,19 @@ class _SearchRequest(PagedRequest, RESTRequest):
         'incomplete-noresponse': 'Incomplete (without response)',
     }
 
+    # Map of allowed importance input values to launchpad parameters determined by
+    # submitting an invalid value which returns an error message listing the
+    # valid choices.
+    importance_map = {
+        'unknown': 'Unknown',
+        'undecided': 'Undecided',
+        'low': 'Low',
+        'medium': "Medium",
+        'high': 'High',
+        'critical': 'Critical',
+        'wishlist': 'Wishlist',
+    }
+
     def __init__(self, service, **kw):
         params, options = self.parse_params(service=service, **kw)
         if not params:
@@ -195,6 +208,18 @@ class _SearchRequest(PagedRequest, RESTRequest):
                 # launchpad is particular about the boolean values it receives
                 params[k] = str(v).lower()
                 options.append(f"{LaunchpadBugTask.attributes[k]}: {v}")
+            elif k == 'importance':
+                importances = []
+                for importance in v:
+                    try:
+                        importance_var = self.importance_map[importance]
+                    except KeyError:
+                        choices = ', '.join(sorted(self.importance_map.keys()))
+                        raise BiteError(
+                            f'invalid importance: {importance!r} (available choices: {choices}')
+                    importances.append(importance_var)
+                params[k] = importances
+                options.append(f"{k.capitalize()}: {', '.join(v)}")
             elif k == 'status':
                 statuses = []
                 for status in v:
