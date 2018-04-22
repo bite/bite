@@ -53,6 +53,9 @@ class Search(args.PagedSearch):
             '-i', '--importance', action='csv',
             help='restrict by importance (one or more)')
         attr.add_argument(
+            '-M', '--milestone',
+            help='restrict by milestone')
+        attr.add_argument(
             '-s', '--status', type=string_list,
             action=parse_stdin,
             help='restrict by status (one or more)')

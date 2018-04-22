@@ -89,6 +89,8 @@ class LaunchpadAttachment(Attachment):
     pass
 
 
+# TODO: cache project milestones
+# (e.g. list URI https://api.launchpad.net/1.0/ubuntu/all_milestones)
 class LaunchpadCache(Cache):
     pass
 
@@ -212,6 +214,10 @@ class _SearchRequest(PagedRequest, RESTRequest):
                 # launchpad is particular about the boolean values it receives
                 params[k] = str(v).lower()
                 options.append(f"Show duplicates: {v}")
+            elif k == 'milestone':
+                # TODO: verify milestone against cached list
+                params[k] = f"{service._base}/+milestone/{v}"
+                options.append(f"{k.capitalize()}: {v}")
             elif k == 'importance':
                 importances = []
                 for importance in v:
