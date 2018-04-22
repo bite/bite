@@ -179,11 +179,15 @@ class RPCRequest(Request):
 class RESTRequest(Request):
     """Construct a REST request."""
 
-    def __init__(self, endpoint, method='GET', **kw):
+    def __init__(self, service, endpoint=None, method='GET', **kw):
         self.method = method
+        if endpoint is None:
+            endpoint = service._base.rstrip('/')
+        elif endpoint.startswith('/'):
+            endpoint = f"{service._base.rstrip('/')}{endpoint}"
         self.endpoint = endpoint
         self.data = None
-        super().__init__(method=method, **kw)
+        super().__init__(service, method=method, **kw)
 
     @property
     def url(self):
@@ -196,7 +200,7 @@ class RESTRequest(Request):
                 l.append((k, v))
 
         params_str = f'?{urlencode(l)}' if l else ''
-        return f"{self.service._base}/{self.endpoint.lstrip('/')}{params_str}"
+        return f"{self.endpoint}{params_str}"
 
     def _finalize(self):
         """Set the request URL using the specified params and encode the data body."""

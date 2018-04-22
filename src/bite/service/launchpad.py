@@ -183,7 +183,7 @@ class _SearchRequest(PagedRequest, RESTRequest):
 
         params['ws.op'] = 'searchTasks'
         params['ws.size'] = service.max_results
-        super().__init__(endpoint='', service=service, params=params, **kw)
+        super().__init__(service=service, params=params, **kw)
         self.options = options
 
     def parse_params(self, service, params=None, options=None, **kw):
