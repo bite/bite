@@ -581,17 +581,10 @@ class SavedSearches(args.Subcmd):
 
 
 @args.subcmd(Bugzilla4_4_Opts)
-class Changes(args.ReceiveSubcmd):
+class Changes(args.Changes):
 
     def __init__(self, *args, **kw):
-        super().__init__(*args, desc='get changes from bug(s)', **kw)
-        # positional args
-        self.parser.add_argument(
-            'ids', metavar='ID',
-            type=id_list,
-            action=partial(parse_stdin, ids),
-            help='ID(s) or alias(es) of the bug(s) to retrieve all changes')
-
+        super().__init__(*args, **kw)
         # optional args
         self.opts.add_argument(
             '-c', '--created', dest='creation_time',
@@ -602,49 +595,26 @@ class Changes(args.ReceiveSubcmd):
             '-m', '--match', type=string_list,
             help='restrict by matching changed fields')
         self.opts.add_argument(
-            '-n', '--number',
-            dest='change_num', type=id_list,
-            action=partial(parse_stdin, ids),
-            help='restrict by change number(s)')
-        self.opts.add_argument(
             '--output',
             help='custom format for output')
-        self.opts.add_argument(
-            '-r', '--creator',
-            type=string_list, action=parse_stdin,
-            help='restrict by person who made the change')
 
 
 @args.subcmd(Bugzilla4_4_Opts)
-class Comments(args.ReceiveSubcmd):
+class Comments(args.Comments):
 
     def __init__(self, *args, **kw):
-        super().__init__(*args, desc='get comments from bug(s)', **kw)
-        # positional args
-        self.parser.add_argument(
-            'ids', metavar='ID',
-            type=id_list,
-            action=partial(parse_stdin, ids),
-            help='ID(s) or alias(es) of the bug(s) to retrieve all comments')
-
+        super().__init__(*args, **kw)
         # optional args
-        self.opts.add_argument(
-            '-n', '--number', dest='comment_num', type=id_list,
-            action=partial(parse_stdin, ids),
-            help='restrict by comment number(s)')
-        self.opts.add_argument(
-            '--output',
-            help='custom format for output')
         self.opts.add_argument(
             '-c', '--created', dest='creation_time',
             metavar='TIME', type=date,
             help='comments made at this time or later')
         self.opts.add_argument(
-            '-r', '--creator', type=string_list, action=parse_stdin,
-            help='restrict by the email of the person who made the comment')
-        self.opts.add_argument(
             '-a', '--attachment', action='store_true',
             help='restrict by comments that include attachments')
+        self.opts.add_argument(
+            '--output',
+            help='custom format for output')
 
 
 @args.subcmd(Bugzilla4_4_Opts)
