@@ -82,7 +82,16 @@ class ServiceOpts(object):
                     cls(parser=subcmd_parser, service=service)
 
 
-class SendSubcmd(Subcmd):
+class RequestSubcmd(Subcmd):
+
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
+        self.opts.add_argument(
+            '--dry-run', action='store_true',
+            help='do everything except requesting or sending data')
+
+
+class SendSubcmd(RequestSubcmd):
 
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
@@ -91,7 +100,7 @@ class SendSubcmd(Subcmd):
             help='require confirmation before submitting modifications')
 
 
-class ReceiveSubcmd(Subcmd):
+class ReceiveSubcmd(RequestSubcmd):
 
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
