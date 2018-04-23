@@ -575,7 +575,7 @@ class SavedSearches(args.Subcmd):
             '-l', '--list', action='store_true',
             help='list available saved searches')
         single_action.add_argument(
-            '-s', '--save', nargs=2, metavar='NAME URL',
+            '-s', '--save', nargs=2, metavar=('NAME', 'URL'),
             help='create a saved search')
         single_action.add_argument(
             '-r', '--remove', action='csv', metavar='NAME',
