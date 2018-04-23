@@ -199,7 +199,7 @@ class Get(args.Get):
         # optional args
         self.opts.add_argument(
             '-H', '--no-history', dest='get_history', action='store_false',
-            help='do not bug history')
+            help='do not show bug history')
         self.opts.add_argument(
             '--show-obsolete', action='store_true',
             help='show obsolete attachments')
