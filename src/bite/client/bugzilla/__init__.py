@@ -170,11 +170,11 @@ class Bugzilla(Cli):
             yield self._header('-', 'Added comment')
             yield kw['comment-body']
 
-    def version(self, dry_run=False):
+    def version(self, **kw):
         version = self.service.version()
         print(f'Bugzilla version: {version}')
 
-    def extensions(self, dry_run=False):
+    def extensions(self, **kw):
         extensions = self.service.extensions()
         if extensions:
             print('Bugzilla extensions')
@@ -184,7 +184,7 @@ class Bugzilla(Cli):
         else:
             print('No installed Bugzilla extensions')
 
-    def users(self, users, dry_run=False):
+    def users(self, users, dry_run=False, **kw):
         params = {}
         for user in users:
             if re.match(r'.+@.+', user):
@@ -203,7 +203,7 @@ class Bugzilla(Cli):
         data = self.service.send(request)
         self.print_users(data)
 
-    def fields(self, fields=None, dry_run=False):
+    def fields(self, fields=None, dry_run=False, **kw):
         params = {}
         if fields is not None:
             for field in fields:
@@ -229,7 +229,7 @@ class Bugzilla(Cli):
                         if 'is_open' in value:
                             print(f"    open: {value['is_open']}")
 
-    def products(self, products=None, dry_run=False):
+    def products(self, products=None, dry_run=False, **kw):
         params = {}
         if products is not None:
             for product in products:
@@ -366,7 +366,7 @@ class Bugzilla(Cli):
         print(*lines, sep='\n')
 
     def _render_history(self, bug_id, changes, creation_time=None, change_num=None,
-                        fields=None, output=None, creator=None, match=None):
+                        fields=None, output=None, creator=None, match=None, **kw):
         if creator is not None:
             changes = (x for x in changes if x.creator in creator)
         if creation_time is not None:
@@ -437,7 +437,7 @@ class Bugzilla(Cli):
         print(*lines, sep='\n')
 
     def _render_comments(self, bug_id, comments, creation_time=None, comment_num=None,
-                        fields=None, output=None, creator=None, attachment=False):
+                        fields=None, output=None, creator=None, attachment=False, **kw):
         if creator is not None:
             comments = (x for x in comments if x.creator in creator)
         if attachment:

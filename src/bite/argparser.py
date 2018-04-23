@@ -499,27 +499,27 @@ class ArgumentParser(arghparse.ArgumentParser):
 
         # add selected subcommand options
         try:
-            subcmd = unparsed_args[0]
-            service_opts.add_subcmd_opts(service=initial_args.service, subcmd=subcmd)
+            subcmd = unparsed_args.pop(0)
+            subcmd_parser = service_opts.add_subcmd_opts(service=initial_args.service, subcmd=subcmd)
         except IndexError:
-            pass
+            subcmd_parser = None
+
+        # no more args exist or help requested, run main parser to show related output
+        if subcmd_parser is None:
+            return super().parse_args()
 
         self.set_defaults(connection=initial_args.connection)
 
         if initial_args.input is not None:
             fcn_args = self._substitute_args(unparsed_args, initial_args)
+        else:
+            fcn_args = subcmd_parser.parse_args(unparsed_args)
+            # if an arg was piped in, remove stdin attr from fcn args and reopen stdin
+            stdin = fcn_args.pop('stdin', None)
+            if stdin is not None:
+                sys.stdin = open('/dev/tty')
 
-        args = arghparse.Namespace(**vars(initial_args))
-        fcn_args = super().parse_args(unparsed_args, initial_args)
-
-        # if an arg was piped in, remove stdin attr from fcn args and reopen stdin
-        stdin = fcn_args.pop('stdin', None)
-        if stdin is not None:
-            sys.stdin = open('/dev/tty')
-
-        args = vars(args)
-        fcn_args = {k: v for k, v in vars(fcn_args).items() if k not in args and v}
-        initial_args.fcn_args = fcn_args
+        initial_args.fcn_args = vars(fcn_args)
         return initial_args
 
 

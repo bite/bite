@@ -1,5 +1,6 @@
 from functools import partial
 
+from snakeoil.cli import arghparse
 from snakeoil.demandload import demandload
 
 from ..exceptions import BiteError
@@ -26,7 +27,7 @@ class Subcmd(object):
     def __init__(self, parser, service, name=None, desc=None):
         name = name if name is not None else getattr(self, '_subcmd_name')
         self.parser = parser.add_parser(
-            name, quiet=False, color=False, description=desc)
+            name, cls=arghparse.ArgumentParser, quiet=False, color=False, description=desc)
         self.parser.set_defaults(fcn=name)
         self.opts = self.parser.add_argument_group(f'{name.capitalize()} options')
 
@@ -73,7 +74,8 @@ class ServiceOpts(object):
         # try to only add the options for the single subcmd
         try:
             cls = getattr(self, subcmd)
-            cls(parser=subcmd_parser, service=service, name=subcmd)
+            subcmd = cls(parser=subcmd_parser, service=service, name=subcmd)
+            return subcmd.parser
         # fallback to adding all subcmd options, since the user is
         # requesting help output (-h/--help) or entering unknown input
         except AttributeError:

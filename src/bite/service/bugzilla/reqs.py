@@ -35,10 +35,10 @@ class SearchRequest4_4(PagedRequest):
             params['limit'] = service.max_results
 
         # limit fields by default to decrease requested data size and speed up response
-        if 'fields' not in kw:
+        fields = kw.get('fields', None)
+        if fields is None:
             fields = ['id', 'assigned_to', 'summary']
         else:
-            fields = kw['fields']
             unknown_fields = set(fields).difference(service.item.attributes.keys())
             if unknown_fields:
                 raise BiteError(f"unknown fields: {', '.join(unknown_fields)}")
