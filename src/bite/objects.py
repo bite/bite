@@ -113,7 +113,7 @@ class Item(object):
         """
         comments = self.comments if self.comments is not None else ()
         changes = self.changes if self.changes is not None else ()
-        return sorted(chain(comments, changes), key=lambda event: event.date)
+        return sorted(chain(comments, changes), key=lambda event: event.created)
 
     def __getattr__(self, name):
         if name in self.attributes:
@@ -127,29 +127,29 @@ class Item(object):
 class Change(object):
     """Generic change event on a service."""
 
-    def __init__(self, creator, date, changes, id=None, count=None):
+    def __init__(self, creator, created, changes, id=None, count=None):
         self.id = id # int
         self.creator = creator # string
-        self.date = date # date object
+        self.created = created # date object
         self.changes = changes # dict
         self.count = count # id
 
     def __str__(self):
-        return f'Change by {self.creator}, {self.date}'
+        return f'Change by {self.creator}, {self.created}'
 
 
 class Comment(Change):
     """Generic comment on a service."""
 
-    def __init__(self, creator, date, id=None, count=None, changes=None, text=None):
+    def __init__(self, creator, created, id=None, count=None, changes=None, text=None):
         self.text = text
-        super().__init__(id=id, creator=creator, date=date, changes=changes, count=count)
+        super().__init__(id=id, creator=creator, created=created, changes=changes, count=count)
 
     def __str__(self):
         if self.count == 0:
-            lines = [f'Description by {self.creator}, {self.date}']
+            lines = [f'Description by {self.creator}, {self.created}']
         else:
-            lines = [f'Comment #{self.count} by {self.creator}, {self.date}']
+            lines = [f'Comment #{self.count} by {self.creator}, {self.created}']
         lines.append('-' * const.COLUMNS)
         if self.text:
             lines.append(self.text)

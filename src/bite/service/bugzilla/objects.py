@@ -197,7 +197,7 @@ class BugzillaComment(Comment):
         else:
             creator = comment['creator']
 
-        date = parsetime(comment['creation_time'])
+        created = parsetime(comment['creation_time'])
         count = comment['count']
 
         if comment['text'] is None:
@@ -210,7 +210,7 @@ class BugzillaComment(Comment):
             changes['attachment_id'] = comment['attachment_id']
 
         super().__init__(
-            id=id, creator=creator, date=date,
+            id=id, creator=creator, created=created,
             count=count, changes=changes, text=text)
 
 
@@ -221,13 +221,13 @@ class BugzillaEvent(Change):
         self.alias = alias
         if rest:
             creator = change['changer']['name']
-            date = parsetime(change['change_time'])
+            created = parsetime(change['change_time'])
         else:
             creator = change['who']
-            date = parsetime(change['when'])
+            created = parsetime(change['when'])
         changes = change['changes']
         super().__init__(
-            creator=creator, date=date, id=id,
+            creator=creator, created=created, id=id,
             changes=changes, count=count)
 
     def __str__(self):
@@ -254,7 +254,7 @@ class BugzillaEvent(Change):
         }
         change_fields.update(BugzillaBug.attributes)
 
-        lines = [f'Change #{self.count} by {self.creator}, {self.date}']
+        lines = [f'Change #{self.count} by {self.creator}, {self.created}']
         lines.append('-' * const.COLUMNS)
         for change in self.changes:
             try:

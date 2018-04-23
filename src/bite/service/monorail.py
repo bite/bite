@@ -130,7 +130,7 @@ class Monorail(Jsonrpc):
                 creator = issue.reporter
                 date = issue.opened
                 content = lxml.html.fromstring(issue_dict['content']['$t'].strip()).text_content()
-                initial = [GooglecodeComment(count=i, creator=creator, date=date, text=content)]
+                initial = [GooglecodeComment(count=i, creator=creator, created=date, text=content)]
 
                 comments = self.get_comments(id)
                 issue.comments = chain(initial, comments)
@@ -166,7 +166,7 @@ class Monorail(Jsonrpc):
                     changes = {'updates': updates}
                 else:
                     changes = None
-                yield GooglecodeComment(count=id, creator=creator, date=date, text=text, changes=changes)
+                yield GooglecodeComment(count=id, creator=creator, created=date, text=text, changes=changes)
 
     def request(self, url, headers=None, params=None, data=None):
         """Attempt to call method with params. Log in if authentication is required."""
@@ -356,7 +356,7 @@ class GooglecodeIssue(Item):
 
 
 class GooglecodeComment(Comment):
-    def __init__(self, id=None, creator=None, date=None, count=None, changes=None, text=None, **kw):
+    def __init__(self, id=None, creator=None, created=None, count=None, changes=None, text=None, **kw):
         if not text:
             text = '(No comment was entered for this change)'
-        super().__init__(id, creator, date, count, changes, text)
+        super().__init__(id, creator, created, count, changes, text)

@@ -395,6 +395,6 @@ class _CommentsRequest(Request):
         else:
             ids = self.ids
 
-        return [RoundupComment(id=ids[i], count=i, text=d['content'], date=parsetime(d['date']),
+        return [RoundupComment(id=ids[i], count=i, text=d['content'], created=parsetime(d['date']),
                                creator=self.service.cache['users'][int(d['author'])-1])
                 for i, d in enumerate(data)]
