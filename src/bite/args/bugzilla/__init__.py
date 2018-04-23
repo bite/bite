@@ -543,7 +543,8 @@ class APIKeys(args.Subcmd):
 
     def __init__(self, *args, **kw):
         super().__init__(*args, desc='generate, revoke, or list API keys', **kw)
-        single_action = self.parser.add_mutually_exclusive_group()
+        action = self.parser.add_argument_group('Action')
+        single_action = action.add_mutually_exclusive_group()
         single_action.add_argument(
             '-l', '--list', action='store_true',
             help='list available apikeys')
@@ -568,7 +569,8 @@ class SavedSearches(args.Subcmd):
 
     def __init__(self, *args, **kw):
         super().__init__(*args, desc='save, remove, or list saved searches', **kw)
-        single_action = self.parser.add_mutually_exclusive_group()
+        action = self.parser.add_argument_group('Action')
+        single_action = action.add_mutually_exclusive_group()
         single_action.add_argument(
             '-l', '--list', action='store_true',
             help='list available saved searches')
