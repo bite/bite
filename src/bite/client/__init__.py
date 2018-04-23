@@ -52,7 +52,7 @@ def login_required(func):
                 self.login()
                 return func(self, *args, **kw)
             except AuthError as e:
-                continue
+                self.log(str(e))
     return wrapper
 
 
