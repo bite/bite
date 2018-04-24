@@ -28,7 +28,10 @@ class Xml(Service):
             # alternative class that uses lxml for parsing which allows
             # recovering from certain types of broken XML.
             if not response.headers['Content-Type'].startswith('text/xml'):
-                raise RequestError('non-XML response, service interface likely disabled on server')
+                msg = 'non-XML response from server'
+                if not self.verbose:
+                    msg += ' (use verbose mode to see it)'
+                raise RequestError(msg=msg, text=response.text)
             raise ParsingError(msg='failed parsing XML', text=str(e)) from e
 
     def _getparser(self, use_datetime=True):

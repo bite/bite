@@ -23,5 +23,8 @@ class Json(Service):
             return response.json()
         except json.decoder.JSONDecodeError as e:
             if not response.headers['Content-Type'].startswith('application/json'):
-                raise RequestError('non-JSON response, service interface likely disabled on server')
+                msg = 'non-JSON response from server'
+                if not self.verbose:
+                    msg += ' (use verbose mode to see it)'
+                raise RequestError(msg=msg, text=response.text)
             raise ParsingError(msg='failed parsing JSON', text=str(e))
