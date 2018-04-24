@@ -218,16 +218,34 @@ class Cookies(LWPCookieJar):
             self._path = None
 
     def save(self, filename=None, *args, **kw):
+        if filename is None:
+            filename = self._path
         if self._path is not None:
             try:
                 os.makedirs(os.path.dirname(self._path))
             except FileExistsError:
                 pass
-        super().save(filename=self._path, *args, **kw)
-        os.chmod(self._path, stat.S_IREAD | stat.S_IWRITE)
+        try:
+            super().save(filename=filename, *args, **kw)
+            os.chmod(self._path, stat.S_IREAD | stat.S_IWRITE)
+        except ValueError:
+            # running without a configured connection
+            if filename is None:
+                pass
+            else:
+                raise
 
     def load(self, filename=None, *args, **kw):
+        if filename is None:
+            filename = self._path
         try:
-            super().load(filename=self._path, *args, **kw)
+            super().load(filename=filename, *args, **kw)
         except FileNotFoundError:
+            # connection doesn't have a saved cache file yet
             pass
+        except ValueError:
+            # running without a configured connection
+            if filename is None:
+                pass
+            else:
+                raise
