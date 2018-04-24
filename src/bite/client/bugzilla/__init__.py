@@ -43,7 +43,7 @@ class Bugzilla(Cli):
                 kw['summary'] = get_input('Title: ')
 
             if not kw.get('description'):
-                data = block_edit('Bug description: ').strip()
+                data = block_edit('Please enter a bug description.').strip()
                 if data:
                     kw['description'] = data
 
