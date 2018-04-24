@@ -134,7 +134,7 @@ class PagedRequest(Request):
         super().__init__(*args, **kw)
 
         if not all((self._offset_key, self._size_key)):
-            raise BiteError('offset and size keys must be set')
+            raise ValueError('offset and size keys must be set')
 
         # total number of elements parsed
         self._seen = 0
