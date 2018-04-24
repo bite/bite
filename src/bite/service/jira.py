@@ -55,7 +55,7 @@ class Jira(JsonREST):
     item = JiraIssue
     item_endpoint = '/issue/{id}'
 
-    def __init__(self, base, **kw):
+    def __init__(self, base, max_results=None, **kw):
         try:
             api_base, project = base.split('/projects/', 1)
             project = project.strip('/')
@@ -63,8 +63,12 @@ class Jira(JsonREST):
             api_base = base
             project = None
         self._project = project
+        # most jira instances default to 1k results per query
+        if max_results is None:
+            max_results = 1000
         # TODO: generalize and allow versioned API support
-        super().__init__(endpoint=f"/rest/api/2", base=api_base, **kw)
+        super().__init__(
+            endpoint=f"/rest/api/2", base=api_base, max_results=max_results, **kw)
         self.webbase = base
 
     def inject_auth(self, request, params):
