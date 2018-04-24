@@ -173,7 +173,7 @@ class Attachments(Subcmd):
 
     def __init__(self, *args, desc=None, **kw):
         if desc is None:
-            desc = f"get attachment(s) from {kw['service'].item.type}(s)"
+            desc = f"get attachments from {kw['service'].item.type}(s)"
         super().__init__(*args, desc=desc, **kw)
 
         # positional args
