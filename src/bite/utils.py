@@ -64,6 +64,7 @@ def launch_editor(initial_text, editor=None, comment_from='', tool=PROG):
 def block_edit(comment, comment_from=''):
     comment = '\n'.join(f'{PROG}: {line}' for line in comment.split('\n'))
     initial_text = f"""\
+
 {PROG}: ---------------------------------------------------
 {comment}
 {PROG}: Any line beginning with '{PROG}:' will be ignored.
