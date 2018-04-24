@@ -3,7 +3,7 @@ from xmlrpc.client import dumps, loads, Unmarshaller, Fault
 from snakeoil.klass import steal_docs
 
 from . import Service
-from ._xml import Xml, LXMLParser
+from ._xml import Xml
 from ..exceptions import RequestError
 
 
