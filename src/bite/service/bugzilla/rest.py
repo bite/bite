@@ -26,12 +26,6 @@ class _BugzillaRestBase(Bugzilla5_0, JsonREST):
         else:
             self.handle_error(code=data['code'], msg=data['message'])
 
-    def _failed_http_response(self, response):
-        # catch invalid REST API resource requests
-        if response.status_code in (404,):
-            self.parse_response(response)
-        super()._failed_http_response(response)
-
 
 class Bugzilla5_0Rest(_BugzillaRestBase):
     """Service for Bugzilla 5.0 REST interface.
