@@ -53,16 +53,16 @@ class Jira(JsonREST):
     _service = 'jira'
 
     item = JiraIssue
-    item_endpoint = '/issue/{id}'
+    item_endpoint = '/issues/{project}-{{id}}'
 
     def __init__(self, base, max_results=None, **kw):
         try:
             api_base, project = base.split('/projects/', 1)
             project = project.strip('/')
-        except ValueError:
-            api_base = base
-            project = None
+        except ValueError as e:
+            raise BiteError(f'invalid project base: {base!r}')
         self._project = project
+        self.item_endpoint = self.item_endpoint.format(project=project)
         # most jira instances default to 1k results per query
         if max_results is None:
             max_results = 1000
@@ -111,8 +111,7 @@ class _SearchRequest(PagedRequest, RESTRequest):
 
         params['fields'] = fields
         # if configured for a specific project, limit search to specified project
-        if service._project is not None:
-            params['jql'] = f"project = {service._project} AND ( {params['jql']} )"
+        params['jql'] = f"project = {service._project} AND ( {params['jql']} )"
 
         # use POST requests to avoid URL length issues with massive JQL queries
         super().__init__(service=service, endpoint='/search',
