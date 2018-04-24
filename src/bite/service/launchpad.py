@@ -321,29 +321,43 @@ class _CommentsRequest(Request):
         if ids is None:
             raise ValueError(f'No {service.item.type} specified')
 
-        params = {}
-        options_log = []
-
         reqs = []
         for i in ids:
-            endpoint = f'{service._api_base}/bugs/{i}/messages'
-            reqs.append(RESTRequest(
-                service=service, endpoint=endpoint, params=params))
+            reqs.extend([
+                RESTRequest(
+                    service=service, endpoint=f'{service._api_base}/bugs/{i}/messages'),
+                RESTRequest(
+                    service=service, endpoint=f'{service._api_base}/bugs/{i}/attachments'),
+            ])
+
 
         super().__init__(service=service, reqs=reqs)
         self.ids = ids
-        self.options = options_log
 
     @generator
     def parse(self, data):
-        for comments in data:
-            comments = comments['entries']
-            yield [LaunchpadComment(
-                id=c['self_link'][len(self.service.base) + 1:],
-                count=i, text=c['content'],
-                date=dateparse(c['date_created']),
-                creator=c['owner_link'][len(self.service.base) + 2:])
-                for i, c in enumerate(comments)]
+        # merge attachments into related comments similar to the web UI
+        for id in self.ids:
+            comments = next(data)['entries']
+            attachments = next(data)['entries']
+            d = {}
+            for a in attachments:
+                comment_num = int(a['message_link'].rsplit('/', 1)[1])
+                attachment_id = a['self_link'].rsplit('/', 1)[1]
+                d[comment_num] = (attachment_id, a['title'])
+            l = []
+            for i, c in enumerate(comments):
+                text = []
+                if i in d:
+                    text.append(f'Attachment: [{d[i][0]}] [{d[i][1]}]')
+                if c['content']:
+                    text.append(c['content'])
+                text = '\n\n'.join(text)
+                l.append(LaunchpadComment(
+                    id=id, count=i, text=text,
+                    created=dateparse(c['date_created']),
+                    creator=c['owner_link'][len(self.service.base) + 2:]))
+            yield l
 
 
 @req_cmd(Launchpad, 'attachments')
