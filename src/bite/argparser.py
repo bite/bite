@@ -494,13 +494,13 @@ class ArgumentParser(arghparse.ArgumentParser):
             if unparsed_args != alias_unparsed_args:
                 initial_args, unparsed_args = self.parse_optionals(alias_unparsed_args, initial_args)
 
-        # replace service attr with service object
-        initial_args.service = get_service_cls(service_name, const.SERVICES)(**vars(initial_args))
+        # initialize requested service
+        service = get_service_cls(service_name, const.SERVICES)(**vars(initial_args))
 
         # add selected subcommand options
         try:
             subcmd = unparsed_args.pop(0)
-            subcmd_parser = service_opts.add_subcmd_opts(service=initial_args.service, subcmd=subcmd)
+            subcmd_parser = service_opts.add_subcmd_opts(service=service, subcmd=subcmd)
         except IndexError:
             subcmd_parser = None
 
@@ -519,7 +519,17 @@ class ArgumentParser(arghparse.ArgumentParser):
             if stdin is not None:
                 sys.stdin = open('/dev/tty')
 
-        initial_args.fcn_args = vars(fcn_args)
+        fcn_args = vars(fcn_args)
+
+        # client settings that override unset service level args
+        for attr in ('verbose', 'debug'):
+            if not getattr(service, attr):
+                setattr(service, attr, fcn_args[attr])
+
+        # set args namespace items for the client
+        initial_args.service = service
+        initial_args.fcn_args = fcn_args
+
         return initial_args
 
 
