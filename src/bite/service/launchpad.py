@@ -99,7 +99,7 @@ class Launchpad(JsonREST):
     _cache_cls = LaunchpadCache
 
     item = LaunchpadBug
-    item_endpoint = '/+bug/{id}'
+    item_endpoint = 'https://bugs.launchpad.net/bugs/{id}'
     attachment = LaunchpadAttachment
     # attachment_endpoint = '/file'
 
