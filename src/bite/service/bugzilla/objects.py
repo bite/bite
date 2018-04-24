@@ -74,6 +74,49 @@ class BugzillaBug(Item):
         'changes': 'history',
     }
 
+    _print_fields = (
+        ('summary', 'Title'),
+        ('alias', 'Alias'),
+        ('assigned_to', 'Assignee'),
+        ('creator', 'Reporter'),
+        ('qa_contact', 'QA Contact'),
+        ('creation_time', 'Reported'),
+        ('last_change_time', 'Updated'),
+        ('status', 'Status'),
+        ('resolution', 'Resolution'),
+        ('dupe_of', 'Duplicate'),
+        ('whiteboard', 'Whiteboard'),
+        ('severity', 'Severity'),
+        ('priority', 'Priority'),
+        ('classification', 'Class'),
+        ('product', 'Product'),
+        ('component', 'Component'),
+        ('platform', 'Platform'),
+        ('op_sys', 'OS'),
+        ('keywords', 'Keywords'),
+        ('target_milestone', 'Target'),
+        ('version', 'Version'),
+        ('url', 'URL'),
+        ('ref', 'Reference'),
+        ('see_also', 'See also'),
+        ('cc', 'CC'),
+        ('id', 'ID'),
+        ('blocks', 'Blocks'),
+        ('depends_on', 'Depends'),
+        ('flags', 'Flags'),
+        ('groups', 'Groups'),
+        ('estimated_time', 'Estimated'),
+        ('deadline', 'Deadline'),
+        ('actual_time', 'Actual'),
+        ('remaining_time', 'Remaining'),
+        #('is_cc_accessible', 'Is CC Accessible'),
+        #('is_confirmed', 'Confirmed'),
+        #('is_creator_accessible', 'Is Creator Accessible'),
+        ('history', 'Changes'),
+        ('comments', 'Comments'),
+        ('attachments', 'Attachments'),
+    )
+
     type = 'bug'
 
     def __init__(self, service, **kw):
@@ -93,67 +136,7 @@ class BugzillaBug(Item):
                 else:
                     setattr(self, k, v)
 
-    def __str__(self):
-        lines = []
-        print_fields = [
-            ('summary', 'Title'),
-            ('alias', 'Alias'),
-            ('assigned_to', 'Assignee'),
-            ('creator', 'Reporter'),
-            ('qa_contact', 'QA Contact'),
-            ('creation_time', 'Reported'),
-            ('last_change_time', 'Updated'),
-            ('status', 'Status'),
-            ('resolution', 'Resolution'),
-            ('dupe_of', 'Duplicate'),
-            ('whiteboard', 'Whiteboard'),
-            ('severity', 'Severity'),
-            ('priority', 'Priority'),
-            ('classification', 'Class'),
-            ('product', 'Product'),
-            ('component', 'Component'),
-            ('platform', 'Platform'),
-            ('op_sys', 'OS'),
-            ('keywords', 'Keywords'),
-            ('target_milestone', 'Target'),
-            ('version', 'Version'),
-            ('url', 'URL'),
-            ('ref', 'Reference'),
-            ('see_also', 'See also'),
-            ('cc', 'CC'),
-            ('id', 'ID'),
-            ('blocks', 'Blocks'),
-            ('depends_on', 'Depends'),
-            ('flags', 'Flags'),
-            ('groups', 'Groups'),
-            ('estimated_time', 'Estimated'),
-            ('deadline', 'Deadline'),
-            ('actual_time', 'Actual'),
-            ('remaining_time', 'Remaining'),
-            #('is_cc_accessible', 'Is CC Accessible'),
-            #('is_confirmed', 'Confirmed'),
-            #('is_creator_accessible', 'Is Creator Accessible'),
-            ('history', 'Changes'),
-            ('comments', 'Comments'),
-            ('attachments', 'Attachments'),
-        ]
-
-        for field, title in print_fields:
-            value = getattr(self, field)
-            if value is None:
-                continue
-
-            if field in ['history', 'comments', 'attachments']:
-                value = len(value)
-
-            # Initial comment is the bug description
-            if field == 'comments': value -= 1
-
-            if isinstance(value, list):
-                value = ', '.join(map(str, value))
-
-            lines.append(f'{title:<12}: {value}')
-
+    def _custom_str_fields(self):
         custom_fields = ((k, v) for (k, v) in vars(self).items()
                          if re.match(r'^cf_\w+$', k))
         for k, v in custom_fields:
@@ -169,9 +152,7 @@ class BugzillaBug(Item):
             else:
                 prefix = ''
             v = prefix + f'{prefix}'.join(value)
-            lines.append(f'{title:<12}: {v}')
-
-        return '\n'.join(lines)
+            yield f'{title:<12}: {v}'
 
     def __getattribute__(self, name):
         value = object.__getattribute__(self, name)

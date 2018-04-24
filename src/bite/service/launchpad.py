@@ -65,33 +65,6 @@ class LaunchpadBug(Item):
             else:
                 setattr(self, k, v)
 
-    def __str__(self):
-        lines = []
-        print_fields = (
-            ('title', 'Title'),
-            ('id', 'ID'),
-            ('created', 'Reported'),
-            ('modified', 'Updated'),
-        )
-
-        for field, title in print_fields:
-            value = getattr(self, field)
-            if value is None:
-                continue
-
-            if field in ('changes', 'comments', 'attachments'):
-                value = len(value)
-
-            # Initial comment is the bug description
-            if field == 'comments': value -= 1
-
-            if isinstance(value, list):
-                value = ', '.join(map(str, value))
-
-            lines.append(f'{title:<12}: {value}')
-
-        return '\n'.join(lines)
-
 
 class LaunchpadComment(Comment):
     pass

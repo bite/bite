@@ -87,6 +87,13 @@ class Item(object):
     attribute_aliases = {}
     type = None
 
+    _print_fields = (
+        ('title', 'Title'),
+        ('id', 'ID'),
+        ('created', 'Reported'),
+        ('modified', 'Updated'),
+    )
+
     def __init__(self, id=None, title=None, creator=None, owner=None, created=None,
                  modified=None, status=None, url=None, blocks=None,
                  depends=None, cc=None, comments=None, attachments=None, changes=None, **kw):
@@ -114,6 +121,32 @@ class Item(object):
         comments = self.comments if self.comments is not None else ()
         changes = self.changes if self.changes is not None else ()
         return sorted(chain(comments, changes), key=lambda event: event.created)
+
+    def _custom_str_fields(self):
+        """Custom field output for string rendering."""
+        return ()
+
+    def __str__(self):
+        lines = []
+
+        for field, title in self._print_fields:
+            value = getattr(self, field)
+            if value is None:
+                continue
+
+            if field in ('changes', 'comments', 'attachments'):
+                value = len(value)
+
+            # Initial comment is the bug description
+            if field == 'comments': value -= 1
+
+            if isinstance(value, list):
+                value = ', '.join(map(str, value))
+
+            lines.append(f'{title:<12}: {value}')
+
+        lines.extend(self._custom_str_fields())
+        return '\n'.join(lines)
 
     def __getattr__(self, name):
         if name in self.attributes:

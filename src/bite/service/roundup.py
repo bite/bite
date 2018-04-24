@@ -46,6 +46,27 @@ class RoundupIssue(Item):
         'files': 'Attachments',
     }
 
+    attribute_aliases = {
+        'comments': 'messages',
+        'attachments': 'files',
+    }
+
+    _print_fields = (
+        ('title', 'Title'),
+        ('assignedto', 'Assignee'),
+        ('creation', 'Created'),
+        ('creator', 'Reporter'),
+        ('activity', 'Modified'),
+        ('actor', 'Modified by'),
+        ('id', 'ID'),
+        ('status', 'Status'),
+        ('priority', 'Priority'),
+        ('superseder', 'Duplicate'),
+        ('keyword', 'Keywords'),
+        ('messages', 'Comments'),
+        ('files', 'Attachments'),
+    )
+
     type = 'issue'
 
     def __init__(self, service, comments=None, attachments=None, **kw):
@@ -88,39 +109,6 @@ class RoundupIssue(Item):
 
         self.attachments = attachments if attachments is not None else []
         self.comments = comments if comments is not None else []
-
-    def __str__(self):
-        lines = []
-        print_fields = [
-            ('title', 'Title'),
-            ('assignedto', 'Assignee'),
-            ('creation', 'Created'),
-            ('creator', 'Reporter'),
-            ('activity', 'Modified'),
-            ('actor', 'Modified by'),
-            ('id', 'ID'),
-            ('status', 'Status'),
-            ('priority', 'Priority'),
-            ('superseder', 'Duplicate'),
-            ('keyword', 'Keywords'),
-            ('messages', 'Comments'),
-            ('files', 'Attachments'),
-        ]
-
-        for field, title in print_fields:
-            value = getattr(self, field)
-            if value is None:
-                continue
-
-            if field in ('messages', 'files'):
-                value = len(value)
-
-            if isinstance(value, list):
-                value = ', '.join(map(str, value))
-
-            lines.append('{:<12}: {}'.format(title, value))
-
-        return '\n'.join(lines)
 
 
 class RoundupComment(Comment):
