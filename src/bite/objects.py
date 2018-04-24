@@ -146,10 +146,11 @@ class Comment(Change):
         super().__init__(id=id, creator=creator, created=created, changes=changes, count=count)
 
     def __str__(self):
+        lines = []
         if self.count == 0:
-            lines = [f'Description by {self.creator}, {self.created}']
+            lines.append(f'Description by {self.creator}, {self.created}')
         else:
-            lines = [f'Comment #{self.count} by {self.creator}, {self.created}']
+            lines.append(f'Comment #{self.count} by {self.creator}, {self.created}')
         lines.append('-' * const.COLUMNS)
         if self.text:
             lines.append(self.text)
