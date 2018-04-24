@@ -7,5 +7,5 @@ class JiraOpts(args.ServiceOpts):
 
 
 @args.subcmd(JiraOpts)
-class Search(args.Search):
+class Search(args.PagedSearch):
     pass
