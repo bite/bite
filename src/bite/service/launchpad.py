@@ -179,7 +179,6 @@ class _SearchRequest(PagedRequest, RESTRequest):
             raise BiteError('no supported search terms or options specified')
 
         params['ws.op'] = 'searchTasks'
-        params['ws.size'] = service.max_results
         super().__init__(service=service, params=params, **kw)
         self.options = options
 

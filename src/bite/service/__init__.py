@@ -130,11 +130,20 @@ class PagedRequest(Request):
     _offset_key = None
     _size_key = None
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
+    def __init__(self, service, limit=None, offset=None, *args, **kw):
+        super().__init__(*args, service=service, **kw)
 
         if not all((self._offset_key, self._size_key)):
             raise ValueError('offset and size keys must be set')
+
+        # set a search limit to make continued requests work as expected
+        if limit is not None:
+            self.params[self._size_key] = limit
+        elif service.max_results is not None:
+            self.params[self._size_key] = service.max_results
+
+        if offset is not None:
+            self.params[self._offset_key] = offset
 
         # total number of elements parsed
         self._seen = 0

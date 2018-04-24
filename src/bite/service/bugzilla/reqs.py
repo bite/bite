@@ -30,10 +30,6 @@ class SearchRequest4_4(PagedRequest):
         if 'status' not in params:
             params['status'] = service.cache['open_status']
 
-        # set a search limit to make continued requests work as expected
-        if 'limit' not in params and service.max_results is not None:
-            params['limit'] = service.max_results
-
         # limit fields by default to decrease requested data size and speed up response
         fields = kw.get('fields', None)
         if fields is None:
@@ -86,8 +82,6 @@ class SearchRequest4_4(PagedRequest):
                 if k == 'terms':
                     params['summary'] = v
                     options.append(f"Summary: {', '.join(map(str, v))}")
-                elif k in ('limit', 'offset'):
-                    params[k] = v
 
         return params, options
 
