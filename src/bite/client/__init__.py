@@ -122,7 +122,9 @@ class Cli(Client):
 
         # fallback to manual user/pass login
         if not self.service.auth:
-            user, password = self.get_user_pass()
+            user, password = self.service.user, self.service.password
+            while not all((user, password)):
+                user, password = self.get_user_pass()
             self.service.login(user, password)
 
     @login_retry
