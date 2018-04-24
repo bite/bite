@@ -202,13 +202,22 @@ class RESTRequest(Request):
         params_str = f'?{urlencode(l)}' if l else ''
         return f"{self.endpoint}{params_str}"
 
+    def params_to_data(self):
+        """Convert params to encoded request data."""
+        self.data = self.params
+        self.params = None
+
     def _finalize(self):
         """Set the request URL using the specified params and encode the data body."""
         # inject auth params if available
         super()._finalize()
 
         # construct URL to resource with requested params
-        self._req.url = self.url
+        if self.method == 'GET':
+            self._req.url = self.url
+        else:
+            self._req.url = self.endpoint
+            self.params_to_data()
 
         # encode additional params to data body
         if self.data:

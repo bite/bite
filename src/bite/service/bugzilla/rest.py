@@ -54,10 +54,13 @@ class _ModifyRequest(ModifyRequest, RESTRequest):
         """Construct a modify request."""
         super().__init__(endpoint='/bug', method='PUT', *args, **kw)
         self.endpoint = f"/bug/{self.params['ids'][0]}"
-        self.data = self.params
-        if self.params['ids'][1:]:
+
+    def params_to_data(self):
+        super().params_to_data()
+        if self.data['ids'][1:]:
             self.data['ids'] = self.params['ids'][1:]
-        self.params = None
+        else:
+            del self.data['ids']
 
 
 @req_cmd(Bugzilla5_0Rest, 'attach')
@@ -66,10 +69,13 @@ class _AttachRequest(AttachRequest, RESTRequest):
         """Construct a modify request."""
         super().__init__(endpoint='/bug/{}/attachment', method='POST', *args, **kw)
         self.endpoint = self.endpoint.format(self.params['ids'][0])
-        self.data = self.params
-        if self.params['ids'][1:]:
+
+    def params_to_data(self):
+        super().params_to_data()
+        if self.data['ids'][1:]:
             self.data['ids'] = self.params['ids'][1:]
-        self.params = None
+        else:
+            del self.data['ids']
 
 
 @req_cmd(Bugzilla5_0Rest, 'create')
@@ -77,8 +83,6 @@ class _CreateRequest(CreateRequest, RESTRequest):
     def __init__(self, *args, **kw):
         """Construct a create request."""
         super().__init__(endpoint='/bug', method='POST', *args, **kw)
-        self.data = self.params
-        self.params = None
 
 
 @req_cmd(Bugzilla5_0Rest, 'search')
