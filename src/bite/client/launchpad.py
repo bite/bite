@@ -1,5 +1,3 @@
-from snakeoil.demandload import demandload
-
 from . import Cli
 
 
