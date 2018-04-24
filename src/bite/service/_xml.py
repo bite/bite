@@ -54,6 +54,14 @@ class Xml(Service):
 
         return u.close()
 
+    def dumps(self, s):
+        """Encode dictionary object to XML."""
+        raise NotImplementedError
+
+    def loads(self, s):
+        """Decode XML to dictionary object."""
+        raise NotImplementedError
+
 
 class _IterContent(object):
 
