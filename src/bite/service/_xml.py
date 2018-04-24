@@ -1,5 +1,3 @@
-from xml.parsers.expat import ExpatError
-
 from lxml.etree import XMLPullParser, XMLSyntaxError
 from snakeoil.klass import steal_docs
 
@@ -21,10 +19,7 @@ class Xml(Service):
     def parse_response(self, response):
         try:
             return self._parse_xml(response)[0]
-        except (ExpatError, XMLSyntaxError) as e:
-            # The default XML parser in python (expat) has issues with badly
-            # formed XML. We workaround this somewhat by using lxml for parsing
-            # which allows recovering from certain types of broken XML.
+        except XMLSyntaxError as e:
             if not response.headers['Content-Type'].startswith('text/xml'):
                 msg = 'non-XML response from server'
                 if not self.verbose:
@@ -79,7 +74,9 @@ class _IterContent(object):
 class LXMLParser(object):
     """XML parser using lxml.
 
-    That tries hard to parse through broken XML.
+    The default XML parser in python based on expat has issues with badly
+    formed XML. We workaround this somewhat by using lxml for parsing which
+    allows recovering from certain types of broken XML.
     """
 
     def __init__(self, target):
