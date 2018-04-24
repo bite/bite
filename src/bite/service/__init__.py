@@ -195,7 +195,7 @@ class RESTRequest(Request):
         elif endpoint.startswith('/'):
             endpoint = f"{service._base.rstrip('/')}{endpoint}"
         self.endpoint = endpoint
-        self.data = None
+        self.data = {}
         super().__init__(service, method=method, **kw)
 
     @property
@@ -213,8 +213,8 @@ class RESTRequest(Request):
 
     def params_to_data(self):
         """Convert params to encoded request data."""
-        self.data = self.params
-        self.params = None
+        self.data.update(self.params)
+        self.params = {}
 
     def _finalize(self):
         """Set the request URL using the specified params and encode the data body."""
