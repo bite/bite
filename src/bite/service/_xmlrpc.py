@@ -1,15 +1,30 @@
-from xmlrpc.client import dumps, loads, Fault
+from xmlrpc.client import dumps, loads, Unmarshaller, Fault
 
 from snakeoil.klass import steal_docs
 
 from . import Service
-from ._xml import LxmlXml
+from ._xml import Xml, LXMLParser
 from ..exceptions import RequestError
 
 
-class Xmlrpc(LxmlXml):
+class _Unmarshaller(Unmarshaller):
+    """Override to avoid decoding unicode objects.
+
+    This can be dropped once the upstream xmlrpc.client lib is fixed.
+    """
+
+    def end_string(self, data):
+        if self._encoding and not isinstance(data, str):
+            data = data.decode(self._encoding)
+        self.append(data)
+        self._value = 0
+    Unmarshaller.dispatch["string"] = end_string
+    Unmarshaller.dispatch["name"] = end_string # struct keys are always strings
+
+
+class Xmlrpc(Xml):
     """Support generic XML-RPC services.
-    
+
     Spec: http://xmlrpc.scripting.com/spec.html
     """
 
@@ -46,3 +61,7 @@ class Xmlrpc(LxmlXml):
             return data
         else:
             self.handle_error(code=faults[0]['faultCode'], msg=faults[0]['faultString'])
+
+    def _getparser(self):
+        u = _Unmarshaller(use_datetime=True)
+        return super()._getparser(unmarshaller=u)

@@ -1,4 +1,3 @@
-from xmlrpc.client import getparser, Unmarshaller
 from xml.parsers.expat import ExpatError
 
 from lxml.etree import XMLPullParser, XMLSyntaxError
@@ -24,9 +23,8 @@ class Xml(Service):
             return self._parse_xml(response)[0]
         except (ExpatError, XMLSyntaxError) as e:
             # The default XML parser in python (expat) has issues with badly
-            # formed XML. This is alleviated somewhat by providing an
-            # alternative class that uses lxml for parsing which allows
-            # recovering from certain types of broken XML.
+            # formed XML. We workaround this somewhat by using lxml for parsing
+            # which allows recovering from certain types of broken XML.
             if not response.headers['Content-Type'].startswith('text/xml'):
                 msg = 'non-XML response from server'
                 if not self.verbose:
@@ -34,14 +32,18 @@ class Xml(Service):
                 raise RequestError(msg=msg, text=response.text)
             raise ParsingError(msg='failed parsing XML', text=str(e)) from e
 
-    def _getparser(self, use_datetime=True):
-        return getparser(use_datetime=use_datetime)
+    def _getparser(self, unmarshaller=None):
+        u = unmarshaller
+        if u is None:
+            u = UnmarshallToDict()
+        p = LXMLParser(u)
+        return p, u
 
     def _parse_xml(self, response):
         """Parse XML data from response."""
         stream = _IterContent(response)
 
-        p, u = self._getparser(use_datetime=True)
+        p, u = self._getparser()
 
         while 1:
             data = stream.read(64*1024)
@@ -66,7 +68,7 @@ class _IterContent(object):
             return b''
 
 
-class _LXMLParser(object):
+class LXMLParser(object):
     """XML parser using lxml.
 
     That tries hard to parse through broken XML.
@@ -97,25 +99,5 @@ class _LXMLParser(object):
         self._parser.close()
 
 
-class _Unmarshaller(Unmarshaller):
-    """Override to avoid decoding unicode objects.
-
-    This can be dropped once the upstream xmlrpc.client lib is fixed.
-    """
-
-    def end_string(self, data):
-        if self._encoding and not isinstance(data, str):
-            data = data.decode(self._encoding)
-        self.append(data)
-        self._value = 0
-    Unmarshaller.dispatch["string"] = end_string
-    Unmarshaller.dispatch["name"] = end_string # struct keys are always strings
-
-
-class LxmlXml(Xml):
-    """Use lxml for parsing with XML-based services."""
-
-    def _getparser(self, use_datetime=True):
-        u = _Unmarshaller(use_datetime=use_datetime)
-        p = _LXMLParser(u)
-        return p, u
+class UnmarshallToDict(object):
+    pass
