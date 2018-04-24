@@ -198,8 +198,8 @@ class Get(args.Get):
         super().__init__(*args, **kw)
         # optional args
         self.opts.add_argument(
-            '-H', '--no-history', dest='get_history', action='store_false',
-            help='do not show bug history')
+            '-H', '--show-history', dest='get_history', action='store_true',
+            help='show bug history')
         self.opts.add_argument(
             '--show-obsolete', action='store_true',
             help='show obsolete attachments')
