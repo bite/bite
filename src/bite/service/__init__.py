@@ -228,10 +228,10 @@ class NullRequest(Request):
 
     def parse(self, data):
         if not self._generator:
-            return None
+            return ()
 
         while True:
-            yield None
+            yield ()
 
 
 class ClientCallbacks(object):
