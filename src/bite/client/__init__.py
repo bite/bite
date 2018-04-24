@@ -163,6 +163,13 @@ class Cli(Client):
         self.log_t(f"{filename!r} attached to {self.service.item.type}{pluralism(ids)}: \
                    {', '.join(map(str, ids))}")
 
+    def _attachment_urls(self, ids):
+        if self.service.attachment_endpoint is None:
+            raise BiteError("no web endpoint defined for attachments")
+        attachment_url = self.service.webbase.rstrip('/') + self.service.attachment_endpoint
+        for id in ids:
+            yield attachment_url.format(id=id)
+
     @login_retry
     def attachments(self, ids, dry_run=False, item_id=False, output_url=False, browser=False, **kw):
         """Get attachments from a service."""
@@ -180,25 +187,15 @@ class Cli(Client):
 
         self.log_t(f"Getting attachment{plural}{item_str}: {', '.join(map(str, ids))}")
 
-        def _attachment_urls(ids):
-            if self.service.attachment_endpoint is None:
-                raise BiteError("no web endpoint defined for attachments")
-            attachment_url = self.service.webbase.rstrip('/') + self.service.attachment_endpoint
-            for id in ids:
-                yield attachment_url.format(id=id)
-
-        def _output_urls(ids):
-            print(*_attachment_urls(ids), sep='\n')
-
         def _launch_browser(ids):
-            urls = list(_attachment_urls(ids))
+            urls = list(self._attachment_urls(ids))
             self.log_t(f'Launching attachment{pluralism(ids)} in browser: {const.BROWSER}')
             self.log(urls, prefix='   - ')
             launch_browser(urls)
 
         if not item_id and (output_url or browser):
             if output_url:
-                _output_urls(ids)
+                print(*self._attachment_urls(ids), sep='\n')
             elif browser:
                 _launch_browser(ids)
         else:
@@ -211,7 +208,8 @@ class Cli(Client):
             attachments = chain.from_iterable(attachments)
 
             if output_url:
-                _output_urls(x.id for x in attachments)
+                ids = (x.id for x in attachments)
+                print(*self._attachment_urls(ids), sep='\n')
             elif browser:
                 _launch_browser(x.id for x in attachments)
             else:
