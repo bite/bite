@@ -1,10 +1,10 @@
-from xmlrpc.client import dumps, loads, Unmarshaller, Fault
+from xmlrpc.client import dumps, loads, Unmarshaller, Fault, ResponseError
 
 from snakeoil.klass import steal_docs
 
 from . import Service
 from ._xml import Xml
-from ..exceptions import RequestError
+from ..exceptions import RequestError, ParsingError
 
 
 class _Unmarshaller(Unmarshaller):
@@ -55,6 +55,8 @@ class Xmlrpc(Xml):
             data = super().parse_response(response)
         except Fault as e:
             raise RequestError(msg=e.faultString, code=e.faultCode)
+        except ResponseError as e:
+            raise ParsingError(msg='failed parsing XML') from e
 
         faults = data.get('faults', None)
         if not faults:
