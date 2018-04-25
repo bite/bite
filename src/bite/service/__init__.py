@@ -570,8 +570,8 @@ class Service(object):
             self._failed_http_response(response)
 
     def _failed_http_response(self, response):
-        if response.status_code in (401, 403):
-            raise AuthError('authentication failed')
+        if response.status_code == 401:
+            raise AuthError('authentication failed', text=response.text)
         else:
             try:
                 raise response.raise_for_status()
