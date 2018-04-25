@@ -424,7 +424,7 @@ class Cli(Client):
                     else:
                         yield value
             else:
-                values = (getattr(item, field) for field in fields)
+                values = (str(getattr(item, field)) for field in fields)
                 yield output.format(*values)
 
     def _render_item(self, item, **kw):
