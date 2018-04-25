@@ -84,14 +84,6 @@ def get_config(args, config_file=None):
     # files matching the name of the selected connection are loaded.
     load_service_files(connection, config)
 
-    if connection is not None:
-        for config_file in service_files(connection):
-            try:
-                with open(config_file) as f:
-                    config.read_file(f)
-            except IOError as e:
-                raise BiteError(f'cannot load config file {e.filename!r}: {e.strerror}')
-
     if connection:
         if not config.has_section(connection):
             raise BiteError(f'unknown connection: {connection!r}')
