@@ -111,7 +111,7 @@ class _SearchRequest(LinkPagedRequest, RESTRequest):
                 or_queries = []
                 display_terms = []
                 for term in v:
-                    or_terms = term.split(',')
+                    or_terms = [x.replace('"', '\\"') for x in term.split(',')]
                     or_search_terms = [f'title ~ "{x}"' for x in or_terms]
                     or_display_terms = [f'"{x}"' for x in or_terms]
                     if len(or_terms) > 1:
