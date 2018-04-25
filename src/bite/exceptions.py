@@ -39,8 +39,8 @@ class ParsingError(BiteError):
 class AuthError(RequestError):
     """Exception related to failed authentication or lack of sufficient privileges."""
 
-    def __init__(self, msg, code=None, expired=False):
-        super().__init__(msg, code)
+    def __init__(self, msg, code=None, expired=False, text=None):
+        super().__init__(msg, code=code, text=text)
         self.expired = expired
 
 
