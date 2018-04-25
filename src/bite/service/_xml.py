@@ -17,15 +17,15 @@ class Xml(Service):
 
     @steal_docs(Service)
     def parse_response(self, response):
+        if not response.headers['Content-Type'].startswith('text/xml'):
+            msg = 'non-XML response from server'
+            if not self.verbose:
+                msg += ' (use verbose mode to see it)'
+            raise RequestError(msg=msg, text=response.text)
         try:
             return self._parse_xml(response)[0]
         except XMLSyntaxError as e:
-            if not response.headers['Content-Type'].startswith('text/xml'):
-                msg = 'non-XML response from server'
-                if not self.verbose:
-                    msg += ' (use verbose mode to see it)'
-                raise RequestError(msg=msg, text=response.text)
-            raise ParsingError(msg='failed parsing XML', text=str(e)) from e
+            raise ParsingError(msg='failed parsing XML') from e
 
     def _getparser(self, unmarshaller=None):
         u = unmarshaller
