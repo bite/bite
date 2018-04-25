@@ -124,6 +124,11 @@ class _SearchRequest(LinkPagedRequest, RESTRequest):
                 options.append(f"Summary: {' AND '.join(display_terms)}")
 
         params['q'] = ' AND '.join(query)
+
+        # sort ascending by issue ID by default
+        if 'sort' not in params:
+            params['sort'] = 'id'
+
         return params, options
 
     def parse(self, data):
