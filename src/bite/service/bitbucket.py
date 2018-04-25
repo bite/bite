@@ -37,12 +37,10 @@ class BitbucketIssue(Item):
 
     type = 'issue'
 
-    def __init__(self, service, **kw):
+    def __init__(self, service, issue):
         for k in self.attributes.keys():
-            v = kw.get(k, None)
-            if v is None:
-                v = 'None'
-            elif k == 'assignee':
+            v = issue.get(k, None)
+            if k == 'assignee' and v:
                 v = v['username']
             setattr(self, k, v)
 
@@ -134,4 +132,4 @@ class _SearchRequest(LinkPagedRequest, RESTRequest):
         self._next_page = data.get(self._next, None)
         issues = data['values']
         for issue in issues:
-            yield self.service.item(self.service, **issue)
+            yield self.service.item(self.service, issue)
