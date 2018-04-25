@@ -1,0 +1,3 @@
+[x265]
+service: bitbucket
+base: https://bitbucket.org/multicoreware/x265
