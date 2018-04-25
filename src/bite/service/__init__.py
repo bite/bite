@@ -172,6 +172,54 @@ class PagedRequest(Request):
             self._finalized = False
 
 
+# TODO: run these asynchronously
+class LinkPagedRequest(Request):
+    """Keep requesting matching records until all relevant result pages are returned."""
+
+    # paging related parameter keys for a related service query
+    _page = None
+    _pagelen = None
+    _next = None
+    _previous = None
+
+    def __init__(self, service, *args, **kw):
+        super().__init__(*args, service=service, **kw)
+
+        if not all((self._page, self._pagelen, self._next, self._previous)):
+            raise ValueError('page, pagelen, next, and previous keys must be set')
+
+        if service.max_results is not None:
+            self.params[self._pagelen] = service.max_results
+
+        # total number of elements parsed
+        self._seen = 0
+        # link to next page
+        self._next_page = None
+
+        # Total number of potential elements to request, some services don't
+        # return the number of matching elements so this is optional.
+        # TODO: For services that return total number of matches on the first
+        # request, send the remaining requests asynchronously.
+        self._total = None
+
+    def send(self):
+        while True:
+            data = self.service.send(self)
+            seen = 0
+            for x in data:
+                seen += 1
+                yield x
+
+            # no more results exist, stop requesting them
+            if self._next_page is None:
+                break
+
+            # set offset and send new request
+            self._seen += seen
+            self._req.url = self._next_page
+
+
+
 class RPCRequest(Request):
     """Construct an RPC request."""
 
