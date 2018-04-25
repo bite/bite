@@ -106,15 +106,26 @@ class _SearchRequest(LinkPagedRequest, RESTRequest):
     def parse_params(self, service, params=None, options=None, **kw):
         params = params if params is not None else {}
         options = options if options is not None else []
-        jql = []
+        query = []
 
         for k, v in ((k, v) for (k, v) in kw.items() if v):
             if k == 'terms':
+                or_queries = []
+                display_terms = []
                 for term in v:
-                    jql.append(f'title ~ "{term}"')
-                options.append(f"Summary: {', '.join(map(str, v))}")
+                    or_terms = term.split(',')
+                    or_search_terms = [f'title ~ "{x}"' for x in or_terms]
+                    or_display_terms = [f'"{x}"' for x in or_terms]
+                    if len(or_terms) > 1:
+                        or_queries.append(f"({' OR '.join(or_search_terms)})")
+                        display_terms.append(f"({' OR '.join(or_display_terms)})")
+                    else:
+                        or_queries.append(or_search_terms[0])
+                        display_terms.append(or_display_terms[0])
+                query.append(f"{' AND '.join(or_queries)}")
+                options.append(f"Summary: {' AND '.join(display_terms)}")
 
-        params['q'] = ' AND '.join(jql)
+        params['q'] = ' AND '.join(query)
         return params, options
 
     def parse(self, data):
