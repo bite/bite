@@ -25,3 +25,14 @@ class Search(args.Search):
                 sorting term with '-'; otherwise, sorting is done in an
                 ascending fashion by default.
             """)
+
+
+@args.subcmd(BitbucketOpts)
+class Get(args.Get):
+
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
+        # optional args
+        self.opts.add_argument(
+            '-H', '--no-history', dest='get_changes', action='store_false',
+            help="don't show bug history")

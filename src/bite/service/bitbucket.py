@@ -10,10 +10,10 @@ Updates:
 
 from dateutil.parser import parse as dateparse
 
-from . import RESTRequest, LinkPagedRequest, req_cmd
+from . import RESTRequest, LinkPagedRequest, Request, NullRequest, generator, req_cmd
 from ..exceptions import BiteError, RequestError
 from ._jsonrest import JsonREST
-from ..objects import Item
+from ..objects import Item, Comment, Attachment, Change
 
 
 class BitbucketError(RequestError):
@@ -41,7 +41,6 @@ class BitbucketIssue(Item):
         #'edited_on': 'Edited',
         'created_on': 'Created',
         'updated_on': 'Modified',
-        'content': 'Description',
     }
 
     attribute_aliases = {
@@ -50,8 +49,23 @@ class BitbucketIssue(Item):
         'modified': 'updated_on',
         'creator': 'reporter',
         'status': 'state',
-        'description': 'content',
     }
+
+    _print_fields = (
+        ('assignee', 'Assignee'),
+        ('title', 'Title'),
+        ('id', 'ID'),
+        ('kind', 'Type'),
+        ('priority', 'Priority'),
+        ('reporter', 'Reporter'),
+        ('component', 'Component'),
+        ('state', 'Status'),
+        ('version', 'Version'),
+        ('created_on', 'Created'),
+        ('updated_on', 'Modified'),
+        ('votes', 'Votes'),
+        ('watches', 'Watches'),
+    )
 
     type = 'issue'
 
@@ -60,11 +74,46 @@ class BitbucketIssue(Item):
             v = issue.get(k, None)
             if k in ('assignee', 'reporter') and v:
                 v = v['username']
+            elif k == 'reporter' and v is None:
+                v = 'Anonymous'
             elif k in ('created_on', 'updated_on'):
                 v = dateparse(v)
-            elif k == 'content':
-                v = v['raw']
             setattr(self, k, v)
+
+        try:
+            desc = issue['content']['raw']
+        except KeyError:
+            desc = ''
+        self.comments = [
+            BitbucketComment(count=0, text=desc, created=self.created_on,
+                             creator=self.reporter)
+        ]
+
+
+class BitbucketComment(Comment):
+    pass
+
+
+class BitbucketAttachment(Attachment):
+    pass
+
+
+class BitbucketEvent(Change):
+
+    def __init__(self, service, id, count, change):
+        creator = change['user']['username']
+        created = dateparse(change['created_on'])
+        changes = {}
+        for k, v in change['changes'].items():
+            if k == 'content':
+                changes['description'] = 'updated'
+            else:
+                changes[service.item.attributes.get(k, k)] = (v['old'], v['new'])
+
+        super().__init__(
+            creator=creator, created=created, id=id,
+            changes=changes, count=count)
+
 
 
 class Bitbucket(JsonREST):
@@ -74,6 +123,7 @@ class Bitbucket(JsonREST):
 
     item = BitbucketIssue
     item_endpoint = '/issues/{id}'
+    attachment = BitbucketAttachment
 
     def __init__(self, base, max_results=None, **kw):
         try:
@@ -106,14 +156,17 @@ class Bitbucket(JsonREST):
         raise BitbucketError(msg=msg, code=code)
 
 
-@req_cmd(Bitbucket, 'search')
-class _SearchRequest(LinkPagedRequest, RESTRequest):
-    """Construct a search request."""
+class BitbucketPagedRequest(LinkPagedRequest, RESTRequest):
 
     _page = 'page'
     _pagelen = 'pagelen'
     _next = 'next'
     _previous = 'previous'
+
+
+@req_cmd(Bitbucket, 'search')
+class _SearchRequest(BitbucketPagedRequest):
+    """Construct a search request."""
 
     # Map of allowed sorting input values to service parameters.
     sorting_map = {
@@ -193,3 +246,132 @@ class _SearchRequest(LinkPagedRequest, RESTRequest):
         issues = data['values']
         for issue in issues:
             yield self.service.item(self.service, issue)
+
+
+@req_cmd(Bitbucket)
+class _GetItemRequest(Request):
+    """Construct an issue request."""
+
+    def __init__(self, ids, service, **kw):
+        if ids is None:
+            raise ValueError(f'No {service.item.type} ID(s) specified')
+
+        reqs = []
+        for i in ids:
+            reqs.append(RESTRequest(
+                service=service, endpoint=f'/issues/{i}'))
+
+        super().__init__(service=service, reqs=reqs)
+        self.ids = ids
+
+    def parse(self, data):
+        # TODO: hack, rework the http send parsing rewapper to be more
+        # intelligent about unwrapping responses
+        if len(self.ids) == 1:
+            data = [data]
+        for i, issue in enumerate(data):
+            yield self.service.item(self.service, issue)
+
+
+@req_cmd(Bitbucket, 'comments')
+class _CommentsRequest(Request):
+    """Construct a comments request."""
+
+    def __init__(self, ids=None, service=None, **kw):
+        if ids is None:
+            raise ValueError(f'No {service.item.type} ID(s) specified')
+
+        reqs = []
+        for i in ids:
+            reqs.append(BitbucketPagedRequest(
+                service=service, endpoint=f'/issues/{i}/comments'))
+
+        super().__init__(service=service, reqs=reqs)
+        self.ids = ids
+
+    @generator
+    def parse(self, data):
+        # skip comments that have no content, i.e. issue attribute changes
+        for i in self.ids:
+            comments = next(data)['values']
+            yield [BitbucketComment(
+                    id=i, count=j+1, text=c['content']['raw'],
+                    created=dateparse(c['created_on']), creator=c['user']['username'])
+                   for j, c in enumerate(comments) if c['content']['raw']]
+
+
+@req_cmd(Bitbucket, 'attachments')
+class _AttachmentsRequest(Request):
+    """Construct an attachments request."""
+
+    def __init__(self, service, ids=None, get_data=False, *args, **kw):
+        if ids is None:
+            raise ValueError(f'No {service.item.type} ID(s) specified')
+
+        reqs = []
+        for i in ids:
+            reqs.append(BitbucketPagedRequest(
+                service=service, endpoint=f'/issues/{i}/attachments'))
+
+        super().__init__(service=service, reqs=reqs)
+        self.ids = ids
+
+    @generator
+    def parse(self, data):
+        for attachments in data:
+            attachments = attachments['values']
+            yield [
+                self.service.attachment(
+                    filename=a['name'], url=a['links']['self']['href'])
+                for a in attachments]
+
+
+@req_cmd(Bitbucket, 'changes')
+class _ChangesRequest(Request):
+    """Construct a changes request."""
+
+    def __init__(self, ids=None, service=None, **kw):
+        if ids is None:
+            raise ValueError(f'No {service.item.type} ID(s) specified')
+
+        reqs = []
+        for i in ids:
+            reqs.append(BitbucketPagedRequest(
+                service=service, endpoint=f'/issues/{i}/changes'))
+
+        super().__init__(service=service, reqs=reqs)
+        self.ids = ids
+
+    @generator
+    def parse(self, data):
+        for i in self.ids:
+            changes = next(data)['values']
+            yield [BitbucketEvent(self.service, id=c['id'], count=j, change=c)
+                   for j, c in enumerate(changes)]
+
+
+@req_cmd(Bitbucket, 'get')
+class _GetRequest(Request):
+    """Construct requests to retrieve all known data for given issue IDs."""
+
+    def __init__(self, ids, service, get_comments=False, get_attachments=False,
+                 get_changes=False, *args, **kw):
+        if not ids:
+            raise ValueError(f'No {service.item.type} ID(s) specified')
+
+        reqs = [service.GetItemRequest(ids=ids)]
+        for call in ('attachments', 'comments', 'changes'):
+            if locals()[f'get_{call}']:
+                reqs.append(getattr(service, f'{call.capitalize()}Request')(ids=ids))
+            else:
+                reqs.append(NullRequest(generator=True))
+
+        super().__init__(service=service, reqs=reqs)
+
+    def parse(self, data):
+        issues, attachments, comments, changes = data
+        for issue in issues:
+            issue.comments += next(comments)
+            issue.attachments = next(attachments)
+            issue.changes = next(changes)
+            yield issue
