@@ -4,7 +4,7 @@ API docs:
     - http://www.redmine.org/projects/redmine/wiki/Rest_api
 """
 
-from .._reqs import RESTRequest, PagedRequest, req_cmd
+from .._reqs import RESTRequest, OffsetPagedRequest, req_cmd
 from .._rest import REST
 from ...exceptions import BiteError, RequestError
 from ...objects import Item
@@ -62,7 +62,7 @@ class Redmine(REST):
 
 
 @req_cmd(Redmine, 'search')
-class _SearchRequest(PagedRequest, RESTRequest):
+class _SearchRequest(OffsetPagedRequest, RESTRequest):
     """Construct a search request.
 
     Assumes the elastic search plugin is installed:

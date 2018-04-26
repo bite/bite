@@ -113,6 +113,65 @@ class Request(object):
 class PagedRequest(Request):
     """Keep requesting matching records until all relevant results are returned."""
 
+    # page, query size, and total results parameter keys for a related service query
+    _page_key = None
+    _size_key = None
+    _total_key = None
+
+    def __init__(self, service, limit=None, page=None, *args, **kw):
+        super().__init__(*args, service=service, **kw)
+
+        if not all((self._page_key, self._size_key, self._total_key)):
+            raise ValueError('page, size, and total keys must be set')
+
+        # set a search limit to make continued requests work as expected
+        if limit is not None:
+            self.params[self._size_key] = limit
+        elif service.max_results is not None:
+            self.params[self._size_key] = service.max_results
+
+        if page is not None:
+            self.params[self._page_key] = page
+        else:
+            self.params[self._page_key] = 0
+
+        # total number of elements parsed
+        self._seen = 0
+
+        # Total number of potential elements to request, some services don't
+        # return the number of matching elements so this is optional.
+        # TODO: For services that return total number of matches on the first
+        # request, send the remaining requests asynchronously.
+        self._total = None
+
+    def send(self):
+        while True:
+            data = self.service.send(self)
+            seen = 0
+            for x in data:
+                seen += 1
+                yield x
+
+            # if no more results exist, stop requesting them
+            self._seen += seen
+            if self._total is None or self._seen >= self._total:
+                break
+
+            # increment page and send new request
+            self.params[self._page_key] += 1
+            self._finalized = False
+
+    def parse(self, data):
+        """Extract the total number of results expected."""
+        if self._total is None:
+            self._total = data[self._total_key]
+        super().parse(data)
+
+
+# TODO: run these asynchronously
+class OffsetPagedRequest(Request):
+    """Keep requesting matching records until all relevant results are returned."""
+
     # offset and query size parameter keys for a related service query
     _offset_key = None
     _size_key = None

@@ -8,7 +8,7 @@ API docs:
 from dateutil.parser import parse as dateparse
 
 from ._jsonrest import JsonREST
-from ._reqs import RESTRequest, PagedRequest, Request, GetRequest, req_cmd, generator
+from ._reqs import RESTRequest, OffsetPagedRequest, Request, GetRequest, req_cmd, generator
 from ..cache import Cache
 from ..exceptions import RequestError, BiteError
 from ..objects import Item, Attachment, Comment, Change
@@ -113,7 +113,7 @@ class Launchpad(JsonREST):
 
 
 @req_cmd(Launchpad, 'search')
-class _SearchRequest(PagedRequest, RESTRequest):
+class _SearchRequest(OffsetPagedRequest, RESTRequest):
     """Construct a search request.
 
     API docs: https://launchpad.net/+apidoc/1.0.html#bugs under the 'searchTasks'

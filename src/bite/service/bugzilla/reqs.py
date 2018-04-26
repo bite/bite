@@ -5,13 +5,13 @@ from urllib.parse import parse_qs
 from snakeoil.demandload import demandload
 
 from .objects import BugzillaEvent, BugzillaComment
-from .._reqs import PagedRequest, Request
+from .._reqs import OffsetPagedRequest, Request
 from ...exceptions import BiteError
 
 demandload('bite:const')
 
 
-class SearchRequest4_4(PagedRequest):
+class SearchRequest4_4(OffsetPagedRequest):
     """Construct a bugzilla-4.4 compatible search request.
 
     API docs: https://www.bugzilla.org/docs/4.4/en/html/api/Bugzilla/WebService/Bug.html#search

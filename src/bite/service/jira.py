@@ -6,7 +6,7 @@ API docs:
 """
 
 from ._jsonrest import JsonREST
-from ._reqs import RESTRequest, PagedRequest, req_cmd
+from ._reqs import RESTRequest, OffsetPagedRequest, req_cmd
 from ..exceptions import BiteError, RequestError
 from ..objects import Item
 
@@ -88,7 +88,7 @@ class Jira(JsonREST):
 
 
 @req_cmd(Jira, 'search')
-class _SearchRequest(PagedRequest, RESTRequest):
+class _SearchRequest(OffsetPagedRequest, RESTRequest):
     """Construct a search request."""
 
     _offset_key = 'startAt'
