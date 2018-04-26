@@ -134,6 +134,8 @@ class _SearchRequest(PagedRequest, RESTRequest):
         'creator': 'reported_by_s',
         'labels': 'labels_t',
         'votes': 'votes_total_i',
+        'private': 'private_b',
+        'muted': 'discussion_disabled_b',
         'milestone': '_milestone_s',
         'type': '_type_s',
         'needs': '_needs_s',
