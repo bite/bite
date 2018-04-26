@@ -4,7 +4,7 @@ API docs:
     - http://www.redmine.org/projects/redmine/wiki/Rest_api
 """
 
-from .. import RESTRequest, PagedRequest, req_cmd
+from .._reqs import RESTRequest, PagedRequest, req_cmd
 from .._rest import REST
 from ...exceptions import BiteError, RequestError
 from ...objects import Item

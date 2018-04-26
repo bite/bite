@@ -5,7 +5,7 @@ from urllib.parse import parse_qs
 from snakeoil.demandload import demandload
 
 from .objects import BugzillaEvent, BugzillaComment
-from .. import PagedRequest, Request
+from .._reqs import PagedRequest, Request
 from ...exceptions import BiteError
 
 demandload('bite:const')

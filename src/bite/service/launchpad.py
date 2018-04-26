@@ -7,10 +7,10 @@ API docs:
 
 from dateutil.parser import parse as dateparse
 
-from . import RESTRequest, PagedRequest, Request, GetRequest, req_cmd, generator
+from ._jsonrest import JsonREST
+from ._reqs import RESTRequest, PagedRequest, Request, GetRequest, req_cmd, generator
 from ..cache import Cache
 from ..exceptions import RequestError, BiteError
-from ._jsonrest import JsonREST
 from ..objects import Item, Attachment, Comment, Change
 
 

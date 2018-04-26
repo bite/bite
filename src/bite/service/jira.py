@@ -5,9 +5,9 @@ API docs:
     - https://docs.atlassian.com/jira/REST/server/
 """
 
-from . import RESTRequest, PagedRequest, req_cmd
-from ..exceptions import BiteError, RequestError
 from ._jsonrest import JsonREST
+from ._reqs import RESTRequest, PagedRequest, req_cmd
+from ..exceptions import BiteError, RequestError
 from ..objects import Item
 
 

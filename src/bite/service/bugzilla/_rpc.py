@@ -5,7 +5,7 @@ from .reqs import (
     AttachRequest, CreateRequest, ExtensionsRequest, VersionRequest, FieldsRequest,
     ProductsRequest, UsersRequest,
 )
-from .. import RPCRequest, GetRequest, req_cmd
+from .._reqs import RPCRequest, GetRequest, req_cmd
 
 
 class Bugzilla4_4Rpc(Bugzilla):

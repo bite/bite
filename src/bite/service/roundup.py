@@ -10,7 +10,7 @@ import re
 from datetime import datetime
 from snakeoil.sequences import iflatten_instance
 
-from . import NullRequest, Request, RPCRequest, req_cmd, generator
+from ._reqs import NullRequest, Request, RPCRequest, req_cmd, generator
 from ._xmlrpc import Xmlrpc
 from ..cache import Cache, csv2tuple
 from ..exceptions import AuthError, RequestError, ParsingError

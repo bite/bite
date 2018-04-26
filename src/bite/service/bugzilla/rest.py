@@ -9,8 +9,8 @@ from .reqs import (
     GetItemRequest, ModifyRequest, AttachRequest, CreateRequest,
     ExtensionsRequest, VersionRequest, FieldsRequest, ProductsRequest, UsersRequest,
 )
-from .. import RESTRequest, GetRequest, req_cmd
 from .._jsonrest import JsonREST
+from .._reqs import RESTRequest, GetRequest, req_cmd
 
 
 class _BugzillaRestBase(Bugzilla5_0, JsonREST):

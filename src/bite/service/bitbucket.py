@@ -10,9 +10,9 @@ Updates:
 
 from dateutil.parser import parse as dateparse
 
-from . import RESTRequest, LinkPagedRequest, Request, GetRequest, generator, req_cmd
-from ..exceptions import BiteError, RequestError
 from ._jsonrest import JsonREST
+from ._reqs import RESTRequest, LinkPagedRequest, Request, GetRequest, generator, req_cmd
+from ..exceptions import BiteError, RequestError
 from ..objects import Item, Comment, Attachment, Change
 
 
