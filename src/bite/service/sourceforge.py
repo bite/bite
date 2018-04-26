@@ -110,7 +110,13 @@ class Sourceforge(JsonREST):
 
 @req_cmd(Sourceforge, 'search')
 class _SearchRequest(PagedRequest, RESTRequest):
-    """Construct a search request."""
+    """Construct a search request.
+
+    Currently using on Solr on the backend, see the following docs for query help:
+        https://lucene.apache.org/solr/guide/7_3/the-standard-query-parser.html
+        http://www.solrtutorial.com/solr-query-syntax.html
+        http://yonik.com/solr/
+    """
 
     _page_key = 'page'
     _size_key = 'limit'
