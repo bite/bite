@@ -127,12 +127,15 @@ class _SearchRequest(PagedRequest, RESTRequest):
     def parse_params(self, service, params=None, options=None, **kw):
         params = params if params is not None else {}
         options = options if options is not None else []
-        query = []
 
         for k, v in ((k, v) for (k, v) in kw.items() if v):
             if k == 'terms':
                 params['q'] = '+'.join(v)
                 options.append(f"Summary: {', '.join(v)}")
+
+        # default to sorting ascending by ID
+        if 'sort' not in params:
+            params['sort'] = 'ticket_num_i asc'
 
         return params, options
 
