@@ -92,6 +92,9 @@ class Item(object):
         ('id', 'ID'),
         ('created', 'Reported'),
         ('modified', 'Updated'),
+        ('comments', 'Comments'),
+        ('attachments', 'Attachments'),
+        ('changes', 'Changes'),
     )
 
     def __init__(self, id=None, title=None, creator=None, owner=None, created=None,

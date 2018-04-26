@@ -65,6 +65,9 @@ class BitbucketIssue(Item):
         ('updated_on', 'Modified'),
         ('votes', 'Votes'),
         ('watches', 'Watches'),
+        ('comments', 'Comments'),
+        ('attachments', 'Attachments'),
+        ('changes', 'Changes'),
     )
 
     type = 'issue'
