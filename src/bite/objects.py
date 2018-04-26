@@ -233,8 +233,10 @@ class Attachment(object):
     def __str__(self):
         if self.size is not None:
             return f'Attachment: [{self.id}] [{self.filename}] ({self.size})'
-        else:
+        elif self.id is not None:
             return f'Attachment: [{self.id}] [{self.filename}]'
+        else:
+            return f'Attachment: [{self.filename}]'
 
     @decompress
     def read(self):
