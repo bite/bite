@@ -122,6 +122,24 @@ class _SearchRequest(PagedRequest, RESTRequest):
     _size_key = 'limit'
     _total_key = 'count'
 
+    # Map of allowed sorting input values to service parameters.
+    sorting_map = {
+        'assignee': 'assigned_to_s',
+        'id': 'ticket_num_i',
+        'title': 'snippet_s',
+        'description': 'text_s',
+        'status': 'status_s',
+        'created': 'created_date_dt',
+        'modified': 'mod_date_dt',
+        'creator': 'reported_by_s',
+        'labels': 'labels_t',
+        'votes': 'votes_total_i',
+        'milestone': '_milestone_s',
+        'type': '_type_s',
+        'needs': '_needs_s',
+        'patch': '_patch_s',
+    }
+
     def __init__(self, service, **kw):
         params, options = self.parse_params(service=service, **kw)
         if not params:
@@ -138,6 +156,24 @@ class _SearchRequest(PagedRequest, RESTRequest):
             if k == 'terms':
                 params['q'] = '+'.join(v)
                 options.append(f"Summary: {', '.join(v)}")
+            elif k == 'sort':
+                sorting_terms = []
+                for sort in v:
+                    if sort[0] == '-':
+                        key = sort[1:]
+                        order = 'desc'
+                    else:
+                        key = sort
+                        order = 'asc'
+                    try:
+                        order_var = self.sorting_map[key]
+                    except KeyError:
+                        choices = ', '.join(sorted(self.sorting_map.keys()))
+                        raise BiteError(
+                            f'unable to sort by: {key!r} (available choices: {choices}')
+                    sorting_terms.append(f'{order_var} {order}')
+                params['sort'] = ','.join(sorting_terms)
+                options.append(f"Sort order: {', '.join(v)}")
 
         # default to sorting ascending by ID
         if 'sort' not in params:
