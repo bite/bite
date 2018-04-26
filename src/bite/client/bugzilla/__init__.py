@@ -482,26 +482,9 @@ class Bugzilla(Cli):
                 yield from self._iter_lines(comments)
 
     def _render_item(self, bug, show_obsolete=False, **kw):
-        yield '=' * const.COLUMNS
-        for line in str(bug).splitlines():
-            if len(line) <= const.COLUMNS:
-                yield line
-            else:
-                yield self.wrapper.fill(line)
-
-        if bug.attachments:
-            if show_obsolete:
-                attachments = [str(a) for a in bug.attachments]
-            else:
-                attachments = [str(a) for a in bug.attachments if not a.is_obsolete]
-            if attachments:
-                if str(bug):
-                    yield ''
-                yield from attachments
-
-        if bug.events and (str(bug) or bug.attachments):
-            yield ''
-        yield from self._iter_lines(str(x) for x in bug.events)
+        if bug.attachments and not show_obsolete:
+            bug.attachments = tuple(a for a in bug.attachments if not a.is_obsolete)
+        yield from super()._render_item(bug, **kw)
 
     def change_fields(self, s):
         changes = s.split(',')
