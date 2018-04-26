@@ -8,6 +8,8 @@ Updates:
     https://blog.bitbucket.org/
 """
 
+from dateutil.parser import parse as dateparse
+
 from . import RESTRequest, LinkPagedRequest, req_cmd
 from ..exceptions import BiteError, RequestError
 from ._jsonrest import JsonREST
@@ -28,11 +30,27 @@ class BitbucketIssue(Item):
         'assignee': 'Assignee',
         'id': 'ID',
         'title': 'Title',
+        'kind': 'Type',
+        'priority': 'Priority',
+        'reporter': 'Reporter',
+        'component': 'Component',
+        'votes': 'Votes',
+        'watches': 'Watches',
+        'state': 'Status',
+        'version': 'Version',
+        #'edited_on': 'Edited',
+        'created_on': 'Created',
+        'updated_on': 'Modified',
+        'content': 'Description',
     }
 
     attribute_aliases = {
-        'title': 'summary',
         'owner': 'assignee',
+        'created': 'created_on',
+        'modified': 'updated_on',
+        'creator': 'reporter',
+        'status': 'state',
+        'description': 'content',
     }
 
     type = 'issue'
@@ -40,8 +58,12 @@ class BitbucketIssue(Item):
     def __init__(self, service, issue):
         for k in self.attributes.keys():
             v = issue.get(k, None)
-            if k == 'assignee' and v:
+            if k in ('assignee', 'reporter') and v:
                 v = v['username']
+            elif k in ('created_on', 'updated_on'):
+                v = dateparse(v)
+            elif k == 'content':
+                v = v['raw']
             setattr(self, k, v)
 
 
