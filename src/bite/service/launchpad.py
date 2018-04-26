@@ -356,7 +356,7 @@ class _CommentsRequest(Request):
                     id=id, count=i, text=text,
                     created=dateparse(c['date_created']),
                     creator=c['owner_link'][len(self.service.base) + 2:]))
-            yield l
+            yield tuple(l)
 
 
 @req_cmd(Launchpad, 'attachments')
@@ -384,7 +384,7 @@ class _AttachmentsRequest(Request):
     def parse(self, data):
         for attachments in data:
             attachments = attachments['entries']
-            yield [self.service.attachment(**a) for a in attachments]
+            yield tuple(self.service.attachment(**a) for a in attachments)
 
 
 @req_cmd(Launchpad, 'get')

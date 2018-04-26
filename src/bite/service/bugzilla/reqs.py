@@ -227,8 +227,8 @@ class HistoryRequest(Request):
     def parse(self, data):
         bugs = data['bugs']
         for b in bugs:
-            yield [BugzillaEvent(change=x, id=b['id'], alias=b['alias'], count=i)
-                   for i, x in enumerate(b['history'], start=1)]
+            yield tuple(BugzillaEvent(change=x, id=b['id'], alias=b['alias'], count=i)
+                        for i, x in enumerate(b['history'], start=1))
 
 
 class CommentsRequest(Request):
@@ -263,8 +263,8 @@ class CommentsRequest(Request):
     def parse(self, data):
         bugs = data['bugs']
         for i in self.ids:
-            yield [BugzillaComment(comment=comment, id=i, count=j)
-                   for j, comment in enumerate(bugs[str(i)]['comments'])]
+            yield tuple(BugzillaComment(comment=comment, id=i, count=j)
+                        for j, comment in enumerate(bugs[str(i)]['comments']))
 
 
 class AttachmentsRequest(Request):
@@ -301,7 +301,7 @@ class AttachmentsRequest(Request):
         if self.ids:
             bugs = data['bugs']
             for i in self.ids:
-                yield [self.service.attachment(**attachment) for attachment in bugs[str(i)]]
+                yield tuple(self.service.attachment(**attachment) for attachment in bugs[str(i)])
 
         if self.attachment_ids:
             attachments = data['attachments']
@@ -311,7 +311,7 @@ class AttachmentsRequest(Request):
                     files.append(self.service.attachment(**attachments[str(i)]))
             except KeyError:
                 raise BiteError(f'invalid attachment ID: {i}')
-            yield files
+            yield tuple(files)
 
 
 class ModifyRequest(Request):
