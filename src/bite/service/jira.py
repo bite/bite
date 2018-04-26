@@ -93,6 +93,7 @@ class _SearchRequest(OffsetPagedRequest, RESTRequest):
 
     _offset_key = 'startAt'
     _size_key = 'maxResults'
+    _total_key = 'total'
 
     def __init__(self, service, **kw):
         params, options = self.parse_params(service=service, **kw)
@@ -134,8 +135,7 @@ class _SearchRequest(OffsetPagedRequest, RESTRequest):
         return params, options
 
     def parse(self, data):
-        if self._total is None:
-            self._total = data['total']
+        super().parse(data)
         issues = data['issues']
         for issue in issues:
             yield self.service.item(self.service, issue)

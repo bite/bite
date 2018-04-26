@@ -176,6 +176,9 @@ class OffsetPagedRequest(Request):
     _offset_key = None
     _size_key = None
 
+    # total results size key
+    _total_key = None
+
     def __init__(self, service, limit=None, offset=None, *args, **kw):
         super().__init__(*args, service=service, **kw)
 
@@ -217,6 +220,12 @@ class OffsetPagedRequest(Request):
             self.params[self._offset_key] = self._seen
             self._finalized = False
 
+    def parse(self, data):
+        """Parse the data returned from a given request."""
+        if self._total is None and self._total_key is not None:
+            self._total = data[self._total_key]
+        super().parse(data)
+
 
 # TODO: run these asynchronously
 class LinkPagedRequest(Request):
@@ -227,6 +236,9 @@ class LinkPagedRequest(Request):
     _pagelen = None
     _next = None
     _previous = None
+
+    # total results size key
+    _total_key = None
 
     def __init__(self, service, *args, **kw):
         super().__init__(*args, service=service, **kw)
@@ -267,6 +279,8 @@ class LinkPagedRequest(Request):
     def parse(self, data):
         """Parse the data returned from a given request."""
         self._next_page = data.get(self._next, None)
+        if self._total is None and self._total_key is not None:
+            self._total = data[self._total_key]
         super().parse(data)
 
 

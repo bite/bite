@@ -165,6 +165,7 @@ class BitbucketPagedRequest(LinkPagedRequest, RESTRequest):
     _pagelen = 'pagelen'
     _next = 'next'
     _previous = 'previous'
+    _total_key = 'size'
 
 
 @req_cmd(Bitbucket, 'search')
@@ -244,8 +245,6 @@ class _SearchRequest(BitbucketPagedRequest):
 
     def parse(self, data):
         super().parse(data)
-        if self._total is None:
-            self._total = data['size']
         issues = data['values']
         for issue in issues:
             yield self.service.item(self.service, issue)

@@ -122,6 +122,7 @@ class _SearchRequest(OffsetPagedRequest, RESTRequest):
 
     _offset_key = 'ws.start'
     _size_key = 'ws.size'
+    _total_key = 'total_size'
 
     # Map of allowed sorting input values to service parameters determined by
     # looking at available values on the web interface.
@@ -270,8 +271,7 @@ class _SearchRequest(OffsetPagedRequest, RESTRequest):
         return params, options
 
     def parse(self, data):
-        if self._total is None:
-            self._total = data['total_size']
+        super().parse(data)
         bugs = data['entries']
         for bug in bugs:
             yield self.service.item(self.service, **bug)
