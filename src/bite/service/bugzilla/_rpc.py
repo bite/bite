@@ -1,11 +1,11 @@
 from . import Bugzilla, Bugzilla5_0, Bugzilla5_2
 from .reqs import (
     SearchRequest4_4, SearchRequest5_0, HistoryRequest, CommentsRequest,
-    AttachmentsRequest, LoginRequest, GetItemRequest, GetRequest, ModifyRequest,
+    AttachmentsRequest, LoginRequest, GetItemRequest, ModifyRequest,
     AttachRequest, CreateRequest, ExtensionsRequest, VersionRequest, FieldsRequest,
     ProductsRequest, UsersRequest,
 )
-from .. import RPCRequest, req_cmd
+from .. import RPCRequest, GetRequest, req_cmd
 
 
 class Bugzilla4_4Rpc(Bugzilla):

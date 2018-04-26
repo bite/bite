@@ -10,7 +10,7 @@ Updates:
 
 from dateutil.parser import parse as dateparse
 
-from . import RESTRequest, LinkPagedRequest, Request, NullRequest, generator, req_cmd
+from . import RESTRequest, LinkPagedRequest, Request, GetRequest, generator, req_cmd
 from ..exceptions import BiteError, RequestError
 from ._jsonrest import JsonREST
 from ..objects import Item, Comment, Attachment, Change
@@ -69,7 +69,7 @@ class BitbucketIssue(Item):
 
     type = 'issue'
 
-    def __init__(self, service, issue):
+    def __init__(self, service, issue, get_desc=True):
         for k in self.attributes.keys():
             v = issue.get(k, None)
             if k in ('assignee', 'reporter') and v:
@@ -80,14 +80,13 @@ class BitbucketIssue(Item):
                 v = dateparse(v)
             setattr(self, k, v)
 
-        try:
-            desc = issue['content']['raw'].strip()
-        except KeyError:
-            desc = ''
-        self.comments = [
-            BitbucketComment(count=0, text=desc, created=self.created_on,
-                             creator=self.reporter)
-        ]
+        if get_desc:
+            try:
+                desc = issue['content']['raw'].strip()
+            except KeyError:
+                desc = ''
+            self.description = BitbucketComment(
+                count=0, text=desc, created=self.created_on, creator=self.reporter)
 
 
 class BitbucketComment(Comment):
@@ -253,7 +252,7 @@ class _SearchRequest(BitbucketPagedRequest):
 class _GetItemRequest(Request):
     """Construct an issue request."""
 
-    def __init__(self, ids, service, **kw):
+    def __init__(self, ids, service, get_desc=True, **kw):
         if ids is None:
             raise ValueError(f'No {service.item.type} ID(s) specified')
 
@@ -264,6 +263,7 @@ class _GetItemRequest(Request):
 
         super().__init__(service=service, reqs=reqs)
         self.ids = ids
+        self.get_desc = get_desc
 
     def parse(self, data):
         # TODO: hack, rework the http send parsing rewapper to be more
@@ -271,7 +271,7 @@ class _GetItemRequest(Request):
         if len(self.ids) == 1:
             data = [data]
         for i, issue in enumerate(data):
-            yield self.service.item(self.service, issue)
+            yield self.service.item(self.service, issue, get_desc=self.get_desc)
 
 
 @req_cmd(Bitbucket, 'comments')
@@ -304,7 +304,7 @@ class _CommentsRequest(Request):
                     l.append(BitbucketComment(
                         id=i, count=j+1, text=c['content']['raw'].strip(),
                         created=dateparse(c['created_on']), creator=creator))
-            yield l
+            yield tuple(l)
 
 
 @req_cmd(Bitbucket, 'attachments')
@@ -327,10 +327,10 @@ class _AttachmentsRequest(Request):
     def parse(self, data):
         for attachments in data:
             attachments = attachments['values']
-            yield [
+            yield tuple(
                 self.service.attachment(
                     filename=a['name'], url=a['links']['self']['href'])
-                for a in attachments]
+                for a in attachments)
 
 
 @req_cmd(Bitbucket, 'changes')
@@ -353,32 +353,27 @@ class _ChangesRequest(Request):
     def parse(self, data):
         for i in self.ids:
             changes = next(data)['values']
-            yield [BitbucketEvent(self.service, id=c['id'], count=j, change=c)
-                   for j, c in enumerate(changes)]
+            yield tuple(BitbucketEvent(self.service, id=c['id'], count=j, change=c)
+                   for j, c in enumerate(changes))
 
 
 @req_cmd(Bitbucket, 'get')
-class _GetRequest(Request):
+class _GetRequest(GetRequest):
     """Construct requests to retrieve all known data for given issue IDs."""
 
-    def __init__(self, ids, service, get_comments=False, get_attachments=False,
-                 get_changes=False, *args, **kw):
-        if not ids:
-            raise ValueError(f'No {service.item.type} ID(s) specified')
-
-        reqs = [service.GetItemRequest(ids=ids)]
-        for call in ('attachments', 'comments', 'changes'):
-            if locals()[f'get_{call}']:
-                reqs.append(getattr(service, f'{call.capitalize()}Request')(ids=ids))
-            else:
-                reqs.append(NullRequest(generator=True))
-
-        super().__init__(service=service, reqs=reqs)
+    def __init__(self, *args, get_comments=False, **kw):
+        super().__init__(*args, get_comments=get_comments, **kw)
+        self.get_comments = get_comments
 
     def parse(self, data):
-        issues, attachments, comments, changes = data
-        for issue in issues:
-            issue.comments += next(comments)
-            issue.attachments = next(attachments)
-            issue.changes = next(changes)
-            yield issue
+        items, comments, attachments, changes = data
+        for item in items:
+            # Prepend comment for description which is provided by
+            # GetItemRequest instead of CommentsRequest.
+            if self.get_comments:
+                item.comments = (item.description,) + next(comments)
+            else:
+                item.comments = None
+            item.attachments = next(attachments)
+            item.changes = next(changes)
+            yield item

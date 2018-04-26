@@ -5,7 +5,7 @@ from urllib.parse import parse_qs
 from snakeoil.demandload import demandload
 
 from .objects import BugzillaEvent, BugzillaComment
-from .. import PagedRequest, NullRequest, Request
+from .. import PagedRequest, Request
 from ...exceptions import BiteError
 
 demandload('bite:const')
@@ -578,32 +578,8 @@ class GetItemRequest(Request):
         super().__init__(service=service, params=params, **kw)
 
     def parse(self, data):
-        return data['bugs']
-
-
-class GetRequest(Request):
-    """Construct requests to retrieve all known data for given bug IDs."""
-
-    def __init__(self, ids, service, get_comments=False, get_attachments=False,
-                 get_history=False, *args, **kw):
-        if not ids:
-            raise ValueError('No bug ID(s) specified')
-
-        reqs = [service.GetItemRequest(ids=ids)]
-        for call in ('attachments', 'comments', 'history'):
-            if locals()[f'get_{call}']:
-                reqs.append(getattr(service, f'{call.capitalize()}Request')(ids=ids))
-            else:
-                reqs.append(NullRequest(generator=True))
-
-        super().__init__(service=service, reqs=reqs)
-
-    def parse(self, data):
-        bugs, attachments, comments, history = data
+        bugs = data['bugs']
         for bug in bugs:
-            bug['comments'] = next(comments)
-            bug['attachments'] = next(attachments)
-            bug['history'] = next(history)
             yield self.service.item(self.service, **bug)
 
 

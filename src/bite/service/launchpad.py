@@ -7,7 +7,7 @@ API docs:
 
 from dateutil.parser import parse as dateparse
 
-from . import RESTRequest, PagedRequest, Request, NullRequest, req_cmd, generator
+from . import RESTRequest, PagedRequest, Request, GetRequest, req_cmd, generator
 from ..cache import Cache
 from ..exceptions import RequestError, BiteError
 from ._jsonrest import JsonREST
@@ -388,27 +388,5 @@ class _AttachmentsRequest(Request):
 
 
 @req_cmd(Launchpad, 'get')
-class _GetRequest(Request):
-    """Construct requests to retrieve all known data for given bug IDs."""
-
-    def __init__(self, ids, service, get_comments=False, get_attachments=False,
-                 get_changes=False, *args, **kw):
-        if not ids:
-            raise ValueError('No bug ID(s) specified')
-
-        reqs = [service.GetItemRequest(ids=ids)]
-        for call in ('attachments', 'comments', 'changes'):
-            if locals()[f'get_{call}']:
-                reqs.append(getattr(service, f'{call.capitalize()}Request')(ids=ids))
-            else:
-                reqs.append(NullRequest(generator=True))
-
-        super().__init__(service=service, reqs=reqs)
-
-    def parse(self, data):
-        bugs, attachments, comments, changes = data
-        for bug in bugs:
-            bug.comments = next(comments)
-            bug.attachments = next(attachments)
-            bug.changes = next(changes)
-            yield bug
+class _GetRequest(GetRequest):
+    pass

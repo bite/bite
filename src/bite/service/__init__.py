@@ -219,7 +219,6 @@ class LinkPagedRequest(Request):
             self._req.url = self._next_page
 
 
-
 class RPCRequest(Request):
     """Construct an RPC request."""
 
@@ -294,10 +293,36 @@ class NullRequest(Request):
 
     def parse(self, data):
         if not self._generator:
-            return ()
+            return None
 
         while True:
-            yield ()
+            yield None
+
+
+class GetRequest(Request):
+    """Construct requests to retrieve all known data for given item IDs."""
+
+    def __init__(self, ids, service, get_comments=False, get_attachments=False,
+                 get_changes=False, *args, **kw):
+        if not ids:
+            raise ValueError('No {service.item.type} ID(s) specified')
+
+        reqs = [service.GetItemRequest(ids=ids)]
+        for call in ('comments', 'attachments', 'changes'):
+            if locals()[f'get_{call}']:
+                reqs.append(getattr(service, f'{call.capitalize()}Request')(ids=ids))
+            else:
+                reqs.append(NullRequest(generator=True))
+
+        super().__init__(service=service, reqs=reqs)
+
+    def parse(self, data):
+        items, comments, attachments, changes = data
+        for item in items:
+            item.comments = next(comments)
+            item.attachments = next(attachments)
+            item.changes = next(changes)
+            yield item
 
 
 class ClientCallbacks(object):

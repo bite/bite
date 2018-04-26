@@ -6,10 +6,10 @@ from . import Bugzilla5_0, Bugzilla5_2
 from .objects import BugzillaBug
 from .reqs import (
     LoginRequest, SearchRequest5_0, HistoryRequest, CommentsRequest, AttachmentsRequest,
-    GetItemRequest, GetRequest, ModifyRequest, AttachRequest, CreateRequest,
+    GetItemRequest, ModifyRequest, AttachRequest, CreateRequest,
     ExtensionsRequest, VersionRequest, FieldsRequest, ProductsRequest, UsersRequest,
 )
-from .. import RESTRequest, req_cmd
+from .. import RESTRequest, GetRequest, req_cmd
 from .._jsonrest import JsonREST
 
 
