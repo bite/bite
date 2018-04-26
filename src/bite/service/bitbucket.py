@@ -133,14 +133,14 @@ class Bitbucket(JsonREST):
             api_base, user, repo = base.rstrip('/').rsplit('/', 2)
         except ValueError as e:
             raise BiteError(f'invalid project base: {base!r}')
-        api_base = f'{api_base}/api/2.0'
+        self._api_base = f'{api_base}/api/2.0'
         endpoint = f'/repositories/{user}/{repo}'
         # bitbucket cloud supports 100 results per page
         if max_results is None:
             max_results = 100
         # TODO: generalize and allow versioned API support
         super().__init__(
-            endpoint=endpoint, base=api_base, max_results=max_results, **kw)
+            endpoint=endpoint, base=self._api_base, max_results=max_results, **kw)
         self.webbase = base
 
     def inject_auth(self, request, params):
