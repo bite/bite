@@ -81,7 +81,7 @@ class BitbucketIssue(Item):
             setattr(self, k, v)
 
         try:
-            desc = issue['content']['raw']
+            desc = issue['content']['raw'].strip()
         except KeyError:
             desc = ''
         self.comments = [
@@ -101,7 +101,9 @@ class BitbucketAttachment(Attachment):
 class BitbucketEvent(Change):
 
     def __init__(self, service, id, count, change):
-        creator = change['user']['username']
+        creator = change['user']
+        if creator is not None:
+            creator = creator['username']
         created = dateparse(change['created_on'])
         changes = {}
         for k, v in change['changes'].items():
@@ -113,7 +115,6 @@ class BitbucketEvent(Change):
         super().__init__(
             creator=creator, created=created, id=id,
             changes=changes, count=count)
-
 
 
 class Bitbucket(JsonREST):
@@ -294,10 +295,16 @@ class _CommentsRequest(Request):
         # skip comments that have no content, i.e. issue attribute changes
         for i in self.ids:
             comments = next(data)['values']
-            yield [BitbucketComment(
-                    id=i, count=j+1, text=c['content']['raw'],
-                    created=dateparse(c['created_on']), creator=c['user']['username'])
-                   for j, c in enumerate(comments) if c['content']['raw']]
+            l = []
+            for j, c in enumerate(comments):
+                creator = c['user']
+                if creator is not None:
+                    creator = creator['username']
+                if c['content']['raw']:
+                    l.append(BitbucketComment(
+                        id=i, count=j+1, text=c['content']['raw'].strip(),
+                        created=dateparse(c['created_on']), creator=creator))
+            yield l
 
 
 @req_cmd(Bitbucket, 'attachments')
