@@ -168,7 +168,19 @@ class Change(object):
         self.count = count # id
 
     def __str__(self):
-        return f'Change by {self.creator}, {self.created}'
+        lines = [f'Change #{self.count} by {self.creator}, {self.created}']
+        lines.append('-' * const.COLUMNS)
+        for k, v in self.changes.items():
+            if isinstance(v, (tuple, list)) and len(v) == 2:
+                if not v[0]:
+                    lines.append(f'{k.capitalize()}: +{v[1]}')
+                elif not v[1]:
+                    lines.append(f'{k.capitalize()}: -{v[0]}')
+                else:
+                    lines.append(f'{k.capitalize()}: {v[0]} -> {v[1]}')
+            else:
+                lines.append(f'{k.capitalize()}: {v}')
+        return '\n'.join(lines)
 
 
 class Comment(Change):
