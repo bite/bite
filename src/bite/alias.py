@@ -1,10 +1,15 @@
 import configparser
+import os
 import re
 import shlex
 import subprocess
 import sys
 
+from snakeoil.demandload import demandload
+
 from .exceptions import BiteError
+
+demandload('bite:const')
 
 
 class BiteInterpolation(configparser.ExtendedInterpolation):
@@ -104,10 +109,35 @@ class BiteInterpolation(configparser.ExtendedInterpolation):
 
 
 class AliasConfigParser(configparser.ConfigParser):
+    """Alias config parser using our customized interpolation."""
 
     def __init__(self, config_opts, *args, **kwargs):
         interpolation = BiteInterpolation(config_opts=config_opts)
         super().__init__(*args, interpolation=interpolation, **kwargs)
+
+
+def load_aliases(config_opts=None):
+    """Create a config object loaded with alias file info."""
+    if config_opts is not None:
+        # load aliases with custom interpolation
+        aliases = AliasConfigParser(config_opts=config_opts)
+    else:
+        # load aliases with no interpolation
+        aliases = configparser.ConfigParser(interpolation=configparser.Interpolation())
+
+    system_aliases = os.path.join(const.CONFIG_PATH, 'aliases')
+    user_aliases = os.path.join(const.USER_CONFIG_PATH, 'aliases')
+
+    try:
+        with open(system_aliases) as f:
+            aliases.read_file(f)
+        aliases.read(user_aliases)
+    except IOError as e:
+        raise BiteError(f'cannot load aliases file {e.filename!r}: {e.strerror}')
+    except (configparser.DuplicateSectionError, configparser.DuplicateOptionError) as e:
+        raise BiteError(e)
+
+    return aliases
 
 
 def shell_split(string):
@@ -145,7 +175,10 @@ def get_sections(connection, service_name):
                 yield f":{service_match.group(1)}:"
 
 
-def substitute_alias(aliases, unparsed_args, connection=None, service_name=None):
+def substitute_alias(config_opts, unparsed_args, connection=None, service_name=None):
+    # load alias files
+    aliases = load_aliases(config_opts)
+
     alias_name = unparsed_args[0]
     extra_cmds = unparsed_args[1:]
 

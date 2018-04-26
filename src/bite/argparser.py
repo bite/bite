@@ -462,7 +462,7 @@ class ArgumentParser(arghparse.ArgumentParser):
         config_file = initial_args.pop('config_file')
 
         # load config files
-        config, config_opts, aliases = get_config(initial_args, config_file=config_file)
+        config, config_opts = get_config(initial_args, config_file=config_file)
 
         if initial_args.base is None or initial_args.service is None:
             self.error('both arguments -b/--base and -s/--service are required '
@@ -489,7 +489,7 @@ class ArgumentParser(arghparse.ArgumentParser):
         # check if unparsed args match any aliases
         if unparsed_args:
             alias_unparsed_args = substitute_alias(
-                aliases, unparsed_args, initial_args.connection, service_name)
+                config_opts, unparsed_args, initial_args.connection, service_name)
             # re-parse optionals to catch any added by aliases
             if unparsed_args != alias_unparsed_args:
                 initial_args, unparsed_args = self.parse_optionals(alias_unparsed_args, initial_args)

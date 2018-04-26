@@ -3,7 +3,6 @@ import os
 
 from snakeoil.demandload import demandload
 
-from .alias import AliasConfigParser
 from .exceptions import BiteError
 
 demandload('bite:const')
@@ -100,17 +99,4 @@ def get_config(args, config_file=None):
     else:
         config_opts = config.defaults()
 
-    # load alias files
-    aliases = AliasConfigParser(config_opts=config_opts)
-    system_aliases = os.path.join(const.CONFIG_PATH, 'aliases')
-    user_aliases = os.path.join(const.USER_CONFIG_PATH, 'aliases')
-    try:
-        with open(system_aliases) as f:
-            aliases.read_file(f)
-        aliases.read(user_aliases)
-    except IOError as e:
-        raise BiteError(f'cannot load aliases file {e.filename!r}: {e.strerror}')
-    except (configparser.DuplicateSectionError, configparser.DuplicateOptionError) as e:
-        raise BiteError(e)
-
-    return config, config_opts, aliases
+    return config, config_opts
