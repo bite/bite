@@ -123,7 +123,7 @@ class _SearchRequest(PagedRequest, RESTRequest):
     _offset_key = 'ws.start'
     _size_key = 'ws.size'
 
-    # Map of allowed sorting input values to launchpad parameters determined by
+    # Map of allowed sorting input values to service parameters determined by
     # looking at available values on the web interface.
     sorting_map = {
         'importance': 'importance',
@@ -252,7 +252,7 @@ class _SearchRequest(PagedRequest, RESTRequest):
                     except KeyError:
                         choices = ', '.join(sorted(self.sorting_map.keys()))
                         raise BiteError(
-                            f'unable to sort by: {sort!r} (available choices: {choices}')
+                            f'unable to sort by: {key!r} (available choices: {choices}')
                     sorting_terms.append(f'{inverse}{order_var}')
                 params['order_by'] = sorting_terms
                 options.append(f"Sort order: {', '.join(v)}")

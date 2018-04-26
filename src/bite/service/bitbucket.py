@@ -115,6 +115,24 @@ class _SearchRequest(LinkPagedRequest, RESTRequest):
     _next = 'next'
     _previous = 'previous'
 
+    # Map of allowed sorting input values to service parameters.
+    sorting_map = {
+        'assignee': 'assignee',
+        'id': 'id',
+        'title': 'title',
+        'type': 'kind',
+        'priority': 'priority',
+        'creator': 'reporter',
+        'component': 'component',
+        'votes': 'votes',
+        'watches': 'watches',
+        'status': 'state',
+        'version': 'version',
+        'created': 'created_on',
+        'modified': 'updated_on',
+        'description': 'content',
+    }
+
     def __init__(self, service, **kw):
         params, options = self.parse_params(service=service, **kw)
         if not params:
@@ -144,6 +162,21 @@ class _SearchRequest(LinkPagedRequest, RESTRequest):
                         display_terms.append(or_display_terms[0])
                 query.append(f"{' AND '.join(or_queries)}")
                 options.append(f"Summary: {' AND '.join(display_terms)}")
+            elif k == 'sort':
+                if v[0] == '-':
+                    key = v[1:]
+                    inverse = '-'
+                else:
+                    key = v
+                    inverse = ''
+                try:
+                    order_var = self.sorting_map[key]
+                except KeyError:
+                    choices = ', '.join(sorted(self.sorting_map.keys()))
+                    raise BiteError(
+                        f'unable to sort by: {key!r} (available choices: {choices}')
+                params['sort'] = f'{inverse}{order_var}'
+                options.append(f"Sort order: {v}")
 
         params['q'] = ' AND '.join(query)
 
