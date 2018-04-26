@@ -419,30 +419,43 @@ class Cli(Client):
                         raise BiteError(f'invalid field: {field!r}')
                     if value is None:
                         continue
-                    if isinstance(value, list):
+                    if isinstance(value, (list, tuple)):
                         yield from map(str, value)
                     else:
-                        yield value
+                        yield str(value)
             else:
                 values = (str(getattr(item, field)) for field in fields)
                 yield output.format(*values)
 
-    def _render_item(self, item, **kw):
+    def _render_item(self, item, fields=None, **kw):
         """Render item data for output."""
-        yield '=' * const.COLUMNS
-        for line in str(item).splitlines():
-            if len(line) <= const.COLUMNS:
-                yield line
-            else:
-                yield self.wrapper.fill(line)
+        if fields is None:
+            yield '=' * const.COLUMNS
+            for line in str(item).splitlines():
+                if len(line) <= const.COLUMNS:
+                    yield line
+                else:
+                    yield self.wrapper.fill(line)
 
-        if item.attachments:
-            attachments = [str(a) for a in item.attachments]
-            if attachments:
-                if str(item):
-                    yield ''
-                yield from attachments
+            if item.attachments:
+                attachments = [str(a) for a in item.attachments]
+                if attachments:
+                    if str(item):
+                        yield ''
+                    yield from attachments
 
-        if item.events and (str(item) or item.attachments):
-            yield ''
-        yield from self._iter_lines(str(x) for x in item.events)
+            if item.events and (str(item) or item.attachments):
+                yield ''
+            yield from self._iter_lines(str(x) for x in item.events)
+        else:
+            for field in fields:
+                try:
+                    value = getattr(item, field)
+                except AttributeError:
+                    raise BiteError(f'invalid field: {field!r}')
+                if value is None:
+                    continue
+                if isinstance(value, (list, tuple)):
+                    yield from map(str, value)
+                else:
+                    yield str(value)
