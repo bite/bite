@@ -205,6 +205,11 @@ class LinkPagedRequest(Request):
             self._seen += seen
             self._req.url = self._next_page
 
+    def parse(self, data):
+        """Parse the data returned from a given request."""
+        self._next_page = data.get(self._next, None)
+        super().parse(data)
+
 
 class RPCRequest(Request):
     """Construct an RPC request."""

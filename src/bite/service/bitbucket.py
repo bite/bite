@@ -243,9 +243,9 @@ class _SearchRequest(BitbucketPagedRequest):
         return params, options
 
     def parse(self, data):
+        super().parse(data)
         if self._total is None:
             self._total = data['size']
-        self._next_page = data.get(self._next, None)
         issues = data['values']
         for issue in issues:
             yield self.service.item(self.service, issue)
