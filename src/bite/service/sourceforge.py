@@ -288,9 +288,14 @@ class _GetItemRequest(Request):
 class _ThreadRequest(Request):
     """Construct a discussion thread request."""
 
-    def __init__(self, service, ids=None, data=None, **kw):
+    def __init__(self, service, ids=None, item_id=False, data=None, **kw):
         if ids is None:
-            raise ValueError(f'No thread ID(s) specified')
+            raise ValueError(f'No ID(s) specified')
+
+        # pull thread IDs from items
+        if item_id:
+            items = service.GetItemRequest(ids=ids).send()
+            ids = [x.thread_id for x in items]
 
         if data is None:
             reqs = []
