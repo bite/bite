@@ -71,6 +71,10 @@ class SourceforgeTicket(Item):
     type = 'ticket'
 
     def __init__(self, service, ticket, get_desc=False, get_attachments=False):
+        self.comments = None
+        self.attachments = None
+        self.changes = None
+
         for k in self.attributes.keys():
             v = ticket.get(k, None)
             if k in ('created_date', 'mod_date') and v:
