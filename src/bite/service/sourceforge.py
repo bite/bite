@@ -451,3 +451,8 @@ class _GetRequest(_GetItemRequest):
             item.attachments = next(attachments)
             item.changes = next(changes)
             yield item
+
+    def handle_exception(self, e):
+        if e.code == 404:
+            raise RequestError('nonexistent item ID', code=e.code)
+        raise e
