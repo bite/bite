@@ -23,7 +23,7 @@ class Json(Service):
             msg = 'non-JSON response from server'
             if not self.verbose:
                 msg += ' (use verbose mode to see it)'
-            raise RequestError(msg=msg, text=response.text)
+            raise RequestError(code=response.status_code, msg=msg, text=response.text)
         try:
             return response.json()
         except json.decoder.JSONDecodeError as e:

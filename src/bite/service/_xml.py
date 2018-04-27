@@ -21,7 +21,7 @@ class Xml(Service):
             msg = 'non-XML response from server'
             if not self.verbose:
                 msg += ' (use verbose mode to see it)'
-            raise RequestError(msg=msg, text=response.text)
+            raise RequestError(code=response.status_code, msg=msg, text=response.text)
         try:
             return self._parse_xml(response)[0]
         except XMLSyntaxError as e:
