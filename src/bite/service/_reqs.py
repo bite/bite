@@ -73,7 +73,7 @@ class Request(object):
             elif r is None:
                 reqs.append(r)
             else:
-                reqs.append(self.service.prepare_request(r))
+                reqs.append(self.service.session.prepare_request(r))
         return tuple(reqs)
 
     @staticmethod
