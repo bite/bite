@@ -265,15 +265,15 @@ class _GetItemRequest(Request):
 
         super().__init__(service=service, reqs=reqs)
         self.ids = ids
-        self.get_desc = get_desc
+        self._get_desc = get_desc
 
     def parse(self, data):
         # TODO: hack, rework the http send parsing rewapper to be more
         # intelligent about unwrapping responses
         if len(self.ids) == 1:
             data = [data]
-        for i, issue in enumerate(data):
-            yield self.service.item(self.service, issue, get_desc=self.get_desc)
+        for issue in data:
+            yield self.service.item(self.service, issue, get_desc=self._get_desc)
 
 
 @req_cmd(Bitbucket, 'comments')
