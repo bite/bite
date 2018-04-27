@@ -5,12 +5,19 @@ API docs:
     https://sourceforge.net/p/forge/documentation/Allura%20API/
 """
 
+import html
+from itertools import chain
+import re
+
 from dateutil.parser import parse as dateparse
 
 from ._jsonrest import JsonREST
-from ._reqs import RESTRequest, PagedRequest, req_cmd
+from ._reqs import (
+    RESTRequest, NullRequest, Request, FlaggedPagedRequest, PagedRequest,
+    req_cmd, generator,
+)
 from ..exceptions import BiteError, RequestError
-from ..objects import Item
+from ..objects import Item, Comment, Attachment, Change
 
 
 class SourceforgeError(RequestError):
@@ -31,6 +38,9 @@ class SourceforgeTicket(Item):
         'reported_by': 'Reporter',
         'summary': 'Title',
         'ticket_num': 'ID',
+        'labels': 'Labels',
+        'private': 'Private',
+        'related_artifacts': 'Related',
     }
 
     attribute_aliases = {
@@ -47,8 +57,10 @@ class SourceforgeTicket(Item):
         ('summary', 'Title'),
         ('ticket_num', 'ID'),
         ('status', 'Status'),
+        ('labels', 'Labels'),
         ('created_date', 'Created'),
         ('mod_date', 'Modified'),
+        ('related_artifacts', 'Related'),
         ('comments', 'Comments'),
         ('attachments', 'Attachments'),
         ('changes', 'Changes'),
@@ -58,12 +70,51 @@ class SourceforgeTicket(Item):
     # it's overridden per service instance.
     type = 'ticket'
 
-    def __init__(self, service, ticket, get_desc=True):
+    def __init__(self, service, ticket, get_desc=False, get_attachments=False):
         for k in self.attributes.keys():
             v = ticket.get(k, None)
             if k in ('created_date', 'mod_date') and v:
                 v = dateparse(v)
+            elif k == 'labels' and not v:
+                v = None
+            elif k == 'related_artifacts':
+                if not v:
+                    v = None
+                else:
+                    v = tuple(x.rstrip('/').rsplit(f'/{service._tracker}/', 1)[1] for x in v)
+            elif k == 'summary':
+                v = html.unescape(v)
             setattr(self, k, v)
+
+        # comment thread ID
+        self.thread_id = ticket['discussion_thread']['_id']
+
+        if get_desc:
+            try:
+                desc = html.unescape(ticket['description'].strip())
+            except KeyError:
+                desc = ''
+            self.description = SourceforgeComment(
+                count=0, creator=self.reported_by, created=self.created_date, text=desc)
+
+        if get_attachments:
+            self.attachments = tuple(
+                SourceforgeAttachment(
+                    size=a['bytes'], url=a['url'], creator=self.reported_by,
+                    created=self.created_date, filename=a['url'].rsplit('/', 1)[1])
+                for a in ticket['attachments'])
+
+
+class SourceforgeComment(Comment):
+    pass
+
+
+class SourceforgeAttachment(Attachment):
+    pass
+
+
+class SourceforgeEvent(Change):
+    pass
 
 
 class Sourceforge(JsonREST):
@@ -81,16 +132,20 @@ class Sourceforge(JsonREST):
         except ValueError as e:
             raise BiteError(f'invalid project base: {base!r}')
 
-        endpoint = f'/rest/p/{project}/{tracker}'
+        self._project = project
+        self._tracker = tracker
+        endpoint = f'/rest/p/{self._project}/{self._tracker}'
+
         # Sourceforge allows projects to name/mount their ticket trackers under
         # any name (e.g. issues, bugs, tickets), try to determine the item name from this.
-        self.item.type = tracker.rstrip('s')
+        self.item.type = self._tracker.rstrip('s')
 
         # 500 results appears to be the default maximum
         if max_results is None:
             max_results = 500
         super().__init__(
             endpoint=endpoint, base=api_base, max_results=max_results, **kw)
+        self.webbase = base
 
     def inject_auth(self, request, params):
         raise NotImplementedError
@@ -108,8 +163,23 @@ class Sourceforge(JsonREST):
         raise SourceforgeError(msg=msg, code=code)
 
 
+class SourceforgePagedRequest(PagedRequest, RESTRequest):
+    """Support navigating paged requests from Sourceforge."""
+
+    _page_key = 'page'
+    _size_key = 'limit'
+    _total_key = 'count'
+
+
+class SourceforgeFlaggedPagedRequest(FlaggedPagedRequest, RESTRequest):
+    """Support navigating paged requests from Sourceforge."""
+
+    _page_key = 'page'
+    _size_key = 'limit'
+
+
 @req_cmd(Sourceforge, 'search')
-class _SearchRequest(PagedRequest, RESTRequest):
+class _SearchRequest(SourceforgePagedRequest):
     """Construct a search request.
 
     Currently using on Solr on the backend, see the following docs for query help:
@@ -117,10 +187,6 @@ class _SearchRequest(PagedRequest, RESTRequest):
         http://www.solrtutorial.com/solr-query-syntax.html
         http://yonik.com/solr/
     """
-
-    _page_key = 'page'
-    _size_key = 'limit'
-    _total_key = 'count'
 
     # Map of allowed sorting input values to service parameters.
     sorting_map = {
@@ -188,3 +254,200 @@ class _SearchRequest(PagedRequest, RESTRequest):
         tickets = data['tickets']
         for ticket in tickets:
             yield self.service.item(self.service, ticket)
+
+
+@req_cmd(Sourceforge)
+class _GetItemRequest(Request):
+    """Construct an issue request."""
+
+    def __init__(self, ids, service, get_desc=True, get_attachments=True, **kw):
+        if ids is None:
+            raise ValueError(f'No {service.item.type} ID(s) specified')
+
+        reqs = []
+        for i in ids:
+            reqs.append(RESTRequest(
+                service=service, endpoint=f'/{i}'))
+
+        super().__init__(service=service, reqs=reqs)
+        self.ids = ids
+        self._get_desc = get_desc
+        self._get_attach = get_attachments
+
+    def parse(self, data):
+        # TODO: hack, rework the http send parsing rewapper to be more
+        # intelligent about unwrapping responses
+        if len(self.ids) == 1:
+            data = [data]
+        for item in data:
+            yield self.service.item(
+                self.service, item['ticket'],
+                get_desc=self._get_desc, get_attachments=self._get_attach)
+
+
+class _ThreadRequest(Request):
+    """Construct a discussion thread request."""
+
+    def __init__(self, service, ids=None, data=None, **kw):
+        if ids is None:
+            raise ValueError(f'No thread ID(s) specified')
+
+        if data is None:
+            reqs = []
+            for i in ids:
+                reqs.append(SourceforgeFlaggedPagedRequest(
+                    service=service, endpoint=f'/_discuss/thread/{i}'))
+        else:
+            reqs = [NullRequest()]
+
+        super().__init__(service=service, reqs=reqs)
+        self.ids = ids
+        self._data = data
+
+    @generator
+    def parse(self, data):
+        if self._data is not None:
+            yield from self._data
+        else:
+            for item in data:
+                posts = item['thread']['posts']
+                yield posts
+                if not posts:
+                    self._consumed = True
+
+
+@req_cmd(Sourceforge, 'comments')
+class _CommentsRequest(_ThreadRequest):
+    """Construct a comments request."""
+
+    @generator
+    def parse(self, data):
+        thread_posts = super().parse(data)
+        for posts in thread_posts:
+            l = []
+            count = 1
+            for i, c in enumerate(posts):
+                # Some trackers appear to have some crazy content with multiple
+                # layers of html escaping, but we only undo one layer.
+                text = html.unescape(c['text'].strip())
+                # skip change events
+                if not re.match(r'(- \*\*\w+\*\*: |- (Attachments|Description) has changed:\n\nDiff)', text):
+                    l.append(SourceforgeComment(
+                        id=i, count=count, creator=c['author'],
+                        created=dateparse(c['timestamp']), text=text))
+                    count += 1
+            yield tuple(l)
+
+
+@req_cmd(Sourceforge, 'attachments')
+class _AttachmentsRequest(_ThreadRequest):
+    """Construct an attachments request."""
+
+    @generator
+    def parse(self, data):
+        thread_posts = super().parse(data)
+        for posts in thread_posts:
+            l = []
+            count = 0
+            for p in posts:
+                for a in p['attachments']:
+                    l.append(SourceforgeAttachment(
+                        creator=p['author'], created=dateparse(p['timestamp']),
+                        size=a['bytes'], url=a['url'], filename=a['url'].rsplit('/', 1)[1]))
+                    count += 1
+            yield tuple(l)
+
+
+@req_cmd(Sourceforge, 'changes')
+class _ChangesRequest(_ThreadRequest):
+    """Construct a changes request."""
+
+    @generator
+    def parse(self, data):
+        thread_posts = super().parse(data)
+        for posts in thread_posts:
+            l = []
+            count = 1
+            for i, c in enumerate(posts):
+                text = c['text'].strip()
+                # find all attribute change events
+                attr_changes = re.findall(r'- \*\*(\w+)\*\*: (.+)', text)
+                # try to extract description changes
+                field_changes = re.findall(
+                    r'- (Description|Attachments) has changed:\n\n(Diff:\n\n~~~~(.*)~~~~)', text, re.DOTALL)
+                if attr_changes or field_changes:
+                    changes = {}
+                    # don't show description changes if diff is empty
+                    for field, diff, content in field_changes:
+                        if content.strip():
+                            changes[field] = f'\n{diff.strip()}'
+                    for field, change in attr_changes:
+                        key = self.service.item.attributes.get(field, field)
+                        changed = change.split('-->')
+                        if len(changed) == 2:
+                            old = changed[0].strip()
+                            new = changed[1].strip()
+                            # skip empty change fields
+                            if old or new:
+                                changes[key] = (old, new)
+                        else:
+                            changes[key] = change
+                    l.append(SourceforgeEvent(
+                        id=i, count=count, creator=c['author'],
+                        created=dateparse(c['timestamp']), changes=changes))
+                    count += 1
+            yield tuple(l)
+
+
+@req_cmd(Sourceforge, 'get')
+class _GetRequest(_GetItemRequest):
+    """Construct requests to retrieve all known data for given issue IDs."""
+
+    def __init__(self, ids, service, get_comments=False, get_attachments=False,
+                 get_changes=False, *args, **kw):
+        if not ids:
+            raise ValueError('No {service.item.type} ID(s) specified')
+
+        super().__init__(ids=ids, service=service,
+                         get_desc=get_comments, get_attachments=get_attachments)
+        self.ids = ids
+        self._get_comments = get_comments
+        self._get_attachments = get_attachments
+        self._get_changes = get_changes
+
+    @property
+    def _none_gen(self):
+        for x in self.ids:
+            yield None
+
+    def parse(self, data):
+        items = list(super().parse(data))
+        comments = self._none_gen
+        attachments = self._none_gen
+        changes = self._none_gen
+
+        if any((self._get_comments, self._get_attachments, self._get_changes)):
+            # request discussion thread data
+            thread_ids = [x.thread_id for x in items]
+            thread_req = _ThreadRequest(self.service, thread_ids)
+            threads = list(thread_req.send())
+            if self._get_comments:
+                item_descs = ((x.description,) for x in items)
+                item_comments = self.service.CommentsRequest(
+                    ids=thread_ids, data=threads).send()
+                comments = (x + y for x, y in zip(item_descs, item_comments))
+            if self._get_attachments:
+                item_initial_attachments = (x.attachments for x in items)
+                post_attachments = self.service.AttachmentsRequest(
+                    ids=thread_ids, data=threads).send()
+                attachments = (
+                    x + y for x, y in zip(item_initial_attachments, post_attachments))
+            if self._get_changes:
+                changes = self.service.ChangesRequest(
+                    ids=thread_ids, data=threads).send()
+
+        for item in items:
+            item.comments = next(comments)
+            item.attachments = next(attachments)
+            item.changes = next(changes)
+            yield item

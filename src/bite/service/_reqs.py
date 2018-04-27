@@ -169,6 +169,55 @@ class PagedRequest(Request):
 
 
 # TODO: run these asynchronously
+class FlaggedPagedRequest(Request):
+    """Keep requesting matching records until all relevant results are returned."""
+
+    # page, query size, and total results parameter keys for a related service query
+    _page_key = None
+    _size_key = None
+
+    def __init__(self, service, limit=None, page=None, *args, **kw):
+        super().__init__(*args, service=service, **kw)
+
+        if not all((self._page_key, self._size_key)):
+            raise ValueError('page and size keys must be set')
+
+        # set a search limit to make continued requests work as expected
+        if limit is not None:
+            self.params[self._size_key] = limit
+        elif service.max_results is not None:
+            self.params[self._size_key] = service.max_results
+
+        if page is not None:
+            self.params[self._page_key] = page
+        else:
+            self.params[self._page_key] = 0
+
+        # total number of elements parsed
+        self._seen = 0
+
+        # flag to note when all data has been consumed
+        self._consumed = False
+
+    def send(self):
+        while True:
+            data = self.service.send(self)
+            seen = 0
+            for x in data:
+                seen += 1
+                yield x
+
+            # if no more results exist, stop requesting them
+            if self._consumed:
+                break
+
+            # increment page and send new request
+            self._seen += seen
+            self.params[self._page_key] += 1
+            self._finalized = False
+
+
+# TODO: run these asynchronously
 class OffsetPagedRequest(Request):
     """Keep requesting matching records until all relevant results are returned."""
 
