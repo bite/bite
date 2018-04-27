@@ -19,7 +19,7 @@ class Json(Service):
 
     @steal_docs(Service)
     def parse_response(self, response):
-        if not response.headers['Content-Type'].startswith('application/json'):
+        if not response.headers.get('Content-Type', '').startswith('application/json'):
             msg = 'non-JSON response from server'
             if not self.verbose:
                 msg += ' (use verbose mode to see it)'
