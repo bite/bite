@@ -11,8 +11,9 @@ try:
     import cchardet as chardet
 except ImportError:
     import chardet
-from snakeoil.demandload import demandload
 from snakeoil import klass
+from snakeoil.demandload import demandload
+from snakeoil.osutils import sizeof_fmt
 
 from . import magic
 from .exceptions import BiteError
@@ -234,12 +235,13 @@ class Attachment(object):
                 self.mimetype = mimetype
 
     def __str__(self):
+        l = ['Attachment:']
+        if self.id is not None:
+            l.append(f'[ID: {self.id}]')
+        l.append(f'[{self.filename}]')
         if self.size is not None:
-            return f'Attachment: [{self.id}] [{self.filename}] ({self.size})'
-        elif self.id is not None:
-            return f'Attachment: [{self.id}] [{self.filename}]'
-        else:
-            return f'Attachment: [{self.filename}]'
+            l.append(f'({sizeof_fmt(self.size)})')
+        return ' '.join(l)
 
     @decompress
     def read(self):

@@ -5,6 +5,7 @@ import string
 
 from dateutil.parser import parse as dateparse
 from snakeoil.demandload import demandload
+from snakeoil.osutils import sizeof_fmt
 
 from ... import utc
 from ...objects import Item, Change, Comment, Attachment, decompress
@@ -280,12 +281,7 @@ class BugzillaAttachment(Attachment):
 
     def __str__(self):
         if self.size is not None:
-            if self.size < 1024 * 1024:
-                size = f'{round(self.size / 1024.0, 2)}K'
-            else:
-                size = f'{round(self.size / 1024 * 1024.0, 2)}M'
-
-            return f'Attachment: [{self.id}] [{self.summary}] ({size}, {self.mimetype})'
+            return f'Attachment: [{self.id}] [{self.summary}] ({sizeof_fmt(self.size)}, {self.mimetype})'
         else:
             return f'Attachment: [{self.id}] [{self.summary}]'
 
