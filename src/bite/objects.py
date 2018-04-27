@@ -143,7 +143,7 @@ class Item(object):
             # Initial comment is the bug description
             if field == 'comments': value -= 1
 
-            if isinstance(value, list):
+            if isinstance(value, (list, tuple)):
                 value = ', '.join(map(str, value))
 
             lines.append(f'{title:<12}: {value}')
