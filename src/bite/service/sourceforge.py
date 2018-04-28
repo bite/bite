@@ -390,9 +390,11 @@ class _ChangesRequest(_ThreadRequest):
                     changes = {}
                     # don't show description changes if diff is empty
                     for field, diff, content in field_changes:
+                        field = field.lower()
                         if content.strip():
                             changes[field] = f'\n{diff.strip()}'
                     for field, change in attr_changes:
+                        field = field.lower()
                         key = self.service.item.attributes.get(field, field)
                         changed = change.split('-->')
                         if len(changed) == 2:
