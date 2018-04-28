@@ -1,0 +1,3 @@
+[gnuplot]
+service: sourceforge
+base: https://sourceforge.net/p/gnuplot/bugs/
