@@ -219,9 +219,15 @@ class _SearchRequest(SourceforgePagedRequest):
     }
 
     def __init__(self, service, **kw):
-        params, options = self.parse_params(service=service, **kw)
-        if not params:
+        params, options, query = self.parse_params(service=service, **kw)
+        if not params and not query:
             raise BiteError('no supported search terms or options specified')
+
+        params['q'] = ' AND '.join(query)
+
+        # default to sorting ascending by ID
+        if 'sort' not in params:
+            params['sort'] = 'ticket_num_i asc'
 
         super().__init__(service=service, endpoint='/search', params=params, **kw)
         self.options = options
@@ -266,13 +272,7 @@ class _SearchRequest(SourceforgePagedRequest):
                 params['sort'] = ','.join(sorting_terms)
                 options.append(f"Sort order: {', '.join(v)}")
 
-        params['q'] = ' AND '.join(query)
-
-        # default to sorting ascending by ID
-        if 'sort' not in params:
-            params['sort'] = 'ticket_num_i asc'
-
-        return params, options
+        return params, options, query
 
     def parse(self, data):
         super().parse(data)
