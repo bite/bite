@@ -1,4 +1,7 @@
+from functools import partial
+
 from .bugzilla import date
+from ..argparser import parse_stdin, id_list, ids
 from .. import args
 
 
@@ -26,6 +29,11 @@ class Search(args.Search):
                 sorting term with '-'; otherwise, sorting is done in an
                 ascending fashion by default.
             """)
+        attr = self.parser.add_argument_group('Attribute related')
+        attr.add_argument(
+            '--id', type=id_list,
+            action=partial(parse_stdin, ids),
+            help=f'restrict by {self.service.item.type} ID(s)')
 
 
 @args.subcmd(SourceforgeOpts)
@@ -36,7 +44,7 @@ class Get(args.Get):
         # optional args
         self.opts.add_argument(
             '-H', '--no-history', dest='get_changes', action='store_false',
-            help="don't show bug history")
+            help=f"don't show {self.service.item.type} history")
 
 
 @args.subcmd(SourceforgeOpts)

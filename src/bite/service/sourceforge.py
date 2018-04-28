@@ -253,6 +253,21 @@ class _SearchRequest(SourceforgePagedRequest):
                         display_terms.append(or_display_terms[0])
                 query.append(f"{' AND '.join(or_queries)}")
                 options.append(f"Summary: {' AND '.join(display_terms)}")
+            elif k == 'id':
+                id_str = None
+                if len(v) > 1:
+                    first, last = v[0], v[-1]
+                    if v == list(range(first, last + 1)):
+                        query.append(f"ticket_num:[{first} TO {last}]")
+                        id_str = f'{first} - {last}'
+                    else:
+                        or_terms = (f"ticket_num:{x}" for x in v)
+                        query.append(f"({' OR '.join(or_terms)})")
+                else:
+                    query.append(f"ticket_num:{v[0]}")
+                if id_str is None:
+                    id_str = ', '.join(map(str, v))
+                options.append(f"{service.item.type.capitalize()} IDs: {id_str}")
             elif k == 'sort':
                 sorting_terms = []
                 for sort in v:
