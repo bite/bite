@@ -5,6 +5,7 @@ from snakeoil.klass import steal_docs
 
 from . import Service
 from ._json import Json
+from ._reqs import RPCRequest
 
 
 class Jsonrpc(Json):
@@ -46,3 +47,15 @@ class Jsonrpc(Json):
         else:
             # assume error object follows json-rpc 2.0 spec formatting
             self.handle_error(code=error['code'], msg=error['message'])
+
+
+class Multicall(RPCRequest):
+    """Construct a system.multicall request."""
+
+    def __init__(self, method, params, *args, **kw):
+        params = [{'method': method, 'params': [x]} for x in params]
+        super().__init__(*args, command='system.multicall', params=params, **kw)
+
+    def parse(self, data):
+        for x in data:
+            yield x['result']

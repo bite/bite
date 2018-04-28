@@ -3,6 +3,7 @@ from xmlrpc.client import dumps, loads, Unmarshaller, Fault, ResponseError
 from snakeoil.klass import steal_docs
 
 from . import Service
+from ._reqs import RPCRequest
 from ._xml import Xml
 from ..exceptions import RequestError, ParsingError
 
@@ -71,3 +72,15 @@ class Xmlrpc(Xml):
     def _getparser(self):
         u = _Unmarshaller(use_datetime=True)
         return super()._getparser(unmarshaller=u)
+
+
+class Multicall(RPCRequest):
+    """Construct a system.multicall request."""
+
+    def __init__(self, method, params, *args, **kw):
+        params = [[{'methodName': method, 'params': [x]} for x in params]]
+        super().__init__(*args, command='system.multicall', params=params, **kw)
+
+    def parse(self, data):
+        for x in data:
+            yield x[0]
