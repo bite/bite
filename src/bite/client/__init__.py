@@ -297,7 +297,7 @@ class Cli(Client):
 
         if dry_run: return
         data = request.send()
-        lines = chain.from_iterable(self._render_changes(item, **kw) for item in data)
+        lines = chain.from_iterable(self._render_modifications(item, **kw) for item in data)
         print(*lines, sep='\n')
 
     @login_retry
@@ -395,7 +395,7 @@ class Cli(Client):
         elif remove:
             self.service.cache.remove()
 
-    def _render_changes(self, data, **kw):
+    def _render_modifications(self, data, **kw):
         raise NotImplementedError
 
     def _render_create(self, data, **kw):
@@ -459,3 +459,146 @@ class Cli(Client):
                     yield from map(str, value)
                 else:
                     yield str(value)
+
+    def changes(self, ids, dry_run=False, **kw):
+        change_num = kw.get('change_num', None)
+        creator = kw.get('creator', None)
+        creation_time = kw.get('creation_time', None)
+        match = kw.get('match', None)
+
+        request = self.service.ChangesRequest(
+            ids=ids, item_id=True, created=kw.get('creation_time', None))
+
+        if creator is not None:
+            request.options.append(f"Creator{pluralism(creator)}: {', '.join(creator)}")
+        if change_num is not None:
+            request.options.append(
+                f"Change number{pluralism(change_num)}: {', '.join(map(str, change_num))}")
+        if match is not None:
+            request.options.append(f"Matching: {', '.join(match)}")
+
+        self.log('Getting changes matching the following options:')
+        self.log_t(request.options, prefix='   - ')
+
+        if kw.get('creator', None) is not None and self.service.suffix is not None:
+            kw['creator'] = list(map(self.service._resuffix, kw['creator']))
+
+        if dry_run: return
+        changes = request.send()
+        lines = chain.from_iterable(self._render_changes(ids[i], change, **kw)
+                                    for i, change in enumerate(changes))
+        print(*lines, sep='\n')
+
+    def _render_changes(self, item_id, changes, creation_time=None, change_num=None,
+                        fields=None, output=None, creator=None, match=None, **kw):
+        if creator is not None:
+            changes = (x for x in changes if x.creator in creator)
+        if creation_time is not None:
+            changes = (x for x in changes if x.created >= creation_time)
+        if match is not None:
+            changes = (event for event in changes if event.match(fields=match))
+        if change_num is not None:
+            if len(change_num) == 1 and change_num[0] < 0:
+                changes = list(changes)[change_num[0]:]
+            else:
+                changes = (x for x in changes if x.count in change_num)
+
+        if fields and output is None:
+            output = ' '.join(['{}' for x in fields])
+
+        if output == '-':
+            for change in changes:
+                for field in fields:
+                    try:
+                        value = getattr(change, field)
+                    except AttributeError:
+                        raise BiteError(f'invalid field: {field!r}')
+                    if value is None:
+                        continue
+                    if isinstance(value, list):
+                        yield from map(str(value))
+                    else:
+                        yield value
+        elif fields and output:
+            for change in changes:
+                values = (getattr(change, field, None) for field in fields)
+                yield from self._iter_lines(output.format(*values))
+        else:
+            changes = list(str(x) for x in changes)
+            if changes:
+                yield self._header('=', f'{self.service.item.type.capitalize()}: {item_id}')
+                yield from self._iter_lines(changes)
+
+    def comments(self, ids, dry_run=False, **kw):
+        creation_time = kw.get('creation_time', None)
+        creator = kw.get('creator', None)
+        attachment = kw.get('attachment', False)
+        comment_num = kw.get('comment_num', None)
+
+        request = self.service.CommentsRequest(
+            ids=ids, item_id=True, created=creation_time)
+
+        if creator is not None:
+            request.options.append(f"Creator{pluralism(creator)}: {', '.join(creator)}")
+        if attachment:
+            request.options.append('Attachments: yes')
+        if comment_num is not None:
+            request.options.append(
+                f"Comment number{pluralism(comment_num)}: {', '.join(map(str, comment_num))}")
+
+        self.log('Getting comments matching the following options:')
+        self.log_t(request.options, prefix='   - ')
+
+        if self.service.suffix is not None and creator is not None:
+            creator = list(map(self.service._resuffix, creator))
+
+        if dry_run: return
+        comments_iter = request.send()
+        lines = chain.from_iterable(self._render_comments(ids[i], comments, **kw)
+                                    for i, comments in enumerate(comments_iter))
+        print(*lines, sep='\n')
+
+    def _render_comments(self, item_id, comments, creation_time=None, comment_num=None,
+                        fields=None, output=None, creator=None, attachment=False, **kw):
+        if creator is not None:
+            comments = (x for x in comments if x.creator in creator)
+        if attachment:
+            comments = (x for x in comments if x.changes['attachment_id'] is not None)
+        if comment_num is not None:
+            if any(x < 0 for x in comment_num):
+                comments = list(comments)
+                selected = []
+                for x in comment_num:
+                    try:
+                        selected.append(comments[x])
+                    except IndexError:
+                        pass
+                comments = selected
+            else:
+                comments = (x for x in comments if x.count in comment_num)
+
+        if fields and output is None:
+            output = ' '.join(['{}' for x in fields])
+
+        if output == '-':
+            for comment in comments:
+                for field in fields:
+                    try:
+                        value = getattr(comment, field)
+                    except AttributeError:
+                        raise BiteError(f'invalid field: {field!r}')
+                    if value is None:
+                        continue
+                    if isinstance(value, list):
+                        yield from map(str, value)
+                    else:
+                        yield value
+        elif fields and output:
+            for comment in comments:
+                values = (getattr(comment, field, None) for field in fields)
+                yield from self._iter_lines(output.format(*values))
+        else:
+            comments = list(str(x) for x in comments)
+            if comments:
+                yield self._header('=', f'{self.service.item.type.capitalize()}: {item_id}')
+                yield from self._iter_lines(comments)

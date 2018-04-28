@@ -199,6 +199,55 @@ class BugzillaComment(Comment):
 class BugzillaEvent(Change):
     """Bugzilla change object."""
 
+    change_aliases = {
+        'attachment-description': 'attachments.description',
+        'attachment-filename': 'attachments.filename',
+        'attachment-mimetype': 'attachments.mimetype',
+        'attachment-obsolete': 'attachments.isobsolete',
+        'attachment-patch': 'attachments.ispatch',
+        'blocks': 'blocked',
+        'cc-accessible': 'cclist_accessible',
+        'confirmed': 'everconfirmed',
+        'depends': 'dependson',
+        'flagname': 'flagtypes.name',
+        'group': 'bug_group',
+        'platform': 'rep_platform',
+        'reporter-accessible': 'reporter_accessible',
+        'severity': 'bug_severity',
+        'title': 'short_desc',
+        'url': 'bug_file_loc',
+        'whiteboard': 'status_whiteboard',
+        'milestone': 'target_milestone',
+    }
+
+    _print_fields = {
+        'attachments.isobsolete': 'Obsolete attachment',
+        'attachments.ispatch': 'Patch attachment',
+        'attachments.description': 'Attachment description',
+        'attachments.filename': 'Attachment filename',
+        'attachments.mimetype': 'Attachment mimetype',
+        'blocked': 'Blocks',
+        'bug_file_loc': 'URL',
+        'bug_group': 'Group',
+        'bug_severity': 'Severity',
+        'bug_status': 'Status',
+        'cclist_accessible': 'CCs accessible',
+        'dependson': 'Depends',
+        'everconfirmed': 'Confirmed',
+        'flag': 'Flag',
+        'flagtypes.name': 'Flag type name',
+        'rep_platform': 'Platform',
+        'reporter_accessible': 'Reporter accessible',
+        'short_desc': 'Title',
+        'status_whiteboard': 'Whiteboard',
+    }
+    _print_fields.update(BugzillaBug.attributes)
+
+    _change_map = {
+        '---': None,
+        '': None,
+    }
+
     def __init__(self, change, id, alias=None, count=None, rest=False, **kw):
         self.alias = alias
         if rest:
@@ -207,55 +256,38 @@ class BugzillaEvent(Change):
         else:
             creator = change['who']
             created = parsetime(change['when'])
-        changes = change['changes']
+        changes = {}
+        for c in change['changes']:
+            removed, added = c['removed'], c['added']
+            removed = self._change_map.get(removed, removed)
+            added = self._change_map.get(added, added)
+            changes[c['field_name']] = (removed, added)
         super().__init__(
             creator=creator, created=created, id=id,
             changes=changes, count=count)
 
     def __str__(self):
-        change_fields = {
-            'attachments.isobsolete': 'Obsolete attachment',
-            'attachments.ispatch': 'Patch attachment',
-            'attachments.description': 'Attachment description',
-            'attachments.filename': 'Attachment filename',
-            'attachments.mimetype': 'Attachment mimetype',
-            'blocked': 'Blocks',
-            'bug_file_loc': 'URL',
-            'bug_group': 'Group',
-            'bug_severity': 'Severity',
-            'bug_status': 'Status',
-            'cclist_accessible': 'CCs accessible',
-            'dependson': 'Depends',
-            'everconfirmed': 'Confirmed',
-            'flag': 'Flag',
-            'flagtypes.name': 'Flag type name',
-            'rep_platform': 'Platform',
-            'reporter_accessible': 'Reporter accessible',
-            'short_desc': 'Title',
-            'status_whiteboard': 'Whiteboard',
-        }
-        change_fields.update(BugzillaBug.attributes)
-
         lines = [f'Change #{self.count} by {self.creator}, {self.created}']
         lines.append('-' * const.COLUMNS)
-        for change in self.changes:
+        for k, v in self.changes.items():
+            removed, added = v
             try:
-                field = change_fields[change['field_name']]
+                field = self._print_fields[k]
             except KeyError:
-                field = change['field_name']
+                field = k
                 if re.match(r'^cf_\w+$', field):
                     field = string.capwords(field[3:], '_')
                     field = field.replace('_', ' ')
 
-            if change['field_name'] == 'attachments.isobsolete':
+            if k == 'attachments.isobsolete':
                 lines.append(f"{field}: {change['attachment_id']}")
             else:
-                if change['removed'] and change['added']:
-                    changes = f"{change['removed']} -> {change['added']}"
-                elif change['removed']:
-                    changes = ', '.join([f'-{c}' for c in change['removed'].split(', ')])
-                elif change['added']:
-                    changes = ', '.join([f'+{c}' for c in change['added'].split(', ')])
+                if removed and added:
+                    changes = f"{removed} -> {added}"
+                elif removed:
+                    changes = ', '.join([f'-{c}' for c in removed.split(', ')])
+                elif added:
+                    changes = ', '.join([f'+{c}' for c in added.split(', ')])
                 lines.append(f'{field}: {changes}')
 
         return '\n'.join(lines)

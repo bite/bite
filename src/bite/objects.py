@@ -141,7 +141,7 @@ class Item(object):
             if field in ('changes', 'comments', 'attachments'):
                 value = len(value)
 
-            # Initial comment is the bug description
+            # Initial comment is the description
             if field == 'comments': value -= 1
 
             if isinstance(value, (list, tuple)):
@@ -164,6 +164,8 @@ class Item(object):
 class Change(object):
     """Generic change event on a service."""
 
+    change_aliases = {}
+
     def __init__(self, creator, created, changes, id=None, count=None):
         self.id = id # int
         self.creator = creator # string
@@ -175,16 +177,43 @@ class Change(object):
         lines = [f'Change #{self.count} by {self.creator}, {self.created}']
         lines.append('-' * const.COLUMNS)
         for k, v in self.changes.items():
-            if isinstance(v, (tuple, list)) and len(v) == 2:
-                if not v[0]:
-                    lines.append(f'{k.capitalize()}: +{v[1]}')
-                elif not v[1]:
-                    lines.append(f'{k.capitalize()}: -{v[0]}')
+            try:
+                removed, added = v
+                if removed and added:
+                    lines.append(f'{k.capitalize()}: {removed} -> {added}')
+                elif removed:
+                    lines.append(f'{k.capitalize()}: -{removed}')
                 else:
-                    lines.append(f'{k.capitalize()}: {v[0]} -> {v[1]}')
-            else:
+                    lines.append(f'{k.capitalize()}: +{added}')
+            except ValueError:
                 lines.append(f'{k.capitalize()}: {v}')
         return '\n'.join(lines)
+
+    def match(self, fields):
+        for field in fields:
+            if ':' in field:
+                key, value = field.split(':')
+            else:
+                key = field
+                value = None
+
+            key = self.change_aliases.get(key, key)
+
+            if not value:
+                return key in self.changes
+            else:
+                try:
+                    removed, added = self.changes[key]
+                    if value.startswith('-'):
+                        return removed == value[1:]
+                    elif value.startswith('+'):
+                        return added == value[1:]
+                    else:
+                        return value in self.changes[key]
+                except KeyError:
+                    return False
+                except ValueError:
+                    return value == self.changes[key]
 
 
 class Comment(Change):
