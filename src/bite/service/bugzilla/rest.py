@@ -5,7 +5,7 @@ from collections import deque
 from . import Bugzilla5_0, Bugzilla5_2
 from .objects import BugzillaBug
 from .reqs import (
-    LoginRequest, SearchRequest5_0, HistoryRequest, CommentsRequest, AttachmentsRequest,
+    LoginRequest, SearchRequest5_0, ChangesRequest, CommentsRequest, AttachmentsRequest,
     GetItemRequest, ModifyRequest, AttachRequest, CreateRequest,
     ExtensionsRequest, VersionRequest, FieldsRequest, ProductsRequest, UsersRequest,
 )
@@ -92,10 +92,10 @@ class _SearchRequest5_0(SearchRequest5_0, RESTRequest):
         super().__init__(endpoint='/bug', *args, **kw)
 
 
-@req_cmd(Bugzilla5_0Rest, 'history')
-class _HistoryRequest(HistoryRequest, RESTRequest):
+@req_cmd(Bugzilla5_0Rest, 'changes')
+class _ChangesRequest(ChangesRequest, RESTRequest):
     def __init__(self, *args, **kw):
-        """Construct a search request."""
+        """Construct a changes request."""
         super().__init__(endpoint='/bug/{}/history', *args, **kw)
         self.endpoint = self.endpoint.format(self.params['ids'][0])
         self.params['ids'] = self.params['ids'][1:]

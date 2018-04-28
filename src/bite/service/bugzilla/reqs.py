@@ -203,8 +203,8 @@ class SearchRequest5_0(SearchRequest4_4):
         return super().parse_params(service, params, options, **kw)
 
 
-class HistoryRequest(Request):
-    """Construct a history request."""
+class ChangesRequest(Request):
+    """Construct a changes request."""
 
     def __init__(self, ids, created=None, service=None, **kw):
         if not ids:

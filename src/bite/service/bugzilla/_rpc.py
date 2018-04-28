@@ -1,6 +1,6 @@
 from . import Bugzilla, Bugzilla5_0, Bugzilla5_2
 from .reqs import (
-    SearchRequest4_4, SearchRequest5_0, HistoryRequest, CommentsRequest,
+    SearchRequest4_4, SearchRequest5_0, ChangesRequest, CommentsRequest,
     AttachmentsRequest, LoginRequest, GetItemRequest, ModifyRequest,
     AttachRequest, CreateRequest, ExtensionsRequest, VersionRequest, FieldsRequest,
     ProductsRequest, UsersRequest,
@@ -79,10 +79,10 @@ class _SearchRequest5_0(SearchRequest5_0, RPCRequest):
         super().__init__(command='Bug.search', *args, **kw)
 
 
-@req_cmd(Bugzilla4_4Rpc, 'history')
-class _HistoryRequest(HistoryRequest, RPCRequest):
+@req_cmd(Bugzilla4_4Rpc, 'changes')
+class _ChangesRequest(ChangesRequest, RPCRequest):
     def __init__(self, *args, **kw):
-        """Construct a history request."""
+        """Construct a changes request."""
         super().__init__(command='Bug.history', *args, **kw)
 
 
@@ -107,10 +107,6 @@ class _GetItemRequest(GetItemRequest, RPCRequest):
         super().__init__(command='Bug.get', *args, **kw)
         # return array of faults for bad bugs instead of directly failing out
         self.params['permissive'] = True
-
-
-class ChangesRequest(RPCRequest):
-    pass
 
 
 @req_cmd(Bugzilla4_4Rpc, 'modify')
