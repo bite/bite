@@ -1,3 +1,4 @@
+from .bugzilla import date
 from .. import args
 
 
@@ -36,3 +37,30 @@ class Get(args.Get):
         self.opts.add_argument(
             '-H', '--no-history', dest='get_changes', action='store_false',
             help="don't show bug history")
+
+
+@args.subcmd(SourceforgeOpts)
+class Changes(args.Changes):
+
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
+        # optional args
+        self.opts.add_argument(
+            '-c', '--created', dest='creation_time',
+            metavar='TIME', type=date,
+            help='changes made at this time or later')
+        self.opts.add_argument(
+            '-m', '--match', action='csv',
+            help='restrict by matching changed fields')
+
+
+@args.subcmd(SourceforgeOpts)
+class Comments(args.Comments):
+
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
+        # optional args
+        self.opts.add_argument(
+            '-c', '--created', dest='creation_time',
+            metavar='TIME', type=date,
+            help='comments made at this time or later')
