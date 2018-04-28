@@ -334,7 +334,7 @@ class _ThreadRequest(Request):
 
         # pull thread IDs from items
         if item_id:
-            items = service.GetItemRequest(ids=ids).send()
+            items = service.SearchRequest(id=ids).send()
             ids = [x.thread_id for x in items]
 
         if data is None:
