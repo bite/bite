@@ -331,9 +331,12 @@ class _ThreadRequest(Request):
     def __init__(self, service, ids=None, item_id=False, data=None, **kw):
         if ids is None:
             raise ValueError(f'No ID(s) specified')
+        options = []
 
         # pull thread IDs from items
         if item_id:
+            service.client.progress_output('Determining message thread IDs')
+            options.append(f"IDs: {', '.join(map(str, ids))}")
             items = service.SearchRequest(id=ids).send()
             ids = [x.thread_id for x in items]
 
@@ -346,6 +349,7 @@ class _ThreadRequest(Request):
             reqs = [NullRequest()]
 
         super().__init__(service=service, reqs=reqs)
+        self.options = options
         self.ids = ids
         self._data = data
 

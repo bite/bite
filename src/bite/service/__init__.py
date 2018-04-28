@@ -28,6 +28,10 @@ class ClientCallbacks(object):
         """Prompts for yes or no response from the user."""
         raise NotImplementedError
 
+    def progress_output(self, s):
+        """Output a progress message."""
+        raise NotImplementedError
+
 
 class Service(object):
     """Generic service support."""

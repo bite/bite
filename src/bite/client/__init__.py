@@ -115,6 +115,9 @@ class Cli(Client):
     def confirm(self, *args, **kw):
         return confirm(*args, **kw)
 
+    def progress_output(self, s):
+        self.log(s)
+
     def login(self):
         """Login to a service and try to cache the authentication token."""
         if self.skip_auth:
