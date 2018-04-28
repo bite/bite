@@ -32,7 +32,7 @@ class Xmlrpc(Xml):
     @steal_docs(Service)
     def _encode_request(method, params=None):
         encoding = 'utf-8'
-        if isinstance(params, list):
+        if isinstance(params, (list, tuple)):
             params = tuple(params)
         else:
             params = (params,) if params is not None else ()
@@ -58,7 +58,11 @@ class Xmlrpc(Xml):
         except ResponseError as e:
             raise ParsingError(msg='failed parsing XML') from e
 
-        faults = data.get('faults', None)
+        try:
+            faults = data.get('faults', None)
+        except AttributeError:
+            faults = None
+
         if not faults:
             return data
         else:

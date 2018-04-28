@@ -15,10 +15,15 @@ class Jsonrpc(Json):
 
     @staticmethod
     @steal_docs(Service)
-    def _encode_request(method, params, id=0):
+    def _encode_request(method, params=None, id=0):
+        if isinstance(params, (list, tuple)):
+            params = list(params)
+        else:
+            params = [params] if params is not None else [{}]
+
         data = {
             'method': method,
-            'params': [params if params is not None else {}],
+            'params': params,
             'id': id,
         }
         return json.dumps(data)
