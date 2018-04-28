@@ -18,6 +18,7 @@ from ._reqs import (
 )
 from ..exceptions import BiteError, RequestError
 from ..objects import Item, Comment, Attachment, Change
+from ..utc import utc
 
 
 class SourceforgeError(RequestError):
@@ -78,7 +79,8 @@ class SourceforgeTicket(Item):
         for k in self.attributes.keys():
             v = ticket.get(k, None)
             if k in ('created_date', 'mod_date') and v:
-                v = dateparse(v)
+                # sourceforge doesn't specify an offset for its timestamps, assume UTC
+                v = dateparse(v).astimezone(utc)
             elif k == 'labels' and not v:
                 v = None
             elif k == 'related_artifacts':
@@ -343,7 +345,7 @@ class _CommentsRequest(_ThreadRequest):
                 if not re.match(r'(- \*\*\w+\*\*: |- (Attachments|Description) has changed:\n\nDiff)', text):
                     l.append(SourceforgeComment(
                         id=i, count=count, creator=c['author'],
-                        created=dateparse(c['timestamp']), text=text))
+                        created=dateparse(c['timestamp']).astimezone(utc), text=text))
                     count += 1
             yield tuple(l)
 
@@ -361,7 +363,7 @@ class _AttachmentsRequest(_ThreadRequest):
             for p in posts:
                 for a in p['attachments']:
                     l.append(SourceforgeAttachment(
-                        creator=p['author'], created=dateparse(p['timestamp']),
+                        creator=p['author'], created=dateparse(p['timestamp']).astimezone(utc),
                         size=a['bytes'], url=a['url'], filename=a['url'].rsplit('/', 1)[1]))
                     count += 1
             yield tuple(l)
@@ -403,7 +405,7 @@ class _ChangesRequest(_ThreadRequest):
                             changes[key] = change
                     l.append(SourceforgeEvent(
                         id=i, count=count, creator=c['author'],
-                        created=dateparse(c['timestamp']), changes=changes))
+                        created=dateparse(c['timestamp']).astimezone(utc), changes=changes))
                     count += 1
             yield tuple(l)
 
