@@ -92,8 +92,12 @@ class SourceforgeTicket(Item):
                 v = html.unescape(v)
             setattr(self, k, v)
 
-        # comment thread ID
-        self.thread_id = ticket['discussion_thread']['_id']
+        # Store comment thread ID, note that search results don't include
+        # discussion thread objects, so fall back to grabbing the value from the URL.
+        if 'discussion_thread' in ticket:
+            self.thread_id = ticket['discussion_thread']['_id']
+        else:
+            self.thread_id = ticket['discussion_thread_url'].rstrip('/').rsplit('/', 1)[1]
 
         if get_desc:
             try:
