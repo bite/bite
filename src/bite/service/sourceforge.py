@@ -229,11 +229,24 @@ class _SearchRequest(SourceforgePagedRequest):
     def parse_params(self, service, params=None, options=None, **kw):
         params = params if params is not None else {}
         options = options if options is not None else []
+        query = []
 
         for k, v in ((k, v) for (k, v) in kw.items() if v):
             if k == 'terms':
-                params['q'] = '+'.join(v)
-                options.append(f"Summary: {', '.join(v)}")
+                or_queries = []
+                display_terms = []
+                for term in v:
+                    or_terms = [x.replace('"', '\\"') for x in term.split(',')]
+                    or_search_terms = [f'summary:"{x}"' for x in or_terms]
+                    or_display_terms = [f'"{x}"' for x in or_terms]
+                    if len(or_terms) > 1:
+                        or_queries.append(f"({' OR '.join(or_search_terms)})")
+                        display_terms.append(f"({' OR '.join(or_display_terms)})")
+                    else:
+                        or_queries.append(or_search_terms[0])
+                        display_terms.append(or_display_terms[0])
+                query.append(f"{' AND '.join(or_queries)}")
+                options.append(f"Summary: {' AND '.join(display_terms)}")
             elif k == 'sort':
                 sorting_terms = []
                 for sort in v:
@@ -252,6 +265,8 @@ class _SearchRequest(SourceforgePagedRequest):
                     sorting_terms.append(f'{order_var} {order}')
                 params['sort'] = ','.join(sorting_terms)
                 options.append(f"Sort order: {', '.join(v)}")
+
+        params['q'] = ' AND '.join(query)
 
         # default to sorting ascending by ID
         if 'sort' not in params:
