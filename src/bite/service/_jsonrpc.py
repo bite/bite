@@ -39,8 +39,8 @@ class Jsonrpc(Json):
         return method, params, id
 
     @steal_docs(Service)
-    def parse_response(self, response):
-        data = super().parse_response(response)
+    def parse_response(self, response, **kw):
+        data = super().parse_response(response, **kw)
         error = data.get('error', None)
         if error is None:
             return data['result']

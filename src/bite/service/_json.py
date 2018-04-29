@@ -18,13 +18,13 @@ class Json(Service):
         })
 
     @steal_docs(Service)
-    def parse_response(self, response):
+    def parse_response(self, response, **kw):
         if not response.headers.get('Content-Type', '').startswith('application/json'):
             msg = 'non-JSON response from server'
             if not self.verbose:
                 msg += ' (use verbose mode to see it)'
             raise RequestError(code=response.status_code, msg=msg, text=response.text)
         try:
-            return response.json()
+            return response.json(**kw)
         except json.decoder.JSONDecodeError as e:
             raise ParsingError(msg='failed parsing JSON', text=str(e))
