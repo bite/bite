@@ -13,14 +13,15 @@ class _Unmarshaller(Unmarshaller):
 
     This can be dropped once the upstream xmlrpc.client lib is fixed.
     """
+    dispatch = Unmarshaller.dispatch
 
     def end_string(self, data):
         if self._encoding and not isinstance(data, str):
             data = data.decode(self._encoding)
         self.append(data)
         self._value = 0
-    Unmarshaller.dispatch["string"] = end_string
-    Unmarshaller.dispatch["name"] = end_string # struct keys are always strings
+    dispatch["string"] = end_string
+    dispatch["name"] = end_string # struct keys are always strings
 
 
 class Xmlrpc(Xml):
