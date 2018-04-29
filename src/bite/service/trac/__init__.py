@@ -72,21 +72,21 @@ class _SearchRequest(RPCRequest):
             raise BiteError('no supported search terms or options specified')
 
         # disable results paging
-        params.append(f'max={service.max_results}')
+        params['max'] = service.max_results
 
         # create params string
-        params = '&'.join(params)
+        params_str = '&'.join(f'{k}={v}' for k, v in params.items())
 
-        super().__init__(service=service, command='ticket.query', params=params, **kw)
+        super().__init__(service=service, command='ticket.query', params=params_str, **kw)
         self.options = options
 
     def parse_params(self, service, params=None, options=None, **kw):
         options = options if options is not None else []
-        params = []
+        params = {}
 
         for k, v in ((k, v) for (k, v) in kw.items() if v):
             if k == 'terms':
-                params.append(f'summary=~{v[0]}')
+                params['summary'] = f'~{v[0]}'
                 options.append(f"Summary: {', '.join(map(str, v))}")
 
         return params, options
