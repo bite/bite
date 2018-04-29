@@ -147,3 +147,11 @@ def str2bool(s):
     if v in ("no", "false", "0"):
         return False
     raise ValueError(f'invalid boolean value: {s!r}')
+
+
+def dict2tuples(dct):
+    for k, v in dct.items():
+        if isinstance(v, (list, tuple)):
+            yield from ((k, x) for x in v)
+        else:
+            yield (k, v)

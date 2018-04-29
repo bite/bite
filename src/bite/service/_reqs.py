@@ -4,6 +4,8 @@ import re
 
 import requests
 
+from ..utils import dict2tuples
+
 
 def req_cmd(service_cls, cmd_name=None):
     """Register service request and command functions."""
@@ -362,14 +364,8 @@ class RESTRequest(Request):
     @property
     def url(self):
         """Construct a full resource URL with params encoded."""
-        l = []
-        for k, v in self.params.items():
-            if isinstance(v, (list, tuple)):
-                l.extend((k, i) for i in v)
-            else:
-                l.append((k, v))
-
-        params_str = f'?{urlencode(l)}' if l else ''
+        params = list(dict2tuples(self.params))
+        params_str = f'?{urlencode(params)}' if params else ''
         return f"{self.endpoint}{params_str}"
 
     def params_to_data(self):

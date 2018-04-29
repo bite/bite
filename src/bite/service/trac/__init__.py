@@ -9,6 +9,7 @@ from .._reqs import RPCRequest, Request, req_cmd
 from .. import Service
 from ...exceptions import BiteError, RequestError
 from ...objects import Item
+from ...utils import dict2tuples
 
 
 class TracError(RequestError):
@@ -80,7 +81,7 @@ class _SearchRequest(RPCRequest):
             params['order'] = 'id'
 
         # create params string
-        params_str = '&'.join(f'{k}={v}' for k, v in params.items())
+        params_str = '&'.join(f'{k}={v}' for k, v in dict2tuples(params))
 
         super().__init__(service=service, command='ticket.query', params=params_str, **kw)
         self.options = options
