@@ -74,6 +74,10 @@ class _SearchRequest(RPCRequest):
         # disable results paging
         params['max'] = service.max_results
 
+        # default to sorting ascending by ID
+        if 'order' not in params:
+            params['order'] = 'id'
+
         # create params string
         params_str = '&'.join(f'{k}={v}' for k, v in params.items())
 
