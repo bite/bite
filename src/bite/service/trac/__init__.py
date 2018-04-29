@@ -32,6 +32,7 @@ class TracTicket(Item):
         ('title', 'Title'),
         ('id', 'ID'),
         ('created', 'Reported'),
+        ('modified', 'Updated'),
     )
 
     type = 'ticket'
@@ -116,5 +117,6 @@ class GetItemRequest(Request):
         # unwrap multicall result
         data = super().parse(data)
         for item in data:
-            id, _created, _changed, attrs = item
-            yield self.service.item(self.service, id=id, **attrs)
+            id, created, modified, attrs = item
+            yield self.service.item(
+                self.service, id=id, created=created, modified=modified, **attrs)
