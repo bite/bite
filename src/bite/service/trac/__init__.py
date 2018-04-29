@@ -80,6 +80,10 @@ class _SearchRequest(RPCRequest):
         if 'order' not in params:
             params['order'] = 'id'
 
+        # default to returning only open tickets
+        if 'status' not in params:
+            params['status'] = '!closed'
+
         # create params string
         params_str = '&'.join(f'{k}={v}' for k, v in dict2tuples(params))
 
