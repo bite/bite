@@ -69,8 +69,10 @@ class Xmlrpc(Xml):
         else:
             self.handle_error(code=faults[0]['faultCode'], msg=faults[0]['faultString'])
 
-    def _getparser(self):
-        u = _Unmarshaller(use_datetime=True)
+    def _getparser(self, unmarshaller=None):
+        u = unmarshaller
+        if u is None:
+            u = _Unmarshaller(use_datetime=True)
         return super()._getparser(unmarshaller=u)
 
 
