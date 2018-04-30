@@ -219,11 +219,11 @@ class _SearchRequest(SourceforgePagedRequest):
     }
 
     def __init__(self, service, **kw):
-        params, options, query = self.parse_params(service=service, **kw)
-        if not params and not query:
+        params, options, query_params = self.parse_params(service=service, **kw)
+        if not query_params:
             raise BiteError('no supported search terms or options specified')
 
-        params['q'] = ' AND '.join(query)
+        params['q'] = ' AND '.join(query_params.values())
 
         # default to sorting ascending by ID
         if 'sort' not in params:
@@ -235,7 +235,7 @@ class _SearchRequest(SourceforgePagedRequest):
     def parse_params(self, service, params=None, options=None, **kw):
         params = params if params is not None else {}
         options = options if options is not None else []
-        query = []
+        query_params = {}
 
         for k, v in ((k, v) for (k, v) in kw.items() if v):
             if k == 'terms':
@@ -251,20 +251,21 @@ class _SearchRequest(SourceforgePagedRequest):
                     else:
                         or_queries.append(or_search_terms[0])
                         display_terms.append(or_display_terms[0])
-                query.append(f"{' AND '.join(or_queries)}")
+                query_params['summary'] = f"{' AND '.join(or_queries)}"
                 options.append(f"Summary: {' AND '.join(display_terms)}")
             elif k == 'id':
                 id_str = None
                 if len(v) > 1:
                     first, last = v[0], v[-1]
                     if v == list(range(first, last + 1)):
-                        query.append(f"ticket_num:[{first} TO {last}]")
+                        query_str = f"ticket_num:[{first} TO {last}]"
                         id_str = f'{first} - {last}'
                     else:
                         or_terms = (f"ticket_num:{x}" for x in v)
-                        query.append(f"({' OR '.join(or_terms)})")
+                        query_str = f"({' OR '.join(or_terms)})"
                 else:
-                    query.append(f"ticket_num:{v[0]}")
+                    query_str = f"ticket_num:{v[0]}"
+                query_params['id'] = query_str
                 if id_str is None:
                     id_str = ', '.join(map(str, v))
                 options.append(f"{service.item.type.capitalize()} IDs: {id_str}")
@@ -287,10 +288,10 @@ class _SearchRequest(SourceforgePagedRequest):
                 params['sort'] = ','.join(sorting_terms)
                 options.append(f"Sort order: {', '.join(v)}")
             elif k in ('created_date', 'mod_date'):
-                query.append(f'{k}:[{v.utcformat()} TO NOW]')
+                query_params[k] = f'{k}:[{v.utcformat()} TO NOW]'
                 options.append(f'{service.item.attributes[k]}: {v} (since {v.isoformat()})')
 
-        return params, options, query
+        return params, options, query_params
 
     def parse(self, data):
         super().parse(data)
