@@ -335,6 +335,38 @@ class LinkPagedRequest(Request):
         super().parse(data)
 
 
+class ParseRequest(Request):
+    """Parse parameters according to defined methods for a request."""
+
+    def __init__(self, service, method=None, **kw):
+        super().__init__(service=service, method=method, **kw)
+        self.param_parser = self.ParamParser(self)
+        self.params = self.parse_params(**kw)
+
+    def parse_params(self, **kw):
+        for k, v in ((k, v) for (k, v) in kw.items() if v):
+            parse = getattr(self.param_parser, k, None)
+            if not callable(parse):
+                parse = self.param_parser._default
+            parse(k, v)
+        params = self.param_parser._finalize(**kw)
+        return params if params is not None else self.params
+
+    class ParamParser(object):
+
+        def __init__(self, request):
+            self.request = request
+            self.service = request.service
+            self.params = request.params
+            self.options = request.options
+
+        def _default(self, k, v):
+            """Fallback parameter parser if no matching method exists."""
+
+        def _finalize(self):
+            """Finalize request parameters."""
+
+
 class RPCRequest(Request):
     """Construct an RPC request."""
 

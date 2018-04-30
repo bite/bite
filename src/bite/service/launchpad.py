@@ -8,7 +8,10 @@ API docs:
 from dateutil.parser import parse as dateparse
 
 from ._jsonrest import JsonREST
-from ._reqs import RESTRequest, OffsetPagedRequest, Request, GetRequest, req_cmd, generator
+from ._reqs import (
+    RESTRequest, OffsetPagedRequest, Request, GetRequest, ParseRequest,
+    req_cmd, generator,
+)
 from ..cache import Cache
 from ..exceptions import RequestError, BiteError
 from ..objects import Item, Attachment, Comment, Change
@@ -112,163 +115,20 @@ class Launchpad(JsonREST):
         self.webbase = base
 
 
-@req_cmd(Launchpad, 'search')
-class _SearchRequest(RESTRequest, OffsetPagedRequest):
-    """Construct a search request.
-
-    API docs: https://launchpad.net/+apidoc/1.0.html#bugs under the 'searchTasks'
-    for custom GET methods.
-    """
+class LaunchpadPagedRequest(RESTRequest, OffsetPagedRequest):
 
     _offset_key = 'ws.start'
     _size_key = 'ws.size'
     _total_key = 'total_size'
 
-    # Map of allowed sorting input values to service parameters determined by
-    # looking at available values on the web interface.
-    sorting_map = {
-        'importance': 'importance',
-        'status': 'status',
-        'info-type': 'information_type',
-        'id': 'id',
-        'title': 'title',
-        'target': 'targetname',
-        'milestone': 'milestone_name',
-        'modified': 'date_last_updated',
-        'assignee': 'assignee',
-        'creator': 'reporter',
-        'created': 'datecreated',
-        'tag': 'tag',
-        'heat': 'heat',
-    }
 
-    # Map of allowed status input values to launchpad parameters determined by
-    # submitting an invalid value which returns an error message listing the
-    # valid choices.
-    status_map = {
-        'new': 'New',
-        'incomplete': 'Incomplete',
-        'opinion': 'Opinion',
-        'invalid': 'Invalid',
-        'wont-fix': "Won't Fix",
-        'expired': 'Expired',
-        'confirmed': 'Confirmed',
-        'triaged': 'Triaged',
-        'in-progress': 'In Progress',
-        'committed': 'Fix Committed',
-        'released': 'Fix Released',
-        'incomplete-response': 'Incomplete (with response)',
-        'incomplete-noresponse': 'Incomplete (without response)',
-    }
+@req_cmd(Launchpad, 'search')
+class _SearchRequest(LaunchpadPagedRequest, ParseRequest):
+    """Construct a search request.
 
-    # Map of allowed importance input values to launchpad parameters determined by
-    # submitting an invalid value which returns an error message listing the
-    # valid choices.
-    importance_map = {
-        'unknown': 'Unknown',
-        'undecided': 'Undecided',
-        'low': 'Low',
-        'medium': "Medium",
-        'high': 'High',
-        'critical': 'Critical',
-        'wishlist': 'Wishlist',
-    }
-
-    def __init__(self, service, **kw):
-        params, options = self.parse_params(service=service, **kw)
-        if not params:
-            raise BiteError('no supported search terms or options specified')
-
-        params['ws.op'] = 'searchTasks'
-        super().__init__(service=service, params=params, **kw)
-        self.options = options
-
-    def parse_params(self, service, params=None, options=None, **kw):
-        params = params if params is not None else {}
-        options = options if options is not None else []
-
-        for k, v in ((k, v) for (k, v) in kw.items() if v):
-            if k == 'terms':
-                # default to searching for any matching terms
-                params['search_text'] = ' OR '.join(v)
-                options.append(f"Summary: {', '.join(map(str, v))}")
-            elif k in ('owner', 'bug_commenter', 'bug_reporter', 'bug_subscriber'):
-                # TODO: validate user exists
-                # invalid users return HTTP Error 400
-                # TODO: Allow searching by display name (will require making
-                # query to find people first which would solve the validation
-                # issue as well.
-                params[k] = f"{service.base}/~{v}"
-                options.append(f"{service.item.attributes[k]}: {v}")
-            elif k in ('created_since', 'modified_since'):
-                params[k] = v.isoformat()
-                options.append(f'{service.item.attributes[k]}: {v} (since {v!r} UTC)')
-            elif k in ('has_cve', 'has_patch'):
-                # launchpad is particular about the boolean values it receives
-                params[k] = str(v).lower()
-                options.append(f"{service.item.attributes[k]}: {v}")
-            elif k == 'omit_duplicates':
-                # launchpad is particular about the boolean values it receives
-                params[k] = str(v).lower()
-                options.append(f"Show duplicates: {v}")
-            elif k == 'milestone':
-                # TODO: verify milestone against cached list
-                params[k] = f"{service._base}/+milestone/{v}"
-                options.append(f"{k.capitalize()}: {v}")
-            elif k == 'importance':
-                importances = []
-                for importance in v:
-                    try:
-                        importance_var = self.importance_map[importance]
-                    except KeyError:
-                        choices = ', '.join(sorted(self.importance_map.keys()))
-                        raise BiteError(
-                            f'invalid importance: {importance!r} (available choices: {choices}')
-                    importances.append(importance_var)
-                params[k] = importances
-                options.append(f"{k.capitalize()}: {', '.join(v)}")
-            elif k == 'status':
-                statuses = []
-                for status in v:
-                    try:
-                        status_var = self.status_map[status]
-                    except KeyError:
-                        choices = ', '.join(sorted(self.status_map.keys()))
-                        raise BiteError(
-                            f'invalid status: {status!r} (available choices: {choices}')
-                    statuses.append(status_var)
-                params[k] = statuses
-                options.append(f"{k.capitalize()}: {', '.join(v)}")
-            elif k == 'sort':
-                sorting_terms = []
-                for sort in v:
-                    if sort[0] == '-':
-                        key = sort[1:]
-                        inverse = '-'
-                    else:
-                        key = sort
-                        inverse = ''
-                    try:
-                        order_var = self.sorting_map[key]
-                    except KeyError:
-                        choices = ', '.join(sorted(self.sorting_map.keys()))
-                        raise BiteError(
-                            f'unable to sort by: {key!r} (available choices: {choices}')
-                    sorting_terms.append(f'{inverse}{order_var}')
-                params['order_by'] = sorting_terms
-                options.append(f"Sort order: {', '.join(v)}")
-            elif k == 'tags':
-                tags = [x.lower() for x in v]
-                if len(tags) > 1:
-                    combine = 'Any'
-                else:
-                    tags = tags[0].split()
-                    combine = 'All'
-                params[k] = tags
-                params['tags_combinator'] = combine
-                options.append(f"{k.capitalize()}: {combine} tags matching: {', '.join(tags)}")
-
-        return params, options
+    API docs: https://launchpad.net/+apidoc/1.0.html#bugs under the 'searchTasks'
+    for custom GET methods.
+    """
 
     def parse(self, data):
         super().parse(data)
@@ -280,6 +140,156 @@ class _SearchRequest(RESTRequest, OffsetPagedRequest):
         if e.code == 400:
             raise LaunchpadError(msg=e.text, code=e.code)
         raise e
+
+    class ParamParser(ParseRequest.ParamParser):
+
+        # Map of allowed sorting input values to service parameters determined by
+        # looking at available values on the web interface.
+        sorting_map = {
+            'importance': 'importance',
+            'status': 'status',
+            'info-type': 'information_type',
+            'id': 'id',
+            'title': 'title',
+            'target': 'targetname',
+            'milestone': 'milestone_name',
+            'modified': 'date_last_updated',
+            'assignee': 'assignee',
+            'creator': 'reporter',
+            'created': 'datecreated',
+            'tag': 'tag',
+            'heat': 'heat',
+        }
+
+        # Map of allowed status input values to launchpad parameters determined by
+        # submitting an invalid value which returns an error message listing the
+        # valid choices.
+        status_map = {
+            'new': 'New',
+            'incomplete': 'Incomplete',
+            'opinion': 'Opinion',
+            'invalid': 'Invalid',
+            'wont-fix': "Won't Fix",
+            'expired': 'Expired',
+            'confirmed': 'Confirmed',
+            'triaged': 'Triaged',
+            'in-progress': 'In Progress',
+            'committed': 'Fix Committed',
+            'released': 'Fix Released',
+            'incomplete-response': 'Incomplete (with response)',
+            'incomplete-noresponse': 'Incomplete (without response)',
+        }
+
+        # Map of allowed importance input values to launchpad parameters determined by
+        # submitting an invalid value which returns an error message listing the
+        # valid choices.
+        importance_map = {
+            'unknown': 'Unknown',
+            'undecided': 'Undecided',
+            'low': 'Low',
+            'medium': "Medium",
+            'high': 'High',
+            'critical': 'Critical',
+            'wishlist': 'Wishlist',
+        }
+
+        def _finalize(self, **kw):
+            if not self.params:
+                raise BiteError('no supported search terms or options specified')
+
+            self.params['ws.op'] = 'searchTasks'
+
+        def terms(self, k, v):
+            # default to searching for any matching terms
+            self.params['search_text'] = ' OR '.join(v)
+            self.options.append(f"Summary: {', '.join(map(str, v))}")
+
+        def owner(self, k, v):
+            # TODO: validate user exists
+            # invalid users return HTTP Error 400
+            # TODO: Allow searching by display name (will require making
+            # query to find people first which would solve the validation
+            # issue as well.
+            self.params[k] = f"{self.service.base}/~{v}"
+            self.options.append(f"{self.service.item.attributes[k]}: {v}")
+        bug_commenter, bug_reporter, bug_subscriber = [owner] * 3
+
+        def created_since(self, k, v):
+            self.params[k] = v.isoformat()
+            self.options.append(f'{self.service.item.attributes[k]}: {v} (since {v!r} UTC)')
+        modified_since = created_since
+
+        def has_cve(self, k, v):
+            # launchpad is particular about the boolean values it receives
+            self.params[k] = str(v).lower()
+            self.options.append(f"{self.service.item.attributes[k]}: {v}")
+        has_patch = has_cve
+
+        def omit_duplicates(self, k, v):
+            # launchpad is particular about the boolean values it receives
+            self.params[k] = str(v).lower()
+            self.options.append(f"Show duplicates: {v}")
+
+        def milestone(self, k, v):
+            # TODO: verify milestone against cached list
+            self.params[k] = f"{self.service._base}/+milestone/{v}"
+            self.options.append(f"{k.capitalize()}: {v}")
+
+        def importance(self, k, v):
+            importances = []
+            for importance in v:
+                try:
+                    importance_var = self.importance_map[importance]
+                except KeyError:
+                    choices = ', '.join(sorted(self.importance_map.keys()))
+                    raise BiteError(
+                        f'invalid importance: {importance!r} (available choices: {choices}')
+                importances.append(importance_var)
+            self.params[k] = importances
+            self.options.append(f"{k.capitalize()}: {', '.join(v)}")
+
+        def status(self, k, v):
+            statuses = []
+            for status in v:
+                try:
+                    status_var = self.status_map[status]
+                except KeyError:
+                    choices = ', '.join(sorted(self.status_map.keys()))
+                    raise BiteError(
+                        f'invalid status: {status!r} (available choices: {choices}')
+                statuses.append(status_var)
+            self.params[k] = statuses
+            self.options.append(f"{k.capitalize()}: {', '.join(v)}")
+
+        def sort(self, k, v):
+            sorting_terms = []
+            for sort in v:
+                if sort[0] == '-':
+                    key = sort[1:]
+                    inverse = '-'
+                else:
+                    key = sort
+                    inverse = ''
+                try:
+                    order_var = self.sorting_map[key]
+                except KeyError:
+                    choices = ', '.join(sorted(self.sorting_map.keys()))
+                    raise BiteError(
+                        f'unable to sort by: {key!r} (available choices: {choices}')
+                sorting_terms.append(f'{inverse}{order_var}')
+            self.params['order_by'] = sorting_terms
+            self.options.append(f"Sort order: {', '.join(v)}")
+
+        def tags(self, k, v):
+            tags = [x.lower() for x in v]
+            if len(tags) > 1:
+                combine = 'Any'
+            else:
+                tags = tags[0].split()
+                combine = 'All'
+            self.params[k] = tags
+            self.params['tags_combinator'] = combine
+            self.options.append(f"{k.capitalize()}: {combine} tags matching: {', '.join(tags)}")
 
 
 @req_cmd(Launchpad)

@@ -5,13 +5,13 @@ from urllib.parse import parse_qs
 from snakeoil.demandload import demandload
 
 from .objects import BugzillaEvent, BugzillaComment
-from .._reqs import OffsetPagedRequest, Request
+from .._reqs import OffsetPagedRequest, Request, ParseRequest
 from ...exceptions import BiteError
 
 demandload('bite:const')
 
 
-class SearchRequest4_4(OffsetPagedRequest):
+class SearchRequest4_4(OffsetPagedRequest, ParseRequest):
     """Construct a bugzilla-4.4 compatible search request.
 
     API docs: https://www.bugzilla.org/docs/4.4/en/html/api/Bugzilla/WebService/Bug.html#search
@@ -20,52 +20,38 @@ class SearchRequest4_4(OffsetPagedRequest):
     _offset_key = 'offset'
     _size_key = 'limit'
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
-        self.param_parser = self.ParamParser(self.service, self.params, self.options)
-        self.parse_params(**kw)
-
-        if not self.params:
-            raise BiteError('no supported search terms or options specified')
-
-        # only return open bugs by default
-        if 'status' not in self.params:
-            self.params['status'] = self.service.cache['open_status']
-
-        # limit fields by default to decrease requested data size and speed up response
-        fields = kw.get('fields', None)
-        if fields is None:
-            fields = ['id', 'assigned_to', 'summary']
-        else:
-            unknown_fields = set(fields).difference(self.service.item.attributes.keys())
-            if unknown_fields:
-                raise BiteError(f"unknown fields: {', '.join(unknown_fields)}")
-            self.options.append(f"Fields: {' '.join(fields)}")
-
-        self.params['include_fields'] = fields
-        self.fields = fields
-
-    def parse_params(self, **kw):
-        for k, v in ((k, v) for (k, v) in kw.items() if v):
-            parse = getattr(self.param_parser, k, None)
-            if callable(parse):
-                parse(k, v)
-            else:
-                if k in self.service.item.attributes:
-                    self.params[k] = v
-                    self.options.append(f"{self.service.item.attributes[k]}: {', '.join(map(str, v))}")
-
     def parse(self, data):
         bugs = data['bugs']
         for bug in bugs:
             yield self.service.item(self.service, **bug)
 
-    class ParamParser(object):
+    class ParamParser(ParseRequest.ParamParser):
 
-        def __init__(self, service, params, options):
-            self.service = service
-            self.params = params
-            self.options = options
+        def _default(self, k, v):
+            if k in self.service.item.attributes:
+                self.params[k] = v
+                self.options.append(f"{self.service.item.attributes[k]}: {', '.join(map(str, v))}")
+
+        def _finalize(self, **kw):
+            if not self.params:
+                raise BiteError('no supported search terms or options specified')
+
+            # only return open bugs by default
+            if 'status' not in self.params:
+                self.params['status'] = self.service.cache['open_status']
+
+            # limit fields by default to decrease requested data size and speed up response
+            fields = kw.get('fields', None)
+            if fields is None:
+                fields = ['id', 'assigned_to', 'summary']
+            else:
+                unknown_fields = set(fields).difference(self.service.item.attributes.keys())
+                if unknown_fields:
+                    raise BiteError(f"unknown fields: {', '.join(unknown_fields)}")
+                self.options.append(f"Fields: {' '.join(fields)}")
+
+            self.params['include_fields'] = fields
+            self.request.fields = fields
 
         def creation_time(self, k, v):
             self.params[k] = v.isoformat()
@@ -112,41 +98,41 @@ class SearchRequest5_0(SearchRequest4_4):
     API docs: https://bugzilla.readthedocs.io/en/5.0/api/core/v1/bug.html#search-bugs
     """
 
-    # map of allowed sorting input values to the names bugzilla expects as parameters
-    sorting_map = {
-        'alias': 'alias',
-        'blocks': 'blocked',
-        'comments': 'longdescs.count',
-        'component': 'component',
-        'created': 'opendate',
-        'creator': 'reporter',
-        'deadline': 'deadline',
-        'depends': 'dependson',
-        'id': 'bug_id',
-        'keywords': 'keywords',
-        'milestone': 'target_milestone',
-        'modified': 'changeddate',
-        'os': 'op_sys',
-        'owner': 'assigned_to',
-        'platform': 'rep_platform',
-        'priority': 'priority',
-        'product': 'product',
-        'resolution': 'resolution',
-        'severity': 'bug_severity',
-        'status': 'bug_status',
-        'summary': 'short_desc',
-        'version': 'version',
-        'last-visited': 'last_visit_ts',
-        'votes': 'votes',
-        'whiteboard': 'status_whiteboard',
-    }
-
     def parse_params(self, **kw):
         # current advanced search field number
         self.adv_num = 1
         return super().parse_params(**kw)
 
     class ParamParser(SearchRequest4_4.ParamParser):
+
+        # map of allowed sorting input values to the names bugzilla expects as parameters
+        sorting_map = {
+            'alias': 'alias',
+            'blocks': 'blocked',
+            'comments': 'longdescs.count',
+            'component': 'component',
+            'created': 'opendate',
+            'creator': 'reporter',
+            'deadline': 'deadline',
+            'depends': 'dependson',
+            'id': 'bug_id',
+            'keywords': 'keywords',
+            'milestone': 'target_milestone',
+            'modified': 'changeddate',
+            'os': 'op_sys',
+            'owner': 'assigned_to',
+            'platform': 'rep_platform',
+            'priority': 'priority',
+            'product': 'product',
+            'resolution': 'resolution',
+            'severity': 'bug_severity',
+            'status': 'bug_status',
+            'summary': 'short_desc',
+            'version': 'version',
+            'last-visited': 'last_visit_ts',
+            'votes': 'votes',
+            'whiteboard': 'status_whiteboard',
+        }
 
         def commenter(self, k, v):
             for val in v:

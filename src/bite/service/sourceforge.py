@@ -13,7 +13,8 @@ from dateutil.parser import parse as dateparse
 
 from ._jsonrest import JsonREST
 from ._reqs import (
-    RESTRequest, NullRequest, Request, FlaggedPagedRequest, PagedRequest,
+    RESTRequest, NullRequest, Request, ParseRequest,
+    FlaggedPagedRequest, PagedRequest,
     req_cmd, generator,
 )
 from ..exceptions import BiteError, RequestError
@@ -189,7 +190,7 @@ class SourceforgeFlaggedPagedRequest(RESTRequest, FlaggedPagedRequest):
 
 
 @req_cmd(Sourceforge, 'search')
-class _SearchRequest(SourceforgePagedRequest):
+class _SearchRequest(SourceforgePagedRequest, ParseRequest):
     """Construct a search request.
 
     Currently using on Solr on the backend, see the following docs for query help:
@@ -198,112 +199,115 @@ class _SearchRequest(SourceforgePagedRequest):
         http://yonik.com/solr/
     """
 
-    # Map of allowed sorting input values to service parameters.
-    sorting_map = {
-        'assignee': 'assigned_to_s',
-        'id': 'ticket_num_i',
-        'title': 'snippet_s',
-        'description': 'text_s',
-        'status': 'status_s',
-        'created': 'created_date_dt',
-        'modified': 'mod_date_dt',
-        'creator': 'reported_by_s',
-        'labels': 'labels_t',
-        'votes': 'votes_total_i',
-        'private': 'private_b',
-        'muted': 'discussion_disabled_b',
-        'milestone': '_milestone_s',
-        'type': '_type_s',
-        'needs': '_needs_s',
-        'patch': '_patch_s',
-    }
-
-    def __init__(self, service, **kw):
-        params, options, query_params = self.parse_params(service=service, **kw)
-        if not query_params:
-            raise BiteError('no supported search terms or options specified')
-
-        params['q'] = ' AND '.join(query_params.values())
-
-        # default to sorting ascending by ID
-        if 'sort' not in params:
-            params['sort'] = 'ticket_num_i asc'
-
-        super().__init__(service=service, endpoint='/search', params=params, **kw)
-        self.options = options
-
-    def parse_params(self, service, params=None, options=None, **kw):
-        params = params if params is not None else {}
-        options = options if options is not None else []
-        query_params = {}
-
-        for k, v in ((k, v) for (k, v) in kw.items() if v):
-            if k == 'terms':
-                or_queries = []
-                display_terms = []
-                for term in v:
-                    or_terms = [x.replace('"', '\\"') for x in term.split(',')]
-                    or_search_terms = [f'summary:"{x}"' for x in or_terms]
-                    or_display_terms = [f'"{x}"' for x in or_terms]
-                    if len(or_terms) > 1:
-                        or_queries.append(f"({' OR '.join(or_search_terms)})")
-                        display_terms.append(f"({' OR '.join(or_display_terms)})")
-                    else:
-                        or_queries.append(or_search_terms[0])
-                        display_terms.append(or_display_terms[0])
-                query_params['summary'] = f"{' AND '.join(or_queries)}"
-                options.append(f"Summary: {' AND '.join(display_terms)}")
-            elif k == 'id':
-                id_str = None
-                if len(v) > 1:
-                    first, last = v[0], v[-1]
-                    if v == list(range(first, last + 1)):
-                        query_str = f"ticket_num:[{first} TO {last}]"
-                        id_str = f'{first} - {last}'
-                    else:
-                        or_terms = (f"ticket_num:{x}" for x in v)
-                        query_str = f"({' OR '.join(or_terms)})"
-                else:
-                    query_str = f"ticket_num:{v[0]}"
-                query_params['id'] = query_str
-                if id_str is None:
-                    id_str = ', '.join(map(str, v))
-                options.append(f"{service.item.type.capitalize()} IDs: {id_str}")
-            elif k == 'sort':
-                sorting_terms = []
-                for sort in v:
-                    if sort[0] == '-':
-                        key = sort[1:]
-                        order = 'desc'
-                    else:
-                        key = sort
-                        order = 'asc'
-                    try:
-                        order_var = self.sorting_map[key]
-                    except KeyError:
-                        choices = ', '.join(sorted(self.sorting_map.keys()))
-                        raise BiteError(
-                            f'unable to sort by: {key!r} (available choices: {choices}')
-                    sorting_terms.append(f'{order_var} {order}')
-                params['sort'] = ','.join(sorting_terms)
-                options.append(f"Sort order: {', '.join(v)}")
-            elif k in ('created_date', 'mod_date'):
-                query_params[k] = f'{k}:[{v.utcformat()} TO NOW]'
-                options.append(f'{service.item.attributes[k]}: {v} (since {v.isoformat()})')
-            elif k in ('assigned_to', 'reported_by'):
-                or_terms = [x.replace('"', '\\"') for x in v]
-                or_search_terms = [f'{k}:"{x}"' for x in or_terms]
-                or_display_terms = [f'"{x}"' for x in or_terms]
-                query_params[k] = f"({' OR '.join(or_search_terms)})"
-                options.append(f"{service.item.attributes[k]}: {', '.join(or_display_terms)}")
-
-        return params, options, query_params
+    def __init__(self, *args, **kw):
+        super().__init__(*args, endpoint='/search', **kw)
 
     def parse(self, data):
         super().parse(data)
         tickets = data['tickets']
         for ticket in tickets:
             yield self.service.item(self.service, ticket)
+
+    class ParamParser(ParseRequest.ParamParser):
+
+        # Map of allowed sorting input values to service parameters.
+        sorting_map = {
+            'assignee': 'assigned_to_s',
+            'id': 'ticket_num_i',
+            'title': 'snippet_s',
+            'description': 'text_s',
+            'status': 'status_s',
+            'created': 'created_date_dt',
+            'modified': 'mod_date_dt',
+            'creator': 'reported_by_s',
+            'labels': 'labels_t',
+            'votes': 'votes_total_i',
+            'private': 'private_b',
+            'muted': 'discussion_disabled_b',
+            'milestone': '_milestone_s',
+            'type': '_type_s',
+            'needs': '_needs_s',
+            'patch': '_patch_s',
+        }
+
+        def __init__(self, request):
+            super().__init__(request)
+            self.query = {}
+
+        def _finalize(self, **kw):
+            if not self.query:
+                raise BiteError('no supported search terms or options specified')
+
+            self.params['q'] = ' AND '.join(self.query.values())
+
+            # default to sorting ascending by ID
+            if 'sort' not in self.params:
+                self.params['sort'] = 'ticket_num_i asc'
+
+        def terms(self, k, v):
+            or_queries = []
+            display_terms = []
+            for term in v:
+                or_terms = [x.replace('"', '\\"') for x in term.split(',')]
+                or_search_terms = [f'summary:"{x}"' for x in or_terms]
+                or_display_terms = [f'"{x}"' for x in or_terms]
+                if len(or_terms) > 1:
+                    or_queries.append(f"({' OR '.join(or_search_terms)})")
+                    display_terms.append(f"({' OR '.join(or_display_terms)})")
+                else:
+                    or_queries.append(or_search_terms[0])
+                    display_terms.append(or_display_terms[0])
+            self.query['summary'] = f"{' AND '.join(or_queries)}"
+            self.options.append(f"Summary: {' AND '.join(display_terms)}")
+
+        def id(self, k, v):
+            id_str = None
+            if len(v) > 1:
+                first, last = v[0], v[-1]
+                if v == list(range(first, last + 1)):
+                    query_str = f"ticket_num:[{first} TO {last}]"
+                    id_str = f'{first} - {last}'
+                else:
+                    or_terms = (f"ticket_num:{x}" for x in v)
+                    query_str = f"({' OR '.join(or_terms)})"
+            else:
+                query_str = f"ticket_num:{v[0]}"
+            self.query['id'] = query_str
+            if id_str is None:
+                id_str = ', '.join(map(str, v))
+            self.options.append(f"{self.service.item.type.capitalize()} IDs: {id_str}")
+
+        def sort(self, k, v):
+            sorting_terms = []
+            for sort in v:
+                if sort[0] == '-':
+                    key = sort[1:]
+                    order = 'desc'
+                else:
+                    key = sort
+                    order = 'asc'
+                try:
+                    order_var = self.sorting_map[key]
+                except KeyError:
+                    choices = ', '.join(sorted(self.sorting_map.keys()))
+                    raise BiteError(
+                        f'unable to sort by: {key!r} (available choices: {choices}')
+                sorting_terms.append(f'{order_var} {order}')
+            self.params['sort'] = ','.join(sorting_terms)
+            self.options.append(f"Sort order: {', '.join(v)}")
+
+        def created_date(self, k, v):
+            self.query[k] = f'{k}:[{v.utcformat()} TO NOW]'
+            self.options.append(f'{self.service.item.attributes[k]}: {v} (since {v.isoformat()})')
+        mod_date = created_date
+
+        def assigned_to(self, k, v):
+            or_terms = [x.replace('"', '\\"') for x in v]
+            or_search_terms = [f'{k}:"{x}"' for x in or_terms]
+            or_display_terms = [f'"{x}"' for x in or_terms]
+            self.query[k] = f"({' OR '.join(or_search_terms)})"
+            self.options.append(f"{self.service.item.attributes[k]}: {', '.join(or_display_terms)}")
+        reported_by = assigned_to
 
 
 @req_cmd(Sourceforge)

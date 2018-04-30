@@ -11,7 +11,10 @@ Updates:
 from dateutil.parser import parse as dateparse
 
 from ._jsonrest import JsonREST
-from ._reqs import RESTRequest, LinkPagedRequest, Request, GetRequest, generator, req_cmd
+from ._reqs import (
+    RESTRequest, LinkPagedRequest, Request, GetRequest, ParseRequest,
+    generator, req_cmd,
+)
 from ..exceptions import BiteError, RequestError
 from ..objects import Item, Comment, Attachment, Change
 
@@ -169,85 +172,83 @@ class BitbucketPagedRequest(RESTRequest, LinkPagedRequest):
 
 
 @req_cmd(Bitbucket, 'search')
-class _SearchRequest(BitbucketPagedRequest):
+class _SearchRequest(BitbucketPagedRequest, ParseRequest):
     """Construct a search request."""
 
-    # Map of allowed sorting input values to service parameters.
-    sorting_map = {
-        'assignee': 'assignee',
-        'id': 'id',
-        'title': 'title',
-        'type': 'kind',
-        'priority': 'priority',
-        'creator': 'reporter',
-        'component': 'component',
-        'votes': 'votes',
-        'watches': 'watches',
-        'status': 'state',
-        'version': 'version',
-        'created': 'created_on',
-        'modified': 'updated_on',
-        'description': 'content',
-    }
-
-    def __init__(self, service, **kw):
-        params, options = self.parse_params(service=service, **kw)
-        if not params:
-            raise BiteError('no supported search terms or options specified')
-
-        super().__init__(service=service, endpoint='/issues', params=params, **kw)
-        self.options = options
-
-    def parse_params(self, service, params=None, options=None, **kw):
-        params = params if params is not None else {}
-        options = options if options is not None else []
-        query = []
-
-        for k, v in ((k, v) for (k, v) in kw.items() if v):
-            if k == 'terms':
-                or_queries = []
-                display_terms = []
-                for term in v:
-                    or_terms = [x.replace('"', '\\"') for x in term.split(',')]
-                    or_search_terms = [f'title ~ "{x}"' for x in or_terms]
-                    or_display_terms = [f'"{x}"' for x in or_terms]
-                    if len(or_terms) > 1:
-                        or_queries.append(f"({' OR '.join(or_search_terms)})")
-                        display_terms.append(f"({' OR '.join(or_display_terms)})")
-                    else:
-                        or_queries.append(or_search_terms[0])
-                        display_terms.append(or_display_terms[0])
-                query.append(f"{' AND '.join(or_queries)}")
-                options.append(f"Summary: {' AND '.join(display_terms)}")
-            elif k == 'sort':
-                if v[0] == '-':
-                    key = v[1:]
-                    inverse = '-'
-                else:
-                    key = v
-                    inverse = ''
-                try:
-                    order_var = self.sorting_map[key]
-                except KeyError:
-                    choices = ', '.join(sorted(self.sorting_map.keys()))
-                    raise BiteError(
-                        f'unable to sort by: {key!r} (available choices: {choices}')
-                params['sort'] = f'{inverse}{order_var}'
-                options.append(f"Sort order: {v}")
-
-        params['q'] = ' AND '.join(query)
-
-        # sort ascending by issue ID by default
-        if 'sort' not in params:
-            params['sort'] = 'id'
-
-        return params, options
+    def __init__(self, *args, **kw):
+        super().__init__(*args, endpoint='/issues', **kw)
 
     def parse(self, data):
         super().parse(data)
         issues = data['values']
         for issue in issues:
             yield self.service.item(self.service, issue)
+
+    class ParamParser(ParseRequest.ParamParser):
+
+        # Map of allowed sorting input values to service parameters.
+        sorting_map = {
+            'assignee': 'assignee',
+            'id': 'id',
+            'title': 'title',
+            'type': 'kind',
+            'priority': 'priority',
+            'creator': 'reporter',
+            'component': 'component',
+            'votes': 'votes',
+            'watches': 'watches',
+            'status': 'state',
+            'version': 'version',
+            'created': 'created_on',
+            'modified': 'updated_on',
+            'description': 'content',
+        }
+
+        def __init__(self, request):
+            super().__init__(request)
+            self.query = []
+
+        def _finalize(self, **kw):
+            if not self.query:
+                raise BiteError('no supported search terms or options specified')
+
+            self.params['q'] = ' AND '.join(self.query)
+
+            # sort ascending by issue ID by default
+            if 'sort' not in self.params:
+                self.params['sort'] = 'id'
+
+        def terms(self, k, v):
+            or_queries = []
+            display_terms = []
+            for term in v:
+                or_terms = [x.replace('"', '\\"') for x in term.split(',')]
+                or_search_terms = [f'title ~ "{x}"' for x in or_terms]
+                or_display_terms = [f'"{x}"' for x in or_terms]
+                if len(or_terms) > 1:
+                    or_queries.append(f"({' OR '.join(or_search_terms)})")
+                    display_terms.append(f"({' OR '.join(or_display_terms)})")
+                else:
+                    or_queries.append(or_search_terms[0])
+                    display_terms.append(or_display_terms[0])
+            self.query.append(f"{' AND '.join(or_queries)}")
+            self.options.append(f"Summary: {' AND '.join(display_terms)}")
+
+        def sort(self, k, v):
+            if v[0] == '-':
+                key = v[1:]
+                inverse = '-'
+            else:
+                key = v
+                inverse = ''
+            try:
+                order_var = self.sorting_map[key]
+            except KeyError:
+                choices = ', '.join(sorted(self.sorting_map.keys()))
+                raise BiteError(
+                    f'unable to sort by: {key!r} (available choices: {choices}')
+            self.params['sort'] = f'{inverse}{order_var}'
+            self.options.append(f"Sort order: {v}")
 
 
 @req_cmd(Bitbucket)

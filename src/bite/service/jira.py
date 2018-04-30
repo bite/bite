@@ -6,7 +6,7 @@ API docs:
 """
 
 from ._jsonrest import JsonREST
-from ._reqs import RESTRequest, OffsetPagedRequest, req_cmd
+from ._reqs import RESTRequest, OffsetPagedRequest, ParseRequest, req_cmd
 from ..exceptions import BiteError, RequestError
 from ..objects import Item
 
@@ -87,55 +87,56 @@ class Jira(JsonREST):
         raise JiraError(msg=msg, code=code)
 
 
-@req_cmd(Jira, 'search')
-class _SearchRequest(RESTRequest, OffsetPagedRequest):
-    """Construct a search request."""
+class JiraPagedRequest(RESTRequest, OffsetPagedRequest):
 
     _offset_key = 'startAt'
     _size_key = 'maxResults'
     _total_key = 'total'
 
-    def __init__(self, service, **kw):
-        params, options = self.parse_params(service=service, **kw)
-        if not params:
-            raise BiteError('no supported search terms or options specified')
 
-        # limit fields by default to decrease requested data size and speed up response
-        fields = kw.get('fields', None)
-        if fields is None:
-            fields = ['id', 'assignee', 'summary']
-        else:
-            unknown_fields = set(fields).difference(service.item.attributes.keys())
-            if unknown_fields:
-                raise BiteError(f"unknown fields: {', '.join(unknown_fields)}")
-            options.append(f"Fields: {' '.join(fields)}")
+@req_cmd(Jira, 'search')
+class _SearchRequest(JiraPagedRequest, ParseRequest):
+    """Construct a search request."""
 
-        params['fields'] = fields
-        # if configured for a specific project, limit search to specified project
-        params['jql'] = f"project = {service._project} AND ( {params['jql']} )"
-
+    def __init__(self, *args, **kw):
         # use POST requests to avoid URL length issues with massive JQL queries
-        super().__init__(service=service, endpoint='/search',
-                         method='POST', params=params, **kw)
-        self.fields = fields
-        self.options = options
-
-    def parse_params(self, service, params=None, options=None, **kw):
-        params = params if params is not None else {}
-        options = options if options is not None else []
-        jql = []
-
-        for k, v in ((k, v) for (k, v) in kw.items() if v):
-            if k == 'terms':
-                for term in v:
-                    jql.append(f'summary ~ {term}')
-            options.append(f"Summary: {', '.join(map(str, v))}")
-
-        params['jql'] = ' AND '.join(jql)
-        return params, options
+        super().__init__(*args, endpoint='/search', method='POST', **kw)
 
     def parse(self, data):
         super().parse(data)
         issues = data['issues']
         for issue in issues:
             yield self.service.item(self.service, issue)
+
+    class ParamParser(ParseRequest.ParamParser):
+
+        def __init__(self, request):
+            super().__init__(request)
+            self.query = []
+
+        def _finalize(self, **kw):
+            if not self.query:
+                raise BiteError('no supported search terms or options specified')
+
+            self.params['jql'] = ' AND '.join(self.query)
+
+            # limit fields by default to decrease requested data size and speed up response
+            fields = kw.get('fields', None)
+            if fields is None:
+                fields = ['id', 'assignee', 'summary']
+            else:
+                unknown_fields = set(fields).difference(self.service.item.attributes.keys())
+                if unknown_fields:
+                    raise BiteError(f"unknown fields: {', '.join(unknown_fields)}")
+                self.options.append(f"Fields: {' '.join(fields)}")
+
+            self.params['fields'] = fields
+            # if configured for a specific project, limit search to specified project
+            self.params['jql'] = f"project = {self.service._project} AND ( {self.params['jql']} )"
+
+            self.request.fields = fields
+
+        def terms(self, k, v):
+            for term in v:
+                self.query.append(f'summary ~ {term}')
+            self.options.append(f"Summary: {', '.join(map(str, v))}")

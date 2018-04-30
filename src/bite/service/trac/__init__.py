@@ -5,7 +5,7 @@ API docs:
     - https://trac.videolan.org/vlc/rpc
 """
 
-from .._reqs import RPCRequest, Request, req_cmd
+from .._reqs import RPCRequest, Request, ParseRequest, req_cmd, generator
 from .. import Service
 from ...exceptions import BiteError, RequestError
 from ...objects import Item
@@ -65,47 +65,41 @@ class Trac(Service):
 
 
 @req_cmd(Trac, 'search')
-class _SearchRequest(RPCRequest):
+class _SearchRequest(RPCRequest, ParseRequest):
     """Construct a search request."""
 
-    def __init__(self, service, **kw):
-        params, options = self.parse_params(service=service, **kw)
-        if not params:
-            raise BiteError('no supported search terms or options specified')
-
-        # disable results paging
-        params['max'] = service.max_results
-
-        # default to sorting ascending by ID
-        if 'order' not in params:
-            params['order'] = 'id'
-
-        # default to returning only open tickets
-        if 'status' not in params:
-            params['status'] = '!closed'
-
-        # create params string
-        params_str = '&'.join(f'{k}={v}' for k, v in dict2tuples(params))
-
-        super().__init__(service=service, command='ticket.query', params=params_str, **kw)
-        self.options = options
-
-    def parse_params(self, service, params=None, options=None, **kw):
-        options = options if options is not None else []
-        params = {}
-
-        for k, v in ((k, v) for (k, v) in kw.items() if v):
-            if k == 'terms':
-                params['summary'] = f'~{v[0]}'
-                options.append(f"Summary: {', '.join(map(str, v))}")
-
-        return params, options
+    def __init__(self, *args, **kw):
+        super().__init__(command='ticket.query', **kw)
 
     def parse(self, data):
         # Trac search requests return a list of matching IDs that we resubmit
         # via a multicall to grab ticket data.
         tickets = self.service.GetItemRequest(ids=data).send()
         yield from tickets
+
+    class ParamParser(ParseRequest.ParamParser):
+
+        def _finalize(self, **kw):
+            if not self.params:
+                raise BiteError('no supported search terms or options specified')
+
+            # disable results paging
+            self.params['max'] = self.service.max_results
+
+            # default to sorting ascending by ID
+            if 'order' not in self.params:
+                self.params['order'] = 'id'
+
+            # default to returning only open tickets
+            if 'status' not in self.params:
+                self.params['status'] = '!closed'
+
+            # return params string
+            return '&'.join(f'{k}={v}' for k, v in dict2tuples(self.params))
+
+        def terms(self, k, v):
+            self.params['summary'] = f'~{v[0]}'
+            self.options.append(f"Summary: {', '.join(map(str, v))}")
 
 
 class GetItemRequest(Request):
