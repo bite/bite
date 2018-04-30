@@ -1,7 +1,7 @@
 from functools import partial
 
 from .bugzilla import date
-from ..argparser import parse_stdin, id_list, ids
+from ..argparser import parse_stdin, id_list, ids, string_list
 from .. import args
 
 
@@ -43,6 +43,13 @@ class Search(args.Search):
             '--id', type=id_list,
             action=partial(parse_stdin, ids),
             help=f'restrict by {self.service.item.type} ID(s)')
+        attr.add_argument(
+            '-a', '--assigned-to', type=string_list, action=parse_stdin,
+            help='email of the person the bug is assigned to')
+        attr.add_argument(
+            '-r', '--creator', dest='reported_by',
+            type=string_list, action=parse_stdin,
+            help='email of the person the bug is assigned to')
 
 
 @args.subcmd(SourceforgeOpts)

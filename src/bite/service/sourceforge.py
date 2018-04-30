@@ -290,6 +290,10 @@ class _SearchRequest(SourceforgePagedRequest):
             elif k in ('created_date', 'mod_date'):
                 query_params[k] = f'{k}:[{v.utcformat()} TO NOW]'
                 options.append(f'{service.item.attributes[k]}: {v} (since {v.isoformat()})')
+            elif k in ('assigned_to', 'reported_by'):
+                or_str = ' OR '.join(f'{k}:"{x}"' for x in v)
+                query_params[k] = f'({or_str})'
+                options.append(f"{service.item.attributes[k]}: {', '.join(v)}")
 
         return params, options, query_params
 
