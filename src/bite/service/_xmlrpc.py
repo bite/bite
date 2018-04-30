@@ -45,10 +45,7 @@ class Xmlrpc(Xml):
     @steal_docs(Service)
     def _decode_request(request):
         params, method = loads(request.data)
-        if not params:
-            params = None
-        else:
-            params = params[0]
+        params = params[0] if params else None
         return method, params
 
     @steal_docs(Service)
@@ -71,9 +68,7 @@ class Xmlrpc(Xml):
             self.handle_error(code=faults[0]['faultCode'], msg=faults[0]['faultString'])
 
     def _getparser(self, unmarshaller=None):
-        u = unmarshaller
-        if u is None:
-            u = _Unmarshaller(use_datetime=True)
+        u = _Unmarshaller(use_datetime=True) if unmarshaller is None else unmarshaller
         return super()._getparser(unmarshaller=u)
 
 
