@@ -61,9 +61,21 @@ class DateTime(object):
     def __repr__(self):
         return str(self._datetime)
 
-    def isoformat(self):
-        """Format the service expects datetime objects sent to it in."""
-        return self._datetime.isoformat()
+    def isoformat(self, **kw):
+        """Return a string representing the date and time in ISO 8601 format."""
+        return self._datetime.isoformat(**kw)
+
+    def utcformat(self):
+        """Return a string representing the date and time in ISO 8601 format, assuming UTC."""
+        return self._datetime.strftime('%Y-%m-%dT%H:%M:%SZ')
+
+    def replace(self, **kw):
+        """Return a modified datetime with kwargs specifying new attributes."""
+        return self._datetime.replace(**kw)
+
+    def strftime(self, fmt):
+        """Return a modified datetime with kwargs specifying new attributes."""
+        return self._datetime.strftime(fmt)
 
     def __eq__(self, x):
         return self._datetime == x
