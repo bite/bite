@@ -73,9 +73,10 @@ class _SearchRequest(RPCRequest, ParseRequest):
 
     def parse(self, data):
         # Trac search requests return a list of matching IDs that we resubmit
-        # via a multicall to grab ticket data.
-        tickets = self.service.GetItemRequest(ids=data).send()
-        yield from tickets
+        # via a multicall to grab ticket data if any matches exist.
+        if data:
+            tickets = self.service.GetItemRequest(ids=data).send()
+            yield from tickets
 
     class ParamParser(ParseRequest.ParamParser):
 
