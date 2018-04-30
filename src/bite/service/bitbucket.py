@@ -254,17 +254,18 @@ class _SearchRequest(BitbucketPagedRequest):
 class _GetItemRequest(Request):
     """Construct an issue request."""
 
-    def __init__(self, ids, service, get_desc=True, **kw):
+    def __init__(self, ids, get_desc=True, **kw):
+        super().__init__(**kw)
         if ids is None:
-            raise ValueError(f'No {service.item.type} ID(s) specified')
+            raise ValueError(f'No {self.service.item.type} ID(s) specified')
 
         reqs = []
         for i in ids:
             reqs.append(RESTRequest(
-                service=service, endpoint=f'/issues/{i}'))
+                service=self.service, endpoint=f'/issues/{i}'))
 
-        super().__init__(service=service, reqs=reqs)
         self.ids = ids
+        self._reqs = tuple(reqs)
         self._get_desc = get_desc
 
     def parse(self, data):
@@ -280,17 +281,18 @@ class _GetItemRequest(Request):
 class _CommentsRequest(Request):
     """Construct a comments request."""
 
-    def __init__(self, ids=None, service=None, **kw):
+    def __init__(self, ids=None, **kw):
+        super().__init__(**kw)
         if ids is None:
-            raise ValueError(f'No {service.item.type} ID(s) specified')
+            raise ValueError(f'No {self.service.item.type} ID(s) specified')
 
         reqs = []
         for i in ids:
             reqs.append(BitbucketPagedRequest(
-                service=service, endpoint=f'/issues/{i}/comments'))
+                service=self.service, endpoint=f'/issues/{i}/comments'))
 
-        super().__init__(service=service, reqs=reqs)
         self.ids = ids
+        self._reqs = tuple(reqs)
 
     @generator
     def parse(self, data):
@@ -313,17 +315,18 @@ class _CommentsRequest(Request):
 class _AttachmentsRequest(Request):
     """Construct an attachments request."""
 
-    def __init__(self, service, ids=None, get_data=False, *args, **kw):
+    def __init__(self, ids=None, get_data=False, *args, **kw):
+        super().__init__(**kw)
         if ids is None:
-            raise ValueError(f'No {service.item.type} ID(s) specified')
+            raise ValueError(f'No {self.service.item.type} ID(s) specified')
 
         reqs = []
         for i in ids:
             reqs.append(BitbucketPagedRequest(
-                service=service, endpoint=f'/issues/{i}/attachments'))
+                service=self.service, endpoint=f'/issues/{i}/attachments'))
 
-        super().__init__(service=service, reqs=reqs)
         self.ids = ids
+        self._reqs = tuple(reqs)
 
     @generator
     def parse(self, data):
@@ -339,17 +342,18 @@ class _AttachmentsRequest(Request):
 class _ChangesRequest(Request):
     """Construct a changes request."""
 
-    def __init__(self, ids=None, service=None, **kw):
+    def __init__(self, ids=None, **kw):
+        super().__init__(**kw)
         if ids is None:
-            raise ValueError(f'No {service.item.type} ID(s) specified')
+            raise ValueError(f'No {self.service.item.type} ID(s) specified')
 
         reqs = []
         for i in ids:
             reqs.append(BitbucketPagedRequest(
-                service=service, endpoint=f'/issues/{i}/changes'))
+                service=self.service, endpoint=f'/issues/{i}/changes'))
 
-        super().__init__(service=service, reqs=reqs)
         self.ids = ids
+        self._reqs = tuple(reqs)
 
     @generator
     def parse(self, data):

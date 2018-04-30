@@ -310,17 +310,17 @@ class _SearchRequest(SourceforgePagedRequest):
 class _GetItemRequest(Request):
     """Construct an issue request."""
 
-    def __init__(self, ids, service, get_desc=True, get_attachments=True, **kw):
+    def __init__(self, ids, get_desc=True, get_attachments=True, **kw):
+        super().__init__(**kw)
         if ids is None:
-            raise ValueError(f'No {service.item.type} ID(s) specified')
+            raise ValueError(f'No {self.service.item.type} ID(s) specified')
 
         reqs = []
         for i in ids:
-            reqs.append(RESTRequest(
-                service=service, endpoint=f'/{i}'))
+            reqs.append(RESTRequest(service=self.service, endpoint=f'/{i}'))
 
-        super().__init__(service=service, reqs=reqs)
         self.ids = ids
+        self._reqs = tuple(reqs)
         self._get_desc = get_desc
         self._get_attach = get_attachments
 
@@ -338,29 +338,28 @@ class _GetItemRequest(Request):
 class _ThreadRequest(Request):
     """Construct a discussion thread request."""
 
-    def __init__(self, service, ids=None, item_id=False, data=None, **kw):
+    def __init__(self, ids=None, item_id=False, data=None, **kw):
+        super().__init__(**kw)
         if ids is None:
             raise ValueError(f'No ID(s) specified')
-        options = []
 
         # pull thread IDs from items
         if item_id:
-            service.client.progress_output('Determining message thread IDs')
-            options.append(f"IDs: {', '.join(map(str, ids))}")
-            items = service.SearchRequest(id=ids).send()
+            self.service.client.progress_output('Determining message thread IDs')
+            self.options.append(f"IDs: {', '.join(map(str, ids))}")
+            items = self.service.SearchRequest(id=ids).send()
             ids = [x.thread_id for x in items]
 
         if data is None:
             reqs = []
             for i in ids:
                 reqs.append(SourceforgeFlaggedPagedRequest(
-                    service=service, endpoint=f'/_discuss/thread/{i}'))
+                    service=self.service, endpoint=f'/_discuss/thread/{i}'))
         else:
             reqs = [NullRequest()]
 
-        super().__init__(service=service, reqs=reqs)
-        self.options = options
         self.ids = ids
+        self._reqs = tuple(reqs)
         self._data = data
 
     @generator
@@ -464,14 +463,9 @@ class _ChangesRequest(_ThreadRequest):
 class _GetRequest(_GetItemRequest):
     """Construct requests to retrieve all known data for given issue IDs."""
 
-    def __init__(self, ids, service, get_comments=False, get_attachments=False,
-                 get_changes=False, *args, **kw):
-        if not ids:
-            raise ValueError('No {service.item.type} ID(s) specified')
-
-        super().__init__(ids=ids, service=service,
-                         get_desc=get_comments, get_attachments=get_attachments)
-        self.ids = ids
+    def __init__(self, *args, get_comments=False, get_attachments=False,
+                 get_changes=False, **kw):
+        super().__init__(*args, get_desc=get_comments, get_attachments=get_attachments, **kw)
         self._get_comments = get_comments
         self._get_attachments = get_attachments
         self._get_changes = get_changes
@@ -490,7 +484,7 @@ class _GetRequest(_GetItemRequest):
         if any((self._get_comments, self._get_attachments, self._get_changes)):
             # request discussion thread data
             thread_ids = [x.thread_id for x in items]
-            thread_req = _ThreadRequest(self.service, thread_ids)
+            thread_req = _ThreadRequest(service=self.service, ids=thread_ids)
             threads = list(thread_req.send())
             if self._get_comments:
                 item_descs = ((x.description,) for x in items)

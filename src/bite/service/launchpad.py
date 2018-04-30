@@ -286,22 +286,18 @@ class _SearchRequest(OffsetPagedRequest, RESTRequest):
 class _GetItemRequest(Request):
     """Construct a bug request."""
 
-    def __init__(self, ids, service, **kw):
+    def __init__(self, ids, **kw):
+        super().__init__(**kw)
         if ids is None:
-            raise ValueError(f'No {service.item.type} specified')
-
-        params = {}
-        options_log = []
+            raise ValueError(f'No {self.service.item.type} specified')
 
         reqs = []
         for i in ids:
-            endpoint = f'{service._api_base}/bugs/{i}'
-            reqs.append(RESTRequest(
-                service=service, endpoint=endpoint, params=params))
+            endpoint = f'{self.service._api_base}/bugs/{i}'
+            reqs.append(RESTRequest(service=self.service, endpoint=endpoint))
 
-        super().__init__(service=service, reqs=reqs)
         self.ids = ids
-        self.options = options_log
+        self._reqs = tuple(reqs)
 
     def parse(self, data):
         # TODO: hack, rework the http send parsing rewapper to be more
@@ -363,22 +359,18 @@ class _CommentsRequest(Request):
 class _AttachmentsRequest(Request):
     """Construct an attachments request."""
 
-    def __init__(self, service, ids=None, get_data=False, *args, **kw):
+    def __init__(self, ids=None, get_data=False, *args, **kw):
+        super().__init__(**kw)
         if ids is None:
-            raise ValueError(f'No {service.item.type} specified')
-
-        params = {}
-        options_log = []
+            raise ValueError(f'No {self.service.item.type} specified')
 
         reqs = []
         for i in ids:
-            endpoint = f'{service._api_base}/bugs/{i}/attachments'
-            reqs.append(RESTRequest(
-                service=service, endpoint=endpoint, params=params))
+            endpoint = f'{self.service._api_base}/bugs/{i}/attachments'
+            reqs.append(RESTRequest(service=self.service, endpoint=endpoint))
 
-        super().__init__(service=service, reqs=reqs)
         self.ids = ids
-        self.options = options_log
+        self._reqs = tuple(reqs)
 
     @generator
     def parse(self, data):

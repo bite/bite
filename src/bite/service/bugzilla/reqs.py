@@ -217,23 +217,18 @@ class SearchRequest5_0(SearchRequest4_4):
 class ChangesRequest(Request):
     """Construct a changes request."""
 
-    def __init__(self, ids, created=None, service=None, **kw):
+    def __init__(self, ids, created=None, **kw):
+        super().__init__(**kw)
         if not ids:
             raise ValueError('No bug ID(s) specified')
 
-        params = {}
-        options_log = []
-
         if ids is not None:
             ids = list(map(str, ids))
-            params['ids'] = ids
-            options_log.append(f"IDs: {', '.join(ids)}")
+            self.params['ids'] = ids
+            self.options.append(f"IDs: {', '.join(ids)}")
         if created is not None:
-            params['new_since'] = created.isoformat()
-            options_log.append(f'Created: {created} (since {created!r} UTC)')
-
-        super().__init__(service=service, params=params, **kw)
-        self.options = options_log
+            self.params['new_since'] = created.isoformat()
+            self.options.append(f'Created: {created} (since {created!r} UTC)')
 
     def parse(self, data):
         bugs = data['bugs']
@@ -245,31 +240,26 @@ class ChangesRequest(Request):
 class CommentsRequest(Request):
     """Construct a comments request."""
 
-    def __init__(self, ids=None, comment_ids=None, created=None, fields=None, service=None, **kw):
+    def __init__(self, ids=None, comment_ids=None, created=None, fields=None, **kw):
+        super().__init__(**kw)
         if ids is None and comment_ids is None:
-            raise ValueError(f'No {service.item.type} or comment ID(s) specified')
-
-        params = {}
-        options_log = []
+            raise ValueError(f'No {self.service.item.type} or comment ID(s) specified')
 
         if ids is not None:
             ids = list(map(str, ids))
-            params['ids'] = ids
-            options_log.append(f"IDs: {', '.join(ids)}")
+            self.params['ids'] = ids
+            self.options.append(f"IDs: {', '.join(ids)}")
         if comment_ids is not None:
             comment_ids = list(map(str, comment_ids))
-            params['comment_ids'] = comment_ids
-            options_log.append(f"Comment IDs: {', '.join(comment_ids)}")
+            self.params['comment_ids'] = comment_ids
+            self.options.append(f"Comment IDs: {', '.join(comment_ids)}")
         if created is not None:
-            params['new_since'] = created.isoformat()
-            options_log.append(f'Created: {created} (since {created!r} UTC)')
+            self.params['new_since'] = created.isoformat()
+            self.options.append(f'Created: {created} (since {created!r} UTC)')
         if fields is not None:
-            params['include_fields'] = fields
+            self.params['include_fields'] = fields
 
         self.ids = ids
-
-        super().__init__(service=service, params=params, **kw)
-        self.options = options_log
 
     def parse(self, data):
         bugs = data['bugs']
@@ -281,30 +271,26 @@ class CommentsRequest(Request):
 class AttachmentsRequest(Request):
     """Construct an attachments request."""
 
-    def __init__(self, service, ids=None, attachment_ids=None, fields=None,
+    def __init__(self, ids=None, attachment_ids=None, fields=None,
                  get_data=False, *args, **kw):
+        super().__init__(**kw)
         if ids is None and attachment_ids is None:
-            raise ValueError(f'No {service.item.type} or attachment ID(s) specified')
-
-        params = {}
-        options_log = []
+            raise ValueError(f'No {self.service.item.type} or attachment ID(s) specified')
 
         if ids is not None:
             ids = list(map(str, ids))
-            params['ids'] = ids
-            options_log.append(f"IDs: {', '.join(ids)}")
+            self.params['ids'] = ids
+            self.options.append(f"IDs: {', '.join(ids)}")
         if attachment_ids is not None:
             attachment_ids = list(map(str, attachment_ids))
-            params['attachment_ids'] = attachment_ids
-            options_log.append(f"Attachment IDs: {', '.join(attachment_ids)}")
+            self.params['attachment_ids'] = attachment_ids
+            self.options.append(f"Attachment IDs: {', '.join(attachment_ids)}")
         if fields is not None:
-            params['include_fields'] = fields
+            self.params['include_fields'] = fields
         # attachment data doesn't get pulled by default
         if not get_data:
-            params['exclude_fields'] = ['data']
+            self.params['exclude_fields'] = ['data']
 
-        super().__init__(service=service, params=params, **kw)
-        self.options = options_log
         self.ids = ids
         self.attachment_ids = attachment_ids
 
@@ -335,10 +321,8 @@ class ModifyRequest(Request):
     # other params requiring object values
     obj_params = {'comment-{x}' for x in ('body', 'is_private', 'is_markdown')}
 
-    def __init__(self, ids, service, *args, **kw):
-        options_log = []
-        params = {}
-
+    def __init__(self, ids, *args, **kw):
+        super().__init__(*args, **kw)
         for k, v in ((k, v) for (k, v) in kw.items() if v):
             if k in self.add_remove:
                 try:
@@ -347,19 +331,19 @@ class ModifyRequest(Request):
                     raise ValueError(f"invalid add/remove values for '{k}'")
 
                 if key == 'cc':
-                    remove = list(map(service._resuffix, remove))
-                    add = list(map(service._resuffix, add))
+                    remove = list(map(self.service._resuffix, remove))
+                    add = list(map(self.service._resuffix, add))
 
                 values = []
                 if remove:
-                    params.setdefault(k, {})['remove'] = remove
+                    self.params.setdefault(k, {})['remove'] = remove
                     values.extend([f'-{x}' for x in remove])
                 if add:
-                    params.setdefault(k, {})['add'] = add
+                    self.params.setdefault(k, {})['add'] = add
                     values.extend([f'+{x}' for x in add])
 
-                options_log.append(
-                    '{:<10}: {}'.format(service.item.attributes[k], ', '.join(values)))
+                self.options.append(
+                    '{:<10}: {}'.format(self.service.item.attributes[k], ', '.join(values)))
             elif k in self.add_remove_set:
                 if k == 'alias' and len(ids) > 1:
                     raise ValueError('unable to set aliases on multiple bugs at once')
@@ -373,49 +357,46 @@ class ModifyRequest(Request):
                 values = []
                 # set overrides add/remove actions
                 if set:
-                    params.setdefault(k, {})['set'] = set
+                    self.params.setdefault(k, {})['set'] = set
                     values = set
                 else:
                     if remove:
-                        params.setdefault(k, {})['remove'] = remove
+                        self.params.setdefault(k, {})['remove'] = remove
                         values.extend([f'-{x}' for x in remove])
                     if add:
-                        params.setdefault(k, {})['add'] = add
+                        self.params.setdefault(k, {})['add'] = add
                         values.extend([f'+{x}' for x in add])
 
-                options_log.append(
-                    '{:<10}: {}'.format(service.item.attributes[k], ', '.join(values)))
+                self.options.append(
+                    '{:<10}: {}'.format(self.service.item.attributes[k], ', '.join(values)))
             elif k in self.obj_params:
                 key1, key2 = k.split('-')
-                params.setdefault(key1, {})[key2] = v
-            elif k in service.item.attributes:
+                self.params.setdefault(key1, {})[key2] = v
+            elif k in self.service.item.attributes:
                 if k == 'assigned_to':
-                    v = service._resuffix(v)
-                params[k] = v
-                options_log.append('{:<10}: {}'.format(service.item.attributes[k], v))
+                    v = self.service._resuffix(v)
+                self.params[k] = v
+                self.options.append('{:<10}: {}'.format(self.service.item.attributes[k], v))
             else:
                 raise ValueError(f'unknown parameter: {k!r}')
 
-        if not params:
+        if not self.params:
             raise ValueError('No changes specified')
 
-        if options_log:
+        if self.options:
             prefix = '--- Modifying fields '
-            options_log.insert(0, f'{prefix}-' * (const.COLUMNS - len(prefix)))
+            self.options.insert(0, f'{prefix}-' * (const.COLUMNS - len(prefix)))
 
-        if 'comment' in params:
+        if 'comment' in self.params:
             prefix = '--- Adding comment '
-            options_log.append(f'{prefix}-' * (const.COLUMNS - len(prefix)))
-            options_log.append(params['comment']['body'])
+            self.options.append(f'{prefix}-' * (const.COLUMNS - len(prefix)))
+            self.options.append(self.params['comment']['body'])
 
-        options_log.append('-' * const.COLUMNS)
+        self.options.append('-' * const.COLUMNS)
 
         if not ids:
             raise ValueError('No bug ID(s) specified')
-        params['ids'] = ids
-
-        super().__init__(service=service, params=params, **kw)
-        self.options = options_log
+        self.params['ids'] = ids
 
     def parse(self, data):
         return data['bugs']
@@ -424,7 +405,7 @@ class ModifyRequest(Request):
 class AttachRequest(Request):
     """Construct an attach request."""
 
-    def __init__(self, service, ids, data=None, filepath=None, filename=None, mimetype=None,
+    def __init__(self, ids, data=None, filepath=None, filename=None, mimetype=None,
                  is_patch=False, is_private=False, comment=None, summary=None, **kw):
         """
         :param ids: The ids or aliases of bugs that you want to add the attachment to.
@@ -457,13 +438,14 @@ class AttachRequest(Request):
         :returns: attachment IDs created
         :rtype: list of attachment IDs
         """
+        super().__init__(**kw)
         if not ids:
             raise ValueError('No bug ID(s) or aliases specified')
 
-        params = {'ids': ids}
+        self.params['ids'] = ids
 
         if data is not None:
-            params['data'] = base64.b64encode(data)
+            self.params['data'] = base64.b64encode(data)
         else:
             if filepath is None:
                 raise ValueError('Either data or a filepath must be passed as an argument')
@@ -472,7 +454,7 @@ class AttachRequest(Request):
                     raise ValueError(f'File not found: {filepath}')
                 else:
                     with open(filepath, 'rb') as f:
-                        params['data'] = base64.b64encode(f.read())
+                        self.params['data'] = base64.b64encode(f.read())
 
         if filename is None:
             if filepath is not None:
@@ -492,14 +474,12 @@ class AttachRequest(Request):
             else:
                 raise ValueError('A valid summary must be specified')
 
-        params['file_name'] = filename
-        params['summary'] = summary
+        self.params['file_name'] = filename
+        self.params['summary'] = summary
         if not is_patch:
-            params['content_type'] = mimetype
-        params['comment'] = comment
-        params['is_patch'] = is_patch
-
-        super().__init__(service=service, params=params, **kw)
+            self.params['content_type'] = mimetype
+        self.params['comment'] = comment
+        self.params['is_patch'] = is_patch
 
     def parse(self, data):
         return data['attachments']
@@ -508,67 +488,65 @@ class AttachRequest(Request):
 class CreateRequest(Request):
     """Construct a bug creation request."""
 
-    def __init__(self, service, product, component, version, summary, description=None, op_sys=None,
+    def __init__(self, product, component, version, summary, description=None, op_sys=None,
                  platform=None, priority=None, severity=None, alias=None, assigned_to=None,
                  cc=None, target_milestone=None, groups=None, status=None, **kw):
         """
         :returns: ID of the newly created bug
         :rtype: int
         """
-        params = {
+        super().__init__(**kw)
+        self.params.update({
             'product': product,
             'component': component,
             'version': version,
             'summary': summary,
-        }
-        options_log = [
+        })
+        self.options.extend([
             '=' * const.COLUMNS,
             f"Product: {product}",
             f"Component: {component}",
             f"Version: {version}",
             f"Title: {summary}",
-        ]
+        ])
 
         if op_sys:
-            params['op_sys'] = op_sys
-            options_log.append(f"OS: {op_sys}")
+            self.params['op_sys'] = op_sys
+            self.options.append(f"OS: {op_sys}")
         if platform:
-            params['platform'] = platform
-            options_log.append(f"Platform: {platform}")
+            self.params['platform'] = platform
+            self.options.append(f"Platform: {platform}")
         if priority:
-            params['priority'] = priority
-            options_log.append(f"Priority: {priority}")
+            self.params['priority'] = priority
+            self.options.append(f"Priority: {priority}")
         if severity:
-            params['severity'] = severity
-            options_log.append(f"Severity: {severity}")
+            self.params['severity'] = severity
+            self.options.append(f"Severity: {severity}")
         if alias:
-            params['alias'] = alias
-            options_log.append(f"Alias: {alias}")
+            self.params['alias'] = alias
+            self.options.append(f"Alias: {alias}")
         if assigned_to:
-            params['assigned_to'] = list(map(service._resuffix, assigned_to))
-            options_log.append(f"Assigned to: {service._desuffix(assigned_to)}")
+            self.params['assigned_to'] = list(map(service._resuffix, assigned_to))
+            self.options.append(f"Assigned to: {service._desuffix(assigned_to)}")
         if cc:
-            params['cc'] = list(map(service._resuffix, cc))
-            options_log.append(f"CC: {', '.join(map(service._desuffix, cc))}")
+            self.params['cc'] = list(map(service._resuffix, cc))
+            self.options.append(f"CC: {', '.join(map(service._desuffix, cc))}")
         if target_milestone:
-            params['target_milestone'] = target_milestone
-            options_log.append(f"Milestone: {target_milestone}")
+            self.params['target_milestone'] = target_milestone
+            self.options.append(f"Milestone: {target_milestone}")
         if groups:
-            params['groups'] = groups
-            options_log.append(f"Groups: {', '.join(groups)}")
+            self.params['groups'] = groups
+            self.options.append(f"Groups: {', '.join(groups)}")
         if status:
-            params['status'] = status
-            options_log.append(f"Status: {status}")
+            self.params['status'] = status
+            self.options.append(f"Status: {status}")
 
         if description:
-            params['description'] = description
+            self.params['description'] = description
             msg = 'Description'
-            options_log.append(f'{"-" * 3} {msg} {"-" * (const.COLUMNS - len(msg) - 5)}')
-            options_log.append(description)
-        options_log.append('=' * const.COLUMNS)
-
-        super().__init__(service=service, params=params, **kw)
-        self.options = options_log
+            self.options.append(f'{"-" * 3} {msg} {"-" * (const.COLUMNS - len(msg) - 5)}')
+            self.options.append(description)
+        self.options.append('=' * const.COLUMNS)
 
     def parse(self, data):
         return data['id']
@@ -577,16 +555,14 @@ class CreateRequest(Request):
 class GetItemRequest(Request):
     """Construct a get request."""
 
-    def __init__(self, ids, service, fields=None, **kw):
+    def __init__(self, ids, fields=None, **kw):
+        super().__init__(**kw)
         if not ids:
             raise ValueError('No bug ID(s) specified')
 
-        params = {}
-        params['ids'] = ids
+        self.params['ids'] = ids
         if fields is not None:
-            params['include_fields'] = fields
-
-        super().__init__(service=service, params=params, **kw)
+            self.params['include_fields'] = fields
 
     def parse(self, data):
         bugs = data['bugs']
@@ -598,12 +574,12 @@ class LoginRequest(Request):
     """Construct a login request."""
 
     def __init__(self, user, password, restrict_login=False, **kw):
-        params = {
+        super().__init__(**kw)
+        self.params = {
             'login': user,
             'password': password,
             'restrict_login': restrict_login,
         }
-        super().__init__(params=params, **kw)
 
     def parse(self, data):
         return data['token']
@@ -633,22 +609,18 @@ class FieldsRequest(Request):
         :param names: field names
         :type names: list of strings
         """
-        params = {}
-        options_log = []
+        super().__init__(**kw)
 
         if ids is None and names is None:
-            options_log.append('all non-obsolete fields')
+            self.options.append('all non-obsolete fields')
 
         if ids is not None:
             ids = list(map(str, ids))
-            params['ids'] = ids
-            options_log.append(f"IDs: {', '.join(ids)}")
+            self.params['ids'] = ids
+            self.options.append(f"IDs: {', '.join(ids)}")
         if names is not None:
-            params['names'] = names
-            options_log.append(f"Field names: {', '.join(names)}")
-
-        super().__init__(params=params, **kw)
-        self.options = options_log
+            self.params['names'] = names
+            self.options.append(f"Field names: {', '.join(names)}")
 
     def parse(self, data):
         return data['fields']
@@ -658,24 +630,20 @@ class ProductsRequest(Request):
     """Construct a products request."""
 
     def __init__(self, ids=None, names=None, match=None, **kw):
-        params = {}
-        options_log = []
+        super().__init__(**kw)
 
         if ids is None and names is None:
             # TODO: not supported in bugzilla-4.4 -- must call get_accessible_products to get IDs
-            params['type'] = ['accessible']
-            options_log.append('all user-accessible products')
+            self.params['type'] = ['accessible']
+            self.options.append('all user-accessible products')
 
         if ids is not None:
             ids = list(map(str, ids))
-            params['ids'] = ids
-            options_log.append(f"IDs: {', '.join(ids)}")
+            self.params['ids'] = ids
+            self.options.append(f"IDs: {', '.join(ids)}")
         if names is not None:
-            params['names'] = names
-            options_log.append(f"Product names: {', '.join(names)}")
-
-        super().__init__(params=params, **kw)
-        self.options = options_log
+            self.params['names'] = names
+            self.options.append(f"Product names: {', '.join(names)}")
 
     def parse(self, data):
         return data['products']
@@ -685,25 +653,20 @@ class UsersRequest(Request):
     """Construct a users request."""
 
     def __init__(self, ids=None, names=None, match=None, **kw):
+        super().__init__(**kw)
         if not any((ids, names, match)):
             raise ValueError('No user ID(s), name(s), or match(es) specified')
 
-        params = {}
-        options_log = []
-
         if ids is not None:
             ids = list(map(str, ids))
-            params['ids'] = ids
-            options_log.append(f"IDs: {', '.join(ids)}")
+            self.params['ids'] = ids
+            self.options.append(f"IDs: {', '.join(ids)}")
         if names is not None:
-            params['names'] = names
-            options_log.append(f"Login names: {', '.join(names)}")
+            self.params['names'] = names
+            self.options.append(f"Login names: {', '.join(names)}")
         if match is not None:
-            params['match'] = match
-            options_log.append(f"Match patterns: {', '.join(match)}")
-
-        super().__init__(params=params, **kw)
-        self.options = options_log
+            self.params['match'] = match
+            self.options.append(f"Match patterns: {', '.join(match)}")
 
     def parse(self, data):
         return data['users']
