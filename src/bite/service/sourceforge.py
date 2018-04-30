@@ -286,6 +286,9 @@ class _SearchRequest(SourceforgePagedRequest):
                     sorting_terms.append(f'{order_var} {order}')
                 params['sort'] = ','.join(sorting_terms)
                 options.append(f"Sort order: {', '.join(v)}")
+            elif k in ('created_date', 'mod_date'):
+                query.append(f'{k}:[{v.utcformat()} TO NOW]')
+                options.append(f'{service.item.attributes[k]}: {v} (since {v.isoformat()})')
 
         return params, options, query
 

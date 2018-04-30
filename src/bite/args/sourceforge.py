@@ -29,6 +29,15 @@ class Search(args.Search):
                 sorting term with '-'; otherwise, sorting is done in an
                 ascending fashion by default.
             """)
+        time = self.parser.add_argument_group('Time related')
+        time.add_argument(
+            '-c', '--created', type=date,
+            dest='created_date', metavar='TIME',
+            help=f'{self.service.item.type}s created at this time or later')
+        time.add_argument(
+            '-m', '--modified', type=date,
+            dest='mod_date', metavar='TIME',
+            help=f'{self.service.item.type}s modified at this time or later')
         attr = self.parser.add_argument_group('Attribute related')
         attr.add_argument(
             '--id', type=id_list,
