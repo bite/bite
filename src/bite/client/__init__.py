@@ -76,15 +76,17 @@ class Client(object):
 class Cli(Client):
     """Generic commandline interface for a service."""
 
-    def __init__(self, service, quiet=False, verbose=False, color=False, connection=None,
-                 passwordcmd=None, skip_auth=True, **kw):
+    def __init__(self, service, quiet=False, verbose=False, debug=False, color=False,
+                 connection=None, passwordcmd=None, skip_auth=True, **kw):
         super().__init__(service)
-        self.quiet = quiet
-        self.verbose = verbose
         self.color = color
         self.passwordcmd = passwordcmd
         self.skip_auth = skip_auth
         self.wrapper = textwrap.TextWrapper(width=const.COLUMNS - 3)
+
+        self.quiet = quiet
+        self.verbose = verbose
+        self.debug = debug
 
         # Login if all credentials provided on launch and not skipping;
         # otherwise, credentials will be requested when needed.

@@ -107,6 +107,13 @@ def get_cli(args):
     if not isinstance(args, dict):
         args = vars(args)
     fcn_args = args.pop('fcn_args')
+
+    # fcn settings that override client level args
+    for attr in ('verbose', 'debug'):
+        val = fcn_args.pop(attr, None)
+        if val:
+            args[attr] = val
+
     client = get_service_cls(args['service'], const.CLIENTS)(**args)
     return client, fcn_args
 
