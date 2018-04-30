@@ -48,7 +48,8 @@ def parse_date(s):
     else:
         raise ValueError(f'invalid date argument: {s!r}')
 
-    return date
+    # drop microsecond resolution since we shouldn't need it
+    return date.replace(microsecond=0)
 
 
 def date(s):
