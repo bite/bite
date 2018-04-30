@@ -28,9 +28,7 @@ class Xml(Service):
             raise ParsingError(msg='failed parsing XML') from e
 
     def _getparser(self, unmarshaller=None):
-        u = unmarshaller
-        if u is None:
-            u = UnmarshallToDict()
+        u = unmarshaller if unmarshaller is not None else UnmarshallToDict()
         p = LXMLParser(u)
         return p, u
 
