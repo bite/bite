@@ -291,9 +291,11 @@ class _SearchRequest(SourceforgePagedRequest):
                 query_params[k] = f'{k}:[{v.utcformat()} TO NOW]'
                 options.append(f'{service.item.attributes[k]}: {v} (since {v.isoformat()})')
             elif k in ('assigned_to', 'reported_by'):
-                or_str = ' OR '.join(f'{k}:"{x}"' for x in v)
-                query_params[k] = f'({or_str})'
-                options.append(f"{service.item.attributes[k]}: {', '.join(v)}")
+                or_terms = [x.replace('"', '\\"') for x in v]
+                or_search_terms = [f'{k}:"{x}"' for x in or_terms]
+                or_display_terms = [f'"{x}"' for x in or_terms]
+                query_params[k] = f"({' OR '.join(or_search_terms)})"
+                options.append(f"{service.item.attributes[k]}: {', '.join(or_display_terms)}")
 
         return params, options, query_params
 
