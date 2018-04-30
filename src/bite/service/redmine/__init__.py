@@ -62,7 +62,7 @@ class Redmine(REST):
 
 
 @req_cmd(Redmine, 'search')
-class _SearchRequest(OffsetPagedRequest, RESTRequest):
+class _SearchRequest(RESTRequest, OffsetPagedRequest):
     """Construct a search request.
 
     Assumes the elastic search plugin is installed:

@@ -113,7 +113,7 @@ class Launchpad(JsonREST):
 
 
 @req_cmd(Launchpad, 'search')
-class _SearchRequest(OffsetPagedRequest, RESTRequest):
+class _SearchRequest(RESTRequest, OffsetPagedRequest):
     """Construct a search request.
 
     API docs: https://launchpad.net/+apidoc/1.0.html#bugs under the 'searchTasks'

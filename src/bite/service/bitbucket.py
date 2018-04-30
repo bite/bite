@@ -159,7 +159,7 @@ class Bitbucket(JsonREST):
         raise BitbucketError(msg=msg, code=code)
 
 
-class BitbucketPagedRequest(LinkPagedRequest, RESTRequest):
+class BitbucketPagedRequest(RESTRequest, LinkPagedRequest):
 
     _page = 'page'
     _pagelen = 'pagelen'

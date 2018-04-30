@@ -173,7 +173,7 @@ class Sourceforge(JsonREST):
         raise SourceforgeError(msg=msg, code=code)
 
 
-class SourceforgePagedRequest(PagedRequest, RESTRequest):
+class SourceforgePagedRequest(RESTRequest, PagedRequest):
     """Support navigating paged requests from Sourceforge."""
 
     _page_key = 'page'
@@ -181,7 +181,7 @@ class SourceforgePagedRequest(PagedRequest, RESTRequest):
     _total_key = 'count'
 
 
-class SourceforgeFlaggedPagedRequest(FlaggedPagedRequest, RESTRequest):
+class SourceforgeFlaggedPagedRequest(RESTRequest, FlaggedPagedRequest):
     """Support navigating paged requests from Sourceforge."""
 
     _page_key = 'page'

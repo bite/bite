@@ -88,7 +88,7 @@ class Jira(JsonREST):
 
 
 @req_cmd(Jira, 'search')
-class _SearchRequest(OffsetPagedRequest, RESTRequest):
+class _SearchRequest(RESTRequest, OffsetPagedRequest):
     """Construct a search request."""
 
     _offset_key = 'startAt'
