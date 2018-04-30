@@ -20,75 +20,84 @@ class SearchRequest4_4(OffsetPagedRequest):
     _offset_key = 'offset'
     _size_key = 'limit'
 
-    def __init__(self, service, **kw):
-        params, options = self.parse_params(service=service, **kw)
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
+        self.param_parser = self.ParamParser(self.service, self.params, self.options)
+        self.parse_params(**kw)
 
-        if not params:
+        if not self.params:
             raise BiteError('no supported search terms or options specified')
 
         # only return open bugs by default
-        if 'status' not in params:
-            params['status'] = service.cache['open_status']
+        if 'status' not in self.params:
+            self.params['status'] = self.service.cache['open_status']
 
         # limit fields by default to decrease requested data size and speed up response
         fields = kw.get('fields', None)
         if fields is None:
             fields = ['id', 'assigned_to', 'summary']
         else:
-            unknown_fields = set(fields).difference(service.item.attributes.keys())
+            unknown_fields = set(fields).difference(self.service.item.attributes.keys())
             if unknown_fields:
                 raise BiteError(f"unknown fields: {', '.join(unknown_fields)}")
-            options.append(f"Fields: {' '.join(fields)}")
+            self.options.append(f"Fields: {' '.join(fields)}")
 
-        params['include_fields'] = fields
-
-        super().__init__(service=service, params=params, **kw)
+        self.params['include_fields'] = fields
         self.fields = fields
-        self.options = options
 
-    def parse_params(self, service, params=None, options=None, **kw):
-        params = params if params is not None else {}
-        options = options if options is not None else []
-
+    def parse_params(self, **kw):
         for k, v in ((k, v) for (k, v) in kw.items() if v):
-            if k in service.item.attributes:
-                if k in ['creation_time', 'last_change_time']:
-                    params[k] = v.isoformat()
-                    options.append(f'{service.item.attributes[k]}: {v} (since {v!r} UTC)')
-                elif k in ['assigned_to', 'creator']:
-                    params[k] = list(map(service._resuffix, v))
-                    options.append(f"{service.item.attributes[k]}: {', '.join(map(str, v))}")
-                elif k == 'status':
-                    status_alias = []
-                    status_map = {
-                        'open': service.cache['open_status'],
-                        'closed': service.cache['closed_status'],
-                        'all': service.cache['open_status'] + service.cache['closed_status'],
-                    }
-                    for status in v:
-                        if status_map.get(status.lower(), False):
-                            status_alias.append(status)
-                            params.setdefault(k, []).extend(status_map[status.lower()])
-                        else:
-                            params.setdefault(k, []).append(status)
-                    if status_alias:
-                        options.append(f"{service.item.attributes[k]}: {', '.join(status_alias)} ({', '.join(params[k])})")
-                    else:
-                        options.append(f"{service.item.attributes[k]}: {', '.join(params[k])}")
-                else:
-                    params[k] = v
-                    options.append(f"{service.item.attributes[k]}: {', '.join(map(str, v))}")
+            parse = getattr(self.param_parser, k, None)
+            if callable(parse):
+                parse(k, v)
             else:
-                if k == 'terms':
-                    params['summary'] = v
-                    options.append(f"Summary: {', '.join(map(str, v))}")
-
-        return params, options
+                if k in self.service.item.attributes:
+                    self.params[k] = v
+                    self.options.append(f"{self.service.item.attributes[k]}: {', '.join(map(str, v))}")
 
     def parse(self, data):
         bugs = data['bugs']
         for bug in bugs:
             yield self.service.item(self.service, **bug)
+
+    class ParamParser(object):
+
+        def __init__(self, service, params, options):
+            self.service = service
+            self.params = params
+            self.options = options
+
+        def creation_time(self, k, v):
+            self.params[k] = v.isoformat()
+            self.options.append(f'{self.service.item.attributes[k]}: {v} (since {v!r} UTC)')
+        last_change_time = creation_time
+
+        def assigned_to(self, k, v):
+            self.params[k] = list(map(self.service._resuffix, v))
+            self.options.append(f"{self.service.item.attributes[k]}: {', '.join(map(str, v))}")
+        creator = assigned_to
+
+        def status(self, k, v):
+            status_alias = []
+            status_map = {
+                'open': self.service.cache['open_status'],
+                'closed': self.service.cache['closed_status'],
+                'all': self.service.cache['open_status'] + self.service.cache['closed_status'],
+            }
+            for status in v:
+                if status_map.get(status.lower(), False):
+                    status_alias.append(status)
+                    self.params.setdefault(k, []).extend(status_map[status.lower()])
+                else:
+                    self.params.setdefault(k, []).append(status)
+            if status_alias:
+                self.options.append(f"{self.service.item.attributes[k]}: {', '.join(status_alias)} ({', '.join(self.params[k])})")
+            else:
+                self.options.append(f"{self.service.item.attributes[k]}: {', '.join(self.params[k])}")
+
+        def terms(self, k, v):
+            self.params['summary'] = v
+            self.options.append(f"Summary: {', '.join(map(str, v))}")
 
 
 class SearchRequest5_0(SearchRequest4_4):
@@ -132,75 +141,77 @@ class SearchRequest5_0(SearchRequest4_4):
         'whiteboard': 'status_whiteboard',
     }
 
-    def parse_params(self, service, params=None, options=None, **kw):
-        params = params if params is not None else {}
-        options = options if options is not None else []
+    def parse_params(self, **kw):
         # current advanced search field number
-        advanced_num = 1
+        self.adv_num = 1
+        return super().parse_params(**kw)
 
-        for k, v in ((k, v) for (k, v) in dict(kw).items() if v):
-            if k in ('cc', 'commenter'):
-                v = kw.pop(k)
-                for val in v:
-                    params[f'f{advanced_num}'] = k
-                    params[f'o{advanced_num}'] = 'substring'
-                    params[f'v{advanced_num}'] = val
-                    advanced_num += 1
-                options.append(f"{k.capitalize()}: {', '.join(map(str, v))}")
-            elif k == 'comments':
-                v = kw.pop(k)
-                params[f'f{advanced_num}'] = 'longdescs.count'
-                params[f'o{advanced_num}'] = 'greaterthaneq'
-                params[f'v{advanced_num}'] = v
-                advanced_num += 1
-                options.append(f"{k.capitalize()}: {v}")
-            elif k == 'sort':
-                v = kw.pop(k)
-                sorting_terms = []
-                for x in v:
-                    inverse = ''
-                    if x[0] == '-':
-                        x = x[1:]
-                        inverse = ' DESC'
-                    try:
-                        order_var = self.sorting_map[x]
-                    except KeyError:
-                        choices = ', '.join(sorted(self.sorting_map.keys()))
-                        raise BiteError(
-                            f'unable to sort by: {x!r} (available choices: {choices}')
-                    sorting_terms.append(f'{order_var}{inverse}')
-                params['order'] = ','.join(sorting_terms)
-                options.append(f"Sort order: {', '.join(v)}")
-            elif k in ('keywords', 'blocks', 'depends_on'):
-                v = kw.pop(k)
-                params[k] = v
-                options.append(f"{service.item.attributes[k]}: {', '.join(map(str, v))}")
-            elif k in ('quicksearch', 'votes'):
-                v = kw.pop(k)
-                params[k] = v
-                options.append(f"{k.capitalize()}: {v}")
-            elif k == 'advanced_url':
-                v = kw.pop(k)
-                base, url_params = v.split('?', 1)
-                if base != f"{service.base.rstrip('/')}/buglist.cgi":
-                    raise BiteError(f'invalid advanced search URL: {v!r}')
-                options.append('Using advanced search URL')
-                # command line options take precedence over URL parameters
-                for k, v in parse_qs(url_params).items():
-                    if k not in params:
-                        # Assume lists with one element are supposed to be sent as strings
-                        # otherwise the jsonrpc/xmlrpc backends error out.
-                        params[k] = v if len(v) > 1 else v[0]
-            elif k == 'saved_search':
-                saved_search_params = service.saved_searches.get(v, None)
-                if saved_search_params is None:
-                    raise BiteError(f'no matching saved search: {v!r}')
-                options.append(f'Using saved search: {v}')
-                for k, v in saved_search_params['params'].items():
-                    if k not in params:
-                        params[k] = v if len(v) > 1 else v[0]
+    class ParamParser(SearchRequest4_4.ParamParser):
 
-        return super().parse_params(service, params, options, **kw)
+        def commenter(self, k, v):
+            for val in v:
+                self.params[f'f{self.adv_num}'] = k
+                self.params[f'o{self.adv_num}'] = 'substring'
+                self.params[f'v{self.adv_num}'] = val
+                self.adv_num += 1
+            self.options.append(f"{k.capitalize()}: {', '.join(map(str, v))}")
+        cc = commenter
+
+        def comments(self, k, v):
+            self.params[f'f{self.adv_num}'] = 'longdescs.count'
+            self.params[f'o{self.adv_num}'] = 'greaterthaneq'
+            self.params[f'v{self.adv_num}'] = v
+            self.adv_num += 1
+            self.options.append(f"{k.capitalize()}: {v}")
+
+        def sort(self, k, v):
+            sorting_terms = []
+            for x in v:
+                inverse = ''
+                if x[0] == '-':
+                    x = x[1:]
+                    inverse = ' DESC'
+                try:
+                    order_var = self.sorting_map[x]
+                except KeyError:
+                    choices = ', '.join(sorted(self.sorting_map.keys()))
+                    raise BiteError(
+                        f'unable to sort by: {x!r} (available choices: {choices}')
+                sorting_terms.append(f'{order_var}{inverse}')
+            self.params['order'] = ','.join(sorting_terms)
+            self.options.append(f"Sort order: {', '.join(v)}")
+
+        def keywords(self, k, v):
+            self.params[k] = v
+            self.options.append(f"{self.service.item.attributes[k]}: {', '.join(map(str, v))}")
+        blocks = keywords
+        depends_on = keywords
+
+        def quicksearch(self, k, v):
+            self.params[k] = v
+            self.options.append(f"{k.capitalize()}: {v}")
+        votes = quicksearch
+
+        def advanced_url(self, k, v):
+            base, url_params = v.split('?', 1)
+            if base != f"{self.service.base.rstrip('/')}/buglist.cgi":
+                raise BiteError(f'invalid advanced search URL: {v!r}')
+            self.options.append('Using advanced search URL')
+            # command line options take precedence over URL parameters
+            for k, v in parse_qs(url_params).items():
+                if k not in self.params:
+                    # Assume lists with one element are supposed to be sent as strings
+                    # otherwise the jsonrpc/xmlrpc backends error out.
+                    self.params[k] = v if len(v) > 1 else v[0]
+
+        def saved_search(self, k, v):
+            saved_search_params = self.service.saved_searches.get(v, None)
+            if saved_search_params is None:
+                raise BiteError(f'no matching saved search: {v!r}')
+            self.options.append(f'Using saved search: {v}')
+            for k, v in saved_search_params['params'].items():
+                if k not in self.params:
+                    self.params[k] = v if len(v) > 1 else v[0]
 
 
 class ChangesRequest(Request):
