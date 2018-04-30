@@ -101,6 +101,11 @@ class _SearchRequest(RPCRequest, ParseRequest):
             self.params['summary'] = f'~{v[0]}'
             self.options.append(f"Summary: {', '.join(map(str, v))}")
 
+        def created(self, k, v):
+            self.params['time'] = f'{v.isoformat()}..'
+            self.options.append(f'{self.service.item.attributes[k]}: {v} (since {v.isoformat()})')
+        modified = created
+
 
 class GetItemRequest(Request):
     """Construct an item request."""
