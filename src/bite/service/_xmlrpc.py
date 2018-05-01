@@ -77,6 +77,34 @@ class Xmlrpc(Xml):
         return super()._getparser(unmarshaller=u)
 
 
+class MulticallIterator(object):
+    """Iterate over the results of a multicall.
+
+    Raising any XML-RPC faults that are found.
+    """
+
+    def __init__(self, results):
+        self.results = results
+        self.idx = 0
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        try:
+            item = self.results[self.idx]
+        except IndexError:
+            raise StopIteration
+
+        if isinstance(item, dict):
+            raise Fault(item['faultCode'], item['faultString'])
+        elif isinstance(item, list):
+            self.idx += 1
+            return item[0]
+        else:
+            raise ValueError("unexpected type in multicall result")
+
+
 class Multicall(RPCRequest):
     """Construct a system.multicall request."""
 
@@ -87,5 +115,4 @@ class Multicall(RPCRequest):
         super().__init__(*args, command='system.multicall', params=(params,), **kw)
 
     def parse(self, data):
-        for x in data:
-            yield x[0]
+        return MulticallIterator(data)
