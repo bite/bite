@@ -132,12 +132,11 @@ class _SearchRequest(RPCRequest, ParseRequest):
             if 'status' not in self.params:
                 self.params['status'] = '!closed'
 
-            # encode params/query into expected format
-            params_str = '&'.join(f'{k}={v}' for k, v in dict2tuples(self.params))
-            query_str = '&'.join(self.query.values())
+            # encode params into expected format
+            params = (f'{k}={v}' for k, v in dict2tuples(self.params))
 
-            # return params string
-            return f'{query_str}&{params_str}'
+            # combine query/params values into a query string
+            return '&'.join(chain(self.query.values(), params))
 
         def terms(self, k, v):
             or_queries = []
