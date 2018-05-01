@@ -161,6 +161,10 @@ class Roundup(Xmlrpc):
 
     def __init__(self, **kw):
         super().__init__(endpoint='/xmlrpc', **kw)
+        # bugs.python.org requires this header
+        self.session.headers.update({
+            'X-Requested-With': 'XMLHttpRequest'
+        })
 
     @property
     def cache_updates(self):
