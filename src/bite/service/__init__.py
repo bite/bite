@@ -24,6 +24,10 @@ class ClientCallbacks(object):
         """Request user/password info from the user if not available."""
         raise NotImplementedError
 
+    def login(self, s):
+        """Interactively login to a service."""
+        raise NotImplementedError
+
     def confirm(self, *args, **kw):
         """Prompts for yes or no response from the user."""
         raise NotImplementedError
