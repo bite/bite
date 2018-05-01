@@ -19,3 +19,10 @@ class Get(args.Get):
 @args.subcmd(RoundupOpts)
 class Attachments(args.Attachments):
     pass
+
+
+@args.subcmd(RoundupOpts)
+class Schema(args.Subcmd):
+
+    def __init__(self, *args, **kw):
+        super().__init__(*args, desc='get Roundup db schema', **kw)

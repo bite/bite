@@ -399,3 +399,11 @@ class _CommentsRequest(Request):
         return [RoundupComment(id=ids[i], count=i, text=d['content'], created=parsetime(d['date']),
                                creator=self.service.cache['users'][int(d['author'])-1])
                 for i, d in enumerate(data)]
+
+
+@req_cmd(Roundup, 'schema')
+class _SchemaRequest(RPCRequest):
+    """Construct a schema request."""
+
+    def __init__(self, *args, **kw):
+        super().__init__(*args, command='schema', **kw)
