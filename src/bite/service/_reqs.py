@@ -377,7 +377,8 @@ class RPCRequest(Request):
     def _finalize(self):
         """Encode the data body of the request."""
         super()._finalize()
-        self._req.data = self.service._encode_request(self.command, self.params)
+        params = self.params if self.params else None
+        self._req.data = self.service._encode_request(self.command, params)
 
 
 class RESTRequest(Request):
