@@ -89,6 +89,28 @@ class _SearchRequest(RPCRequest, ParseRequest):
 
     class ParamParser(ParseRequest.ParamParser):
 
+        # Map of allowed sorting input values to service parameters.
+        sorting_map = {
+            'assignee': 'owner',
+            'id': 'id',
+            'created': 'created',
+            'modified': 'modified',
+            'status': 'status',
+            'description': 'description',
+            'creator': 'reporter',
+            'milestone': 'milestone',
+            'component': 'component',
+            'summary': 'summary',
+            'priority': 'priority',
+            'keywords': 'keywords',
+            'version': 'version',
+            'platform': 'platform',
+            'difficulty': 'difficulty',
+            'type': 'type',
+            'wip': 'wip',
+            'severity': 'severity',
+        }
+
         def __init__(self, request):
             super().__init__(request)
             self.query = {}
@@ -135,6 +157,24 @@ class _SearchRequest(RPCRequest, ParseRequest):
             self.params['time'] = f'{v.isoformat()}..'
             self.options.append(f'{self.service.item.attributes[k]}: {v} (since {v.isoformat()})')
         modified = created
+
+        def order(self, k, v):
+            if v[0] == '-':
+                key = v[1:]
+                desc = 1
+            else:
+                key = v
+                desc = 0
+            try:
+                order_var = self.sorting_map[key]
+            except KeyError:
+                choices = ', '.join(sorted(self.sorting_map.keys()))
+                raise BiteError(
+                    f'unable to sort by: {key!r} (available choices: {choices}')
+            self.params[k] = order_var
+            if desc:
+                self.params['desc'] = desc
+            self.options.append(f"Sort order: {v}")
 
 
 class GetItemRequest(Request):
