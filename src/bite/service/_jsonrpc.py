@@ -20,7 +20,7 @@ class Jsonrpc(Json):
         if isinstance(params, (list, tuple)):
             params = list(params)
         else:
-            params = [params] if params is not None else [{}]
+            params = [params] if params is not None else []
 
         data = {
             'method': method,
