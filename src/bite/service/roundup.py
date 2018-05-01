@@ -17,10 +17,14 @@ from ._xmlrpc import Xmlrpc, XmlrpcError, Multicall
 from ..cache import Cache, csv2tuple
 from ..exceptions import AuthError, RequestError, ParsingError
 from ..objects import decompress, Item, Attachment, Comment
+from ..utc import utc
 
 
 def parsetime(time):
-    return datetime.strptime(time, '<Date %Y-%m-%d.%X.%f>')
+    """Parse custom date format that roundup uses."""
+    date = datetime.strptime(time, '<Date %Y-%m-%d.%X.%f>')
+    # strip microseconds and assume UTC
+    return date.replace(microsecond=0).astimezone(utc)
 
 
 class RoundupError(RequestError):
