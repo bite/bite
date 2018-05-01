@@ -165,10 +165,11 @@ def _cache(options, out, err):
             return 1
         options.connection = connection
         options.base = base
-        options.service = get_service_cls(service, const.SERVICES)(**vars(options))
-        client, fcn_args = get_cli(dict(vars(options)))
+        args = vars(options)
+        options.service = get_service_cls(service, const.SERVICES)(**args)
+        client = get_service_cls(args['service'], const.CLIENTS)(**args)
         try:
-            client.cache(**fcn_args)
+            client.cache(**args)
         except RequestError as e:
             err.write(f'failed updating cached data: {connection}: {e}')
             return 1

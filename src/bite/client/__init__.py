@@ -392,7 +392,7 @@ class Cli(Client):
             else:
                 yield line[:const.COLUMNS]
 
-    def cache(self, update=False, remove=False, *args, **kw):
+    def cache(self, *args, update=False, remove=False, **kw):
         if update:
             updates = self.service.cache_updates
             if updates != self.service.cache:
