@@ -71,7 +71,11 @@ class Trac(Service):
 
 @req_cmd(Trac, 'search')
 class _SearchRequest(RPCRequest, ParseRequest):
-    """Construct a search request."""
+    """Construct a search request.
+
+    Query docs:
+        https://trac.edgewall.org/wiki/TracQuery
+    """
 
     def __init__(self, *args, **kw):
         super().__init__(command='ticket.query', **kw)
@@ -85,8 +89,12 @@ class _SearchRequest(RPCRequest, ParseRequest):
 
     class ParamParser(ParseRequest.ParamParser):
 
+        def __init__(self, request):
+            super().__init__(request)
+            self.query = {}
+
         def _finalize(self, **kw):
-            if not self.params:
+            if not any((self.params, self.query)):
                 raise BiteError('no supported search terms or options specified')
 
             # disable results paging
@@ -100,12 +108,28 @@ class _SearchRequest(RPCRequest, ParseRequest):
             if 'status' not in self.params:
                 self.params['status'] = '!closed'
 
+            # encode params/query into expected format
+            params_str = '&'.join(f'{k}={v}' for k, v in dict2tuples(self.params))
+            query_str = '&'.join(self.query.values())
+
             # return params string
-            return '&'.join(f'{k}={v}' for k, v in dict2tuples(self.params))
+            return f'{query_str}&{params_str}'
 
         def terms(self, k, v):
-            self.params['summary'] = f'~{v[0]}'
-            self.options.append(f"Summary: {', '.join(map(str, v))}")
+            or_queries = []
+            display_terms = []
+            for term in v:
+                or_terms = [x.replace('"', '\\"') for x in term.split(',')]
+                or_search_terms = [f'summary~={x}' for x in or_terms]
+                or_display_terms = [f'"{x}"' for x in or_terms]
+                if len(or_terms) > 1:
+                    or_queries.append('|'.join(or_terms))
+                    display_terms.append(f"({' OR '.join(or_display_terms)})")
+                else:
+                    or_queries.append(or_terms[0])
+                    display_terms.append(or_display_terms[0])
+            self.query['summary'] = '&'.join(f"summary~={x}" for x in or_queries)
+            self.options.append(f"Summary: {' AND '.join(display_terms)}")
 
         def created(self, k, v):
             self.params['time'] = f'{v.isoformat()}..'
