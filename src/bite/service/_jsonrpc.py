@@ -20,9 +20,9 @@ class Jsonrpc(Json):
     @steal_docs(Service)
     def _encode_request(method, params=None, id=0):
         if isinstance(params, (list, tuple)):
-            params = list(params)
+            params = tuple(params)
         else:
-            params = [params] if params is not None else []
+            params = (params,) if params is not None else ()
 
         data = {
             'method': method,
@@ -56,8 +56,8 @@ class Multicall(RPCRequest):
 
     def __init__(self, method, params, *args, **kw):
         methods = repeat(method) if isinstance(method, str) else method
-        params = (list(x) if isinstance(x, Iterable) else [x] for x in params)
-        params = [{'method': m, 'params': x} for m, x in zip(methods, params)]
+        params = (tuple(x) if isinstance(x, Iterable) else (x,) for x in params)
+        params = tuple({'method': m, 'params': x} for m, x in zip(methods, params))
         super().__init__(*args, command='system.multicall', params=params, **kw)
 
     def parse(self, data):

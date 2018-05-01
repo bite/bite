@@ -39,13 +39,12 @@ class Xmlrpc(Xml):
     @staticmethod
     @steal_docs(Service)
     def _encode_request(method, params=None):
-        encoding = 'utf-8'
         if isinstance(params, (list, tuple)):
             params = tuple(params)
         else:
             params = (params,) if params is not None else ()
-        return dumps(params, method, encoding=encoding,
-                     allow_none=True).encode(encoding, 'xmlcharrefreplace')
+        return dumps(params, method, encoding='utf-8',
+                     allow_none=True).encode('utf-8', 'xmlcharrefreplace')
 
     @staticmethod
     @steal_docs(Service)
@@ -83,9 +82,9 @@ class Multicall(RPCRequest):
 
     def __init__(self, method, params, *args, **kw):
         methods = repeat(method) if isinstance(method, str) else method
-        params = (list(x) if isinstance(x, Iterable) else [x] for x in params)
-        params = [{'methodName': m, 'params': x} for m, x in zip(methods, params)]
-        super().__init__(*args, command='system.multicall', params=[params], **kw)
+        params = (tuple(x) if isinstance(x, Iterable) else (x,) for x in params)
+        params = tuple({'methodName': m, 'params': x} for m, x in zip(methods, params))
+        super().__init__(*args, command='system.multicall', params=(params,), **kw)
 
     def parse(self, data):
         for x in data:
