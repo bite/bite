@@ -5,8 +5,8 @@ API docs:
     - https://trac.videolan.org/vlc/rpc
 """
 
-from .._reqs import RPCRequest, Request, ParseRequest, req_cmd, generator
 from .. import Service
+from .._reqs import RPCRequest, Request, ParseRequest, req_cmd, generator
 from ...exceptions import BiteError, RequestError
 from ...objects import Item
 from ...utils import dict2tuples
@@ -54,6 +54,11 @@ class Trac(Service):
         if max_results is None:
             max_results = 0
         super().__init__(*args, endpoint='/rpc', max_results=max_results, **kw)
+
+    def login(self, *args, **kw):
+        # authenticated sessions use a different endpoint
+        self._base = f"{self._base.rsplit('/')[0]}/login/rpc"
+        super().login(*args, **kw)
 
     def inject_auth(self, request, params):
         raise NotImplementedError
