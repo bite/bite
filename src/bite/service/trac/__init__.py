@@ -142,7 +142,6 @@ class _SearchRequest(RPCRequest, ParseRequest):
             display_terms = []
             for term in v:
                 or_terms = [x.replace('"', '\\"') for x in term.split(',')]
-                or_search_terms = [f'summary~={x}' for x in or_terms]
                 or_display_terms = [f'"{x}"' for x in or_terms]
                 if len(or_terms) > 1:
                     or_queries.append('|'.join(or_terms))
@@ -150,7 +149,9 @@ class _SearchRequest(RPCRequest, ParseRequest):
                 else:
                     or_queries.append(or_terms[0])
                     display_terms.append(or_display_terms[0])
-            self.query['summary'] = '&'.join(f"summary~={x}" for x in or_queries)
+            # space-separated AND queries are only supported in 1.2.1 onwards
+            # https://trac.edgewall.org/ticket/10152
+            self.query['summary'] = f"summary~={' '.join(or_queries)}"
             self.options.append(f"Summary: {' AND '.join(display_terms)}")
 
         def created(self, k, v):
