@@ -45,11 +45,11 @@ class Search(args.Search):
             help=f'restrict by {self.service.item.type} ID(s)')
         attr.add_argument(
             '-a', '--assigned-to', type=string_list, action=parse_stdin,
-            help='email of the person the bug is assigned to')
+            help=f'person the {self.service.item.type} is assigned to')
         attr.add_argument(
             '-r', '--creator', dest='reported_by',
             type=string_list, action=parse_stdin,
-            help='email of the person the bug is assigned to')
+            help=f'person who created the {self.service.item.type}')
 
 
 @args.subcmd(SourceforgeOpts)

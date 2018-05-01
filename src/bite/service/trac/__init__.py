@@ -5,6 +5,8 @@ API docs:
     - https://trac.videolan.org/vlc/rpc
 """
 
+from itertools import chain
+
 from .. import Service
 from .._reqs import RPCRequest, Request, ParseRequest, req_cmd, generator
 from ...exceptions import BiteError, RequestError
@@ -176,6 +178,11 @@ class _SearchRequest(RPCRequest, ParseRequest):
             if desc:
                 self.params['desc'] = desc
             self.options.append(f"Sort order: {v}")
+
+        def owner(self, k, v):
+            self.params[k] = '|'.join(v)
+            self.options.append(f"{self.service.item.attributes[k]}: {', '.join(v)}")
+        reporter = owner
 
 
 class GetItemRequest(Request):
