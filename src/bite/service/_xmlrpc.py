@@ -1,3 +1,5 @@
+from collections import Iterable
+from itertools import repeat
 from xmlrpc.client import dumps, loads, Unmarshaller, Fault, ResponseError
 
 from snakeoil.klass import steal_docs
@@ -76,8 +78,10 @@ class Multicall(RPCRequest):
     """Construct a system.multicall request."""
 
     def __init__(self, method, params, *args, **kw):
-        params = [[{'methodName': method, 'params': [x]} for x in params]]
-        super().__init__(*args, command='system.multicall', params=params, **kw)
+        methods = repeat(method) if isinstance(method, str) else method
+        params = (list(x) if isinstance(x, Iterable) else [x] for x in params)
+        params = [{'methodName': m, 'params': x} for m, x in zip(methods, params)]
+        super().__init__(*args, command='system.multicall', params=[params], **kw)
 
     def parse(self, data):
         for x in data:

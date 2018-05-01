@@ -1,3 +1,5 @@
+from collections import Iterable
+from itertools import repeat
 try: import simplejson as json
 except ImportError: import json
 
@@ -53,7 +55,9 @@ class Multicall(RPCRequest):
     """Construct a system.multicall request."""
 
     def __init__(self, method, params, *args, **kw):
-        params = [{'method': method, 'params': [x]} for x in params]
+        methods = repeat(method) if isinstance(method, str) else method
+        params = (list(x) if isinstance(x, Iterable) else [x] for x in params)
+        params = [{'method': m, 'params': x} for m, x in zip(methods, params)]
         super().__init__(*args, command='system.multicall', params=params, **kw)
 
     def parse(self, data):
