@@ -96,7 +96,7 @@ class Service(object):
         self.session.headers['Accept-Encoding'] = ', '.join(('gzip', 'deflate', 'compress'))
 
         # login if user/pass was specified and the auth token isn't set
-        if not self.auth and user is not None and password is not None:
+        if not self.auth and all((user, password)):
             self.login(user, password, **kw)
 
     @property
