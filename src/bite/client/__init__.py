@@ -120,9 +120,9 @@ class Cli(Client):
     def progress_output(self, s):
         self.log(s)
 
-    def login(self):
+    def login(self, force=False):
         """Login to a service and try to cache the authentication token."""
-        if self.skip_auth:
+        if self.skip_auth and not force:
             return
 
         # fallback to manual user/pass login
