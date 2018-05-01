@@ -7,6 +7,11 @@ class RoundupOpts(args.ServiceOpts):
 
 
 @args.subcmd(RoundupOpts)
+class Search(args.Search):
+    pass
+
+
+@args.subcmd(RoundupOpts)
 class Get(args.Get):
     pass
 
@@ -14,63 +19,3 @@ class Get(args.Get):
 @args.subcmd(RoundupOpts)
 class Attachments(args.Attachments):
     pass
-
-
-# def subcmds(subparsers):
-#     # create arguments
-#     parser = subparsers.add_parser('create',
-#         description='create a new issue',
-#         help='create a new issue')
-#     parser.set_defaults(fcn='create')
-#     # optional args
-#     person = parser.add_argument_group('Person related')
-#     person.add_argument('-a', '--assigned-to',
-#         dest='assignedto',
-#         metavar='ASSIGNED_TO',
-#         help='assign issue to someone other than the default assignee')
-#     person.add_argument('--nosy',
-#         type=string_list,
-#         help='add a list of people who may be interested in the issue')
-#     attr = parser.add_argument_group('Attribute related')
-#     attr.add_argument('-t', '--title',
-#         help='title of issue')
-#     attr.add_argument('-s', '--status',
-#         help='status of issue')
-#     attr.add_argument('-K', '--keywords',
-#         type=string_list,
-#         help='set the keywords of this issue')
-#     attr.add_argument('--priority',
-#         help='set priority for the issue')
-#
-#     # modify arguments
-#     parser = subparsers.add_parser(
-#         'modify', verbose=False,
-#         description='modify issues(s)',
-#         help='modify issues(s)')
-#     parser.set_defaults(fcn='modify')
-#     # positional args
-#     parser.add_argument('ids',
-#         type=id_list,
-#         action=partial(parse_stdin, ids),
-#         metavar='ID',
-#         help='ID(s) of the issue(s) to modify')
-#     # optional args
-#     attr = parser.add_argument_group('Attribute related')
-#     attr.add_argument('-t', '--title',
-#         help='set title of issue')
-#
-#     # search arguments
-#     parser = subparsers.add_parser(
-#         'search', verbose=False,
-#         description='search for issues',
-#         help='search for issues')
-#     parser.set_defaults(fcn='search')
-#     # positional args
-#     parser.add_argument('terms',
-#         action=parse_stdin,
-#         nargs='*',
-#         help='strings to search for in title and/or body')
-#     # optional args
-#     attr = parser.add_argument_group('Attribute related')
-#     attr.add_argument('-s', '--status',
-#         help='restrict by status')

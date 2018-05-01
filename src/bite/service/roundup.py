@@ -1,17 +1,19 @@
 """XML-RPC access to Roundup.
 
-API docs: http://www.roundup-tracker.org/docs/xmlrpc.html
+API docs:
+    http://www.roundup-tracker.org/docs/xmlrpc.html
+    http://roundup.sourceforge.net/docs/user_guide.html#query-tracker
 """
 
 from base64 import b64encode
-from itertools import chain
+from itertools import chain, repeat
 import re
 
 from datetime import datetime
 from snakeoil.sequences import iflatten_instance
 
-from ._reqs import NullRequest, Request, RPCRequest, req_cmd, generator
-from ._xmlrpc import Xmlrpc
+from ._reqs import NullRequest, Request, RPCRequest, ParseRequest, req_cmd, generator
+from ._xmlrpc import Xmlrpc, XmlrpcError, Multicall
 from ..cache import Cache, csv2tuple
 from ..exceptions import AuthError, RequestError, ParsingError
 from ..objects import decompress, Item, Attachment, Comment
@@ -49,6 +51,7 @@ class RoundupIssue(Item):
     attribute_aliases = {
         'comments': 'messages',
         'attachments': 'files',
+        'owner': 'assignedto',
     }
 
     _print_fields = (
@@ -69,7 +72,7 @@ class RoundupIssue(Item):
 
     type = 'issue'
 
-    def __init__(self, service, comments=None, attachments=None, **kw):
+    def __init__(self, service, comments=None, attachments=None, changes=None, **kw):
         self.service = service
         for k, v in kw.items():
             if k in ('creation', 'activity'):
@@ -109,6 +112,7 @@ class RoundupIssue(Item):
 
         self.attachments = attachments if attachments is not None else []
         self.comments = comments if comments is not None else []
+        self.changes = changes if changes is not None else []
 
 
 class RoundupComment(Comment):
@@ -143,7 +147,7 @@ class RoundupCache(Cache):
 class Roundup(Xmlrpc):
     """Service supporting the Roundup issue tracker."""
 
-    #_service = 'roundup'
+    _service = 'roundup'
     _cache_cls = RoundupCache
 
     item = RoundupIssue
@@ -200,80 +204,89 @@ class Roundup(Xmlrpc):
         authstr = 'Basic ' + (b64encode(b':'.join((user, password))).strip()).decode()
         return authstr
 
-    # def create(self, title, **kw):
-    #     """Create a new issue given a list of parameters
-    #
-    #     :returns: ID of the newly created issue
-    #     :rtype: int
-    #     """
-    #     params = ['issue']
-    #     params.append('title={}'.format(title))
-    #     for k, v in self.item.attributes.items():
-    #         if kw.get(k, None) is not None:
-    #             params.append("{}={}".format(k, kw[k]))
-    #
-    #     req = self.create_request(method='create', params=params)
-    #     data = self.send(req)
-    #     return data
-    #
-    # def modify(self, id, **kw):
-    #     params = ['issue' + str(id[0])]
-    #     for k, v in self.item.attributes.items():
-    #         if kw.get(k, None) is not None:
-    #             params.append("{}={}".format(k, kw[k]))
-    #
-    #     req = self.create_request(method='set', params=params)
-    #     data = self.send(req)
-    #     return data
-    #
-    # def search(self, ids=None, **kw):
-    #     params = ['issue', ids]
-    #     search_params = {}
-    #     if kw['terms']:
-    #         search_params['title'] = kw['terms']
-    #     for k, v in self.item.attributes.items():
-    #         if kw.get(k, None) is not None:
-    #             search_params[k] = kw[k]
-    #     params.append(search_params)
-    #
-    #     req = self.create_request(method='filter', params=params)
-    #     data = self.send(req)
-    #     return data
-
     def parse_response(self, response):
         """Send request object and perform checks on the response."""
         try:
             data = super().parse_response(response)
-        except RequestError as e:
-            # XXX: Hacky method of splitting off exception class from error string,
-            # should probably move to using a regex or similar.
-            code, msg = re.match(r"^<type '(.+)'>:(.+)$", e.msg).groups()
-            raise RequestError(msg=msg, code=code, text=e.text)
+        except XmlrpcError as e:
+            roundup_exc = re.match(r"^<\w+ '(.+)'>:(.+)$", e.msg)
+            if roundup_exc:
+                code, msg = roundup_exc.groups()
+                raise RoundupError(msg=msg.lower(), code=code)
+            raise
 
         return data
 
 
+@req_cmd(Roundup, 'search')
+class _SearchRequest(RPCRequest, ParseRequest):
+    """Construct a search request."""
+
+    def __init__(self, *args, **kw):
+        super().__init__(*args, command='filter', **kw)
+
+    def parse(self, data):
+        # Roundup search requests return a list of matching IDs that we resubmit
+        # via a multicall to grab ticket data if any matches exist.
+        if data:
+            issues = self.service.GetItemRequest(ids=data).send()
+            yield from issues
+
+    class ParamParser(ParseRequest.ParamParser):
+
+        def _finalize(self, **kw):
+            if not self.params:
+                raise BiteError('no supported search terms or options specified')
+            return 'issue', None, self.params
+
+        def terms(self, k, v):
+            self.params['title'] = v
+            self.options.append(f"Summary: {', '.join(v)}")
+
+
+@req_cmd(Roundup)
+class _GetItemRequest(Multicall):
+    """Construct an item request."""
+
+    def __init__(self, ids, service, fields=None, **kw):
+        if ids is None:
+            raise ValueError(f'No {service.item.type} ID(s) specified')
+
+        if fields is None:
+            fields = service.item.attributes.keys()
+        params = (chain([f'issue{i}'], fields) for i in ids)
+
+        super().__init__(service=service, method='display', params=params, **kw)
+        self.ids = ids
+
+    def parse(self, data):
+        # unwrap multicall result
+        issues = super().parse(data)
+        return (self.service.item(self.service, id=self.ids[i], **issue)
+                for i, issue in enumerate(issues))
+
+
 @req_cmd(Roundup, 'get')
 class _GetRequest(Request):
+    """Construct a get request."""
 
-    def __init__(self, ids, service, fields=None, get_comments=False,
+    def __init__(self, ids, fields=None, get_comments=False,
                  get_attachments=False, **kw):
-        """Construct a get request."""
+        super().__init__(**kw)
         if not ids:
-            raise ValueError(f'No {service.item.type} ID(s) specified')
+            raise ValueError(f'No {self.service.item.type} ID(s) specified')
 
         reqs = []
         for i in ids:
-            issue_reqs = []
             params = ['issue' + str(i)]
             if fields is not None:
                 params.extend(fields)
             else:
-                params.extend(service.item.attributes.keys())
-            reqs.append(RPCRequest(service=service, command='display', params=params))
+                params.extend(self.service.item.attributes.keys())
+            reqs.append(RPCRequest(service=self.service, command='display', params=params))
 
-        super().__init__(service=service, reqs=reqs)
         self.ids = ids
+        self._reqs = tuple(reqs)
         self.get_comments = get_comments
         self.get_attachments = get_attachments
 
@@ -323,9 +336,9 @@ class _GetRequest(Request):
 
 @req_cmd(Roundup, 'attachments')
 class _AttachmentsRequest(Request):
-    def __init__(self, service, ids=None, attachment_ids=None, get_data=False, *args, **kw):
+    def __init__(self, ids=None, attachment_ids=None, get_data=False, **kw):
         """Construct an attachments request."""
-        super().__init__(service)
+        super().__init__(**kw)
         # TODO: add support for specifying issue IDs
         if attachment_ids is None:
             raise ValueError('No attachment ID(s) specified')
@@ -337,10 +350,10 @@ class _AttachmentsRequest(Request):
             if get_data:
                 fields.append('content')
             params.extend(fields)
-            reqs.append(RPCRequest(service=service, command='display', params=params))
+            reqs.append(RPCRequest(service=self.service, command='display', params=params))
 
-        super().__init__(service=service, reqs=reqs)
         self.ids = ids
+        self._reqs = tuple(reqs)
         self.attachment_ids = attachment_ids
 
     @generator
@@ -358,9 +371,9 @@ class _AttachmentsRequest(Request):
 
 @req_cmd(Roundup, 'comments')
 class _CommentsRequest(Request):
-    def __init__(self, service, ids=None, comment_ids=None, created=None, fields=None, *args, **kw):
+    def __init__(self, ids=None, comment_ids=None, created=None, fields=None, **kw):
         """Construct a comments request."""
-        super().__init__(service)
+        super().__init__(**kw)
         # TODO: add support for specifying issue IDs
         if comment_ids is None:
             raise ValueError('No comment ID(s) specified')
@@ -372,8 +385,8 @@ class _CommentsRequest(Request):
                 params.extend(fields)
             reqs.append(RPCRequest(service=service, command='display', params=params))
 
-        super().__init__(service=service, reqs=reqs)
         self.ids = ids
+        self._reqs = tuple(reqs)
         self.comment_ids = comment_ids
 
     @generator
