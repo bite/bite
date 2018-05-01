@@ -26,6 +26,10 @@ class _Unmarshaller(Unmarshaller):
     dispatch["name"] = end_string # struct keys are always strings
 
 
+class XmlrpcError(RequestError):
+    pass
+
+
 class Xmlrpc(Xml):
     """Support generic XML-RPC services.
 
@@ -55,7 +59,7 @@ class Xmlrpc(Xml):
         try:
             data = super().parse_response(response)
         except Fault as e:
-            raise RequestError(msg=e.faultString, code=e.faultCode)
+            raise XmlrpcError(msg=e.faultString, code=e.faultCode)
         except ResponseError as e:
             raise ParsingError(msg='failed parsing XML') from e
 
