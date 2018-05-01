@@ -201,3 +201,14 @@ class GetItemRequest(Request):
             id, created, modified, attrs = item
             yield self.service.item(
                 self.service, id=id, created=created, modified=modified, **attrs)
+
+
+@req_cmd(Trac, 'version')
+class _VersionRequest(RPCRequest):
+    """Construct a version request."""
+
+    def __init__(self, *args, **kw):
+        super().__init__(command='system.getAPIVersion', *args, **kw)
+
+    def parse(self, data):
+        return '.'.join(map(str, data))

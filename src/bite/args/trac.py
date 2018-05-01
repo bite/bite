@@ -49,3 +49,10 @@ class Search(args.Search):
             '-r', '--creator', dest='reporter',
             type=string_list, action=parse_stdin,
             help=f'person who created the {self.service.item.type}')
+
+
+@args.subcmd(TracOpts)
+class Version(args.Subcmd):
+
+    def __init__(self, *args, **kw):
+        super().__init__(*args, desc='get Trac version', **kw)

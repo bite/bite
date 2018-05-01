@@ -4,6 +4,10 @@ from . import Cli
 class Trac(Cli):
     """CLI for Trac service."""
 
+    def version(self, **kw):
+        version = self.service.version()
+        print(f'Trac version: {version}')
+
 
 class TracJsonrpc(Trac):
 
