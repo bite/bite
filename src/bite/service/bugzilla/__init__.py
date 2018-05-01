@@ -89,8 +89,8 @@ class Bugzilla(Service):
         return config_updates
 
     @steal_docs(Service)
-    def login(self, user, password, restrict_login=False, **kw):
-        super().login(user, password, restrict_login=restrict_login)
+    def login(self, *args, restrict_login=False, **kw):
+        super().login(*args, restrict_login=restrict_login, **kw)
 
     @steal_docs(Service)
     def inject_auth(self, request, params):
