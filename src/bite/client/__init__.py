@@ -288,9 +288,10 @@ class Cli(Client):
 
     @login_retry
     @login_required
-    def modify(self, ids, ask=False, dry_run=False, **kw):
+    def modify(self, ask=False, dry_run=False, **kw):
         """Modify an item on the service."""
-        request = self.service.ModifyRequest(ids, **kw)
+        request = self.service.ModifyRequest(**kw)
+        ids = request.params['ids']
 
         self.log_t(f"Modifying {self.service.item.type}{pluralism(ids)}: {', '.join(map(str, ids))}")
         self.log(request.options, prefix='')
