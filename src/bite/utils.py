@@ -26,8 +26,9 @@ def raw_input_block():
             raise StopIteration
 
 
-def launch_browser(urls, browser=const.BROWSER):
+def launch_browser(urls, browser=None):
     """Launch URLs in a browser."""
+    browser = browser if browser is not None else const.BROWSER
     urls = list(iflatten_instance(urls))
     try:
         subprocess.Popen(
