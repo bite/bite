@@ -5,7 +5,7 @@ import datetime
 from dateutil.parser import parse as parsetime
 from dateutil.relativedelta import *
 
-from ..argparser import parse_stdin, string_list, id_list, ids
+from ..argparser import parse_stdin, id_list, ids
 
 def subcmds(subparsers):
     # modification related methods not supported yet

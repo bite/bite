@@ -1,6 +1,6 @@
 from .bugzilla import date
 from .. import args
-from ..argparser import parse_stdin, id_list, string_list
+from ..argparser import parse_stdin, string_list
 
 
 class TracOpts(args.ServiceOpts):
