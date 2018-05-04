@@ -20,39 +20,58 @@ from .exceptions import BiteError
 demandload('bite:const')
 
 
-def string_list(s):
-    if sys.stdin.isatty() or s != '-':
-        return [item for item in s.split(',') if item != ""]
-    else:
+class ArgType(object):
+
+    def __call__(self, data, stdin=False):
+        if stdin:
+            return self.parse_stdin(data)
+        elif sys.stdin.isatty():
+            return self.parse(data)
+        return data
+
+    def parse(self, s):
+        """Parse string value into expected argument type."""
         return s
 
+    def parse_stdin(self, data):
+        """Parse standard input into expected argument type."""
+        return data
 
-def id_list(s):
-    if sys.stdin.isatty() or s != '-':
+
+class StringList(ArgType):
+
+    def parse(self, s):
+        return [item for item in s.split(',') if item != ""]
+
+string_list = StringList()
+
+
+class IdList(ArgType):
+
+    def parse(self, s):
         try:
             l = []
             for item in s.split(','):
                 l.append(int(item))
             return l
         except:
-            if item == '-':
-                raise ArgumentTypeError("'-' is only valid when piping data in")
-            else:
-                raise ArgumentTypeError(f'invalid ID value: {item!r}')
-    else:
-        return s
+            raise ArgumentTypeError(f'invalid ID value: {item!r}')
+
+id_list = IdList()
 
 
-def ids(s):
-    if sys.stdin.isatty() or s != '-':
+class IDs(ArgType):
+
+    def parse(self, s):
         try:
             return int(s)
         except:
-            if s == '-':
-                raise ArgumentTypeError("'-' is only valid when piping data in")
-            else:
-                raise ArgumentTypeError(f'invalid ID value: {s!r}')
-    else:
+            raise ArgumentTypeError(f'invalid ID value: {s!r}')
+
+    def parse_stdin(self, data):
+        return [self.parse(x) for x in data]
+
+ids = IDs()
         return s
 
 
@@ -63,6 +82,7 @@ def existing_file(s):
 
 
 class parse_file(Action):
+
     def __call__(self, parser, namespace, values, option_string=None):
         lines = (shlex.split(line.strip()) for line in values)
         setattr(namespace, self.dest, lines)
@@ -71,7 +91,10 @@ class parse_file(Action):
 class parse_stdin(Action):
 
     def __init__(self, convert_type=None, append=True, *args, **kwargs):
-        self.convert_type = convert_type if convert_type is not None else lambda x: x
+        if convert_type is not None:
+            self.convert_type = convert_type
+        else:
+            self.convert_type = kwargs.get('type', lambda x, stdin: x)
         self.append = append
         super().__init__(*args, **kwargs)
 
@@ -82,32 +105,30 @@ class parse_stdin(Action):
             values[0] == '-'
         )
 
-        if stdin_opt:
-            if not sys.stdin.isatty():
-                if option_string is None:
-                    option = (self.dest, self.dest)
-                else:
-                    option = (self.dest, option_string)
-                try:
-                    stdin = getattr(namespace, 'stdin')
-                    parser.error(f'argument {option[1]}: data from standard input '
-                                 'already being used for argument {stdin[1]}')
-                except AttributeError:
-                    # store option for stdin check above
-                    setattr(namespace, 'stdin', option)
-                    # read args from standard input for specified option
-                    values = []
-                    for x in sys.stdin.readlines():
-                        v = x.strip()
-                        if v:
-                            try:
-                                values.extend(iflatten_instance([self.convert_type(v)]))
-                            except ArgumentTypeError as e:
-                                raise ArgumentError(self, e)
+        if stdin_opt and not sys.stdin.isatty():
+            if option_string is None:
+                option = (self.dest, self.dest)
+            else:
+                option = (self.dest, option_string)
+            try:
+                stdin = getattr(namespace, 'stdin')
+                parser.error(f'argument {option[1]}: data from standard input '
+                                'already being used for argument {stdin[1]}')
+            except AttributeError:
+                # store option for stdin check above
+                setattr(namespace, 'stdin', option)
+                # read args from standard input for specified option
+                values = [s for s in (x.strip() for x in sys.stdin.readlines()) if s]
 
-                    # make sure values were piped via stdin for required args
-                    if not values and self.required:
-                        raise ArgumentError(self, 'missing required values piped via stdin')
+                # convert values to expected types
+                try:
+                    values = self.convert_type(values, stdin=True)
+                except ArgumentTypeError as e:
+                    raise ArgumentError(self, e)
+
+                # make sure values were piped via stdin for required args
+                if not values and self.required:
+                    raise ArgumentError(self, 'missing required values piped via stdin')
 
         # append multiple args by default for array-based options
         previous = getattr(namespace, self.dest)
