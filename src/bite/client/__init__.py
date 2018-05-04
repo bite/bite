@@ -56,13 +56,25 @@ def login_required(func):
     return wrapper
 
 
+def dry_run(func):
+    """Decorator that forces a dry run of a method."""
+    @wraps(func)
+    def wrapper(self, *args, dry_run=False, **kw):
+        # skip authentication and monkey patch sending to return an empty dataset
+        if dry_run:
+            self.skip_auth = True
+            self.service.send = lambda *args, **kw: ()
+        return func(self, *args, **kw)
+    return wrapper
+
+
 class Client(object):
     """Generic client for a service."""
 
     _service = None
 
     def __init__(self, service):
-        self.service = service 
+        self.service = service
 
         # Register client callbacks for service obj. We want this to explode if
         # a Client child doesn't implement all the callbacks requested by the
@@ -132,8 +144,9 @@ class Cli(Client):
                 user, password = self.get_user_pass()
             self.service.login(user, password)
 
+    @dry_run
     @login_retry
-    def get(self, ids, dry_run=False, browser=False, output_url=False, **kw):
+    def get(self, ids, browser=False, output_url=False, **kw):
         """Get item(s) from a service and all related info."""
         if not ids:
             raise RuntimeError(f'No {self.service.item.type} ID(s) specified')
@@ -161,17 +174,16 @@ class Cli(Client):
             request = self.service.GetRequest(ids, **kw)
             self.log_t(f"Getting {self.service.item.type}{pluralism(ids)}: {', '.join(map(str, ids))}")
 
-            if dry_run: return
             data = request.send()
             lines = chain.from_iterable(self._render_item(item, **kw) for item in data)
             print(*lines, sep='\n')
 
+    @dry_run
     @login_retry
     @login_required
-    def attach(self, ids, dry_run=False, **kw):
+    def attach(self, ids, **kw):
         """Attach a file to a specified item given a filename."""
         request = self.service.AttachRequest(ids, **kw)
-        if dry_run: return
         data = request.send()
         self.log_t(f"{filename!r} attached to {self.service.item.type}{pluralism(ids)}: \
                    {', '.join(map(str, ids))}")
@@ -188,8 +200,9 @@ class Cli(Client):
         for id in ids:
             yield attachment_url.format(id=id)
 
+    @dry_run
     @login_retry
-    def attachments(self, ids, dry_run=False, item_id=False, output_url=False, browser=False, **kw):
+    def attachments(self, ids, item_id=False, output_url=False, browser=False, **kw):
         """Get attachments from a service."""
         # skip pulling data if we don't need it
         get_data = (not output_url and not browser)
@@ -217,7 +230,6 @@ class Cli(Client):
             elif browser:
                 _launch_browser(ids)
         else:
-            if dry_run: return
             attachments = request.send()
 
             # Attachment requests yield lists of attachments -- each list
@@ -287,9 +299,10 @@ class Cli(Client):
         self.log(f'Saving attachment: {path!r}')
         f.write(path)
 
+    @dry_run
     @login_retry
     @login_required
-    def modify(self, ask=False, dry_run=False, **kw):
+    def modify(self, ask=False, **kw):
         """Modify an item on the service."""
         request = self.service.ModifyRequest(**kw)
         ids = request.params['ids']
@@ -302,14 +315,14 @@ class Cli(Client):
                 self.log('Modification aborted')
                 return
 
-        if dry_run: return
         data = request.send()
         lines = chain.from_iterable(self._render_modifications(item, **kw) for item in data)
         print(*lines, sep='\n')
 
+    @dry_run
     @login_retry
     @login_required
-    def create(self, ask=False, batch=False, dry_run=False, **kw):
+    def create(self, ask=False, batch=False, **kw):
         """Create an item on the service."""
         request = self.service.CreateRequest(**kw)
 
@@ -321,19 +334,18 @@ class Cli(Client):
                 self.log('Creation aborted')
                 return
 
-        if dry_run: return
         data = request.send()
         lines = self._render_create(data, **kw)
         print(*lines, sep='\n')
 
-    def search(self, dry_run=False, **kw):
+    @dry_run
+    def search(self, **kw):
         """Search for items on the service."""
         request = self.service.SearchRequest(**kw)
 
         self.log(f'Searching for {self.service.item.type}s with the following options:')
         self.log(request.options, prefix='   - ')
 
-        if dry_run: return
         data = request.send()
 
         lines = self._render_search(data, **kw)
@@ -406,7 +418,8 @@ class Cli(Client):
         raise NotImplementedError
 
     def _render_create(self, data, **kw):
-        yield f"Created {self.service.item.type} #{data}"
+        if data:
+            yield f"Created {self.service.item.type} #{data}"
 
     def _render_search(self, data, fields=None, output=None, **kw):
         """Render search data for output."""
@@ -467,7 +480,8 @@ class Cli(Client):
                 else:
                     yield str(value)
 
-    def changes(self, ids, dry_run=False, **kw):
+    @dry_run
+    def changes(self, ids, **kw):
         change_num = kw.get('change_num', None)
         creator = kw.get('creator', None)
         creation_time = kw.get('creation_time', None)
@@ -490,7 +504,6 @@ class Cli(Client):
         if kw.get('creator', None) is not None and self.service.suffix is not None:
             kw['creator'] = list(map(self.service._resuffix, kw['creator']))
 
-        if dry_run: return
         changes = request.send()
         lines = chain.from_iterable(self._render_changes(ids[i], change, **kw)
                                     for i, change in enumerate(changes))
@@ -536,7 +549,8 @@ class Cli(Client):
                 yield self._header('=', f'{self.service.item.type.capitalize()}: {item_id}')
                 yield from self._iter_lines(changes)
 
-    def comments(self, ids, dry_run=False, **kw):
+    @dry_run
+    def comments(self, ids, **kw):
         creation_time = kw.get('creation_time', None)
         creator = kw.get('creator', None)
         attachment = kw.get('attachment', False)
@@ -559,7 +573,6 @@ class Cli(Client):
         if self.service.suffix is not None and creator is not None:
             creator = list(map(self.service._resuffix, creator))
 
-        if dry_run: return
         comments_iter = request.send()
         lines = chain.from_iterable(self._render_comments(ids[i], comments, **kw)
                                     for i, comments in enumerate(comments_iter))
