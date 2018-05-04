@@ -170,8 +170,9 @@ class Cli(Client):
     @login_required
     def attach(self, ids, dry_run=False, **kw):
         """Attach a file to a specified item given a filename."""
+        request = self.service.AttachRequest(ids, **kw)
         if dry_run: return
-        data = self.service.add_attachment(ids, **kw)
+        data = request.send()
         self.log_t(f"{filename!r} attached to {self.service.item.type}{pluralism(ids)}: \
                    {', '.join(map(str, ids))}")
 
