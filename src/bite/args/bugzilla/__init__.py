@@ -98,8 +98,7 @@ class Attach(args.Attach):
             'filepath', type=str,
             help='path of the file to attach')
         self.parser.add_argument(
-            'ids', type=id_list, metavar='ID',
-            action=partial(parse_stdin, ids),
+            'ids', type=ids, nargs='+', metavar='ID', action=parse_stdin,
             help='bug ID(s) where the file should be attached')
 
         # optional args

@@ -148,8 +148,7 @@ class Get(ReceiveSubcmd):
 
         # positional args
         self.parser.add_argument(
-            'ids', type=id_list, metavar='ID',
-            action=partial(parse_stdin, ids),
+            'ids', type=ids, nargs='+', metavar='ID', action=parse_stdin,
             help=f"ID(s) or alias(es) of the {kw['service'].item.type}(s) to retrieve")
 
         # optional args
@@ -179,8 +178,7 @@ class Attachments(Subcmd):
 
         # positional args
         self.parser.add_argument(
-            'ids', metavar='ID',
-            type=id_list, action=partial(parse_stdin, ids),
+            'ids', type=ids, nargs='+', metavar='ID', action=parse_stdin,
             help=f"attachment ID(s) (or {kw['service'].item.type} ID(s) when --item-id is used)")
 
         # optional args
@@ -210,9 +208,7 @@ class Changes(ReceiveSubcmd):
         super().__init__(*args, desc=desc, **kw)
         # positional args
         self.parser.add_argument(
-            'ids', metavar='ID',
-            type=id_list,
-            action=partial(parse_stdin, ids),
+            'ids', type=ids, nargs='+', metavar='ID', action=parse_stdin,
             help=f"ID(s) or alias(es) of the {kw['service'].item.type}(s) "
                  "to retrieve all changes")
         # optional args
@@ -235,9 +231,7 @@ class Comments(ReceiveSubcmd):
         super().__init__(*args, desc=desc, **kw)
         # positional args
         self.parser.add_argument(
-            'ids', metavar='ID',
-            type=id_list,
-            action=partial(parse_stdin, ids),
+            'ids', type=ids, nargs='+', metavar='ID', action=parse_stdin,
             help=f"ID(s) or alias(es) of the {kw['service'].item.type}(s) "
                  "to retrieve all comments")
         # optional args
@@ -275,8 +269,7 @@ class Modify(SendSubcmd):
 
         # positional args
         self.parser.add_argument(
-            'ids', type=id_list, metavar='ID',
-            action=partial(parse_stdin, ids),
+            'ids', type=ids, nargs='+', metavar='ID', action=parse_stdin,
             help=f"ID(s) of the {kw['service'].item.type}(s) to modify")
 
         # optional args
