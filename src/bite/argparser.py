@@ -16,6 +16,7 @@ from . import get_service_cls
 from .alias import substitute_alias
 from .config import get_config
 from .exceptions import BiteError
+from .utils import block_edit, confirm
 
 demandload('bite:const')
 
@@ -72,13 +73,31 @@ class IDs(ArgType):
         return [self.parse(x) for x in data]
 
 ids = IDs()
+
+
+class Comment(ArgType):
+
+    def parse(self, s):
+        if s == '__BITE_EDITOR__':
+            s = block_edit('Enter comment:').strip()
+        elif os.path.exists(s):
+            if confirm(prompt=f'Use file for comment: {s!r}?', default=True):
+                try:
+                    with open(s) as f:
+                        data = f.read().strip()
+                    if confirm(prompt=f'Edit comment?'):
+                        data = block_edit('Edit comment', comment_from=data).strip()
+                except IOError as e:
+                    raise BiteError('unable to read file: {s!r}: {e}')
+                s = data
         return s
 
+    def parse_stdin(self, data):
+        if not data:
+            raise ArgumentTypeError('no comment data provided on stdin')
+        return '\n'.join(data)
 
-def existing_file(s):
-    if not os.path.exists(s):
-        raise ArgumentTypeError(f'nonexistent file: {s!r}')
-    return s
+comment = Comment()
 
 
 class parse_file(Action):

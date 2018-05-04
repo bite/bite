@@ -127,22 +127,6 @@ class Bugzilla(Cli):
 
         super().create(*args, **kw)
 
-    def modify(self, *args, **kw):
-        comment_from = kw.get('comment_from')
-        if comment_from is not None:
-            try:
-                if comment_from == '-':
-                    kw['comment-body'] = sys.stdin.read()
-                else:
-                    kw['comment-body'] = open(comment_from, 'r').read()
-            except IOError as e:
-                raise BiteError('Unable to read file: {comment_from}: {e}')
-
-        if kw.get('comment_editor'):
-            kw['comment-body'] = block_edit('Enter comment:').rstrip()
-
-        super().modify(*args, **kw)
-
     def _render_modifications(self, bug, **kw):
         yield self._header('=', f"Bug: {str(bug['id'])}")
         changes = bug['changes']

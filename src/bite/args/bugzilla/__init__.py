@@ -212,26 +212,22 @@ class Modify(args.Modify):
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
         # optional args
-        attr = self.parser.add_argument_group('Attribute related')
-        attr.add_argument(
-            '-c', '--comment', metavar='COMMENT', dest='comment-body',
-            help='add comment from command line')
-        attr.add_argument(
+        self.attr.add_argument(
             '-S', '--severity',
             help='set severity for this bug')
-        attr.add_argument(
+        self.attr.add_argument(
             '-t', '--title', dest='summary',
             help='set title of bug')
-        attr.add_argument(
+        self.attr.add_argument(
             '-u', '--url',
             help='set URL field of bug')
-        attr.add_argument(
+        self.attr.add_argument(
             '-V', '--version',
             help='set the version for this bug'),
-        attr.add_argument(
+        self.attr.add_argument(
             '-W', '--whiteboard',
             help='set status whiteboard'),
-        attr.add_argument(
+        self.attr.add_argument(
             '--alias', action='csv_elements',
             help='add/remove/set aliases',
             docs="""
@@ -249,7 +245,7 @@ class Modify(args.Modify):
                 at a time so passing multiple bug ID targets will cause an
                 error.
             """)
-        attr.add_argument(
+        self.attr.add_argument(
             '--blocks', action='csv_elements', metavar='BUG_ID',
             help='add/remove/set blockers',
             docs="""
@@ -263,10 +259,10 @@ class Modify(args.Modify):
                 Note that setting blockers overrides the current blockers for the
                 bug as well as any passed add/remove values.
             """)
-        attr.add_argument(
+        self.attr.add_argument(
             '--component',
             help='change the component for this bug')
-        attr.add_argument(
+        self.attr.add_argument(
             '--depends', action='csv_elements', metavar='BUG_ID',
             help='add/remove/set dependencies',
             docs="""
@@ -282,7 +278,7 @@ class Modify(args.Modify):
                 dependencies for the bug as well as any passed add/remove
                 values.
             """)
-        attr.add_argument(
+        self.attr.add_argument(
             '--groups', action='csv_negations', metavar='GROUP',
             help='add/remove groups',
             docs="""
@@ -292,7 +288,7 @@ class Modify(args.Modify):
                 bug. Use the prefixes '+' and '-' for each ID to add and remove
                 groups, respectively.
             """)
-        attr.add_argument(
+        self.attr.add_argument(
             '-K', '--keywords', action='csv_elements', metavar='KEYWORDS',
             help='add/remove/set keywords',
             docs="""
@@ -306,22 +302,22 @@ class Modify(args.Modify):
                 Note that setting keywords overrides the current keywords for
                 the bug as well as any passed add/remove values.
             """)
-        attr.add_argument(
+        self.attr.add_argument(
             '--target-milestone',
             help='set a target milestone for this bug')
-        attr.add_argument(
+        self.attr.add_argument(
             '--op-sys',
             help='change the operating system for this bug')
-        attr.add_argument(
+        self.attr.add_argument(
             '--platform',
             help='change the platform for this bug')
-        attr.add_argument(
+        self.attr.add_argument(
             '--priority',
             help='change the priority for this bug')
-        attr.add_argument(
+        self.attr.add_argument(
             '--product',
             help='change the product for this bug')
-        attr.add_argument(
+        self.attr.add_argument(
             '--see-also', action='csv_negations', metavar='URL',
             help='add/remove "see also" URLs',
             docs="""

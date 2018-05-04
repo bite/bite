@@ -4,7 +4,7 @@ from snakeoil.cli import arghparse
 from snakeoil.demandload import demandload
 
 from ..exceptions import BiteError
-from ..argparser import parse_stdin, string_list, id_list, ids
+from ..argparser import parse_stdin, comment, string_list, id_list, ids
 from ..utils import str2bool
 
 demandload('bite:const')
@@ -280,13 +280,11 @@ class Modify(SendSubcmd):
             help=f"ID(s) of the {kw['service'].item.type}(s) to modify")
 
         # optional args
-        self.opts.add_argument(
-            '-C', '--comment-editor', action='store_true',
-            help='add comment via default editor')
-        self.opts.add_argument(
-            '-F', '--comment-from',
-            help='add comment from file. If -C is also specified, '
-                 'the editor will be opened with this file as its contents')
+        self.attr = self.parser.add_argument_group('Attribute related')
+        self.attr.add_argument(
+            '-c', '--comment', nargs='?', const='__BITE_EDITOR__',
+            type=comment, action=parse_stdin,
+            help='add comment from command line')
 
 
 class Create(SendSubcmd):
