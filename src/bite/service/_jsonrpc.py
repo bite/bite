@@ -1,5 +1,4 @@
-from collections import Iterable
-from itertools import repeat
+from itertools import repeat, islice
 try: import simplejson as json
 except ImportError: import json
 
@@ -51,6 +50,12 @@ class Jsonrpc(Json):
             # assume error object follows json-rpc 2.0 spec formatting
             self.handle_error(code=error['code'], msg=error['message'])
 
+    def multicall(self, *args, **kw):
+        return Multicall(service=self, *args, **kw)
+
+    def merged_multicall(self, reqs, *args, **kw):
+        return MergedMulticall(reqs=reqs, service=self, *args, **kw)
+
 
 class Multicall(RPCRequest):
     """Construct a system.multicall request."""
@@ -64,3 +69,22 @@ class Multicall(RPCRequest):
     def parse(self, data):
         for x in data:
             yield x['result']
+
+
+class MergedMulticall(RPCRequest):
+
+    def __init__(self, reqs, *args, **kw):
+        self.req_groups = []
+
+        params = []
+        for req in reqs:
+            params.extend(req.params)
+            self.req_groups.append(len(req.params))
+        params = tuple(params)
+
+        super().__init__(*args, command='system.multicall', params=params, **kw)
+
+    def parse(self, data):
+        i = MulticallIterator(data)
+        for length in self.req_groups:
+            yield islice(i, length)

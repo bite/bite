@@ -1,5 +1,4 @@
-from collections import Iterable
-from itertools import repeat
+from itertools import repeat, islice
 from xmlrpc.client import dumps, loads, Unmarshaller, Fault, ResponseError
 
 from snakeoil.klass import steal_docs
@@ -77,6 +76,12 @@ class Xmlrpc(Xml):
         u = _Unmarshaller(use_datetime=True) if unmarshaller is None else unmarshaller
         return super()._getparser(unmarshaller=u)
 
+    def multicall(self, *args, **kw):
+        return Multicall(service=self, *args, **kw)
+
+    def merged_multicall(self, reqs, *args, **kw):
+        return MergedMulticall(reqs=reqs, service=self, *args, **kw)
+
 
 class MulticallIterator(object):
     """Iterate over the results of a multicall.
@@ -117,3 +122,22 @@ class Multicall(RPCRequest):
 
     def parse(self, data):
         return MulticallIterator(data)
+
+
+class MergedMulticall(RPCRequest):
+
+    def __init__(self, reqs, *args, **kw):
+        self.req_groups = []
+
+        params = []
+        for req in reqs:
+            params.extend(req.params[0])
+            self.req_groups.append(len(req.params[0]))
+        params = tuple(params)
+
+        super().__init__(*args, command='system.multicall', params=(params,), **kw)
+
+    def parse(self, data):
+        i = MulticallIterator(data)
+        for length in self.req_groups:
+            yield islice(i, length)
