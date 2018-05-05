@@ -7,7 +7,7 @@ import requests
 from ..utils import dict2tuples
 
 
-def req_cmd(service_cls, cmd_name=None):
+def req_cmd(service_cls, cmd_name=None, obj_args=False):
     """Register service request and command functions."""
     def wrapped(cls, *args, **kwds):
         req_func = lambda self, *args, **kw: cls(*args, service=self, **kw)
@@ -17,7 +17,13 @@ def req_cmd(service_cls, cmd_name=None):
         setattr(service_cls, name.group(1), req_func)
         if cmd_name is not None:
             send = getattr(service_cls, 'send')
-            send_func = lambda self, *args, **kw: send(self, cls(*args, service=self, **kw))
+            # TODO: figure out a better funcion overloading method
+            def send_func(self, *args, **kw):
+                # support passing in item object iterables for marked reqs
+                if obj_args and (args and not kw):
+                    reqs = tuple(cls(service=self, **item) for item in args)
+                    return send(self, Request(service=self, reqs=reqs))
+                return send(self, cls(*args, service=self, **kw))
             setattr(service_cls, cmd_name, send_func)
         return cls
     return wrapped

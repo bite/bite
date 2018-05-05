@@ -109,21 +109,21 @@ class _GetItemRequest(RPCRequest, GetItemRequest):
         self.params['permissive'] = True
 
 
-@req_cmd(Bugzilla4_4Rpc, 'modify')
+@req_cmd(Bugzilla4_4Rpc, 'modify', obj_args=True)
 class _ModifyRequest(RPCRequest, ModifyRequest):
     def __init__(self, *args, **kw):
         """Construct a modify request."""
         super().__init__(command='Bug.update', *args, **kw)
 
 
-@req_cmd(Bugzilla4_4Rpc, 'attach')
+@req_cmd(Bugzilla4_4Rpc, 'attach', obj_args=True)
 class _AttachRequest(RPCRequest, AttachRequest):
     def __init__(self, *args, **kw):
         """Construct an attach request."""
         super().__init__(command='Bug.add_attachment', *args, **kw)
 
 
-@req_cmd(Bugzilla4_4Rpc, 'create')
+@req_cmd(Bugzilla4_4Rpc, 'create', obj_args=True)
 class _CreateRequest(RPCRequest, CreateRequest):
     def __init__(self, *args, **kw):
         """Construct a create request."""

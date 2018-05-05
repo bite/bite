@@ -172,6 +172,13 @@ class Item(object):
         else:
             raise AttributeError(f'missing field: {name}')
 
+    # allow items to be used as mapping args to functions
+    def __getitem__(self, key):
+        return self.__dict__[key]
+
+    def keys(self):
+        return self.__dict__.keys()
+
 
 class Change(object):
     """Generic change event on a service."""

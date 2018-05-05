@@ -48,7 +48,7 @@ class _GetRequest(GetRequest):
     """Construct a get request."""
 
 
-@req_cmd(Bugzilla5_0Rest, 'modify')
+@req_cmd(Bugzilla5_0Rest, 'modify', obj_args=True)
 class _ModifyRequest(RESTRequest, ModifyRequest):
     def __init__(self, *args, **kw):
         """Construct a modify request."""
@@ -63,7 +63,7 @@ class _ModifyRequest(RESTRequest, ModifyRequest):
             del self.data['ids']
 
 
-@req_cmd(Bugzilla5_0Rest, 'attach')
+@req_cmd(Bugzilla5_0Rest, 'attach', obj_args=True)
 class _AttachRequest(RESTRequest, AttachRequest):
     def __init__(self, *args, **kw):
         """Construct a modify request."""
@@ -78,7 +78,7 @@ class _AttachRequest(RESTRequest, AttachRequest):
             del self.data['ids']
 
 
-@req_cmd(Bugzilla5_0Rest, 'create')
+@req_cmd(Bugzilla5_0Rest, 'create', obj_args=True)
 class _CreateRequest(RESTRequest, CreateRequest):
     def __init__(self, *args, **kw):
         """Construct a create request."""
