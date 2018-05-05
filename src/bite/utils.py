@@ -156,3 +156,7 @@ def dict2tuples(dct):
             yield from ((k, x) for x in v)
         else:
             yield (k, v)
+
+
+def nonstring_iterable(obj):
+    return hasattr(obj, '__iter__') and not isinstance(obj, str)

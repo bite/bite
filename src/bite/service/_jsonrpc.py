@@ -8,6 +8,7 @@ from snakeoil.klass import steal_docs
 from . import Service
 from ._json import Json
 from ._reqs import RPCRequest
+from ..utils import nonstring_iterable
 
 
 class Jsonrpc(Json):
@@ -56,7 +57,7 @@ class Multicall(RPCRequest):
 
     def __init__(self, method, params, *args, **kw):
         methods = repeat(method) if isinstance(method, str) else method
-        params = (tuple(x) if isinstance(x, Iterable) else (x,) for x in params)
+        params = (tuple(x) if nonstring_iterable(x) else (x,) for x in params)
         params = tuple({'method': m, 'params': x} for m, x in zip(methods, params))
         super().__init__(*args, command='system.multicall', params=params, **kw)
 

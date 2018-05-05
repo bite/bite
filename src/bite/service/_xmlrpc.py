@@ -8,6 +8,7 @@ from . import Service
 from ._reqs import RPCRequest
 from ._xml import Xml
 from ..exceptions import RequestError, ParsingError
+from ..utils import nonstring_iterable
 
 
 class _Unmarshaller(Unmarshaller):
@@ -110,7 +111,7 @@ class Multicall(RPCRequest):
 
     def __init__(self, method, params, *args, **kw):
         methods = repeat(method) if isinstance(method, str) else method
-        params = (tuple(x) if isinstance(x, Iterable) else (x,) for x in params)
+        params = (tuple(x) if nonstring_iterable(x) else (x,) for x in params)
         params = tuple({'methodName': m, 'params': x} for m, x in zip(methods, params))
         super().__init__(*args, command='system.multicall', params=(params,), **kw)
 
