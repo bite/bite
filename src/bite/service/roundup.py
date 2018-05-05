@@ -170,30 +170,36 @@ class Roundup(Xmlrpc):
     def cache_updates(self):
         """Pull latest data from service for cache update."""
         config_updates = {}
+        values = {}
+
+        # login required to grab user data
+        self.client.login(force=True)
+
+        attrs = ('status', 'priority', 'keyword', 'user')
         reqs = []
+        # pull list of specified attribute types
+        names = list(self.multicall(method='list', params=attrs).send())
 
-        # get possible status values
-        reqs.append(RPCRequest(command='list', params=['status'], service=self))
+        # The list command doesn't return the related values in the order that
+        # values their underlying IDs so we have to roll lookups across the
+        # entire scope to determine them.
+        for i, attr in enumerate(attrs):
+            data = names[i]
+            values[attr] = data
+            params = ([attr, x] for x in data)
+            reqs.append(self.multicall(method='lookup', params=params))
 
-        # get possible priority values
-        reqs.append(RPCRequest(command='list', params=['priority'], service=self))
-
-        # get possible keyword values
-        reqs.append(RPCRequest(command='list', params=['keyword'], service=self))
-
-        # get possible user values requires login, otherwise returns empty list
-        self.skip_auth = False
-        self.auth.read()
-        reqs.append(RPCRequest(command='list', params=['user'], service=self))
-
-        status, priority, keyword, users = self.send(reqs)
+        data = self.merged_multicall(reqs=reqs).send()
+        for attr in ('status', 'priority', 'keyword', 'user'):
+            order = next(data)
+            values[attr] = [x for order, x in sorted(zip(order, values[attr]))]
 
         # don't sort, ordering is important for the mapping to work properly
-        config_updates['status'] = tuple(status)
-        config_updates['priority'] = tuple(priority)
-        config_updates['keyword'] = tuple(keyword)
-        if users:
-            config_updates['users'] = tuple(users)
+        config_updates['status'] = tuple(values['status'])
+        config_updates['priority'] = tuple(values['priority'])
+        config_updates['keyword'] = tuple(values['keyword'])
+        if 'user' in values:
+            config_updates['users'] = tuple(values['user'])
 
         return config_updates
 
