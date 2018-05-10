@@ -56,6 +56,15 @@ class ServiceOpts(object):
 
         self.main_opts()
 
+    def subcmds(self):
+        """Get sequence of subcommands defined for the service."""
+        l = []
+        for x in dir(self):
+            attr = getattr(self, x)
+            if isinstance(attr, type) and issubclass(attr, Subcmd):
+                l.append((x, attr))
+        return tuple(l)
+
     def main_opts(self):
         """Add service specific top-level options."""
 
@@ -80,9 +89,8 @@ class ServiceOpts(object):
         # fallback to adding all subcmd options, since the user is
         # requesting help output (-h/--help) or entering unknown input
         except AttributeError:
-            for cls in (getattr(self, attr) for attr in dir(self)):
-                if isinstance(cls, type) and issubclass(cls, Subcmd):
-                    cls(parser=subcmd_parser, service=service)
+            for subcmd, cls in self.subcmds():
+                cls(parser=subcmd_parser, service=service)
 
 
 class RequestSubcmd(Subcmd):
