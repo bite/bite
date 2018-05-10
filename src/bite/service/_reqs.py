@@ -346,6 +346,9 @@ class LinkPagedRequest(Request):
 class ParseRequest(Request):
     """Parse parameters according to defined methods for a request."""
 
+    # map from args dest name to expected service parameter name
+    _params_map = {}
+
     def __init__(self, service, method=None, **kw):
         super().__init__(service=service, method=method, **kw)
         self.param_parser = self.ParamParser(self)
@@ -353,26 +356,39 @@ class ParseRequest(Request):
 
     def parse_params(self, **kw):
         for k, v in ((k, v) for (k, v) in kw.items() if v):
-            parse = getattr(self.param_parser, k, None)
+            parse = getattr(self.param_parser, k, self.param_parser._default_parser)
             if not callable(parse):
-                parse = self.param_parser._default
+                raise ValueError(f"invalid parameter parsing function: {k!r}")
             parse(k, v)
-        params = self.param_parser._finalize(**kw)
+
+        self.params = self.remap_params(self.params)
+        params = self.param_parser._finalize()
         return params if params is not None else self.params
+
+    def remap_params(self, dct, remap=None):
+        """Remap dict keys to expected service parameter names."""
+        if remap is None:
+            remap = self._params_map
+        for k in (remap.keys() & dct.keys()):
+            kp = remap[k]
+            dct[kp] = dct.pop(k)
+        return dct
 
     class ParamParser(object):
 
         def __init__(self, request):
             self.request = request
+            self.remap = request._params_map
             self.service = request.service
             self.params = request.params
             self.options = request.options
 
-        def _default(self, k, v):
-            """Fallback parameter parser if no matching method exists."""
-
         def _finalize(self):
             """Finalize request parameters."""
+
+        def _default_parser(self, k, v):
+            """Default parameter parser."""
+            raise ValueError(f"unknown parameter: {k!r}")
 
 
 class RPCRequest(Request):
