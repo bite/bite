@@ -90,7 +90,7 @@ class MulticallIterator(object):
     """
 
     def __init__(self, results):
-        self.results = results
+        self.results = tuple(results)
         self.idx = 0
 
     def __iter__(self):
@@ -128,6 +128,7 @@ class MergedMulticall(RPCRequest):
 
     def __init__(self, reqs, *args, **kw):
         self.req_groups = []
+        self.reqs = reqs
 
         params = []
         for req in reqs:
@@ -138,6 +139,7 @@ class MergedMulticall(RPCRequest):
         super().__init__(*args, method='system.multicall', params=(params,), **kw)
 
     def parse(self, data):
-        i = MulticallIterator(data)
-        for length in self.req_groups:
-            yield islice(i, length)
+        start = 0
+        for i, length in enumerate(self.req_groups):
+            yield self.reqs[i].parse(islice(data, start, start + length))
+            start += length
