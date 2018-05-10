@@ -1,7 +1,7 @@
 from itertools import repeat, islice
 
 from . import Service
-from ._reqs import NullRequest, Request
+from ._reqs import Request
 from ..utils import nonstring_iterable
 
 
