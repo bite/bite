@@ -6,7 +6,8 @@ API docs:
 """
 
 from ._jsonrest import JsonREST
-from ._reqs import RESTRequest, OffsetPagedRequest, ParseRequest, req_cmd
+from ._reqs import OffsetPagedRequest, ParseRequest, req_cmd
+from ._rest import RESTRequest
 from ..exceptions import BiteError, RequestError
 from ..objects import Item
 

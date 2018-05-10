@@ -10,7 +10,8 @@ from itertools import chain
 from snakeoil.klass import aliased, alias
 
 from .. import Service
-from .._reqs import RPCRequest, Request, ParseRequest, NullRequest, req_cmd, generator
+from .._reqs import Request, ParseRequest, NullRequest, req_cmd, generator
+from .._rpc import Multicall, MergedMulticall, RPCRequest
 from ...exceptions import BiteError, RequestError
 from ...objects import Item, Comment, Attachment, Change
 from ...utils import dict2tuples
@@ -237,7 +238,8 @@ class _SearchRequest(RPCRequest, ParseRequest):
             self.options.append(f"{self.service.item.attributes[k]}: {', '.join(v)}")
 
 
-class GetItemRequest(RPCRequest):
+@req_cmd(Trac)
+class _GetItemRequest(Multicall):
     """Construct an item request."""
 
     def __init__(self, ids, service, **kw):
@@ -256,7 +258,8 @@ class GetItemRequest(RPCRequest):
                 self.service, id=id, created=created, modified=modified, **attrs)
 
 
-class _ChangelogRequest(Request):
+@req_cmd(Trac, name='_ChangelogRequest')
+class _ChangelogRequest(Multicall):
     """Construct a changelog request."""
 
     def __init__(self, service, ids=None, item_id=False, data=None, **kw):
@@ -281,7 +284,8 @@ class _ChangelogRequest(Request):
         return super().parse(data)
 
 
-class CommentsRequest(_ChangelogRequest):
+@req_cmd(Trac, cmd='comments')
+class _CommentsRequest(_ChangelogRequest):
     """Construct a comments request."""
 
     @generator
@@ -302,7 +306,8 @@ class CommentsRequest(_ChangelogRequest):
             yield tuple(l)
 
 
-class AttachmentsRequest(RPCRequest):
+@req_cmd(Trac, cmd='attachments')
+class _AttachmentsRequest(Multicall):
     """Construct an attachments request."""
 
     def __init__(self, ids, service, **kw):
@@ -324,7 +329,8 @@ class AttachmentsRequest(RPCRequest):
             yield tuple(l)
 
 
-class ChangesRequest(_ChangelogRequest):
+@req_cmd(Trac, cmd='changes')
+class _ChangesRequest(_ChangelogRequest):
     """Construct a changes request."""
 
     _skip_fields = {'comment', 'attachment'}
@@ -351,7 +357,8 @@ class ChangesRequest(_ChangelogRequest):
             yield tuple(l)
 
 
-class GetRequest(Request):
+@req_cmd(Trac, cmd='get')
+class _GetRequest(MergedMulticall):
     """Construct requests to retrieve all known data for given ticket IDs."""
 
     def __init__(self, ids, service, get_comments=False, get_attachments=False,

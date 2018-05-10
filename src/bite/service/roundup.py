@@ -12,8 +12,9 @@ import re
 from datetime import datetime
 from snakeoil.klass import aliased, alias
 
-from ._reqs import NullRequest, Request, RPCRequest, ParseRequest, req_cmd, generator
-from ._xmlrpc import Xmlrpc, XmlrpcError, Multicall
+from ._reqs import NullRequest, Request, ParseRequest, req_cmd, generator
+from ._rpc import Multicall, RPCRequest
+from ._xmlrpc import Xmlrpc, XmlrpcError
 from ..cache import Cache, csv2tuple
 from ..exceptions import RequestError, BiteError
 from ..objects import decompress, Item, Attachment, Comment
@@ -394,35 +395,28 @@ class _GetRequest(_GetItemRequest):
 
     def parse(self, data):
         issues = list(super().parse(data))
-        file_reqs = []
-        msg_reqs = []
+        reqs = []
 
         for issue in issues:
-            file_ids = issue.files
-            issue_files = []
-            if file_ids and self._get_attachments:
-                issue_files.append(self.service.AttachmentsRequest(attachment_ids=file_ids))
+            if issue.files and self._get_attachments:
+                reqs.append(
+                    self.service.AttachmentsRequest(attachment_ids=issue.files))
             else:
-                issue_files.append(NullRequest())
+                reqs.append(NullRequest())
 
-            msg_ids = issue.messages
-            issue_msgs = []
-            if msg_ids and self._get_comments:
-                issue_msgs.append(self.service.CommentsRequest(comment_ids=msg_ids))
+            if issue.messages and self._get_comments:
+                reqs.append(
+                    self.service.CommentsRequest(comment_ids=issue.messages))
             else:
-                issue_msgs.append(NullRequest())
+                reqs.append(NullRequest())
 
-            file_reqs.append(issue_files)
-            msg_reqs.append(issue_msgs)
-
-        attachments = self.service.send(file_reqs)
-        comments = self.service.send(msg_reqs)
+        issue_data = self.service.merged_multicall(reqs=reqs).send()
         # TODO: There doesn't appear to be a way to request issue changes via the API.
         # changes = self.service.ChangesRequest(ids=self.ids).send()
 
         for issue in issues:
-            issue.attachments = next(attachments)
-            issue.comments = next(comments)
+            issue.attachments = next(issue_data)
+            issue.comments = next(issue_data)
             issue.changes = ()
             yield issue
 

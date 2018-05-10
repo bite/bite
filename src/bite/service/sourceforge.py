@@ -14,10 +14,11 @@ from snakeoil.klass import aliased, alias
 
 from ._jsonrest import JsonREST
 from ._reqs import (
-    RESTRequest, NullRequest, Request, ParseRequest,
+    NullRequest, Request, ParseRequest,
     FlaggedPagedRequest, PagedRequest,
     req_cmd, generator,
 )
+from ._rest import RESTRequest
 from ..exceptions import BiteError, RequestError
 from ..objects import Item, Comment, Attachment, Change
 from ..utc import utc

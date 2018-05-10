@@ -1,10 +1,7 @@
 from functools import wraps, partial
-from urllib.parse import urlencode
 import re
 
 import requests
-
-from ..utils import dict2tuples
 
 
 def req_cmd(service_cls, name=None, cmd=None, obj_args=False):
@@ -388,62 +385,6 @@ class ParseRequest(Request):
 
         def _default_parser(self, k, v):
             """Default parameter parser."""
-
-
-class RPCRequest(Request):
-    """Construct an RPC request."""
-
-    def __init__(self, method, **kw):
-        super().__init__(method='POST', **kw)
-        self.method = method
-
-    def _finalize(self):
-        """Encode the data body of the request."""
-        super()._finalize()
-        params = self.params if self.params else None
-        self._req.data = self.service._encode_request(self.method, params)
-
-
-class RESTRequest(Request):
-    """Construct a REST request."""
-
-    def __init__(self, service, endpoint=None, method='GET', **kw):
-        self.method = method
-        if endpoint is None:
-            endpoint = service._base.rstrip('/')
-        elif endpoint.startswith('/'):
-            endpoint = f"{service._base.rstrip('/')}{endpoint}"
-        self.endpoint = endpoint
-        self.data = {}
-        super().__init__(service, method=method, **kw)
-
-    @property
-    def url(self):
-        """Construct a full resource URL with params encoded."""
-        params = list(dict2tuples(self.params))
-        params_str = f'?{urlencode(params)}' if params else ''
-        return f"{self.endpoint}{params_str}"
-
-    def params_to_data(self):
-        """Convert params to encoded request data."""
-        self.data.update(self.params)
-        self.params = {}
-
-    def _finalize(self):
-        """Set the request URL using the specified params and encode the data body."""
-        # inject auth params if available
-        super()._finalize()
-
-        # construct URL to resource with requested params
-        if self.method == 'GET':
-            self._req.url = self.url
-        else:
-            self._req.url = self.endpoint
-            self.params_to_data()
-
-        # encode additional params to data body
-        if self.data:
-            self._req.data = self.service._encode_request(self.data)
 
 
 class NullRequest(Request):

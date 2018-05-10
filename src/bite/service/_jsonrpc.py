@@ -1,4 +1,3 @@
-from itertools import repeat, islice
 try: import simplejson as json
 except ImportError: import json
 
@@ -6,15 +5,42 @@ from snakeoil.klass import steal_docs
 
 from . import Service
 from ._json import Json
-from ._reqs import RPCRequest
-from ..utils import nonstring_iterable
+from ._rpc import Rpc
 
 
-class Jsonrpc(Json):
+class MulticallIterator(object):
+    """Iterate over the results of a multicall."""
+
+    def __init__(self, results):
+        # TODO: refactor send/parsing to drop this hack
+        if isinstance(results, dict):
+            results = (results,)
+        self.results = tuple(results)
+        self.idx = 0
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        try:
+            item = self.results[self.idx]
+        except IndexError:
+            raise StopIteration
+
+        if isinstance(item, dict):
+            self.idx += 1
+            return item['result']
+        else:
+            raise TypeError(f"unexpected multicall result: {item!r}")
+
+
+class Jsonrpc(Json, Rpc):
     """Support generic JSON-RPC 1.0 services.
 
     Spec: http://www.jsonrpc.org/specification_v1
     """
+
+    _multicall_iter = MulticallIterator
 
     @staticmethod
     @steal_docs(Service)
@@ -49,48 +75,3 @@ class Jsonrpc(Json):
         else:
             # assume error object follows json-rpc 2.0 spec formatting
             self.handle_error(code=error['code'], msg=error['message'])
-
-    def multicall(self, *args, **kw):
-        return Multicall(service=self, *args, **kw)
-
-    def merged_multicall(self, reqs, *args, **kw):
-        return MergedMulticall(reqs=reqs, service=self, *args, **kw)
-
-
-class Multicall(RPCRequest):
-    """Construct a system.multicall request."""
-
-    def __init__(self, method, params, *args, **kw):
-        methods = repeat(method) if isinstance(method, str) else method
-        params = (tuple(x) if nonstring_iterable(x) else (x,) for x in params)
-        params = tuple({'method': m, 'params': x} for m, x in zip(methods, params))
-        super().__init__(*args, method='system.multicall', params=params, **kw)
-
-    def parse(self, data):
-        # TODO: refactor send/parsing to drop this hack
-        if isinstance(data, dict):
-            data = [data]
-
-        for x in data:
-            yield x['result']
-
-
-class MergedMulticall(RPCRequest):
-
-    def __init__(self, reqs, *args, **kw):
-        self.req_groups = []
-        self.reqs = reqs
-
-        params = []
-        for req in reqs:
-            params.extend(req.params)
-            self.req_groups.append(len(req.params))
-        params = tuple(params)
-
-        super().__init__(*args, method='system.multicall', params=params, **kw)
-
-    def parse(self, data):
-        start = 0
-        for i, length in enumerate(self.req_groups):
-            yield self.reqs[i].parse(islice(data, start, start + length))
-            start += length

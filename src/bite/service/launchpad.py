@@ -10,9 +10,10 @@ from snakeoil.klass import aliased, alias
 
 from ._jsonrest import JsonREST
 from ._reqs import (
-    RESTRequest, OffsetPagedRequest, Request, GetRequest, ParseRequest,
+    OffsetPagedRequest, Request, GetRequest, ParseRequest,
     req_cmd, generator,
 )
+from ._rest import RESTRequest
 from ..cache import Cache
 from ..exceptions import RequestError, BiteError
 from ..objects import Item, Attachment, Comment, Change

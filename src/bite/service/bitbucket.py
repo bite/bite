@@ -11,8 +11,9 @@ Updates:
 from dateutil.parser import parse as dateparse
 
 from ._jsonrest import JsonREST
+from ._rest import RESTRequest
 from ._reqs import (
-    RESTRequest, LinkPagedRequest, Request, GetRequest, ParseRequest,
+    LinkPagedRequest, Request, GetRequest, ParseRequest,
     generator, req_cmd,
 )
 from ..exceptions import BiteError, RequestError

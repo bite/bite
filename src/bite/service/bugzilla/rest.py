@@ -10,7 +10,8 @@ from .reqs import (
     ExtensionsRequest, VersionRequest, FieldsRequest, ProductsRequest, UsersRequest,
 )
 from .._jsonrest import JsonREST
-from .._reqs import RESTRequest, GetRequest, req_cmd
+from .._reqs import GetRequest, req_cmd
+from .._rest import RESTRequest
 
 
 class _BugzillaRestBase(Bugzilla5_0, JsonREST):
