@@ -378,15 +378,15 @@ class ParseRequest(Request):
 class RPCRequest(Request):
     """Construct an RPC request."""
 
-    def __init__(self, command, **kw):
+    def __init__(self, method, **kw):
         super().__init__(method='POST', **kw)
-        self.command = command
+        self.method = method
 
     def _finalize(self):
         """Encode the data body of the request."""
         super()._finalize()
         params = self.params if self.params else None
-        self._req.data = self.service._encode_request(self.command, params)
+        self._req.data = self.service._encode_request(self.method, params)
 
 
 class RESTRequest(Request):

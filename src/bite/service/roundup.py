@@ -420,4 +420,4 @@ class _SchemaRequest(RPCRequest):
     """Construct a schema request."""
 
     def __init__(self, *args, **kw):
-        super().__init__(*args, command='schema', **kw)
+        super().__init__(*args, method='schema', **kw)

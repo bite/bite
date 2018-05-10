@@ -118,7 +118,7 @@ class Multicall(RPCRequest):
         methods = repeat(method) if isinstance(method, str) else method
         params = (tuple(x) if nonstring_iterable(x) else (x,) for x in params)
         params = tuple({'methodName': m, 'params': x} for m, x in zip(methods, params))
-        super().__init__(*args, command='system.multicall', params=(params,), **kw)
+        super().__init__(*args, method='system.multicall', params=(params,), **kw)
 
     def parse(self, data):
         return MulticallIterator(data)
@@ -135,7 +135,7 @@ class MergedMulticall(RPCRequest):
             self.req_groups.append(len(req.params[0]))
         params = tuple(params)
 
-        super().__init__(*args, command='system.multicall', params=(params,), **kw)
+        super().__init__(*args, method='system.multicall', params=(params,), **kw)
 
     def parse(self, data):
         i = MulticallIterator(data)

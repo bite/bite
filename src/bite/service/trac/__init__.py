@@ -208,7 +208,7 @@ class _VersionRequest(RPCRequest):
     """Construct a version request."""
 
     def __init__(self, *args, **kw):
-        super().__init__(command='system.getAPIVersion', *args, **kw)
+        super().__init__(method='system.getAPIVersion', *args, **kw)
 
     def parse(self, data):
         return '.'.join(map(str, data))
