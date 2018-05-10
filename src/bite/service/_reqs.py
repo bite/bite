@@ -442,6 +442,9 @@ class NullRequest(Request):
     def __bool__(self):
         return False
 
+    def __str__(self):
+        return repr(self)
+
     def parse(self, data):
         if not self._generator:
             return None
