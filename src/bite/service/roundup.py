@@ -232,7 +232,7 @@ class Roundup(Xmlrpc):
         return data
 
 
-@req_cmd(Roundup, 'search')
+@req_cmd(Roundup, cmd='search')
 class _SearchRequest(RPCRequest, ParseRequest):
     """Construct a search request."""
 
@@ -280,8 +280,8 @@ class _GetItemRequest(Multicall):
                 for i, issue in enumerate(issues))
 
 
-@req_cmd(Roundup, 'get')
-class _GetRequest(Request):
+@req_cmd(Roundup, cmd='get')
+class _GetRequest(_GetItemRequest):
     """Construct a get request."""
 
     def __init__(self, ids, fields=None, get_comments=False,
@@ -348,9 +348,9 @@ class _GetRequest(Request):
                 for i, issue in enumerate(issues))
 
 
-@req_cmd(Roundup, 'attachments')
-class _AttachmentsRequest(Request):
-    def __init__(self, ids=None, attachment_ids=None, get_data=False, **kw):
+@req_cmd(Roundup, cmd='attachments')
+class _AttachmentsRequest(Multicall):
+    def __init__(self, service, ids=None, attachment_ids=None, get_data=False, **kw):
         """Construct an attachments request."""
         super().__init__(**kw)
         # TODO: add support for specifying issue IDs
@@ -383,9 +383,9 @@ class _AttachmentsRequest(Request):
                 for i, d in enumerate(data)]
 
 
-@req_cmd(Roundup, 'comments')
-class _CommentsRequest(Request):
-    def __init__(self, ids=None, comment_ids=None, created=None, fields=None, **kw):
+@req_cmd(Roundup, cmd='comments')
+class _CommentsRequest(Multicall):
+    def __init__(self, service, ids=None, comment_ids=None, created=None, fields=(), **kw):
         """Construct a comments request."""
         super().__init__(**kw)
         # TODO: add support for specifying issue IDs

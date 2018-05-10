@@ -43,12 +43,12 @@ class Bugzilla5_2Rest(Bugzilla5_2, Bugzilla5_0Rest):
     _service = 'bugzilla5.2-rest'
 
 
-@req_cmd(Bugzilla5_0Rest, 'get')
+@req_cmd(Bugzilla5_0Rest, cmd='get')
 class _GetRequest(GetRequest):
     """Construct a get request."""
 
 
-@req_cmd(Bugzilla5_0Rest, 'modify', obj_args=True)
+@req_cmd(Bugzilla5_0Rest, cmd='modify', obj_args=True)
 class _ModifyRequest(RESTRequest, ModifyRequest):
     def __init__(self, *args, **kw):
         """Construct a modify request."""
@@ -63,7 +63,7 @@ class _ModifyRequest(RESTRequest, ModifyRequest):
             del self.data['ids']
 
 
-@req_cmd(Bugzilla5_0Rest, 'attach', obj_args=True)
+@req_cmd(Bugzilla5_0Rest, cmd='attach', obj_args=True)
 class _AttachRequest(RESTRequest, AttachRequest):
     def __init__(self, *args, **kw):
         """Construct a modify request."""
@@ -78,21 +78,21 @@ class _AttachRequest(RESTRequest, AttachRequest):
             del self.data['ids']
 
 
-@req_cmd(Bugzilla5_0Rest, 'create', obj_args=True)
+@req_cmd(Bugzilla5_0Rest, cmd='create', obj_args=True)
 class _CreateRequest(RESTRequest, CreateRequest):
     def __init__(self, *args, **kw):
         """Construct a create request."""
         super().__init__(endpoint='/bug', method='POST', *args, **kw)
 
 
-@req_cmd(Bugzilla5_0Rest, 'search')
+@req_cmd(Bugzilla5_0Rest, cmd='search')
 class _SearchRequest5_0(RESTRequest, SearchRequest5_0):
     def __init__(self, *args, **kw):
         """Construct a search request."""
         super().__init__(endpoint='/bug', *args, **kw)
 
 
-@req_cmd(Bugzilla5_0Rest, 'changes')
+@req_cmd(Bugzilla5_0Rest, cmd='changes')
 class _ChangesRequest(RESTRequest, ChangesRequest):
     def __init__(self, *args, **kw):
         """Construct a changes request."""
@@ -101,7 +101,7 @@ class _ChangesRequest(RESTRequest, ChangesRequest):
         self.params['ids'] = self.params['ids'][1:]
 
 
-@req_cmd(Bugzilla5_0Rest, 'comments')
+@req_cmd(Bugzilla5_0Rest, cmd='comments')
 class _CommentsRequest(RESTRequest, CommentsRequest):
     def __init__(self, *args, **kw):
         """Construct a comments request."""
@@ -110,7 +110,7 @@ class _CommentsRequest(RESTRequest, CommentsRequest):
         self.params['ids'] = self.params['ids'][1:]
 
 
-@req_cmd(Bugzilla5_0Rest, 'attachments')
+@req_cmd(Bugzilla5_0Rest, cmd='attachments')
 class _AttachmentsRequest(RESTRequest, AttachmentsRequest):
     def __init__(self, *args, **kw):
         """Construct an attachments request."""
@@ -139,21 +139,21 @@ class _LoginRequest(RESTRequest, LoginRequest):
         super().__init__(endpoint='/login', *args, **kw)
 
 
-@req_cmd(Bugzilla5_0Rest, 'extensions')
+@req_cmd(Bugzilla5_0Rest, cmd='extensions')
 class _ExtensionsRequest(RESTRequest, ExtensionsRequest):
     def __init__(self, service):
         """Construct an extensions request."""
         super().__init__(service=service, endpoint='/extensions')
 
 
-@req_cmd(Bugzilla5_0Rest, 'version')
+@req_cmd(Bugzilla5_0Rest, cmd='version')
 class _VersionRequest(RESTRequest, VersionRequest):
     def __init__(self, service):
         """Construct a version request."""
         super().__init__(service=service, endpoint='/version')
 
 
-@req_cmd(Bugzilla5_0Rest, 'fields')
+@req_cmd(Bugzilla5_0Rest, cmd='fields')
 class _FieldsRequest(RESTRequest, FieldsRequest):
     def __init__(self, *args, **kw):
         super().__init__(endpoint='/field/bug', *args, **kw)
@@ -164,13 +164,13 @@ class _FieldsRequest(RESTRequest, FieldsRequest):
             self.params = dict(params)
 
 
-@req_cmd(Bugzilla5_0Rest, 'products')
+@req_cmd(Bugzilla5_0Rest, cmd='products')
 class _ProductsRequest(RESTRequest, ProductsRequest):
     def __init__(self, *args, **kw):
         super().__init__(endpoint='/product', *args, **kw)
 
 
-@req_cmd(Bugzilla5_0Rest, 'users')
+@req_cmd(Bugzilla5_0Rest, cmd='users')
 class _UsersRequest(RESTRequest, UsersRequest):
     def __init__(self, *args, **kw):
         super().__init__(endpoint='/user', *args, **kw)

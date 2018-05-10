@@ -26,74 +26,74 @@ class _LoginRequest(RPCRequest, LoginRequest):
         super().__init__(command='User.login', *args, **kw)
 
 
-@req_cmd(Bugzilla4_4Rpc, 'users')
+@req_cmd(Bugzilla4_4Rpc, cmd='users')
 class _UsersRequest(RPCRequest, UsersRequest):
     def __init__(self, *args, **kw):
         super().__init__(command='User.get', *args, **kw)
 
 
-@req_cmd(Bugzilla4_4Rpc, 'fields')
+@req_cmd(Bugzilla4_4Rpc, cmd='fields')
 class _FieldsRequest(RPCRequest, FieldsRequest):
     def __init__(self, *args, **kw):
         super().__init__(command='Bug.fields', *args, **kw)
 
 
-@req_cmd(Bugzilla4_4Rpc, 'products')
+@req_cmd(Bugzilla4_4Rpc, cmd='products')
 class _ProductsRequest(RPCRequest, ProductsRequest):
     def __init__(self, *args, **kw):
         super().__init__(command='Product.get', *args, **kw)
 
 
-@req_cmd(Bugzilla4_4Rpc, 'extensions')
+@req_cmd(Bugzilla4_4Rpc, cmd='extensions')
 class _ExtensionsRequest(RPCRequest, ExtensionsRequest):
     def __init__(self, *args, **kw):
         """Construct an extensions request."""
         super().__init__(command='Bugzilla.extensions', *args, **kw)
 
 
-@req_cmd(Bugzilla4_4Rpc, 'version')
+@req_cmd(Bugzilla4_4Rpc, cmd='version')
 class _VersionRequest(RPCRequest, VersionRequest):
     def __init__(self, *args, **kw):
         """Construct a version request."""
         super().__init__(command='Bugzilla.version', *args, **kw)
 
 
-@req_cmd(Bugzilla4_4Rpc, 'get')
+@req_cmd(Bugzilla4_4Rpc, cmd='get')
 class _GetRequest(GetRequest):
     def __init__(self, *args, **kw):
         """Construct a get request."""
         super().__init__(*args, **kw)
 
 
-@req_cmd(Bugzilla4_4Rpc, 'search')
+@req_cmd(Bugzilla4_4Rpc, cmd='search')
 class _SearchRequest4_4(RPCRequest, SearchRequest4_4):
     def __init__(self, *args, **kw):
         """Construct a search request."""
         super().__init__(command='Bug.search', *args, **kw)
 
 
-@req_cmd(Bugzilla5_0Rpc, 'search')
+@req_cmd(Bugzilla5_0Rpc, cmd='search')
 class _SearchRequest5_0(RPCRequest, SearchRequest5_0):
     def __init__(self, *args, **kw):
         """Construct a search request."""
         super().__init__(command='Bug.search', *args, **kw)
 
 
-@req_cmd(Bugzilla4_4Rpc, 'changes')
+@req_cmd(Bugzilla4_4Rpc, cmd='changes')
 class _ChangesRequest(RPCRequest, ChangesRequest):
     def __init__(self, *args, **kw):
         """Construct a changes request."""
         super().__init__(command='Bug.history', *args, **kw)
 
 
-@req_cmd(Bugzilla4_4Rpc, 'comments')
+@req_cmd(Bugzilla4_4Rpc, cmd='comments')
 class _CommentsRequest(RPCRequest, CommentsRequest):
     def __init__(self, *args, **kw):
         """Construct a comments request."""
         super().__init__(command='Bug.comments', *args, **kw)
 
 
-@req_cmd(Bugzilla4_4Rpc, 'attachments')
+@req_cmd(Bugzilla4_4Rpc, cmd='attachments')
 class _AttachmentsRequest(RPCRequest, AttachmentsRequest):
     def __init__(self, *args, **kw):
         """Construct an attachments request."""
@@ -109,21 +109,21 @@ class _GetItemRequest(RPCRequest, GetItemRequest):
         self.params['permissive'] = True
 
 
-@req_cmd(Bugzilla4_4Rpc, 'modify', obj_args=True)
+@req_cmd(Bugzilla4_4Rpc, cmd='modify', obj_args=True)
 class _ModifyRequest(RPCRequest, ModifyRequest):
     def __init__(self, *args, **kw):
         """Construct a modify request."""
         super().__init__(command='Bug.update', *args, **kw)
 
 
-@req_cmd(Bugzilla4_4Rpc, 'attach', obj_args=True)
+@req_cmd(Bugzilla4_4Rpc, cmd='attach', obj_args=True)
 class _AttachRequest(RPCRequest, AttachRequest):
     def __init__(self, *args, **kw):
         """Construct an attach request."""
         super().__init__(command='Bug.add_attachment', *args, **kw)
 
 
-@req_cmd(Bugzilla4_4Rpc, 'create', obj_args=True)
+@req_cmd(Bugzilla4_4Rpc, cmd='create', obj_args=True)
 class _CreateRequest(RPCRequest, CreateRequest):
     def __init__(self, *args, **kw):
         """Construct a create request."""

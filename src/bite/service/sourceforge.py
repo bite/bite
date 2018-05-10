@@ -189,7 +189,7 @@ class SourceforgeFlaggedPagedRequest(RESTRequest, FlaggedPagedRequest):
     _size_key = 'limit'
 
 
-@req_cmd(Sourceforge, 'search')
+@req_cmd(Sourceforge, cmd='search')
 class _SearchRequest(SourceforgePagedRequest, ParseRequest):
     """Construct a search request.
 
@@ -378,7 +378,7 @@ class _ThreadRequest(Request):
                     self._consumed = True
 
 
-@req_cmd(Sourceforge, 'comments')
+@req_cmd(Sourceforge, cmd='comments')
 class _CommentsRequest(_ThreadRequest):
     """Construct a comments request."""
 
@@ -401,7 +401,7 @@ class _CommentsRequest(_ThreadRequest):
             yield tuple(l)
 
 
-@req_cmd(Sourceforge, 'attachments')
+@req_cmd(Sourceforge, cmd='attachments')
 class _AttachmentsRequest(_ThreadRequest):
     """Construct an attachments request."""
 
@@ -420,7 +420,7 @@ class _AttachmentsRequest(_ThreadRequest):
             yield tuple(l)
 
 
-@req_cmd(Sourceforge, 'changes')
+@req_cmd(Sourceforge, cmd='changes')
 class _ChangesRequest(_ThreadRequest):
     """Construct a changes request."""
 
@@ -463,7 +463,7 @@ class _ChangesRequest(_ThreadRequest):
             yield tuple(l)
 
 
-@req_cmd(Sourceforge, 'get')
+@req_cmd(Sourceforge, cmd='get')
 class _GetRequest(_GetItemRequest):
     """Construct requests to retrieve all known data for given issue IDs."""
 

@@ -171,7 +171,7 @@ class BitbucketPagedRequest(RESTRequest, LinkPagedRequest):
     _total_key = 'size'
 
 
-@req_cmd(Bitbucket, 'search')
+@req_cmd(Bitbucket, cmd='search')
 class _SearchRequest(BitbucketPagedRequest, ParseRequest):
     """Construct a search request."""
 
@@ -278,7 +278,7 @@ class _GetItemRequest(Request):
             yield self.service.item(self.service, issue, get_desc=self._get_desc)
 
 
-@req_cmd(Bitbucket, 'comments')
+@req_cmd(Bitbucket, cmd='comments')
 class _CommentsRequest(Request):
     """Construct a comments request."""
 
@@ -312,7 +312,7 @@ class _CommentsRequest(Request):
             yield tuple(l)
 
 
-@req_cmd(Bitbucket, 'attachments')
+@req_cmd(Bitbucket, cmd='attachments')
 class _AttachmentsRequest(Request):
     """Construct an attachments request."""
 
@@ -339,7 +339,7 @@ class _AttachmentsRequest(Request):
                 for a in attachments)
 
 
-@req_cmd(Bitbucket, 'changes')
+@req_cmd(Bitbucket, cmd='changes')
 class _ChangesRequest(Request):
     """Construct a changes request."""
 
@@ -364,7 +364,7 @@ class _ChangesRequest(Request):
                    for j, c in enumerate(changes))
 
 
-@req_cmd(Bitbucket, 'get')
+@req_cmd(Bitbucket, cmd='get')
 class _GetRequest(GetRequest):
     """Construct requests to retrieve all known data for given issue IDs."""
 

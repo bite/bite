@@ -122,7 +122,7 @@ class LaunchpadPagedRequest(RESTRequest, OffsetPagedRequest):
     _total_key = 'total_size'
 
 
-@req_cmd(Launchpad, 'search')
+@req_cmd(Launchpad, cmd='search')
 class _SearchRequest(LaunchpadPagedRequest, ParseRequest):
     """Construct a search request.
 
@@ -318,7 +318,7 @@ class _GetItemRequest(Request):
             yield self.service.item(service=self.service, **bug)
 
 
-@req_cmd(Launchpad, 'comments')
+@req_cmd(Launchpad, cmd='comments')
 class _CommentsRequest(Request):
     """Construct a comments request."""
 
@@ -365,7 +365,7 @@ class _CommentsRequest(Request):
             yield tuple(l)
 
 
-@req_cmd(Launchpad, 'attachments')
+@req_cmd(Launchpad, cmd='attachments')
 class _AttachmentsRequest(Request):
     """Construct an attachments request."""
 
@@ -389,6 +389,6 @@ class _AttachmentsRequest(Request):
             yield tuple(self.service.attachment(**a) for a in attachments)
 
 
-@req_cmd(Launchpad, 'get')
+@req_cmd(Launchpad, cmd='get')
 class _GetRequest(GetRequest):
     pass

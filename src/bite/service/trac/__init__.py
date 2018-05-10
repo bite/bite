@@ -71,7 +71,7 @@ class Trac(Service):
         raise TracError(msg=msg, code=code)
 
 
-@req_cmd(Trac, 'search')
+@req_cmd(Trac, cmd='search')
 class _SearchRequest(RPCRequest, ParseRequest):
     """Construct a search request.
 

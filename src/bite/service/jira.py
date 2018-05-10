@@ -94,7 +94,7 @@ class JiraPagedRequest(RESTRequest, OffsetPagedRequest):
     _total_key = 'total'
 
 
-@req_cmd(Jira, 'search')
+@req_cmd(Jira, cmd='search')
 class _SearchRequest(JiraPagedRequest, ParseRequest):
     """Construct a search request."""
 

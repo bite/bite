@@ -68,7 +68,7 @@ class RedminePagedRequest(RESTRequest, OffsetPagedRequest):
     _total_key = 'total_count'
 
 
-@req_cmd(Redmine, 'search')
+@req_cmd(Redmine, cmd='search')
 class _SearchRequest(RedminePagedRequest, ParseRequest):
     """Construct a search request.
 

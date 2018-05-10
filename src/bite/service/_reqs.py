@@ -1,4 +1,4 @@
-from functools import wraps
+from functools import wraps, partial
 from urllib.parse import urlencode
 import re
 
@@ -7,15 +7,17 @@ import requests
 from ..utils import dict2tuples
 
 
-def req_cmd(service_cls, cmd_name=None, obj_args=False):
+def req_cmd(service_cls, name=None, cmd=None, obj_args=False):
     """Register service request and command functions."""
-    def wrapped(cls, *args, **kwds):
+    def wrapped(req_name, cls, *args, **kwds):
         req_func = lambda self, *args, **kw: cls(*args, service=self, **kw)
-        name = re.match(r'^_?([a-zA-Z]+).*$', cls.__name__)
-        if not name:
-            raise ValueError(f'invalid request name: {cls.__name__!r}')
-        setattr(service_cls, name.group(1), req_func)
-        if cmd_name is not None:
+        if req_name is None:
+            req_name = re.match(r'^_?([a-zA-Z]+).*$', cls.__name__)
+            if not req_name:
+                raise ValueError(f'invalid request name: {cls.__name__!r}')
+            req_name = req_name.group(1)
+        setattr(service_cls, req_name, req_func)
+        if cmd is not None:
             send = getattr(service_cls, 'send')
             # TODO: figure out a better funcion overloading method
             def send_func(self, *args, **kw):
@@ -24,9 +26,9 @@ def req_cmd(service_cls, cmd_name=None, obj_args=False):
                     reqs = tuple(cls(service=self, **item) for item in args)
                     return send(self, Request(service=self, reqs=reqs))
                 return send(self, cls(*args, service=self, **kw))
-            setattr(service_cls, cmd_name, send_func)
+            setattr(service_cls, cmd, send_func)
         return cls
-    return wrapped
+    return partial(wrapped, name)
 
 
 def generator(func):
