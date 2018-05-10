@@ -10,12 +10,12 @@ from itertools import chain, repeat
 import re
 
 from datetime import datetime
-from snakeoil.sequences import iflatten_instance
+from snakeoil.klass import aliased, alias
 
 from ._reqs import NullRequest, Request, RPCRequest, ParseRequest, req_cmd, generator
 from ._xmlrpc import Xmlrpc, XmlrpcError, Multicall
 from ..cache import Cache, csv2tuple
-from ..exceptions import AuthError, RequestError, ParsingError
+from ..exceptions import RequestError, BiteError
 from ..objects import decompress, Item, Attachment, Comment
 from ..utc import utc
 
@@ -236,26 +236,107 @@ class Roundup(Xmlrpc):
 class _SearchRequest(RPCRequest, ParseRequest):
     """Construct a search request."""
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, command='filter', **kw)
+    # map from standardized kwargs name to expected service parameter name
+    _params_map = {
+        'created': 'creation',
+        'modified': 'activity',
+    }
+
+    def __init__(self, *args, fields=None, **kw):
+        super().__init__(*args, method='filter', **kw)
+
+        # limit fields by default to decrease requested data size and speed up response
+        if fields is None:
+            fields = ['id', 'assignee', 'title']
+        else:
+            unknown_fields = set(fields).difference(self.service.item.attributes.keys())
+            if unknown_fields:
+                raise BiteError(f"unknown fields: {', '.join(unknown_fields)}")
+            self.options.append(f"Fields: {' '.join(fields)}")
+        self.fields = fields
 
     def parse(self, data):
         # Roundup search requests return a list of matching IDs that we resubmit
         # via a multicall to grab ticket data if any matches exist.
         if data:
-            issues = self.service.GetItemRequest(ids=data).send()
+            issues = self.service.GetItemRequest(ids=data, fields=self.fields).send()
             yield from issues
 
+    @aliased
     class ParamParser(ParseRequest.ParamParser):
+
+        # map of allowed sorting input values to service parameters
+        _sorting_map = {
+            'assignee': 'assignee',
+            'id': 'id',
+            'creator': 'creator',
+            'created': 'creation',
+            'modified': 'activity',
+            'modified-by': 'actor',
+            'components': 'components',
+            'depends': 'dependencies',
+            'keywords': 'keywords',
+            'comments': 'message_count',
+            'cc': 'nosy_count',
+            'priority': 'priority',
+            'prs': 'pull_requests',
+            'resolution': 'resolution',
+            'severity': 'severity',
+            'stage': 'stage',
+            'status': 'status',
+            'title': 'title',
+            'type': 'type',
+        }
+
+        def __init__(self, *args, **kw):
+            super().__init__(*args, **kw)
+            self._sort = None
 
         def _finalize(self, **kw):
             if not self.params:
                 raise BiteError('no supported search terms or options specified')
-            return 'issue', None, self.params
+
+            # default to sorting ascending by ID
+            sort = self._sort if self._sort is not None else [('+', 'id')]
+
+            # default to showing issues that aren't closed
+            # TODO: use service cache with status names here
+            if 'status' not in self.params:
+                cached_statuses = self.service.cache['status']
+                if cached_statuses:
+                    open_statuses = list(
+                        i + 1 for i, x in enumerate(cached_statuses) if x != 'closed')
+                    self.params['status'] = open_statuses
+
+            return 'issue', None, self.params, sort
 
         def terms(self, k, v):
             self.params['title'] = v
             self.options.append(f"Summary: {', '.join(v)}")
+
+        @alias('modified')
+        def created(self, k, v):
+            self.params[k] = f"{v.strftime('%Y-%m-%d.%H:%M:%S')};."
+            self.options.append(f'{k.capitalize()}: {v} (since {v.isoformat()})')
+
+        def sort(self, k, v):
+            sorting_terms = []
+            for sort in v:
+                if sort[0] == '-':
+                    key = sort[1:]
+                    order = '-'
+                else:
+                    key = sort
+                    order = '+'
+                try:
+                    order_var = self._sorting_map[key]
+                except KeyError:
+                    choices = ', '.join(sorted(self._sorting_map.keys()))
+                    raise BiteError(
+                        f'unable to sort by: {key!r} (available choices: {choices}')
+                sorting_terms.append((order, order_var))
+            self._sort = sorting_terms
+            self.options.append(f"Sort order: {', '.join(v)}")
 
 
 @req_cmd(Roundup)

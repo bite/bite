@@ -10,6 +10,7 @@ from itertools import chain
 import re
 
 from dateutil.parser import parse as dateparse
+from snakeoil.klass import aliased, alias
 
 from ._jsonrest import JsonREST
 from ._reqs import (
@@ -199,6 +200,14 @@ class _SearchRequest(SourceforgePagedRequest, ParseRequest):
         http://yonik.com/solr/
     """
 
+    # map from standardized kwargs name to expected service parameter name
+    _params_map = {
+        'created': 'created_date',
+        'modified': 'mod_date',
+        'creator': 'reported_by',
+        'assignee': 'assigned_to',
+    }
+
     def __init__(self, *args, **kw):
         super().__init__(*args, endpoint='/search', **kw)
 
@@ -206,12 +215,13 @@ class _SearchRequest(SourceforgePagedRequest, ParseRequest):
         super().parse(data)
         tickets = data['tickets']
         for ticket in tickets:
-            yield self.service.item(self.service, ticket)
+            yield self.service.item(self.service, **ticket)
 
+    @aliased
     class ParamParser(ParseRequest.ParamParser):
 
-        # Map of allowed sorting input values to service parameters.
-        sorting_map = {
+        # map of allowed sorting input values to service parameters
+        _sorting_map = {
             'assignee': 'assigned_to_s',
             'id': 'ticket_num_i',
             'title': 'snippet_s',
@@ -287,27 +297,27 @@ class _SearchRequest(SourceforgePagedRequest, ParseRequest):
                     key = sort
                     order = 'asc'
                 try:
-                    order_var = self.sorting_map[key]
+                    order_var = self._sorting_map[key]
                 except KeyError:
-                    choices = ', '.join(sorted(self.sorting_map.keys()))
+                    choices = ', '.join(sorted(self._sorting_map.keys()))
                     raise BiteError(
                         f'unable to sort by: {key!r} (available choices: {choices}')
                 sorting_terms.append(f'{order_var} {order}')
-            self.params['sort'] = ','.join(sorting_terms)
+            self.params[k] = ','.join(sorting_terms)
             self.options.append(f"Sort order: {', '.join(v)}")
 
-        def created_date(self, k, v):
-            self.query[k] = f'{k}:[{v.utcformat()} TO NOW]'
-            self.options.append(f'{self.service.item.attributes[k]}: {v} (since {v.isoformat()})')
-        mod_date = created_date
+        @alias('modified')
+        def created(self, k, v):
+            self.query[k] = f'{self.remap[k]}:[{v.utcformat()} TO NOW]'
+            self.options.append(f'{k.capitalize()}: {v} (since {v.isoformat()})')
 
-        def assigned_to(self, k, v):
+        @alias('assignee')
+        def creator(self, k, v):
             or_terms = [x.replace('"', '\\"') for x in v]
-            or_search_terms = [f'{k}:"{x}"' for x in or_terms]
+            or_search_terms = [f'{self.remap[k]}:"{x}"' for x in or_terms]
             or_display_terms = [f'"{x}"' for x in or_terms]
             self.query[k] = f"({' OR '.join(or_search_terms)})"
-            self.options.append(f"{self.service.item.attributes[k]}: {', '.join(or_display_terms)}")
-        reported_by = assigned_to
+            self.options.append(f"{k.capitalize()}: {', '.join(or_display_terms)}")
 
 
 @req_cmd(Sourceforge)

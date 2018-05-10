@@ -23,7 +23,7 @@ class Search(args.Search):
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
         self.opts.add_argument(
-            '--sort', dest='order', metavar='TERM',
+            '--sort', metavar='TERM',
             help='sorting order for search query',
             docs="""
                 Requested sorting order for the given search query.

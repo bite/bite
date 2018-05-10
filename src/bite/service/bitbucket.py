@@ -187,7 +187,7 @@ class _SearchRequest(BitbucketPagedRequest, ParseRequest):
     class ParamParser(ParseRequest.ParamParser):
 
         # Map of allowed sorting input values to service parameters.
-        sorting_map = {
+        _sorting_map = {
             'assignee': 'assignee',
             'id': 'id',
             'title': 'title',
@@ -206,13 +206,13 @@ class _SearchRequest(BitbucketPagedRequest, ParseRequest):
 
         def __init__(self, request):
             super().__init__(request)
-            self.query = []
+            self.query = {}
 
         def _finalize(self, **kw):
             if not self.query:
                 raise BiteError('no supported search terms or options specified')
 
-            self.params['q'] = ' AND '.join(self.query)
+            self.params['q'] = ' AND '.join(self.query.values())
 
             # sort ascending by issue ID by default
             if 'sort' not in self.params:
@@ -231,7 +231,7 @@ class _SearchRequest(BitbucketPagedRequest, ParseRequest):
                 else:
                     or_queries.append(or_search_terms[0])
                     display_terms.append(or_display_terms[0])
-            self.query.append(f"{' AND '.join(or_queries)}")
+            self.query['summary'] = f"{' AND '.join(or_queries)}"
             self.options.append(f"Summary: {' AND '.join(display_terms)}")
 
         def sort(self, k, v):
@@ -242,9 +242,9 @@ class _SearchRequest(BitbucketPagedRequest, ParseRequest):
                 key = v
                 inverse = ''
             try:
-                order_var = self.sorting_map[key]
+                order_var = self._sorting_map[key]
             except KeyError:
-                choices = ', '.join(sorted(self.sorting_map.keys()))
+                choices = ', '.join(sorted(self._sorting_map.keys()))
                 raise BiteError(
                     f'unable to sort by: {key!r} (available choices: {choices}')
             self.params['sort'] = f'{inverse}{order_var}'

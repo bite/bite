@@ -6,6 +6,7 @@ API docs:
 """
 
 from dateutil.parser import parse as dateparse
+from snakeoil.klass import aliased, alias
 
 from ._jsonrest import JsonREST
 from ._reqs import (
@@ -141,11 +142,12 @@ class _SearchRequest(LaunchpadPagedRequest, ParseRequest):
             raise LaunchpadError(msg=e.text, code=e.code)
         raise e
 
+    @aliased
     class ParamParser(ParseRequest.ParamParser):
 
         # Map of allowed sorting input values to service parameters determined by
         # looking at available values on the web interface.
-        sorting_map = {
+        _sorting_map = {
             'importance': 'importance',
             'status': 'status',
             'info-type': 'information_type',
@@ -164,7 +166,7 @@ class _SearchRequest(LaunchpadPagedRequest, ParseRequest):
         # Map of allowed status input values to launchpad parameters determined by
         # submitting an invalid value which returns an error message listing the
         # valid choices.
-        status_map = {
+        _status_map = {
             'new': 'New',
             'incomplete': 'Incomplete',
             'opinion': 'Opinion',
@@ -183,7 +185,7 @@ class _SearchRequest(LaunchpadPagedRequest, ParseRequest):
         # Map of allowed importance input values to launchpad parameters determined by
         # submitting an invalid value which returns an error message listing the
         # valid choices.
-        importance_map = {
+        _importance_map = {
             'unknown': 'Unknown',
             'undecided': 'Undecided',
             'low': 'Low',
@@ -193,10 +195,18 @@ class _SearchRequest(LaunchpadPagedRequest, ParseRequest):
             'wishlist': 'Wishlist',
         }
 
+        def __init__(self, *args, **kw):
+            super().__init__(*args, **kw)
+            self._sort = None
+
         def _finalize(self, **kw):
             if not self.params:
                 raise BiteError('no supported search terms or options specified')
 
+            # default to sorting ascending by ID
+            self.params['order_by'] = self._sort if self._sort is not None else ['id']
+
+            # launchpad operation flag for searching
             self.params['ws.op'] = 'searchTasks'
 
         def terms(self, k, v):
@@ -204,6 +214,7 @@ class _SearchRequest(LaunchpadPagedRequest, ParseRequest):
             self.params['search_text'] = ' OR '.join(v)
             self.options.append(f"Summary: {', '.join(map(str, v))}")
 
+        @alias('bug_commenter', 'bug_reporter', 'bug_subscriber')
         def owner(self, k, v):
             # TODO: validate user exists
             # invalid users return HTTP Error 400
@@ -212,18 +223,17 @@ class _SearchRequest(LaunchpadPagedRequest, ParseRequest):
             # issue as well.
             self.params[k] = f"{self.service.base}/~{v}"
             self.options.append(f"{self.service.item.attributes[k]}: {v}")
-        bug_commenter, bug_reporter, bug_subscriber = [owner] * 3
 
+        @alias('modified_since')
         def created_since(self, k, v):
             self.params[k] = v.isoformat()
             self.options.append(f'{self.service.item.attributes[k]}: {v} (since {v!r} UTC)')
-        modified_since = created_since
 
+        @alias('has_patch')
         def has_cve(self, k, v):
             # launchpad is particular about the boolean values it receives
             self.params[k] = str(v).lower()
             self.options.append(f"{self.service.item.attributes[k]}: {v}")
-        has_patch = has_cve
 
         def omit_duplicates(self, k, v):
             # launchpad is particular about the boolean values it receives
@@ -239,9 +249,9 @@ class _SearchRequest(LaunchpadPagedRequest, ParseRequest):
             importances = []
             for importance in v:
                 try:
-                    importance_var = self.importance_map[importance]
+                    importance_var = self._importance_map[importance]
                 except KeyError:
-                    choices = ', '.join(sorted(self.importance_map.keys()))
+                    choices = ', '.join(sorted(self._importance_map.keys()))
                     raise BiteError(
                         f'invalid importance: {importance!r} (available choices: {choices}')
                 importances.append(importance_var)
@@ -252,9 +262,9 @@ class _SearchRequest(LaunchpadPagedRequest, ParseRequest):
             statuses = []
             for status in v:
                 try:
-                    status_var = self.status_map[status]
+                    status_var = self._status_map[status]
                 except KeyError:
-                    choices = ', '.join(sorted(self.status_map.keys()))
+                    choices = ', '.join(sorted(self._status_map.keys()))
                     raise BiteError(
                         f'invalid status: {status!r} (available choices: {choices}')
                 statuses.append(status_var)
@@ -271,13 +281,13 @@ class _SearchRequest(LaunchpadPagedRequest, ParseRequest):
                     key = sort
                     inverse = ''
                 try:
-                    order_var = self.sorting_map[key]
+                    order_var = self._sorting_map[key]
                 except KeyError:
-                    choices = ', '.join(sorted(self.sorting_map.keys()))
+                    choices = ', '.join(sorted(self._sorting_map.keys()))
                     raise BiteError(
                         f'unable to sort by: {key!r} (available choices: {choices}')
                 sorting_terms.append(f'{inverse}{order_var}')
-            self.params['order_by'] = sorting_terms
+            self._sort = sorting_terms
             self.options.append(f"Sort order: {', '.join(v)}")
 
         def tags(self, k, v):

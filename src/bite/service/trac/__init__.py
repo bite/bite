@@ -7,8 +7,10 @@ API docs:
 
 from itertools import chain
 
+from snakeoil.klass import aliased, alias
+
 from .. import Service
-from .._reqs import RPCRequest, Request, ParseRequest, req_cmd, generator
+from .._reqs import RPCRequest, Request, ParseRequest, NullRequest, req_cmd, generator
 from ...exceptions import BiteError, RequestError
 from ...objects import Item
 from ...utils import dict2tuples
@@ -79,8 +81,15 @@ class _SearchRequest(RPCRequest, ParseRequest):
         https://trac.edgewall.org/wiki/TracQuery
     """
 
-    def __init__(self, *args, **kw):
-        super().__init__(command='ticket.query', **kw)
+    # map from standardized kwargs name to expected service parameter name
+    _params_map = {
+        'created': 'time',
+        'modified': 'changetime',
+        'sort': 'order',
+    }
+
+    def __init__(self, *args, fields=None, **kw):
+        super().__init__(method='ticket.query', **kw)
 
     def parse(self, data):
         # Trac search requests return a list of matching IDs that we resubmit
@@ -89,10 +98,11 @@ class _SearchRequest(RPCRequest, ParseRequest):
             tickets = self.service.GetItemRequest(ids=data).send()
             yield from tickets
 
+    @aliased
     class ParamParser(ParseRequest.ParamParser):
 
         # Map of allowed sorting input values to service parameters.
-        sorting_map = {
+        _sorting_map = {
             'assignee': 'owner',
             'id': 'id',
             'created': 'created',
@@ -116,6 +126,7 @@ class _SearchRequest(RPCRequest, ParseRequest):
         def __init__(self, request):
             super().__init__(request)
             self.query = {}
+            self._sort = {'order': 'id'}
 
         def _finalize(self, **kw):
             if not any((self.params, self.query)):
@@ -125,8 +136,7 @@ class _SearchRequest(RPCRequest, ParseRequest):
             self.params['max'] = self.service.max_results
 
             # default to sorting ascending by ID
-            if 'order' not in self.params:
-                self.params['order'] = 'id'
+            self.params.update(self._sort)
 
             # default to returning only open tickets
             if 'status' not in self.params:
@@ -155,12 +165,12 @@ class _SearchRequest(RPCRequest, ParseRequest):
             self.query['summary'] = f"summary~={' '.join(or_queries)}"
             self.options.append(f"Summary: {' AND '.join(display_terms)}")
 
+        @alias('modified')
         def created(self, k, v):
-            self.params['time'] = f'{v.isoformat()}..'
-            self.options.append(f'{self.service.item.attributes[k]}: {v} (since {v.isoformat()})')
-        modified = created
+            self.params[k] = f'{v.isoformat()}..'
+            self.options.append(f'{k.capitalize()}: {v} (since {v.isoformat()})')
 
-        def order(self, k, v):
+        def sort(self, k, v):
             if v[0] == '-':
                 key = v[1:]
                 desc = 1
@@ -168,20 +178,20 @@ class _SearchRequest(RPCRequest, ParseRequest):
                 key = v
                 desc = 0
             try:
-                order_var = self.sorting_map[key]
+                order_var = self._sorting_map[key]
             except KeyError:
-                choices = ', '.join(sorted(self.sorting_map.keys()))
+                choices = ', '.join(sorted(self._sorting_map.keys()))
                 raise BiteError(
                     f'unable to sort by: {key!r} (available choices: {choices}')
-            self.params[k] = order_var
+            self._sort['order'] = order_var
             if desc:
-                self.params['desc'] = desc
+                self._sort['desc'] = desc
             self.options.append(f"Sort order: {v}")
 
+        @alias('reporter')
         def owner(self, k, v):
             self.params[k] = '|'.join(v)
             self.options.append(f"{self.service.item.attributes[k]}: {', '.join(v)}")
-        reporter = owner
 
 
 class GetItemRequest(Request):

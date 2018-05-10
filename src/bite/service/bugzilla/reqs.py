@@ -3,6 +3,7 @@ import os
 from urllib.parse import parse_qs
 
 from snakeoil.demandload import demandload
+from snakeoil.klass import aliased, alias
 
 from .objects import BugzillaEvent, BugzillaComment
 from .._reqs import OffsetPagedRequest, Request, ParseRequest
@@ -17,22 +18,25 @@ class SearchRequest4_4(OffsetPagedRequest, ParseRequest):
     API docs: https://www.bugzilla.org/docs/4.4/en/html/api/Bugzilla/WebService/Bug.html#search
     """
 
+    # paging request keys
     _offset_key = 'offset'
     _size_key = 'limit'
+
+    # map from standardized kwargs name to expected service parameter name
+    _params_map = {
+        'created': 'creation_time',
+        'modified': 'last_change_time',
+    }
 
     def parse(self, data):
         bugs = data['bugs']
         for bug in bugs:
             yield self.service.item(self.service, **bug)
 
+    @aliased
     class ParamParser(ParseRequest.ParamParser):
 
-        def _default(self, k, v):
-            if k in self.service.item.attributes:
-                self.params[k] = v
-                self.options.append(f"{self.service.item.attributes[k]}: {', '.join(map(str, v))}")
-
-        def _finalize(self, **kw):
+        def _finalize(self):
             if not self.params:
                 raise BiteError('no supported search terms or options specified')
 
@@ -41,27 +45,27 @@ class SearchRequest4_4(OffsetPagedRequest, ParseRequest):
                 self.params['status'] = self.service.cache['open_status']
 
             # limit fields by default to decrease requested data size and speed up response
-            fields = kw.get('fields', None)
-            if fields is None:
-                fields = ['id', 'assigned_to', 'summary']
-            else:
-                unknown_fields = set(fields).difference(self.service.item.attributes.keys())
-                if unknown_fields:
-                    raise BiteError(f"unknown fields: {', '.join(unknown_fields)}")
-                self.options.append(f"Fields: {' '.join(fields)}")
+            if 'include_fields' not in self.params:
+                self.params['include_fields'] = ['id', 'assigned_to', 'summary']
 
-            self.params['include_fields'] = fields
-            self.request.fields = fields
+        def fields(self, k, v):
+            available = self.service.item.attributes.keys()
+            unknown_fields = set(v).difference(available)
+            if unknown_fields:
+                raise BiteError(f"unknown fields: {', '.join(map(repr, unknown_fields))} "
+                                f"(available: {', '.join(sorted(available))}")
+            self.params['include_fields'] = v
+            self.options.append(f"Fields: {' '.join(v)}")
 
-        def creation_time(self, k, v):
+        @alias('modified')
+        def created(self, k, v):
             self.params[k] = v.isoformat()
-            self.options.append(f'{self.service.item.attributes[k]}: {v} (since {v!r} UTC)')
-        last_change_time = creation_time
+            self.options.append(f'{k.capitalize()}: {v} (since {v!r} UTC)')
 
+        @alias('creator', 'qa_contact')
         def assigned_to(self, k, v):
             self.params[k] = list(map(self.service._resuffix, v))
             self.options.append(f"{self.service.item.attributes[k]}: {', '.join(map(str, v))}")
-        creator = assigned_to
 
         def status(self, k, v):
             status_alias = []
@@ -77,9 +81,10 @@ class SearchRequest4_4(OffsetPagedRequest, ParseRequest):
                 else:
                     self.params.setdefault(k, []).append(status)
             if status_alias:
-                self.options.append(f"{self.service.item.attributes[k]}: {', '.join(status_alias)} ({', '.join(self.params[k])})")
+                params_str = f"{', '.join(status_alias)} ({', '.join(self.params[k])})"
             else:
-                self.options.append(f"{self.service.item.attributes[k]}: {', '.join(self.params[k])}")
+                params_str = ', '.join(self.params[k])
+            self.options.append(f"Status: {params_str}")
 
         def terms(self, k, v):
             self.params['summary'] = v
@@ -103,10 +108,11 @@ class SearchRequest5_0(SearchRequest4_4):
         self.adv_num = 1
         return super().parse_params(**kw)
 
+    @aliased
     class ParamParser(SearchRequest4_4.ParamParser):
 
         # map of allowed sorting input values to the names bugzilla expects as parameters
-        sorting_map = {
+        _sorting_map = {
             'alias': 'alias',
             'blocks': 'blocked',
             'comments': 'longdescs.count',
@@ -134,6 +140,17 @@ class SearchRequest5_0(SearchRequest4_4):
             'whiteboard': 'status_whiteboard',
         }
 
+        def __init__(self, *args, **kw):
+            super().__init__(*args, **kw)
+            self._sort = None
+
+        def _finalize(self):
+            super()._finalize()
+
+            # default to sorting ascending by ID
+            self.params['order'] = self._sort if self._sort is not None else 'id'
+
+        @alias('cc')
         def commenter(self, k, v):
             for val in v:
                 self.params[f'f{self.adv_num}'] = k
@@ -141,7 +158,6 @@ class SearchRequest5_0(SearchRequest4_4):
                 self.params[f'v{self.adv_num}'] = val
                 self.adv_num += 1
             self.options.append(f"{k.capitalize()}: {', '.join(map(str, v))}")
-        cc = commenter
 
         def comments(self, k, v):
             self.params[f'f{self.adv_num}'] = 'longdescs.count'
@@ -158,25 +174,24 @@ class SearchRequest5_0(SearchRequest4_4):
                     x = x[1:]
                     inverse = ' DESC'
                 try:
-                    order_var = self.sorting_map[x]
+                    order_var = self._sorting_map[x]
                 except KeyError:
-                    choices = ', '.join(sorted(self.sorting_map.keys()))
+                    choices = ', '.join(sorted(self._sorting_map.keys()))
                     raise BiteError(
                         f'unable to sort by: {x!r} (available choices: {choices}')
                 sorting_terms.append(f'{order_var}{inverse}')
-            self.params['order'] = ','.join(sorting_terms)
+            self._sort = ','.join(sorting_terms)
             self.options.append(f"Sort order: {', '.join(v)}")
 
+        @alias('blocks', 'depends_on')
         def keywords(self, k, v):
             self.params[k] = v
             self.options.append(f"{self.service.item.attributes[k]}: {', '.join(map(str, v))}")
-        blocks = keywords
-        depends_on = keywords
 
+        @alias('votes')
         def quicksearch(self, k, v):
             self.params[k] = v
             self.options.append(f"{k.capitalize()}: {v}")
-        votes = quicksearch
 
         def advanced_url(self, k, v):
             base, url_params = v.split('?', 1)

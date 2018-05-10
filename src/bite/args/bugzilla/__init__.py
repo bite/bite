@@ -386,17 +386,15 @@ class Search(args.PagedSearch):
             '-r', '--creator', type=string_list, action=parse_stdin,
             help='email of the person who created the bug')
         self.person.add_argument(
-            '--qa-contact',
+            '--qa-contact', type=string_list, action=parse_stdin,
             help='email of the QA contact for the bug')
         time = self.parser.add_argument_group('Time related')
         time.add_argument(
-            '-c', '--created', type=date,
-            dest='creation_time', metavar='TIME',
+            '-c', '--created', type=date, metavar='TIME',
             action=partial(parse_stdin, date),
             help='bugs created at this time or later')
         time.add_argument(
-            '-m', '--modified', type=date,
-            dest='last_change_time', metavar='TIME',
+            '-m', '--modified', type=date, metavar='TIME',
             action=partial(parse_stdin, date),
             help='bugs modified at this time or later')
         self.attr = self.parser.add_argument_group('Attribute related')
