@@ -52,6 +52,17 @@ class Search(args.Search):
 
 
 @args.subcmd(TracOpts)
+class Get(args.Get):
+
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
+        # optional args
+        self.opts.add_argument(
+            '-H', '--no-history', dest='get_changes', action='store_false',
+            help=f"don't show {self.service.item.type} history")
+
+
+@args.subcmd(TracOpts)
 class Version(args.Subcmd):
 
     def __init__(self, *args, **kw):

@@ -12,7 +12,7 @@ from snakeoil.klass import aliased, alias
 from .. import Service
 from .._reqs import RPCRequest, Request, ParseRequest, NullRequest, req_cmd, generator
 from ...exceptions import BiteError, RequestError
-from ...objects import Item
+from ...objects import Item, Comment, Attachment, Change
 from ...utils import dict2tuples
 
 
@@ -24,9 +24,26 @@ class TracError(RequestError):
         super().__init__(msg, code, text)
 
 
+class TracComment(Comment):
+    pass
+
+
+class TracAttachment(Attachment):
+    pass
+
+
+class TracEvent(Change):
+    pass
+
+
 class TracTicket(Item):
 
     attributes = {
+        'cc': 'cc',
+        'created': 'Created',
+        'modified': 'Modified',
+        'owner': 'Assignee',
+        'reporter': 'Reporter',
     }
 
     attribute_aliases = {
@@ -38,13 +55,38 @@ class TracTicket(Item):
         ('id', 'ID'),
         ('created', 'Reported'),
         ('modified', 'Updated'),
+        ('status', 'Status'),
+        ('resolution', 'Resolution'),
+        ('reporter', 'Reporter'),
+        ('owner', 'Assignee'),
+        ('cc', 'CC'),
+        ('component', 'Component'),
+        ('priority', 'Priority'),
+        ('keywords', 'Keywords'),
+        ('version', 'Version'),
+        ('platform', 'Platform'),
+        ('milestone', 'Milestone'),
+        ('difficulty', 'Difficulty'),
+        ('type', 'Type'),
+        ('wip', 'Completion'),
+        ('severity', 'Severity'),
     )
 
     type = 'ticket'
 
     def __init__(self, service, **kw):
         for k, v in kw.items():
+            if not v:
+                v = None
             setattr(self, k, v)
+
+        self.comments = None
+        self.attachments = None
+        self.changes = None
+
+        self.description = TracComment(
+            count=0, creator=self.reporter, created=self.created,
+            text=self.description.strip())
 
 
 class Trac(Service):
@@ -52,6 +94,7 @@ class Trac(Service):
 
     item = TracTicket
     item_endpoint = '/ticket/{id}'
+    attachment = TracAttachment
 
     def __init__(self, *args, max_results=None, **kw):
         # Trac uses a setting of 0 to disable paging search results
@@ -194,7 +237,7 @@ class _SearchRequest(RPCRequest, ParseRequest):
             self.options.append(f"{self.service.item.attributes[k]}: {', '.join(v)}")
 
 
-class GetItemRequest(Request):
+class GetItemRequest(RPCRequest):
     """Construct an item request."""
 
     def __init__(self, ids, service, **kw):
@@ -213,7 +256,162 @@ class GetItemRequest(Request):
                 self.service, id=id, created=created, modified=modified, **attrs)
 
 
-@req_cmd(Trac, 'version')
+class _ChangelogRequest(Request):
+    """Construct a changelog request."""
+
+    def __init__(self, service, ids=None, item_id=False, data=None, **kw):
+        if ids is None and data is None:
+            raise ValueError(f'No ID(s) specified')
+        options = []
+
+        if data is None:
+            super().__init__(service=service, method='ticket.changeLog', params=ids, **kw)
+        else:
+            Request.__init__(self, service=service, reqs=(NullRequest(),))
+
+        self.options = options
+        self.ids = ids
+        self._data = data
+
+    @generator
+    def parse(self, data):
+        if self._data is not None:
+            return self._data
+        # unwrap multicall result
+        return super().parse(data)
+
+
+class CommentsRequest(_ChangelogRequest):
+    """Construct a comments request."""
+
+    @generator
+    def parse(self, data):
+        data = super().parse(data)
+        for changes in data:
+            l = []
+            count = 1
+            for change in changes:
+                created, creator, field, old, new, perm = change
+                if field == 'comment':
+                    text = new.strip()
+                    # skip comments without text or only whitespace
+                    if text:
+                        l.append(TracComment(
+                            count=count, creator=creator, created=created, text=text))
+                        count += 1
+            yield tuple(l)
+
+
+class AttachmentsRequest(RPCRequest):
+    """Construct an attachments request."""
+
+    def __init__(self, ids, service, **kw):
+        if ids is None:
+            raise ValueError(f'No {service.item.type} ID(s) specified')
+
+        super().__init__(service=service, method='ticket.listAttachments', params=ids, **kw)
+        self.ids = ids
+
+    def parse(self, data):
+        # unwrap multicall result
+        data = super().parse(data)
+        for item_attachments in data:
+            l = []
+            for attachment in item_attachments:
+                filename, description, size, created, creator = attachment
+                l.append(TracAttachment(
+                    creator=creator, created=created, size=size, filename=filename))
+            yield tuple(l)
+
+
+class ChangesRequest(_ChangelogRequest):
+    """Construct a changes request."""
+
+    _skip_fields = {'comment', 'attachment'}
+
+    @generator
+    def parse(self, data):
+        data = super().parse(data)
+        for changes in data:
+            l = []
+            count = 1
+            prev_created = None
+            changes_dct = {}
+            for i, change in enumerate(changes):
+                created, creator, field, old, new, perm = change
+                if field not in self._skip_fields and any((old, new)):
+                    changes_dct[field] = (old, new)
+                    if prev_created and created != prev_created:
+                        l.append(TracEvent(
+                            id=i, count=count, creator=creator,
+                            created=created, changes=changes_dct))
+                        changes_dct = {}
+                        count += 1
+                    prev_created = created
+            yield tuple(l)
+
+
+class GetRequest(Request):
+    """Construct requests to retrieve all known data for given ticket IDs."""
+
+    def __init__(self, ids, service, get_comments=False, get_attachments=False,
+                 get_changes=False, *args, **kw):
+        if not ids:
+            raise ValueError('No {service.item.type} ID(s) specified')
+
+        reqs = [service.GetItemRequest(ids=ids)]
+        if get_comments or get_changes:
+            reqs.append(service._ChangelogRequest(ids=ids))
+        if get_attachments:
+            reqs.append(service.AttachmentsRequest(ids=ids))
+
+        super().__init__(service=service, reqs=reqs)
+        self.ids = ids
+        self._get_comments = get_comments
+        self._get_attachments = get_attachments
+        self._get_changes = get_changes
+
+    @property
+    def _none_gen(self):
+        for x in self.ids:
+            yield None
+
+    def parse(self, data):
+        data = super().parse(data)
+        items = next(data)
+        if self._get_comments or self._get_changes:
+            changelogs = next(data)
+        if self._get_attachments:
+            attachments = next(data)
+        else:
+            attachments = self._none_gen
+
+        items = list(items)
+        comments = self._none_gen
+        changes = self._none_gen
+
+        if self._get_comments or self._get_changes:
+            changelogs = list(changelogs)
+            if self._get_comments:
+                item_descs = ((x.description,) for x in items)
+                item_comments = self.service.comments(data=changelogs)
+                comments = (x + y for x, y in zip(item_descs, item_comments))
+            if self._get_changes:
+                changes = self.service.changes(data=changelogs)
+
+        for item in items:
+            item.comments = next(comments)
+            item.attachments = next(attachments)
+            item.changes = next(changes)
+            yield item
+
+    def handle_exception(self, e):
+        if e.code == 404:
+            raise RequestError('nonexistent item ID', code=e.code)
+        raise e
+
+
+@req_cmd(Trac, cmd='version')
 class _VersionRequest(RPCRequest):
     """Construct a version request."""
 
