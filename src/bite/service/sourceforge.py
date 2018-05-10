@@ -73,13 +73,13 @@ class SourceforgeTicket(Item):
     # it's overridden per service instance.
     type = 'ticket'
 
-    def __init__(self, service, ticket, get_desc=False, get_attachments=False):
+    def __init__(self, service, get_desc=False, get_attachments=False, **kw):
         self.comments = None
         self.attachments = None
         self.changes = None
 
         for k in self.attributes.keys():
-            v = ticket.get(k, None)
+            v = kw.get(k, None)
             if k in ('created_date', 'mod_date') and v:
                 # sourceforge doesn't specify an offset for its timestamps, assume UTC
                 v = dateparse(v).astimezone(utc)
@@ -96,14 +96,14 @@ class SourceforgeTicket(Item):
 
         # Store comment thread ID, note that search results don't include
         # discussion thread objects, so fall back to grabbing the value from the URL.
-        if 'discussion_thread' in ticket:
-            self.thread_id = ticket['discussion_thread']['_id']
+        if 'discussion_thread' in kw:
+            self.thread_id = kw['discussion_thread']['_id']
         else:
-            self.thread_id = ticket['discussion_thread_url'].rstrip('/').rsplit('/', 1)[1]
+            self.thread_id = kw['discussion_thread_url'].rstrip('/').rsplit('/', 1)[1]
 
         if get_desc:
             try:
-                desc = html.unescape(ticket['description'].strip())
+                desc = html.unescape(kw['description'].strip())
             except KeyError:
                 desc = ''
             self.description = SourceforgeComment(
@@ -114,7 +114,7 @@ class SourceforgeTicket(Item):
                 SourceforgeAttachment(
                     size=a['bytes'], url=a['url'], creator=self.reported_by,
                     created=self.created_date, filename=a['url'].rsplit('/', 1)[1])
-                for a in ticket['attachments'])
+                for a in kw['attachments'])
 
 
 class SourceforgeComment(Comment):
@@ -345,8 +345,8 @@ class _GetItemRequest(Request):
             data = [data]
         for item in data:
             yield self.service.item(
-                self.service, item['ticket'],
-                get_desc=self._get_desc, get_attachments=self._get_attach)
+                self.service, get_desc=self._get_desc, get_attachments=self._get_attach,
+                **item['ticket'])
 
 
 class _ThreadRequest(Request):
