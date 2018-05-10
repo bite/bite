@@ -388,7 +388,6 @@ class ParseRequest(Request):
 
         def _default_parser(self, k, v):
             """Default parameter parser."""
-            raise ValueError(f"unknown parameter: {k!r}")
 
 
 class RPCRequest(Request):

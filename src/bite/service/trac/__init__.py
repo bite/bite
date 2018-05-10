@@ -131,8 +131,8 @@ class _SearchRequest(RPCRequest, ParseRequest):
         'sort': 'order',
     }
 
-    def __init__(self, *args, fields=None, **kw):
-        super().__init__(method='ticket.query', **kw)
+    def __init__(self, *args, **kw):
+        super().__init__(*args, method='ticket.query', **kw)
 
     def parse(self, data):
         # Trac search requests return a list of matching IDs that we resubmit
