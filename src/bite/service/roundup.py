@@ -36,47 +36,62 @@ class RoundupError(RequestError):
 
 class RoundupIssue(Item):
 
+    # assumes bugs.python.org issue schema
     attributes = {
+        # from schema list
+        'assignee': 'Assignee',
+        'components': 'Components',
+        'dependencies': 'Depends',
+        'files': 'Attachments',
+        'keywords': 'Keywords',
+        # 'message_count': 'Comment count',
+        'messages': 'Comments',
+        'nosy': 'Nosy List',
+        # 'nosy_count': 'Nosy count',
+        'priority': 'Priority',
+        'pull_requests': 'PRs',
+        'resolution': 'Resolution',
+        'severity': 'Severity',
+        'stage': 'Stage',
+        'status': 'Status',
+        'superseder': 'Duplicate of',
+        'title': 'Title',
+        'type': 'Type',
+        'versions': 'Versions',
+
+        # properties not listed by schema output, but included by default
+        'id': 'ID',
         'creator': 'Reporter',
         'creation': 'Created',
-        'assignedto': 'Assignee',
-        'keyword': 'Keywords',
-        'priority': 'Priority',
-        'status': 'Status',
-        'title': 'Title',
-        'nosy': 'Nosy List',
-        'superseder': 'Duplicate of',
         'actor': 'Modified by',
         'activity': 'Modified',
-        'messages': 'Comments',
-        'files': 'Attachments',
     }
 
     attribute_aliases = {
-        'comments': 'messages',
-        'attachments': 'files',
-        'owner': 'assignedto',
+        'owner': 'assignee',
+        'created': 'creation',
+        'modified': 'activity',
     }
 
     _print_fields = (
         ('title', 'Title'),
-        ('assignedto', 'Assignee'),
+        ('assignee', 'Assignee'),
         ('creation', 'Created'),
         ('creator', 'Reporter'),
         ('activity', 'Modified'),
         ('actor', 'Modified by'),
         ('id', 'ID'),
         ('status', 'Status'),
+        ('dependencies', 'Depends'),
+        ('resolution', 'Resolution'),
         ('priority', 'Priority'),
         ('superseder', 'Duplicate'),
-        ('keyword', 'Keywords'),
-        ('messages', 'Comments'),
-        ('files', 'Attachments'),
+        ('keywords', 'Keywords'),
     )
 
     type = 'issue'
 
-    def __init__(self, service, comments=None, attachments=None, changes=None, **kw):
+    def __init__(self, service, **kw):
         self.service = service
         for k, v in kw.items():
             if k in ('creation', 'activity'):
@@ -113,10 +128,6 @@ class RoundupIssue(Item):
                 setattr(self, k, keywords)
             else:
                 setattr(self, k, v)
-
-        self.attachments = attachments if attachments is not None else []
-        self.comments = comments if comments is not None else []
-        self.changes = changes if changes is not None else []
 
 
 class RoundupComment(Comment):
@@ -347,6 +358,8 @@ class _GetItemRequest(Multicall):
         if ids is None:
             raise ValueError(f'No {service.item.type} ID(s) specified')
 
+        # Request all fields by default, roundup says it does this already when
+        # no fields are specified, but it still doesn't return all fields.
         if fields is None:
             fields = service.item.attributes.keys()
         params = (chain([f'issue{i}'], fields) for i in ids)
@@ -357,7 +370,7 @@ class _GetItemRequest(Multicall):
     def parse(self, data):
         # unwrap multicall result
         issues = super().parse(data)
-        return (self.service.item(self.service, id=self.ids[i], **issue)
+        return (self.service.item(self.service, **issue)
                 for i, issue in enumerate(issues))
 
 
@@ -365,25 +378,10 @@ class _GetItemRequest(Multicall):
 class _GetRequest(_GetItemRequest):
     """Construct a get request."""
 
-    def __init__(self, ids, fields=None, get_comments=False,
-                 get_attachments=False, **kw):
-        super().__init__(**kw)
-        if not ids:
-            raise ValueError(f'No {self.service.item.type} ID(s) specified')
-
-        reqs = []
-        for i in ids:
-            params = ['issue' + str(i)]
-            if fields is not None:
-                params.extend(fields)
-            else:
-                params.extend(self.service.item.attributes.keys())
-            reqs.append(RPCRequest(service=self.service, command='display', params=params))
-
-        self.ids = ids
-        self._reqs = tuple(reqs)
-        self.get_comments = get_comments
-        self.get_attachments = get_attachments
+    def __init__(self, *args, get_comments=False, get_attachments=False, **kw):
+        super().__init__(*args, **kw)
+        self._get_comments = get_comments
+        self._get_attachments = get_attachments
 
     def handle_exception(self, e):
         if e.code == 'exceptions.IndexError':
@@ -395,25 +393,21 @@ class _GetRequest(_GetItemRequest):
         raise
 
     def parse(self, data):
-        issues = []
-        files = {}
-        messages = {}
-        reqs = []
-        issues = list(iflatten_instance(data, dict))
-
+        issues = list(super().parse(data))
         file_reqs = []
         msg_reqs = []
+
         for issue in issues:
-            file_ids = issue.get('files', [])
+            file_ids = issue.files
             issue_files = []
-            if file_ids and self.get_attachments:
+            if file_ids and self._get_attachments:
                 issue_files.append(self.service.AttachmentsRequest(attachment_ids=file_ids))
             else:
                 issue_files.append(NullRequest())
 
-            msg_ids = issue.get('messages', [])
+            msg_ids = issue.messages
             issue_msgs = []
-            if msg_ids and self.get_comments:
+            if msg_ids and self._get_comments:
                 issue_msgs.append(self.service.CommentsRequest(comment_ids=msg_ids))
             else:
                 issue_msgs.append(NullRequest())
@@ -423,44 +417,44 @@ class _GetRequest(_GetItemRequest):
 
         attachments = self.service.send(file_reqs)
         comments = self.service.send(msg_reqs)
+        # TODO: There doesn't appear to be a way to request issue changes via the API.
+        # changes = self.service.ChangesRequest(ids=self.ids).send()
 
-        return (self.service.item(service=self.service, comments=next(comments),
-                                  attachments=next(attachments), id=self.ids[i], **issue)
-                for i, issue in enumerate(issues))
+        for issue in issues:
+            issue.attachments = next(attachments)
+            issue.comments = next(comments)
+            issue.changes = ()
+            yield issue
 
 
 @req_cmd(Roundup, cmd='attachments')
 class _AttachmentsRequest(Multicall):
     def __init__(self, service, ids=None, attachment_ids=None, get_data=False, **kw):
         """Construct an attachments request."""
-        super().__init__(**kw)
         # TODO: add support for specifying issue IDs
         if attachment_ids is None:
             raise ValueError('No attachment ID(s) specified')
 
-        reqs = []
-        for i in attachment_ids:
-            params = ['file' + str(i)]
-            fields = ['name', 'type', 'creator', 'creation']
-            if get_data:
-                fields.append('content')
-            params.extend(fields)
-            reqs.append(RPCRequest(service=self.service, command='display', params=params))
+        fields = ['name', 'type', 'creator', 'creation']
+        if get_data:
+            fields.append('content')
+        params = (chain([f'file{i}'], fields) for i in attachment_ids)
+        super().__init__(service=service, method='display', params=params, **kw)
 
         self.ids = ids
-        self._reqs = tuple(reqs)
         self.attachment_ids = attachment_ids
 
-    @generator
     def parse(self, data):
+        # unwrap multicall result
+        data = super().parse(data)
+
         if self.attachment_ids:
             ids = self.attachment_ids
         else:
             ids = self.ids
 
         return [RoundupAttachment(id=ids[i], filename=d['name'], data=d.get('content', None),
-                                  creator=self.service.cache['users'][int(d['creator'])-1],
-                                  created=parsetime(d['creation']), mimetype=d['type'])
+                                  creator=d['creator'], created=parsetime(d['creation']), mimetype=d['type'])
                 for i, d in enumerate(data)]
 
 
@@ -468,35 +462,31 @@ class _AttachmentsRequest(Multicall):
 class _CommentsRequest(Multicall):
     def __init__(self, service, ids=None, comment_ids=None, created=None, fields=(), **kw):
         """Construct a comments request."""
-        super().__init__(**kw)
         # TODO: add support for specifying issue IDs
         if comment_ids is None:
             raise ValueError('No comment ID(s) specified')
 
-        reqs = []
-        for i in comment_ids:
-            params = ['msg' + str(i)]
-            if fields is not None:
-                params.extend(fields)
-            reqs.append(RPCRequest(service=service, command='display', params=params))
+        params = (chain([f'msg{i}'], fields) for i in comment_ids)
+        super().__init__(service=service, method='display', params=params, **kw)
 
         self.ids = ids
-        self._reqs = tuple(reqs)
         self.comment_ids = comment_ids
 
-    @generator
     def parse(self, data):
+        # unwrap multicall result
+        data = super().parse(data)
+
         if self.comment_ids:
             ids = self.comment_ids
         else:
             ids = self.ids
 
-        return [RoundupComment(id=ids[i], count=i, text=d['content'], created=parsetime(d['date']),
-                               creator=self.service.cache['users'][int(d['author'])-1])
+        return [RoundupComment(id=ids[i], count=i, text=d['content'].strip(),
+                               created=parsetime(d['date']), creator=d['author'])
                 for i, d in enumerate(data)]
 
 
-@req_cmd(Roundup, 'schema')
+@req_cmd(Roundup, cmd='schema')
 class _SchemaRequest(RPCRequest):
     """Construct a schema request."""
 
