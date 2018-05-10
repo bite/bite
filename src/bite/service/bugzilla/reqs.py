@@ -312,30 +312,88 @@ class AttachmentsRequest(Request):
             yield tuple(files)
 
 
-class ModifyRequest(Request):
+class ModifyRequest(ParseRequest):
     """Construct a modify request."""
 
-    # parameters support add, remove, and possibly set actions
-    add_remove = {'groups', 'see_also', 'cc'}
-    add_remove_set = {'alias', 'blocks', 'depends', 'keywords'}
+    def __init__(self, ids=None, **kw):
+        self.ids = ids
+        super().__init__(**kw)
 
-    # other params requiring object values
-    obj_params = {'comment-{x}' for x in ('body', 'is_private', 'is_markdown')}
+    def parse(self, data):
+        return data['bugs']
 
-    def __init__(self, ids, *args, **kw):
-        super().__init__(*args, **kw)
-        for k, v in ((k, v) for (k, v) in kw.items() if v):
-            if k in self.add_remove:
-                try:
-                    remove, add = v
-                except ValueError:
-                    raise ValueError(f"invalid add/remove values for '{k}'")
+    @aliased
+    class ParamParser(ParseRequest.ParamParser):
 
-                if key == 'cc':
-                    remove = list(map(self.service._resuffix, remove))
-                    add = list(map(self.service._resuffix, add))
+        def _finalize(self):
+            if not self.params:
+                raise ValueError('No changes specified')
 
-                values = []
+            if not self.request.ids:
+                raise ValueError('No bug ID(s) specified')
+            self.params['ids'] = self.request.ids
+
+            if self.options:
+                prefix = '--- Modifying fields '
+                self.options.insert(0, prefix + '-' * (const.COLUMNS - len(prefix)))
+
+            if 'comment' in self.params:
+                prefix = '--- Adding comment '
+                self.options.append(prefix + '-' * (const.COLUMNS - len(prefix)))
+                self.options.append(self.params['comment']['body'])
+
+            self.options.append('-' * const.COLUMNS)
+
+        def _default_parser(self, k, v):
+            if k in self.service.item.attributes:
+                if k == 'assigned_to':
+                    v = self.service._resuffix(v)
+                self.params[k] = v
+                self.options.append('{:<10}: {}'.format(self.service.item.attributes[k], v))
+            else:
+                super()._default_parser(k, v)
+
+        # fields that can be added or removed
+        @alias('groups', 'see_also', 'cc')
+        def _add_remove(self, k, v):
+            try:
+                remove, add = v
+            except ValueError:
+                raise ValueError(f"invalid add/remove values for '{k}'")
+
+            if k == 'cc':
+                remove = list(map(self.service._resuffix, remove))
+                add = list(map(self.service._resuffix, add))
+
+            values = []
+            if remove:
+                self.params.setdefault(k, {})['remove'] = remove
+                values.extend([f'-{x}' for x in remove])
+            if add:
+                self.params.setdefault(k, {})['add'] = add
+                values.extend([f'+{x}' for x in add])
+
+            self.options.append(
+                '{:<10}: {}'.format(self.service.item.attributes[k], ', '.join(values)))
+
+        # fields that can be added, removed, or set
+        @alias('alias', 'blocks', 'depends', 'keywords')
+        def _add_remove_set(self, k, v):
+            if k == 'alias' and len(ids) > 1:
+                raise ValueError('unable to set aliases on multiple bugs at once')
+
+            # fields supporting add/remove/set actions
+            try:
+                remove, set, add = v
+            except ValueError:
+                raise ValueError(f"invalid add/remove/set values for '{k}'")
+
+            values = []
+            # set overrides add/remove actions
+            if set:
+                self.params.setdefault(k, {})['set'] = set
+                values = set
+            else:
                 if remove:
                     self.params.setdefault(k, {})['remove'] = remove
                     values.extend([f'-{x}' for x in remove])
@@ -343,64 +401,15 @@ class ModifyRequest(Request):
                     self.params.setdefault(k, {})['add'] = add
                     values.extend([f'+{x}' for x in add])
 
-                self.options.append(
-                    '{:<10}: {}'.format(self.service.item.attributes[k], ', '.join(values)))
-            elif k in self.add_remove_set:
-                if k == 'alias' and len(ids) > 1:
-                    raise ValueError('unable to set aliases on multiple bugs at once')
+            self.options.append(
+                '{:<10}: {}'.format(self.service.item.attributes[k], ', '.join(values)))
 
-                # fields supporting add/remove/set actions
-                try:
-                    remove, set, add = v
-                except ValueError:
-                    raise ValueError(f"invalid add/remove/set values for '{k}'")
-
-                values = []
-                # set overrides add/remove actions
-                if set:
-                    self.params.setdefault(k, {})['set'] = set
-                    values = set
-                else:
-                    if remove:
-                        self.params.setdefault(k, {})['remove'] = remove
-                        values.extend([f'-{x}' for x in remove])
-                    if add:
-                        self.params.setdefault(k, {})['add'] = add
-                        values.extend([f'+{x}' for x in add])
-
-                self.options.append(
-                    '{:<10}: {}'.format(self.service.item.attributes[k], ', '.join(values)))
-            elif k in self.obj_params:
-                key1, key2 = k.split('-')
-                self.params.setdefault(key1, {})[key2] = v
-            elif k in self.service.item.attributes:
-                if k == 'assigned_to':
-                    v = self.service._resuffix(v)
-                self.params[k] = v
-                self.options.append('{:<10}: {}'.format(self.service.item.attributes[k], v))
-            else:
-                raise ValueError(f'unknown parameter: {k!r}')
-
-        if not self.params:
-            raise ValueError('No changes specified')
-
-        if self.options:
-            prefix = '--- Modifying fields '
-            self.options.insert(0, f'{prefix}-' * (const.COLUMNS - len(prefix)))
-
-        if 'comment' in self.params:
-            prefix = '--- Adding comment '
-            self.options.append(f'{prefix}-' * (const.COLUMNS - len(prefix)))
-            self.options.append(self.params['comment']['body'])
-
-        self.options.append('-' * const.COLUMNS)
-
-        if not ids:
-            raise ValueError('No bug ID(s) specified')
-        self.params['ids'] = ids
-
-    def parse(self, data):
-        return data['bugs']
+        @alias('comment_is_private', 'comment_is_markdown')
+        def comment(self, k, v):
+            if k == 'comment':
+                k = 'comment_body'
+            key1, key2 = k.split('_', 1)
+            self.params.setdefault(key1, {})[key2] = v
 
 
 class AttachRequest(Request):
@@ -497,6 +506,7 @@ class CreateRequest(Request):
         :rtype: int
         """
         super().__init__(**kw)
+        # TODO: check param settings for validity against cached values?
         self.params.update({
             'product': product,
             'component': component,
