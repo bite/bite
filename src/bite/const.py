@@ -14,6 +14,9 @@ demandload(
 )
 
 _reporoot = os.path.realpath(__file__).rsplit(os.path.sep, 3)[0]
+# TODO: handle running from build dir inside repo in a better fashion
+if _reporoot.endswith('/build'):
+    _reporoot = os.path.dirname(_reporoot)
 _module = sys.modules[__name__]
 try:
     # This is a file written during installation;
