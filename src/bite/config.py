@@ -33,21 +33,24 @@ def load_config(config=None, config_file=None):
     return config, connection
 
 
-def service_files(connection=None):
+def service_files(connection=None, user_dir=True):
     """Return iterator of service files optionally matching a given connection name."""
-    for service_dir in (os.path.join(const.DATA_PATH, 'services'),
-                        os.path.join(const.USER_DATA_PATH, 'services')):
+    dirs = [os.path.join(const.DATA_PATH, 'services')]
+    if user_dir:
+        dirs.append(os.path.join(const.USER_DATA_PATH, 'services'))
+
+    for service_dir in dirs:
         for root, _, files in os.walk(service_dir):
             for config_file in files:
                 if connection is None or config_file == connection:
                     yield os.path.join(root, config_file)
 
 
-def load_service_files(connection=None, config=None):
+def load_service_files(connection=None, config=None, user_dir=True):
     """Load service specific configuration files."""
     config = config if config is not None else configparser.ConfigParser()
 
-    for config_file in service_files(connection):
+    for config_file in service_files(connection, user_dir):
         try:
             with open(config_file) as f:
                 config.read_file(f)
