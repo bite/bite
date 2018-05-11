@@ -1,3 +1,4 @@
+from .bugzilla import date
 from .. import args
 from ..argparser import parse_stdin, string_list
 
@@ -27,6 +28,13 @@ class Search(args.Search):
                 sorting term with '-'; otherwise, sorting is done in an
                 ascending fashion by default.
             """)
+        time = self.parser.add_argument_group('Time related')
+        time.add_argument(
+            '-c', '--created', type=date, metavar='TIME',
+            help='issues created at this time or later')
+        time.add_argument(
+            '-m', '--modified', type=date, metavar='TIME',
+            help='issues modified at this time or later')
         attr = self.parser.add_argument_group('Attribute related')
         attr.add_argument(
             '-s', '--status', type=string_list, action=parse_stdin,

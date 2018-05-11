@@ -9,6 +9,7 @@ Updates:
 """
 
 from dateutil.parser import parse as dateparse
+from snakeoil.klass import aliased, alias
 
 from ._jsonrest import JsonREST
 from ._rest import RESTRequest
@@ -176,6 +177,12 @@ class BitbucketPagedRequest(RESTRequest, LinkPagedRequest):
 class _SearchRequest(BitbucketPagedRequest, ParseRequest):
     """Construct a search request."""
 
+    # map from standardized kwargs name to expected service parameter name
+    _params_map = {
+        'created': 'created_on',
+        'modified': 'updated_on',
+    }
+
     def __init__(self, *args, **kw):
         super().__init__(*args, endpoint='/issues', **kw)
 
@@ -185,6 +192,7 @@ class _SearchRequest(BitbucketPagedRequest, ParseRequest):
         for issue in issues:
             yield self.service.item(self.service, issue)
 
+    @aliased
     class ParamParser(ParseRequest.ParamParser):
 
         # Map of allowed sorting input values to service parameters.
@@ -293,6 +301,11 @@ class _SearchRequest(BitbucketPagedRequest, ParseRequest):
             else:
                 self.query[k] = or_search_terms[0]
                 self.options.append(f"Status: {or_terms[0]}")
+
+        @alias('modified')
+        def created(self, k, v):
+            self.query[k] = f'{self.remap[k]} > {v.isoformat()}'
+            self.options.append(f'{k.capitalize()}: {v} (since {v.isoformat()})')
 
 
 @req_cmd(Bitbucket)
