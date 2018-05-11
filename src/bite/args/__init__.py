@@ -1,3 +1,4 @@
+import argparse
 from functools import partial
 
 from snakeoil.cli import arghparse
@@ -54,7 +55,12 @@ class ServiceOpts(object):
         self.service_opts = service_specific_opts
         self.service_opts.title = service_name.split('-')[0].capitalize() + ' specific options'
 
-        self.main_opts()
+        # skip multiple main_opts() run issues during doc generation
+        try:
+            self.main_opts()
+        except argparse.ArgumentError as e:
+            if 'conflicting option string' not in str(e):
+                raise
 
     def subcmds(self):
         """Get sequence of subcommands defined for the service."""
