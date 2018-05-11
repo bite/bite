@@ -2,6 +2,7 @@ from .. import args
 
 
 class JiraOpts(args.ServiceOpts):
+    """Jira options."""
 
     _service = 'jira'
 

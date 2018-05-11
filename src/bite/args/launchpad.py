@@ -4,6 +4,7 @@ from ..argparser import parse_stdin, string_list
 
 
 class LaunchpadOpts(args.ServiceOpts):
+    """Launchpad options."""
 
     _service = 'launchpad'
 

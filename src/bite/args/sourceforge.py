@@ -6,6 +6,7 @@ from .. import args
 
 
 class SourceforgeOpts(args.ServiceOpts):
+    """Sourceforge options."""
 
     _service = 'sourceforge'
 

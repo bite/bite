@@ -243,6 +243,7 @@ latex_documents = [
 
 # -- Options for manual page output ---------------------------------------
 
+docdir = os.path.dirname(os.path.abspath(__file__))
 bin_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'bin')
 scripts = os.listdir(bin_path)
 
@@ -256,6 +257,12 @@ man_pages = [
     ('man/%s' % script, script, import_module(module).__doc__.strip().split('\n', 1)[0], authors_list, 1)
     for module, script in generated_man_pages
 ]
+for _root, _dirs, files in os.walk(os.path.join(docdir, 'man')):
+    for f in (x for x in files if x.startswith(f'{project}-')):
+        filename = f.rsplit('.', 1)[0]
+        service_name = filename.split('-', 1)[1].capitalize()
+        man_pages.append(
+            (f'man/{filename}', filename, f"{service_name} support", authors_list, 1))
 
 # If true, show URL addresses after external links.
 #man_show_urls = False

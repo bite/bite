@@ -2,6 +2,7 @@ from .. import args
 
 
 class BitbucketOpts(args.ServiceOpts):
+    """Bitbucket options."""
 
     _service = 'bitbucket'
 

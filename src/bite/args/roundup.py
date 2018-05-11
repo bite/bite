@@ -3,6 +3,7 @@ from .. import args
 
 
 class RoundupOpts(args.ServiceOpts):
+    """Roundup options."""
 
     _service = 'roundup'
 

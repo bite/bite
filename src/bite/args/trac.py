@@ -4,15 +4,17 @@ from ..argparser import parse_stdin, string_list
 
 
 class TracOpts(args.ServiceOpts):
-    pass
+    """Trac options."""
 
 
 class TracJsonrpcOpts(TracOpts):
+    __doc__ = TracOpts.__doc__
 
     _service = 'trac-jsonrpc'
 
 
 class TracXmlrpcOpts(TracOpts):
+    __doc__ = TracOpts.__doc__
 
     _service = 'trac-xmlrpc'
 

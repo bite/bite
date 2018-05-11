@@ -23,10 +23,12 @@ def person_search(s):
 
 
 class Bugzilla5_0RestOpts(Bugzilla5_0Opts):
+    __doc__ = Bugzilla5_0Opts.__doc__
 
     _service = 'bugzilla5.0-rest'
 
 
 class Bugzilla5_2RestOpts(Bugzilla5_2Opts):
+    __doc__ = Bugzilla5_2Opts.__doc__
 
     _service = 'bugzilla5.2-rest'
