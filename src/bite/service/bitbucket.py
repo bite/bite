@@ -213,9 +213,13 @@ class _SearchRequest(BitbucketPagedRequest, ParseRequest):
             if not self.query:
                 raise BiteError('no supported search terms or options specified')
 
+            # default to showing issues that are open
+            if 'status' not in self.query:
+                self.query['status'] = 'state = "open"'
+
             self.params['q'] = ' AND '.join(self.query.values())
 
-            # sort ascending by issue ID by default
+            # default to sorting ascending by issue ID
             if 'sort' not in self.params:
                 self.params['sort'] = 'id'
 
