@@ -62,7 +62,7 @@ def date(s):
         return s
 
 
-class Bugzilla4_4_Opts(args.ServiceOpts):
+class Bugzilla4_4Opts(args.ServiceOpts):
     """Bugzilla 4.4 options."""
 
     def __init__(self, *args, **kw):
@@ -80,15 +80,15 @@ class Bugzilla4_4_Opts(args.ServiceOpts):
             help='restrict the login to your IP address')
 
 
-class Bugzilla5_0_Opts(Bugzilla4_4_Opts):
+class Bugzilla5_0Opts(Bugzilla4_4Opts):
     """Bugzilla 5.0 options."""
 
 
-class Bugzilla5_2_Opts(Bugzilla5_0_Opts):
+class Bugzilla5_2Opts(Bugzilla5_0Opts):
     """Bugzilla 5.2 options."""
 
 
-@args.subcmd(Bugzilla4_4_Opts)
+@args.subcmd(Bugzilla4_4Opts)
 class Attach(args.Attach):
 
     def __init__(self, *args, **kw):
@@ -110,7 +110,7 @@ class Attach(args.Attach):
             help='attachment is a patch')
 
 
-@args.subcmd(Bugzilla4_4_Opts)
+@args.subcmd(Bugzilla4_4Opts)
 class Attachments(args.Attachments):
 
     def __init__(self, *args, **kw):
@@ -121,7 +121,7 @@ class Attachments(args.Attachments):
             help='list attachment metadata')
 
 
-@args.subcmd(Bugzilla4_4_Opts)
+@args.subcmd(Bugzilla4_4Opts)
 class Create(args.Create):
 
     def __init__(self, *args, **kw):
@@ -191,7 +191,7 @@ class Create(args.Create):
             help='set the keywords of this bug')
 
 
-@args.subcmd(Bugzilla4_4_Opts)
+@args.subcmd(Bugzilla4_4Opts)
 class Get(args.Get):
 
     def __init__(self, *args, **kw):
@@ -205,7 +205,7 @@ class Get(args.Get):
             help='show obsolete attachments')
 
 
-@args.subcmd(Bugzilla4_4_Opts)
+@args.subcmd(Bugzilla4_4Opts)
 class Modify(args.Modify):
 
     def __init__(self, *args, **kw):
@@ -369,7 +369,7 @@ class Modify(args.Modify):
             help='set number of hours worked on this bug as part of this change'),
 
 
-@args.subcmd(Bugzilla4_4_Opts)
+@args.subcmd(Bugzilla4_4Opts)
 class Search(args.PagedSearch):
 
     def __init__(self, *args, **kw):
@@ -456,7 +456,7 @@ class Search(args.PagedSearch):
             help='restrict by url (one or more)')
 
 
-@args.subcmd(Bugzilla5_0_Opts, 'search')
+@args.subcmd(Bugzilla5_0Opts, 'search')
 class Search5_0(Search):
 
     def __init__(self, *args, **kw):
@@ -531,7 +531,7 @@ class Search5_0(Search):
             help='restrict bugs by the specified number of comments or greater')
 
 
-@args.subcmd(Bugzilla5_0_Opts)
+@args.subcmd(Bugzilla5_0Opts)
 class APIKeys(args.Subcmd):
     """Interface to working with bugzilla apikeys."""
 
@@ -557,7 +557,7 @@ class APIKeys(args.Subcmd):
             """)
 
 
-@args.subcmd(Bugzilla5_0_Opts)
+@args.subcmd(Bugzilla5_0Opts)
 class SavedSearches(args.Subcmd):
     """Interface to working with bugzilla saved searches."""
 
@@ -576,7 +576,7 @@ class SavedSearches(args.Subcmd):
             help='remove saved search(es)')
 
 
-@args.subcmd(Bugzilla4_4_Opts)
+@args.subcmd(Bugzilla4_4Opts)
 class Changes(args.Changes):
 
     def __init__(self, *args, **kw):
@@ -595,7 +595,7 @@ class Changes(args.Changes):
             help='custom format for output')
 
 
-@args.subcmd(Bugzilla4_4_Opts)
+@args.subcmd(Bugzilla4_4Opts)
 class Comments(args.Comments):
 
     def __init__(self, *args, **kw):
@@ -613,21 +613,21 @@ class Comments(args.Comments):
             help='custom format for output')
 
 
-@args.subcmd(Bugzilla4_4_Opts)
+@args.subcmd(Bugzilla4_4Opts)
 class Version(args.Subcmd):
 
     def __init__(self, *args, **kw):
         super().__init__(*args, desc='get bugzilla version', **kw)
 
 
-@args.subcmd(Bugzilla4_4_Opts)
+@args.subcmd(Bugzilla4_4Opts)
 class Extensions(args.Subcmd):
 
     def __init__(self, *args, **kw):
         super().__init__(*args, desc='get bugzilla extensions', **kw)
 
 
-@args.subcmd(Bugzilla4_4_Opts)
+@args.subcmd(Bugzilla4_4Opts)
 class Products(args.Subcmd):
 
     def __init__(self, *args, **kw):
@@ -639,7 +639,7 @@ class Products(args.Subcmd):
             help='either ID or name')
 
 
-@args.subcmd(Bugzilla4_4_Opts)
+@args.subcmd(Bugzilla4_4Opts)
 class Users(args.Subcmd):
 
     def __init__(self, *args, **kw):
@@ -650,7 +650,7 @@ class Users(args.Subcmd):
             help='either ID, login, or matching string')
 
 
-@args.subcmd(Bugzilla4_4_Opts)
+@args.subcmd(Bugzilla4_4Opts)
 class Fields(args.Subcmd):
 
     def __init__(self, *args, **kw):
