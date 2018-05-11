@@ -225,10 +225,13 @@ class _SearchRequest(BitbucketPagedRequest, ParseRequest):
             'duplicate': 'duplicate',
             'wontfix': 'wontfix',
             'closed': 'closed',
+        }
 
-            # status aliases
+        # Map of status alias names to matching status values
+        _status_aliases = {
             'OPEN': ('new', 'open', 'on hold'),
             'CLOSED': ('resolved', 'invalid', 'duplicate', 'wontfix', 'closed'),
+            'ALL': _status_map.values(),
         }
 
         def __init__(self, request):
@@ -285,15 +288,14 @@ class _SearchRequest(BitbucketPagedRequest, ParseRequest):
             or_terms = []
             for status in v:
                 try:
-                    status_var = self._status_map[status]
+                    or_terms.append(self._status_map[status])
                 except KeyError:
-                    choices = ', '.join(sorted(self._status_map.keys()))
-                    raise BiteError(
-                        f'invalid status: {status!r} (available choices: {choices}')
-                if isinstance(status_var, (tuple, list)):
-                    or_terms.extend(status_var)
-                else:
-                    or_terms.append(status_var)
+                    try:
+                        or_terms.extend(self._status_aliases[status])
+                    except KeyError:
+                        choices = ', '.join(sorted(self._status_map.keys()))
+                        raise BiteError(
+                            f'invalid status: {status!r} (available choices: {choices}')
             or_search_terms = [f'state = "{x}"' for x in or_terms]
             if len(or_terms) > 1:
                 self.query[k] = f"({' OR '.join(or_search_terms)})"
