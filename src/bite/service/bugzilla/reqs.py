@@ -5,11 +5,17 @@ from urllib.parse import parse_qs
 from snakeoil.demandload import demandload
 from snakeoil.klass import aliased, alias
 
+from . import Bugzilla
 from .objects import BugzillaEvent, BugzillaComment
-from .._reqs import OffsetPagedRequest, Request, ParseRequest
+from .._reqs import OffsetPagedRequest, Request, ParseRequest, GetRequest, req_cmd
 from ...exceptions import BiteError
 
 demandload('bite:const')
+
+
+@req_cmd(Bugzilla, cmd='get')
+class _GetRequest(GetRequest):
+    """Construct a get request."""
 
 
 class SearchRequest4_4(OffsetPagedRequest, ParseRequest):

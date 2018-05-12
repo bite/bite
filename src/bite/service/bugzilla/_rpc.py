@@ -5,7 +5,7 @@ from .reqs import (
     AttachRequest, CreateRequest, ExtensionsRequest, VersionRequest, FieldsRequest,
     ProductsRequest, UsersRequest,
 )
-from .._reqs import GetRequest, req_cmd
+from .._reqs import req_cmd
 from .._rpc import RPCRequest
 
 
@@ -57,13 +57,6 @@ class _VersionRequest(RPCRequest, VersionRequest):
     def __init__(self, *args, **kw):
         """Construct a version request."""
         super().__init__(method='Bugzilla.version', *args, **kw)
-
-
-@req_cmd(Bugzilla4_4Rpc, cmd='get')
-class _GetRequest(GetRequest):
-    def __init__(self, *args, **kw):
-        """Construct a get request."""
-        super().__init__(*args, **kw)
 
 
 @req_cmd(Bugzilla4_4Rpc, cmd='search')

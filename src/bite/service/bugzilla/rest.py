@@ -10,7 +10,7 @@ from .reqs import (
     ExtensionsRequest, VersionRequest, FieldsRequest, ProductsRequest, UsersRequest,
 )
 from .._jsonrest import JsonREST
-from .._reqs import GetRequest, req_cmd
+from .._reqs import req_cmd
 from .._rest import RESTRequest
 
 
@@ -42,11 +42,6 @@ class Bugzilla5_2Rest(Bugzilla5_2, Bugzilla5_0Rest):
     API docs: http://bugzilla.readthedocs.io/en/latest/api/index.html
     """
     _service = 'bugzilla5.2-rest'
-
-
-@req_cmd(Bugzilla5_0Rest, cmd='get')
-class _GetRequest(GetRequest):
-    """Construct a get request."""
 
 
 @req_cmd(Bugzilla5_0Rest, cmd='modify', obj_args=True)
