@@ -402,13 +402,13 @@ class _GetRequest(_GetItemRequest):
                 reqs.append(
                     self.service.AttachmentsRequest(attachment_ids=issue.files))
             else:
-                reqs.append(NullRequest(generator=True))
+                reqs.append(NullRequest())
 
             if issue.messages and self._get_comments:
                 reqs.append(
                     self.service.CommentsRequest(comment_ids=issue.messages))
             else:
-                reqs.append(NullRequest(generator=True))
+                reqs.append(NullRequest())
 
         issue_data = self.service.merged_multicall(reqs=reqs).send()
         # TODO: There doesn't appear to be a way to request issue changes via the API.

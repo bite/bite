@@ -266,7 +266,7 @@ class _ChangelogRequest(Multicall):
         if data is None:
             super().__init__(method='ticket.changeLog', params=ids, **kw)
         else:
-            Request.__init__(self, reqs=(NullRequest(generator=True),), **kw)
+            Request.__init__(self, reqs=(NullRequest(),), **kw)
 
         if ids is None and data is None:
             raise ValueError(f'No ID(s) specified')

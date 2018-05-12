@@ -399,9 +399,8 @@ class ParseRequest(Request):
 class NullRequest(Request):
     """Placeholder request that does nothing."""
 
-    def __init__(self, generator=False):
+    def __init__(self):
         super().__init__(service=None)
-        self._generator = generator
         self._reqs = (None,)
         self._finalized = True
 
@@ -415,9 +414,6 @@ class NullRequest(Request):
         return repr(self)
 
     def parse(self, data):
-        if not self._generator:
-            return None
-
         while True:
             yield None
 
@@ -435,7 +431,7 @@ class GetRequest(Request):
             if locals()[f'get_{call}']:
                 reqs.append(getattr(service, f'{call.capitalize()}Request')(ids=ids))
             else:
-                reqs.append(NullRequest(generator=True))
+                reqs.append(NullRequest())
 
         super().__init__(service=service, reqs=reqs)
 
