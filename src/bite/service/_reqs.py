@@ -116,31 +116,13 @@ class Request(object):
         return self._requests
 
 
-# TODO: run these asynchronously
-class PagedRequest(Request):
-    """Keep requesting matching records until all relevant results are returned."""
+class _BasePagedRequest(Request):
 
-    # page, query size, and total results parameter keys for a related service query
-    _page_key = None
-    _size_key = None
+    # total results parameter key for a related service query
     _total_key = None
 
-    def __init__(self, service, limit=None, page=None, *args, **kw):
-        super().__init__(*args, service=service, **kw)
-
-        if not all((self._page_key, self._size_key, self._total_key)):
-            raise ValueError('page, size, and total keys must be set')
-
-        # set a search limit to make continued requests work as expected
-        if limit is not None:
-            self.params[self._size_key] = limit
-        elif service.max_results is not None:
-            self.params[self._size_key] = service.max_results
-
-        if page is not None:
-            self.params[self._page_key] = page
-        else:
-            self.params[self._page_key] = 0
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
 
         # total number of elements parsed
         self._seen = 0
@@ -150,6 +132,41 @@ class PagedRequest(Request):
         # TODO: For services that return total number of matches on the first
         # request, send the remaining requests asynchronously.
         self._total = None
+
+    def parse(self, data):
+        """Extract the total number of results expected."""
+        if self._total is None and self._total_key is not None:
+            # Some services variably insert the total results number in
+            # response objects based on how expensive it is to compute so allow
+            # it to be missing.
+            self._total = data.get(self._total_key, None)
+        return super().parse(data)
+
+
+# TODO: run these asynchronously
+class PagedRequest(_BasePagedRequest):
+    """Keep requesting matching records until all relevant results are returned."""
+
+    # page and query size parameter keys for a related service query
+    _page_key = None
+    _size_key = None
+
+    def __init__(self, limit=None, page=None, *args, **kw):
+        super().__init__(*args, **kw)
+
+        if not all((self._page_key, self._size_key, self._total_key)):
+            raise ValueError('page, size, and total keys must be set')
+
+        # set a search limit to make continued requests work as expected
+        if limit is not None:
+            self.params[self._size_key] = limit
+        elif self.service.max_results is not None:
+            self.params[self._size_key] = self.service.max_results
+
+        if page is not None:
+            self.params[self._page_key] = page
+        else:
+            self.params[self._page_key] = 0
 
     def send(self):
         while True:
@@ -168,15 +185,6 @@ class PagedRequest(Request):
             self.params[self._page_key] += 1
             self._finalized = False
 
-    def parse(self, data):
-        """Extract the total number of results expected."""
-        if self._total is None:
-            # Some services variably insert the total results number in
-            # response objects based on how expensive it is to compute so allow
-            # it to be missing.
-            self._total = data.get(self._total_key, None)
-        return super().parse(data)
-
 
 # TODO: run these asynchronously
 class FlaggedPagedRequest(Request):
@@ -186,8 +194,8 @@ class FlaggedPagedRequest(Request):
     _page_key = None
     _size_key = None
 
-    def __init__(self, service, limit=None, page=None, *args, **kw):
-        super().__init__(*args, service=service, **kw)
+    def __init__(self, limit=None, page=None, *args, **kw):
+        super().__init__(*args, **kw)
 
         if not all((self._page_key, self._size_key)):
             raise ValueError('page and size keys must be set')
@@ -195,8 +203,8 @@ class FlaggedPagedRequest(Request):
         # set a search limit to make continued requests work as expected
         if limit is not None:
             self.params[self._size_key] = limit
-        elif service.max_results is not None:
-            self.params[self._size_key] = service.max_results
+        elif self.service.max_results is not None:
+            self.params[self._size_key] = self.service.max_results
 
         if page is not None:
             self.params[self._page_key] = page
@@ -228,18 +236,15 @@ class FlaggedPagedRequest(Request):
 
 
 # TODO: run these asynchronously
-class OffsetPagedRequest(Request):
+class OffsetPagedRequest(_BasePagedRequest):
     """Keep requesting matching records until all relevant results are returned."""
 
     # offset and query size parameter keys for a related service query
     _offset_key = None
     _size_key = None
 
-    # total results size key
-    _total_key = None
-
-    def __init__(self, service, limit=None, offset=None, *args, **kw):
-        super().__init__(*args, service=service, **kw)
+    def __init__(self, limit=None, offset=None, *args, **kw):
+        super().__init__(*args, **kw)
 
         if not all((self._offset_key, self._size_key)):
             raise ValueError('offset and size keys must be set')
@@ -247,20 +252,11 @@ class OffsetPagedRequest(Request):
         # set a search limit to make continued requests work as expected
         if limit is not None:
             self.params[self._size_key] = limit
-        elif service.max_results is not None:
-            self.params[self._size_key] = service.max_results
+        elif self.service.max_results is not None:
+            self.params[self._size_key] = self.service.max_results
 
         if offset is not None:
             self.params[self._offset_key] = offset
-
-        # total number of elements parsed
-        self._seen = 0
-
-        # Total number of potential elements to request, some services don't
-        # return the number of matching elements so this is optional.
-        # TODO: For services that return total number of matches on the first
-        # request, send the remaining requests asynchronously.
-        self._total = None
 
     def send(self):
         while True:
@@ -279,18 +275,9 @@ class OffsetPagedRequest(Request):
             self.params[self._offset_key] = self._seen
             self._finalized = False
 
-    def parse(self, data):
-        """Parse the data returned from a given request."""
-        if self._total is None and self._total_key is not None:
-            # Some services variably insert the total results number in
-            # response objects based on how expensive it is to compute so allow
-            # it to be missing.
-            self._total = data.get(self._total_key, None)
-        return super().parse(data)
-
 
 # TODO: run these asynchronously
-class LinkPagedRequest(Request):
+class LinkPagedRequest(_BasePagedRequest):
     """Keep requesting matching records until all relevant result pages are returned."""
 
     # paging related parameter keys for a related service query
@@ -299,28 +286,17 @@ class LinkPagedRequest(Request):
     _next = None
     _previous = None
 
-    # total results size key
-    _total_key = None
-
-    def __init__(self, service, *args, **kw):
-        super().__init__(*args, service=service, **kw)
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
 
         if not all((self._page, self._pagelen, self._next, self._previous)):
             raise ValueError('page, pagelen, next, and previous keys must be set')
 
-        if service.max_results is not None:
-            self.params[self._pagelen] = service.max_results
+        if self.service.max_results is not None:
+            self.params[self._pagelen] = self.service.max_results
 
-        # total number of elements parsed
-        self._seen = 0
         # link to next page
         self._next_page = None
-
-        # Total number of potential elements to request, some services don't
-        # return the number of matching elements so this is optional.
-        # TODO: For services that return total number of matches on the first
-        # request, send the remaining requests asynchronously.
-        self._total = None
 
     def send(self):
         while True:
@@ -341,11 +317,6 @@ class LinkPagedRequest(Request):
     def parse(self, data):
         """Parse the data returned from a given request."""
         self._next_page = data.get(self._next, None)
-        if self._total is None and self._total_key is not None:
-            # Some services variably insert the total results number in
-            # response objects based on how expensive it is to compute so allow
-            # it to be missing.
-            self._total = data.get(self._total_key, None)
         return super().parse(data)
 
 
