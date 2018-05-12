@@ -74,9 +74,8 @@ class Xmlrpc(Xml, Rpc):
         return dumps(params, method, encoding='utf-8',
                      allow_none=True).encode('utf-8', 'xmlcharrefreplace')
 
-    @staticmethod
     @steal_docs(Service)
-    def _decode_request(request):
+    def _decode_request(self, request):
         params, method = loads(request.data)
         return method, self._extract_params(params)
 
