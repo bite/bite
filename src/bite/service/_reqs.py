@@ -40,9 +40,9 @@ def generator(func):
 class Request(object):
     """Construct a request."""
 
-    def __init__(self, service, url=None, method=None, params=None, reqs=None, **kw):
+    def __init__(self, service, url=None, method=None, params=None, reqs=None, options=None, **kw):
         self.service = service
-        self.options = []
+        self.options = options if options is not None else []
         self.params = params if params is not None else {}
         self._req = None
         self._finalized = False
