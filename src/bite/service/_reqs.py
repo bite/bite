@@ -394,6 +394,10 @@ class NullRequest(Request):
         super().__init__(service=None)
         self._generator = generator
         self._reqs = (None,)
+        self._finalized = True
+
+    def _finalize(self):
+        pass
 
     def __bool__(self):
         return False
