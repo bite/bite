@@ -223,6 +223,14 @@ class _SearchRequest(BitbucketPagedRequest, ParseRequest):
             'blocker': 'blocker',
         }
 
+        # map of allowed type input values to service parameters
+        _type_map = {
+            'bug': 'bug',
+            'enhancement': 'enhancement',
+            'proposal': 'proposal',
+            'task': 'task',
+        }
+
         # map of allowed status input values to service parameters
         _status_map = {
             'new': 'new',
@@ -328,6 +336,19 @@ class _SearchRequest(BitbucketPagedRequest, ParseRequest):
                 self.query[k] = f"({self.query[k]})"
             self.options.append(f"Priority: {' OR '.join(or_terms)}")
 
+        def type(self, k, v):
+            or_terms = []
+            for type in v:
+                try:
+                    or_terms.append(self._type_map[type])
+                except KeyError:
+                    choices = ', '.join(sorted(self._type_map.keys()))
+                    raise BiteError(
+                        f'invalid type: {type!r} (available choices: {choices})')
+            self.query[k] = ' OR '.join(f'kind = "{x}"' for x in or_terms)
+            if len(or_terms) > 1:
+                self.query[k] = f"({self.query[k]})"
+            self.options.append(f"Type: {' OR '.join(or_terms)}")
 
         @alias('modified')
         def created(self, k, v):

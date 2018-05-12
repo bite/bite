@@ -61,6 +61,15 @@ class Search(args.Search):
                 which case results can match any of the given values.
             """)
         attr.add_argument(
+            '--type', type=string_list, action=parse_stdin,
+            help='restrict by type (one or more)',
+            docs="""
+                Restrict issues returned by their type.
+
+                Multiple types can be entered as comma-separated values in
+                which case results can match any of the given values.
+            """)
+        attr.add_argument(
             '--votes',
             help='restrict by number of votes or greater')
         attr.add_argument(
