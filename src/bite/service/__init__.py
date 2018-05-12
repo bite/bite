@@ -1,4 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor
+from multiprocessing import cpu_count
 from urllib.parse import urlparse, urlunparse
 
 import requests
@@ -15,6 +16,50 @@ demandload(
     'warnings',
     'urllib3',
 )
+
+
+class Session(requests.Session):
+
+    def __init__(self, concurrent=None, verify=True, stream=True,
+                 timeout=None, allow_redirects=False):
+        super().__init__()
+        self.verify = verify
+        self.stream = stream
+        self.allow_redirects = allow_redirects
+        # default to timing out connections after 30 seconds
+        self.timeout = timeout if timeout is not None else 30
+
+        # block when urllib3 connection pool is full
+        concurrent = concurrent if concurrent is not None else cpu_count() * 5
+        a = requests.adapters.HTTPAdapter(pool_maxsize=concurrent, pool_block=True)
+        self.mount('https://', a)
+        self.mount('http://', a)
+
+        # Suppress insecure request warnings if SSL cert verification is
+        # disabled. Since it's enabled by default we assume when it's disabled
+        # the user knows what they're doing.
+        if not self.verify:
+            warnings.simplefilter('ignore', urllib3.exceptions.InsecureRequestWarning)
+
+        self.headers['User-Agent'] = f'{__title__}-{__version__}'
+        self.headers['Accept-Encoding'] = ', '.join(('gzip', 'deflate', 'compress'))
+
+    def send(self, request, **kw):
+        # use session settings if not explicitly passed
+        kw.setdefault('timeout', self.timeout)
+        kw.setdefault('allow_redirects', self.allow_redirects)
+
+        if not isinstance(request, requests.PreparedRequest):
+            request = self.prepare_request(request)
+
+        try:
+            return super().send(request, **kw)
+        except requests.exceptions.SSLError as e:
+            raise RequestError('SSL certificate verification failed')
+        except requests.exceptions.ConnectionError as e:
+            raise RequestError('failed to establish connection')
+        except requests.exceptions.ReadTimeout as e:
+            raise RequestError('request timed out')
 
 
 class ClientCallbacks(object):
@@ -56,17 +101,14 @@ class Service(object):
         self.user = user
         self.password = password
         self.suffix = suffix
-        self.verify = verify
         self.verbose = verbose
         self.debug = debug
-        self.timeout = timeout if timeout is not None else 30
         self.max_results = max_results
 
         self.client = ClientCallbacks()
 
         # max workers defaults to system CPU count * 5 if concurrent is None
         self.executor = ThreadPoolExecutor(max_workers=concurrent)
-        self.concurrent = self.executor._max_workers
 
         url = urlparse(self.base)
         self._base = urlunparse((
@@ -82,22 +124,9 @@ class Service(object):
         self.cookies = Cookies(connection)
         self.cookies.load()
 
-        # block when urllib3 connection pool is full
-        s = requests.Session()
-        a = requests.adapters.HTTPAdapter(pool_maxsize=self.concurrent, pool_block=True)
-        s.mount('https://', a)
-        s.mount('http://', a)
-        self.session = s
+        concurrent = self.executor._max_workers
+        self.session = Session(concurrent=concurrent, verify=verify, timeout=timeout)
         self._web_session = None
-
-        # Suppress insecure request warnings if SSL cert verification is
-        # disabled. Since it's enabled by default we assume when it's disabled
-        # the user knows what they're doing.
-        if not self.verify:
-            warnings.simplefilter('ignore', urllib3.exceptions.InsecureRequestWarning)
-
-        self.session.headers['User-Agent'] = f'{__title__}-{__version__}'
-        self.session.headers['Accept-Encoding'] = ', '.join(('gzip', 'deflate', 'compress'))
 
         # login if user/pass was specified and the auth token isn't set
         if not self.auth and all((user, password)):
@@ -158,7 +187,7 @@ class Service(object):
             self.service = service
             self.authenticate = login
             self.authenticated = False
-            self.session = requests.Session()
+            self.session = Session()
             self.session.cookies = self.service.cookies
             self.params = {}
 
@@ -271,18 +300,9 @@ class Service(object):
         else:
             return data
 
-    def _http_send(self, req):
+    def _http_send(self, req, **kw):
         """Send an HTTP request and return the parsed response."""
-        try:
-            response = self.session.send(
-                self.session.prepare_request(req), stream=True, timeout=self.timeout,
-                verify=self.verify, allow_redirects=False)
-        except requests.exceptions.SSLError as e:
-            raise RequestError('SSL certificate verification failed')
-        except requests.exceptions.ConnectionError as e:
-            raise RequestError('failed to establish connection')
-        except requests.exceptions.ReadTimeout as e:
-            raise RequestError('request timed out')
+        response = self.session.send(req, **kw)
 
         if response.status_code == 301:
             old = self.base
