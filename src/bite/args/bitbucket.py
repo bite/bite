@@ -86,3 +86,8 @@ class Get(args.Get):
         self.opts.add_argument(
             '-H', '--no-history', dest='get_changes', action='store_false',
             help="don't show bug history")
+
+
+@args.subcmd(BitbucketOpts)
+class Comments(args.Comments):
+    pass

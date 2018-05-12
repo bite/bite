@@ -402,6 +402,7 @@ class _CommentsRequest(Request):
         super().__init__(**kw)
         if ids is None:
             raise ValueError(f'No {self.service.item.type} ID(s) specified')
+        self.options.append(f"IDs: {', '.join(map(str, ids))}")
 
         reqs = []
         for i in ids:
@@ -414,8 +415,8 @@ class _CommentsRequest(Request):
     @generator
     def parse(self, data):
         # skip comments that have no content, i.e. issue attribute changes
-        for i in self.ids:
-            comments = next(data)['values']
+        for i, comments in zip(self.ids, data):
+            comments = comments['values']
             l = []
             for j, c in enumerate(comments):
                 creator = c['user']
@@ -474,10 +475,11 @@ class _ChangesRequest(Request):
 
     @generator
     def parse(self, data):
-        for i in self.ids:
-            changes = next(data)['values']
-            yield tuple(BitbucketEvent(self.service, id=c['id'], count=j, change=c)
-                   for j, c in enumerate(changes))
+        for i, changes in zip(self.ids, data):
+            changes = changes['values']
+            yield tuple(BitbucketEvent(
+                self.service, id=c['id'], count=j, change=c)
+                for j, c in enumerate(changes))
 
 
 @req_cmd(Bitbucket, cmd='get')
@@ -496,7 +498,7 @@ class _GetRequest(GetRequest):
             if self.get_comments:
                 item.comments = (item.description,) + next(comments)
             else:
-                item.comments = None
+                item.comments = next(comments)
             item.attachments = next(attachments)
             item.changes = next(changes)
             yield item
