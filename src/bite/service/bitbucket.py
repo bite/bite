@@ -295,8 +295,11 @@ class _SearchRequest(BitbucketPagedRequest, ParseRequest):
                         or_terms.extend(self._status_aliases[status])
                     except KeyError:
                         choices = ', '.join(sorted(self._status_map.keys()))
+                        aliases = ', '.join(sorted(self._status_aliases.keys()))
                         raise BiteError(
-                            f'invalid status: {status!r} (available choices: {choices}')
+                            f'invalid status: {status!r} '
+                            f'(available choices: {choices}) '
+                            f'(aliases: {aliases})')
             self.query[k] = ' OR '.join(f'state = "{x}"' for x in or_terms)
             if len(or_terms) > 1:
                 self.query[k] = f"({self.query[k]})"
