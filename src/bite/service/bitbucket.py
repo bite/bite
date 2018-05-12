@@ -297,13 +297,10 @@ class _SearchRequest(BitbucketPagedRequest, ParseRequest):
                         choices = ', '.join(sorted(self._status_map.keys()))
                         raise BiteError(
                             f'invalid status: {status!r} (available choices: {choices}')
-            or_search_terms = [f'state = "{x}"' for x in or_terms]
+            self.query[k] = ' OR '.join(f'state = "{x}"' for x in or_terms)
             if len(or_terms) > 1:
-                self.query[k] = f"({' OR '.join(or_search_terms)})"
-                self.options.append(f"Status: ({' OR '.join(or_terms)})")
-            else:
-                self.query[k] = or_search_terms[0]
-                self.options.append(f"Status: {or_terms[0]}")
+                self.query[k] = f"({self.query[k]})"
+            self.options.append(f"Status: {' OR '.join(or_terms)}")
 
         @alias('modified')
         def created(self, k, v):
