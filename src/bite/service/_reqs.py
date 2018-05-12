@@ -171,8 +171,11 @@ class PagedRequest(Request):
     def parse(self, data):
         """Extract the total number of results expected."""
         if self._total is None:
-            self._total = data[self._total_key]
-        super().parse(data)
+            # Some services variably insert the total results number in
+            # response objects based on how expensive it is to compute so allow
+            # it to be missing.
+            self._total = data.get(self._total_key, None)
+        return super().parse(data)
 
 
 # TODO: run these asynchronously
@@ -279,8 +282,11 @@ class OffsetPagedRequest(Request):
     def parse(self, data):
         """Parse the data returned from a given request."""
         if self._total is None and self._total_key is not None:
-            self._total = data[self._total_key]
-        super().parse(data)
+            # Some services variably insert the total results number in
+            # response objects based on how expensive it is to compute so allow
+            # it to be missing.
+            self._total = data.get(self._total_key, None)
+        return super().parse(data)
 
 
 # TODO: run these asynchronously
@@ -336,8 +342,11 @@ class LinkPagedRequest(Request):
         """Parse the data returned from a given request."""
         self._next_page = data.get(self._next, None)
         if self._total is None and self._total_key is not None:
-            self._total = data[self._total_key]
-        super().parse(data)
+            # Some services variably insert the total results number in
+            # response objects based on how expensive it is to compute so allow
+            # it to be missing.
+            self._total = data.get(self._total_key, None)
+        return super().parse(data)
 
 
 class ParseRequest(Request):
