@@ -3,7 +3,6 @@
 from collections import deque
 
 from . import Bugzilla5_0, Bugzilla5_2
-from .objects import BugzillaBug
 from .reqs import (
     LoginRequest, SearchRequest5_0, ChangesRequest, CommentsRequest, AttachmentsRequest,
     GetItemRequest, ModifyRequest, AttachRequest, CreateRequest,

@@ -3,7 +3,6 @@ import re
 
 from dateutil.parser import parse as parsetime
 import lxml.html
-import requests
 from snakeoil.demandload import demandload
 from snakeoil.klass import steal_docs
 from snakeoil.sequences import namedtuple
