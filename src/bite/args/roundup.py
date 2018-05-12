@@ -46,6 +46,11 @@ class Attachments(args.Attachments):
 
 
 @args.subcmd(RoundupOpts)
+class Comments(args.Comments):
+    pass
+
+
+@args.subcmd(RoundupOpts)
 class Schema(args.Subcmd):
 
     def __init__(self, *args, **kw):

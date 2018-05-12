@@ -6,18 +6,18 @@ API docs:
 """
 
 from base64 import b64encode
-from itertools import chain, repeat
+from itertools import chain, islice
 import re
 
 from datetime import datetime
 from snakeoil.klass import aliased, alias
 
-from ._reqs import NullRequest, Request, ParseRequest, req_cmd, generator
+from ._reqs import NullRequest, ParseRequest, req_cmd
 from ._rpc import Multicall, RPCRequest
 from ._xmlrpc import Xmlrpc, XmlrpcError
 from ..cache import Cache, csv2tuple
 from ..exceptions import RequestError, BiteError
-from ..objects import decompress, Item, Attachment, Comment
+from ..objects import Item, Attachment, Comment
 from ..utc import utc
 
 
@@ -456,30 +456,54 @@ class _AttachmentsRequest(Multicall):
 
 @req_cmd(Roundup, cmd='comments')
 class _CommentsRequest(Multicall):
-    def __init__(self, service, ids=None, comment_ids=None, created=None, fields=(), **kw):
-        """Construct a comments request."""
-        # TODO: add support for specifying issue IDs
-        if comment_ids is None:
-            raise ValueError('No comment ID(s) specified')
+    """Construct a comments request."""
 
-        params = (chain([f'msg{i}'], fields) for i in comment_ids)
-        super().__init__(service=service, method='display', params=params, **kw)
+    def __init__(self, ids=None, comment_ids=None, created=None, fields=(), **kw):
+        if not any((ids, comment_ids)):
+            raise ValueError('No ID(s) specified')
 
+        super().__init__(method='display', **kw)
+        if ids is not None:
+            self.options.append(f"IDs: {', '.join(map(str, ids))}")
+
+        self.fields = fields
         self.ids = ids
         self.comment_ids = comment_ids
+
+    def _finalize(self):
+        # get message IDs for given issue IDs
+        if self.ids is not None:
+            id_info = []
+            self.comment_ids = []
+            req_fields = ('id', 'messages')
+            issues = self.service.GetItemRequest(ids=self.ids, fields=req_fields).send()
+            for i, x in enumerate(issues):
+                id_info.append((self.ids[i], len(x.messages)))
+                self.comment_ids.extend(x.messages)
+            self.ids = tuple(id_info)
+
+        self.params = (chain([f'msg{i}'], self.fields) for i in self.comment_ids)
+        super()._finalize()
 
     def parse(self, data):
         # unwrap multicall result
         data = super().parse(data)
 
-        if self.comment_ids:
-            ids = self.comment_ids
+        if self.ids:
+            count = 0
+            for _id, length in self.ids:
+                l = []
+                for i, d in enumerate(islice(data, length)):
+                    l.append(RoundupComment(
+                        id=self.comment_ids[count], count=i, text=d['content'].strip(),
+                        created=parsetime(d['date']), creator=d['author']))
+                    count += 1
+                yield tuple(l)
         else:
-            ids = self.ids
-
-        return [RoundupComment(id=ids[i], count=i, text=d['content'].strip(),
-                               created=parsetime(d['date']), creator=d['author'])
-                for i, d in enumerate(data)]
+            yield tuple(RoundupComment(
+                id=self.comment_ids[i], count=i, text=d['content'].strip(),
+                created=parsetime(d['date']), creator=d['author'])
+                for i, d in enumerate(data))
 
 
 @req_cmd(Roundup, cmd='schema')
