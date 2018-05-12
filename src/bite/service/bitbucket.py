@@ -306,8 +306,12 @@ class _SearchRequest(BitbucketPagedRequest, ParseRequest):
 
         @alias('modified')
         def created(self, k, v):
-            self.query[k] = f'{self.remap[k]} > {v.isoformat()}'
+            self.query[k] = f'{self.remap[k]} >= {v.isoformat()}'
             self.options.append(f'{k.capitalize()}: {v} (since {v.isoformat()})')
+
+        def votes(self, k, v):
+            self.query[k] = f'{k} >= {v}'
+            self.options.append(f'{k.capitalize()}: >= {v}')
 
 
 @req_cmd(Bitbucket)

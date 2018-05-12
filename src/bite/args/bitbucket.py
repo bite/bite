@@ -45,6 +45,9 @@ class Search(args.Search):
                 Multiple statuses can be entered as comma-separated values in
                 which case results can match any of the given values.
             """)
+        attr.add_argument(
+            '--votes',
+            help='restrict by number of votes or greater')
 
 
 @args.subcmd(BitbucketOpts)
