@@ -315,6 +315,12 @@ class _SearchRequest(BitbucketPagedRequest, ParseRequest):
             self.query[k] = f'{self.remap.get(k, k)} >= {v}'
             self.options.append(f'{k.capitalize()}: >= {v}')
 
+        def id(self, k, v):
+            self.query[k] = ' OR '.join(f'id = {x}' for x in v)
+            if len(v) > 1:
+                self.query[k] = f"({self.query[k]})"
+            self.options.append(f"IDs: {', '.join(map(str, v))}")
+
 
 @req_cmd(Bitbucket)
 class _GetItemRequest(Request):

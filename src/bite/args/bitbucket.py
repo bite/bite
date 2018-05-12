@@ -1,6 +1,8 @@
+from functools import partial
+
 from .bugzilla import date
 from .. import args
-from ..argparser import parse_stdin, string_list
+from ..argparser import parse_stdin, string_list, id_list, ids
 
 
 class BitbucketOpts(args.ServiceOpts):
@@ -36,6 +38,10 @@ class Search(args.Search):
             '-m', '--modified', type=date, metavar='TIME',
             help='issues modified at this time or later')
         attr = self.parser.add_argument_group('Attribute related')
+        attr.add_argument(
+            '--id', type=id_list,
+            action=partial(parse_stdin, ids),
+            help='restrict by issue ID(s)')
         attr.add_argument(
             '-s', '--status', type=string_list, action=parse_stdin,
             help='restrict by status (one or more)',
