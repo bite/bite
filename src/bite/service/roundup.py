@@ -12,7 +12,7 @@ import re
 from datetime import datetime
 from snakeoil.klass import aliased, alias
 
-from ._reqs import NullRequest, ParseRequest, req_cmd
+from ._reqs import NullRequest, ParseRequest, req_cmd, generator
 from ._rpc import Multicall, RPCRequest
 from ._xmlrpc import Xmlrpc, XmlrpcError
 from ..cache import Cache, csv2tuple
@@ -402,21 +402,23 @@ class _GetRequest(_GetItemRequest):
                 reqs.append(
                     self.service.AttachmentsRequest(attachment_ids=issue.files))
             else:
-                reqs.append(NullRequest())
+                reqs.append(NullRequest(generator=True))
 
             if issue.messages and self._get_comments:
                 reqs.append(
                     self.service.CommentsRequest(comment_ids=issue.messages))
             else:
-                reqs.append(NullRequest())
+                reqs.append(NullRequest(generator=True))
 
         issue_data = self.service.merged_multicall(reqs=reqs).send()
         # TODO: There doesn't appear to be a way to request issue changes via the API.
         # changes = self.service.ChangesRequest(ids=self.ids).send()
 
         for issue in issues:
-            issue.attachments = next(issue_data)
-            issue.comments = next(issue_data)
+            attachments = next(issue_data)
+            comments = next(issue_data)
+            issue.attachments = next(attachments)
+            issue.comments = next(comments)
             issue.changes = ()
             yield issue
 
@@ -439,6 +441,7 @@ class _AttachmentsRequest(Multicall):
         self.ids = ids
         self.attachment_ids = attachment_ids
 
+    @generator
     def parse(self, data):
         # unwrap multicall result
         data = super().parse(data)
@@ -485,6 +488,7 @@ class _CommentsRequest(Multicall):
         self.params = (chain([f'msg{i}'], self.fields) for i in self.comment_ids)
         super()._finalize()
 
+    @generator
     def parse(self, data):
         # unwrap multicall result
         data = super().parse(data)

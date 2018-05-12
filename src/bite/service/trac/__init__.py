@@ -266,7 +266,7 @@ class _ChangelogRequest(Multicall):
         if data is None:
             super().__init__(method='ticket.changeLog', params=ids, **kw)
         else:
-            Request.__init__(self, reqs=(NullRequest(),))
+            Request.__init__(self, reqs=(NullRequest(generator=True),), **kw)
 
         if ids is None and data is None:
             raise ValueError(f'No ID(s) specified')
@@ -277,9 +277,9 @@ class _ChangelogRequest(Multicall):
     @generator
     def parse(self, data):
         if self._data is not None:
-            yield self._data
+            return self._data
         # unwrap multicall result
-        yield super().parse(data)
+        return super().parse(data)
 
 
 @req_cmd(Trac, cmd='comments')

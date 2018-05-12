@@ -79,8 +79,5 @@ class MergedMulticall(RPCRequest):
     def parse(self, data):
         start = 0
         for i, length in enumerate(self.req_groups):
-            if length == 0:
-                yield None
-            else:
-                yield from self.reqs[i].parse(islice(data, start, start + length))
-                start += length
+            yield self.reqs[i].parse(islice(data, start, start + length))
+            start += length
