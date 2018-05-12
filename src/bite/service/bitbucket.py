@@ -243,9 +243,11 @@ class _SearchRequest(BitbucketPagedRequest, ParseRequest):
             if not self.query:
                 raise BiteError('no supported search terms or options specified')
 
-            # default to showing issues that are open
+            # default to showing issues that aren't closed
             if 'status' not in self.query:
-                self.query['status'] = 'state = "open"'
+                open_status_query = ' OR '.join(
+                    f'state = "{x}"' for x in self._status_aliases['OPEN'])
+                self.query['status'] = f'({open_status_query})'
 
             self.params['q'] = ' AND '.join(self.query.values())
 
