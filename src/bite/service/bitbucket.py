@@ -196,7 +196,7 @@ class _SearchRequest(BitbucketPagedRequest, ParseRequest):
     @aliased
     class ParamParser(ParseRequest.ParamParser):
 
-        # Map of allowed sorting input values to service parameters.
+        # map of allowed sorting input values to service parameters
         _sorting_map = {
             'assignee': 'assignee',
             'id': 'id',
@@ -214,9 +214,16 @@ class _SearchRequest(BitbucketPagedRequest, ParseRequest):
             'description': 'content',
         }
 
-        # Map of allowed status input values to launchpad parameters determined by
-        # submitting an invalid value which returns an error message listing the
-        # valid choices.
+        # map of allowed priority input values to service parameters
+        _priority_map = {
+            'trivial': 'trivial',
+            'minor': 'minor',
+            'major': 'major',
+            'critical': 'critical',
+            'blocker': 'blocker',
+        }
+
+        # map of allowed status input values to service parameters
         _status_map = {
             'new': 'new',
             'open': 'open',
@@ -228,7 +235,7 @@ class _SearchRequest(BitbucketPagedRequest, ParseRequest):
             'closed': 'closed',
         }
 
-        # Map of status alias names to matching status values
+        # map of status alias names to matching status values
         _status_aliases = {
             'OPEN': ('new', 'open', 'on hold'),
             'CLOSED': ('resolved', 'invalid', 'duplicate', 'wontfix', 'closed'),
@@ -306,6 +313,21 @@ class _SearchRequest(BitbucketPagedRequest, ParseRequest):
             if len(or_terms) > 1:
                 self.query[k] = f"({self.query[k]})"
             self.options.append(f"Status: {' OR '.join(or_terms)}")
+
+        def priority(self, k, v):
+            or_terms = []
+            for priority in v:
+                try:
+                    or_terms.append(self._priority_map[priority])
+                except KeyError:
+                    choices = ', '.join(sorted(self._priority_map.keys()))
+                    raise BiteError(
+                        f'invalid priority: {priority!r} (available choices: {choices})')
+            self.query[k] = ' OR '.join(f'priority = "{x}"' for x in or_terms)
+            if len(or_terms) > 1:
+                self.query[k] = f"({self.query[k]})"
+            self.options.append(f"Priority: {' OR '.join(or_terms)}")
+
 
         @alias('modified')
         def created(self, k, v):
