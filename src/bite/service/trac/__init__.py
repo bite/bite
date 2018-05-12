@@ -242,11 +242,11 @@ class _SearchRequest(RPCRequest, ParseRequest):
 class _GetItemRequest(Multicall):
     """Construct an item request."""
 
-    def __init__(self, ids, service, **kw):
+    def __init__(self, ids, **kw):
+        super().__init__(method='ticket.get', params=ids, **kw)
         if ids is None:
-            raise ValueError(f'No {service.item.type} ID(s) specified')
+            raise ValueError(f'No {self.service.item.type} ID(s) specified')
 
-        super().__init__(service=service, method='ticket.get', params=ids, **kw)
         self.ids = ids
 
     def parse(self, data):
@@ -262,26 +262,24 @@ class _GetItemRequest(Multicall):
 class _ChangelogRequest(Multicall):
     """Construct a changelog request."""
 
-    def __init__(self, service, ids=None, item_id=False, data=None, **kw):
+    def __init__(self, ids=None, item_id=False, data=None, **kw):
+        if data is None:
+            super().__init__(method='ticket.changeLog', params=ids, **kw)
+        else:
+            Request.__init__(self, reqs=(NullRequest(),))
+
         if ids is None and data is None:
             raise ValueError(f'No ID(s) specified')
-        options = []
 
-        if data is None:
-            super().__init__(service=service, method='ticket.changeLog', params=ids, **kw)
-        else:
-            Request.__init__(self, service=service, reqs=(NullRequest(),))
-
-        self.options = options
         self.ids = ids
         self._data = data
 
     @generator
     def parse(self, data):
         if self._data is not None:
-            return self._data
+            yield self._data
         # unwrap multicall result
-        return super().parse(data)
+        yield super().parse(data)
 
 
 @req_cmd(Trac, cmd='comments')
@@ -310,11 +308,11 @@ class _CommentsRequest(_ChangelogRequest):
 class _AttachmentsRequest(Multicall):
     """Construct an attachments request."""
 
-    def __init__(self, ids, service, **kw):
+    def __init__(self, ids, **kw):
+        super().__init__(method='ticket.listAttachments', params=ids, **kw)
         if ids is None:
-            raise ValueError(f'No {service.item.type} ID(s) specified')
+            raise ValueError(f'No {self.service.item.type} ID(s) specified')
 
-        super().__init__(service=service, method='ticket.listAttachments', params=ids, **kw)
         self.ids = ids
 
     def parse(self, data):

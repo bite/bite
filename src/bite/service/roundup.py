@@ -355,24 +355,24 @@ class _SearchRequest(RPCRequest, ParseRequest):
 class _GetItemRequest(Multicall):
     """Construct an item request."""
 
-    def __init__(self, ids, service, fields=None, **kw):
+    def __init__(self, ids, fields=None, **kw):
+        super().__init__(method='display', **kw)
         if ids is None:
-            raise ValueError(f'No {service.item.type} ID(s) specified')
+            raise ValueError(f'No {self.service.item.type} ID(s) specified')
 
         # Request all fields by default, roundup says it does this already when
         # no fields are specified, but it still doesn't return all fields.
         if fields is None:
-            fields = service.item.attributes.keys()
-        params = (chain([f'issue{i}'], fields) for i in ids)
+            fields = self.service.item.attributes.keys()
 
-        super().__init__(service=service, method='display', params=params, **kw)
+        self.params = (chain([f'issue{i}'], fields) for i in ids)
         self.ids = ids
 
     def parse(self, data):
         # unwrap multicall result
         issues = super().parse(data)
-        return (self.service.item(self.service, **issue)
-                for i, issue in enumerate(issues))
+        for i, issue in enumerate(issues):
+            yield self.service.item(self.service, **issue)
 
 
 @req_cmd(Roundup, cmd='get')
@@ -423,18 +423,19 @@ class _GetRequest(_GetItemRequest):
 
 @req_cmd(Roundup, cmd='attachments')
 class _AttachmentsRequest(Multicall):
-    def __init__(self, service, ids=None, attachment_ids=None, get_data=False, **kw):
-        """Construct an attachments request."""
+    """Construct an attachments request."""
+
+    def __init__(self, ids=None, attachment_ids=None, get_data=False, **kw):
         # TODO: add support for specifying issue IDs
         if attachment_ids is None:
             raise ValueError('No attachment ID(s) specified')
+        super().__init__(method='display', **kw)
 
         fields = ['name', 'type', 'creator', 'creation']
         if get_data:
             fields.append('content')
-        params = (chain([f'file{i}'], fields) for i in attachment_ids)
-        super().__init__(service=service, method='display', params=params, **kw)
 
+        self.params = (chain([f'file{i}'], fields) for i in attachment_ids)
         self.ids = ids
         self.attachment_ids = attachment_ids
 
@@ -447,9 +448,10 @@ class _AttachmentsRequest(Multicall):
         else:
             ids = self.ids
 
-        return [RoundupAttachment(id=ids[i], filename=d['name'], data=d.get('content', None),
-                                  creator=d['creator'], created=parsetime(d['creation']), mimetype=d['type'])
-                for i, d in enumerate(data)]
+        yield tuple(RoundupAttachment(
+            id=ids[i], filename=d['name'], data=d.get('content', None),
+            creator=d['creator'], created=parsetime(d['creation']), mimetype=d['type'])
+            for i, d in enumerate(data))
 
 
 @req_cmd(Roundup, cmd='comments')
