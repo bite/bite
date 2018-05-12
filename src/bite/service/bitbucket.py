@@ -181,6 +181,7 @@ class _SearchRequest(BitbucketPagedRequest, ParseRequest):
     _params_map = {
         'created': 'created_on',
         'modified': 'updated_on',
+        'watchers': 'watches',
     }
 
     def __init__(self, *args, **kw):
@@ -309,8 +310,9 @@ class _SearchRequest(BitbucketPagedRequest, ParseRequest):
             self.query[k] = f'{self.remap[k]} >= {v.isoformat()}'
             self.options.append(f'{k.capitalize()}: {v} (since {v.isoformat()})')
 
+        @alias('watchers')
         def votes(self, k, v):
-            self.query[k] = f'{k} >= {v}'
+            self.query[k] = f'{self.remap.get(k, k)} >= {v}'
             self.options.append(f'{k.capitalize()}: >= {v}')
 
 

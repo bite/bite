@@ -48,6 +48,9 @@ class Search(args.Search):
         attr.add_argument(
             '--votes',
             help='restrict by number of votes or greater')
+        attr.add_argument(
+            '--watchers',
+            help='restrict by number of watchers or greater')
 
 
 @args.subcmd(BitbucketOpts)
