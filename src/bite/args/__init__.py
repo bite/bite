@@ -28,6 +28,9 @@ class Subcmd(object):
     def __init__(self, parser, service, name=None):
         name = name if name is not None else getattr(self, '_subcmd_name')
         self.service = service
+        if self.description is None:
+            raise ValueError(
+                f'missing description for subcommand {name!r}: {self.__class__}')
         self.parser = parser.add_parser(
             name, cls=arghparse.ArgumentParser,
             quiet=False, color=False, description=self.description)
