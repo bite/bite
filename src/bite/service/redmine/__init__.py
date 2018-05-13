@@ -46,11 +46,11 @@ class Redmine(REST):
     item = RedmineIssue
     item_endpoint = '/issues/{id}'
 
-    def __init__(self, *args, max_results=None, **kw):
+    def __init__(self, max_results=None, **kw):
         # most redmine instances default to 100 results per query
         if max_results is None:
             max_results = 100
-        super().__init__(*args, max_results=max_results, **kw)
+        super().__init__(max_results=max_results, **kw)
 
     def inject_auth(self, request, params):
         raise NotImplementedError
@@ -61,7 +61,7 @@ class Redmine(REST):
         raise RedmineError(msg=msg, code=code)
 
 
-class RedminePagedRequest(RESTRequest, OffsetPagedRequest):
+class RedminePagedRequest(OffsetPagedRequest, RESTRequest):
 
     _offset_key = 'offset'
     _size_key = 'limit'
@@ -69,7 +69,7 @@ class RedminePagedRequest(RESTRequest, OffsetPagedRequest):
 
 
 @req_cmd(Redmine, cmd='search')
-class _SearchRequest(RedminePagedRequest, ParseRequest):
+class _SearchRequest(ParseRequest, RedminePagedRequest):
     """Construct a search request.
 
     Assumes the elastic search plugin is installed:
@@ -77,11 +77,11 @@ class _SearchRequest(RedminePagedRequest, ParseRequest):
         https://github.com/Restream/redmine_elasticsearch/wiki/Search-Quick-Reference
     """
 
-    def __init__(self, service, *args, **kw):
-        super().__init__(*args, service=service, endpoint=f'/search.{service._ext}', **kw)
+    def __init__(self, *, service, **kw):
+        super().__init__(service=service, endpoint=f'/search.{service._ext}', **kw)
 
     def parse(self, data):
-        super().parse(data)
+        data = super().parse(data)
         issues = data['results']
         for issue in issues:
             yield self.service.item(self.service, issue)

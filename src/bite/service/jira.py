@@ -88,7 +88,7 @@ class Jira(JsonREST):
         raise JiraError(msg=msg, code=code)
 
 
-class JiraPagedRequest(RESTRequest, OffsetPagedRequest):
+class JiraPagedRequest(OffsetPagedRequest, RESTRequest):
 
     _offset_key = 'startAt'
     _size_key = 'maxResults'
@@ -96,23 +96,23 @@ class JiraPagedRequest(RESTRequest, OffsetPagedRequest):
 
 
 @req_cmd(Jira, cmd='search')
-class _SearchRequest(JiraPagedRequest, ParseRequest):
+class _SearchRequest(ParseRequest, JiraPagedRequest):
     """Construct a search request."""
 
-    def __init__(self, *args, **kw):
+    def __init__(self, **kw):
         # use POST requests to avoid URL length issues with massive JQL queries
-        super().__init__(*args, endpoint='/search', method='POST', **kw)
+        super().__init__(endpoint='/search', method='POST', **kw)
 
     def parse(self, data):
-        super().parse(data)
+        data = super().parse(data)
         issues = data['issues']
         for issue in issues:
             yield self.service.item(self.service, issue)
 
     class ParamParser(ParseRequest.ParamParser):
 
-        def __init__(self, request):
-            super().__init__(request)
+        def __init__(self, **kw):
+            super().__init__(**kw)
             self.query = []
 
         def _finalize(self, **kw):

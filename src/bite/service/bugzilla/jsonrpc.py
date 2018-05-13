@@ -43,11 +43,11 @@ class _StreamingBugzillaJsonrpc(BugzillaJsonrpc):
 
     class SearchRequest(_SearchRequest5_0):
 
-        def __init__(self, *args, **kw):
+        def __init__(self, **kw):
             """Construct a search request."""
-            super().__init__(*args, **kw)
+            super().__init__(**kw)
 
-        def parse(self, data, *args, **kw):
+        def parse(self, data):
             import ijson.backends.yajl2 as ijson
             bugs = ijson.items(data, 'result.bugs.item')
             return (self.service.item(service=self.service, bug=bug) for bug in bugs)

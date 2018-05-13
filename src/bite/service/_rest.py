@@ -26,7 +26,7 @@ class RESTRequest(Request):
             endpoint = f"{service._base.rstrip('/')}{endpoint}"
         self.endpoint = endpoint
         self.data = {}
-        super().__init__(service, method=method, **kw)
+        super().__init__(service=service, method=method, **kw)
 
     @property
     def url(self):

@@ -184,11 +184,11 @@ class _SearchRequest(BitbucketPagedRequest, ParseRequest):
         'watchers': 'watches',
     }
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, endpoint='/issues', **kw)
+    def __init__(self, **kw):
+        super().__init__(endpoint='/issues', **kw)
 
     def parse(self, data):
-        super().parse(data)
+        data = super().parse(data)
         issues = data['values']
         for issue in issues:
             yield self.service.item(self.service, issue)
@@ -250,8 +250,8 @@ class _SearchRequest(BitbucketPagedRequest, ParseRequest):
             'ALL': _status_map.values(),
         }
 
-        def __init__(self, request):
-            super().__init__(request)
+        def __init__(self, **kw):
+            super().__init__(**kw)
             self.query = {}
 
         def _finalize(self, **kw):
@@ -433,7 +433,7 @@ class _CommentsRequest(Request):
 class _AttachmentsRequest(Request):
     """Construct an attachments request."""
 
-    def __init__(self, ids=None, get_data=False, *args, **kw):
+    def __init__(self, ids=None, get_data=False, **kw):
         super().__init__(**kw)
         if ids is None:
             raise ValueError(f'No {self.service.item.type} ID(s) specified')
@@ -486,16 +486,16 @@ class _ChangesRequest(Request):
 class _GetRequest(GetRequest):
     """Construct requests to retrieve all known data for given issue IDs."""
 
-    def __init__(self, *args, get_comments=False, **kw):
-        super().__init__(*args, get_comments=get_comments, **kw)
-        self.get_comments = get_comments
+    def __init__(self, get_comments=False, **kw):
+        super().__init__(get_comments=get_comments, **kw)
+        self._get_comments = get_comments
 
     def parse(self, data):
         items, comments, attachments, changes = data
         for item in items:
             # Prepend comment for description which is provided by
             # GetItemRequest instead of CommentsRequest.
-            if self.get_comments:
+            if self._get_comments:
                 item.comments = (item.description,) + next(comments)
             else:
                 item.comments = next(comments)

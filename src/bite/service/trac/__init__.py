@@ -97,16 +97,16 @@ class Trac(Service):
     item_endpoint = '/ticket/{id}'
     attachment = TracAttachment
 
-    def __init__(self, *args, max_results=None, **kw):
+    def __init__(self, max_results=None, **kw):
         # Trac uses a setting of 0 to disable paging search results
         if max_results is None:
             max_results = 0
-        super().__init__(*args, endpoint='/rpc', max_results=max_results, **kw)
+        super().__init__(endpoint='/rpc', max_results=max_results, **kw)
 
-    def login(self, *args, **kw):
+    def login(self, **kw):
         # authenticated sessions use a different endpoint
         self._base = f"{self._base.rsplit('/')[0]}/login/rpc"
-        super().login(*args, **kw)
+        super().login(**kw)
 
     def inject_auth(self, request, params):
         raise NotImplementedError
@@ -118,7 +118,7 @@ class Trac(Service):
 
 
 @req_cmd(Trac, cmd='search')
-class _SearchRequest(RPCRequest, ParseRequest):
+class _SearchRequest(ParseRequest, RPCRequest):
     """Construct a search request.
 
     Query docs:
@@ -132,8 +132,8 @@ class _SearchRequest(RPCRequest, ParseRequest):
         'sort': 'order',
     }
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, method='ticket.query', **kw)
+    def __init__(self, **kw):
+        super().__init__(command='ticket.query', **kw)
 
     def parse(self, data):
         # Trac search requests return a list of matching IDs that we resubmit
@@ -167,8 +167,8 @@ class _SearchRequest(RPCRequest, ParseRequest):
             'severity': 'severity',
         }
 
-        def __init__(self, request):
-            super().__init__(request)
+        def __init__(self, **kw):
+            super().__init__(**kw)
             self.query = {}
             self._sort = {'order': 'id'}
 
@@ -243,7 +243,7 @@ class _GetItemRequest(Multicall):
     """Construct an item request."""
 
     def __init__(self, ids, **kw):
-        super().__init__(method='ticket.get', params=ids, **kw)
+        super().__init__(command='ticket.get', params=ids, **kw)
         if ids is None:
             raise ValueError(f'No {self.service.item.type} ID(s) specified')
 
@@ -264,7 +264,7 @@ class _ChangelogRequest(Multicall):
 
     def __init__(self, ids=None, item_id=False, data=None, **kw):
         if data is None:
-            super().__init__(method='ticket.changeLog', params=ids, **kw)
+            super().__init__(command='ticket.changeLog', params=ids, **kw)
         else:
             Request.__init__(self, reqs=(NullRequest(),), **kw)
 
@@ -309,7 +309,7 @@ class _AttachmentsRequest(Multicall):
     """Construct an attachments request."""
 
     def __init__(self, ids, **kw):
-        super().__init__(method='ticket.listAttachments', params=ids, **kw)
+        super().__init__(command='ticket.listAttachments', params=ids, **kw)
         if ids is None:
             raise ValueError(f'No {self.service.item.type} ID(s) specified')
 
@@ -359,19 +359,21 @@ class _ChangesRequest(_ChangelogRequest):
 class _GetRequest(MergedMulticall):
     """Construct requests to retrieve all known data for given ticket IDs."""
 
-    def __init__(self, ids, service, get_comments=False, get_attachments=False,
-                 get_changes=False, *args, **kw):
+    def __init__(self, ids, get_comments=False, get_attachments=False,
+                 get_changes=False, **kw):
+        super().__init__(**kw)
+
         if not ids:
-            raise ValueError('No {service.item.type} ID(s) specified')
-
-        reqs = [service.GetItemRequest(ids=ids)]
-        if get_comments or get_changes:
-            reqs.append(service._ChangelogRequest(ids=ids))
-        if get_attachments:
-            reqs.append(service.AttachmentsRequest(ids=ids))
-
-        super().__init__(service=service, reqs=reqs)
+            raise ValueError('No {self.service.item.type} ID(s) specified')
         self.ids = ids
+
+        reqs = [self.service.GetItemRequest(ids=ids)]
+        if get_comments or get_changes:
+            reqs.append(self.service._ChangelogRequest(ids=ids))
+        if get_attachments:
+            reqs.append(self.service.AttachmentsRequest(ids=ids))
+        self.reqs = reqs
+
         self._get_comments = get_comments
         self._get_attachments = get_attachments
         self._get_changes = get_changes
@@ -420,8 +422,8 @@ class _GetRequest(MergedMulticall):
 class _VersionRequest(RPCRequest):
     """Construct a version request."""
 
-    def __init__(self, *args, **kw):
-        super().__init__(method='system.getAPIVersion', *args, **kw)
+    def __init__(self, **kw):
+        super().__init__(command='system.getAPIVersion', **kw)
 
     def parse(self, data):
         return '.'.join(map(str, data))

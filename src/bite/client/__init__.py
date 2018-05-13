@@ -142,7 +142,7 @@ class Cli(Client):
             user, password = self.service.user, self.service.password
             while not all((user, password)):
                 user, password = self.get_user_pass()
-            self.service.login(user, password)
+            self.service.login(user=user, password=password)
 
     @dry_run
     @login_retry
@@ -171,7 +171,7 @@ class Cli(Client):
         elif output_url:
             print(*_item_urls(ids), sep='\n')
         else:
-            request = self.service.GetRequest(ids, **kw)
+            request = self.service.GetRequest(ids=ids, **kw)
             self.log_t(f"Getting {self.service.item.type}{pluralism(ids)}: {', '.join(map(str, ids))}")
 
             data = request.send()
@@ -183,7 +183,7 @@ class Cli(Client):
     @login_required
     def attach(self, ids, **kw):
         """Attach a file to a specified item given a filename."""
-        request = self.service.AttachRequest(ids, **kw)
+        request = self.service.AttachRequest(ids=ids, **kw)
         data = request.send()
         self.log_t(f"{filename!r} attached to {self.service.item.type}{pluralism(ids)}: \
                    {', '.join(map(str, ids))}")
@@ -304,7 +304,7 @@ class Cli(Client):
     @login_required
     def modify(self, ask=False, **kw):
         """Modify an item on the service."""
-        request = self.service.ModifyRequest(**kw)
+        request = self.service.ModifyRequest(params=kw)
         ids = request.params['ids']
 
         self.log_t(f"Modifying {self.service.item.type}{pluralism(ids)}: {', '.join(map(str, ids))}")
@@ -324,7 +324,7 @@ class Cli(Client):
     @login_required
     def create(self, ask=False, batch=False, **kw):
         """Create an item on the service."""
-        request = self.service.CreateRequest(**kw)
+        request = self.service.CreateRequest(params=kw)
 
         self.log_t(f"Creating {self.service.item.type}")
         self.log(request.options, prefix='')
@@ -341,7 +341,7 @@ class Cli(Client):
     @dry_run
     def search(self, **kw):
         """Search for items on the service."""
-        request = self.service.SearchRequest(**kw)
+        request = self.service.SearchRequest(params=kw)
 
         self.log(f'Searching for {self.service.item.type}s with the following options:')
         self.log(request.options, prefix='   - ')

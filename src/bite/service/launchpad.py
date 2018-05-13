@@ -117,7 +117,7 @@ class Launchpad(JsonREST):
         self.webbase = base
 
 
-class LaunchpadPagedRequest(RESTRequest, OffsetPagedRequest):
+class LaunchpadPagedRequest(OffsetPagedRequest, RESTRequest):
 
     _offset_key = 'ws.start'
     _size_key = 'ws.size'
@@ -125,7 +125,7 @@ class LaunchpadPagedRequest(RESTRequest, OffsetPagedRequest):
 
 
 @req_cmd(Launchpad, cmd='search')
-class _SearchRequest(LaunchpadPagedRequest, ParseRequest):
+class _SearchRequest(ParseRequest, LaunchpadPagedRequest):
     """Construct a search request.
 
     API docs: https://launchpad.net/+apidoc/1.0.html#bugs under the 'searchTasks'
@@ -133,7 +133,7 @@ class _SearchRequest(LaunchpadPagedRequest, ParseRequest):
     """
 
     def parse(self, data):
-        super().parse(data)
+        data = super().parse(data)
         bugs = data['entries']
         for bug in bugs:
             yield self.service.item(self.service, **bug)
@@ -196,8 +196,8 @@ class _SearchRequest(LaunchpadPagedRequest, ParseRequest):
             'wishlist': 'Wishlist',
         }
 
-        def __init__(self, *args, **kw):
-            super().__init__(*args, **kw)
+        def __init__(self, **kw):
+            super().__init__(**kw)
             self._sort = None
 
         def _finalize(self, **kw):
@@ -380,7 +380,7 @@ class _CommentsRequest(Request):
 class _AttachmentsRequest(Request):
     """Construct an attachments request."""
 
-    def __init__(self, ids=None, get_data=False, *args, **kw):
+    def __init__(self, ids=None, get_data=False, **kw):
         super().__init__(**kw)
         if ids is None:
             raise ValueError(f'No {self.service.item.type} specified')

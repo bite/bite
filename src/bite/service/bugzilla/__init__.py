@@ -25,7 +25,7 @@ class BugzillaError(RequestError):
 
 class BugzillaCache(Cache):
 
-    def __init__(self, *args, **kw):
+    def __init__(self, **kw):
         # default to bugzilla-5 open/closed statuses
         defaults = {
             'open_status': ('CONFIRMED', 'IN_PROGRESS', 'UNCONFIRMED'),
@@ -37,7 +37,7 @@ class BugzillaCache(Cache):
             'closed_status': csv2tuple,
         }
 
-        super().__init__(defaults=defaults, converters=converters, *args, **kw)
+        super().__init__(defaults=defaults, converters=converters, **kw)
 
 
 class Bugzilla(Service):
@@ -50,11 +50,11 @@ class Bugzilla(Service):
     attachment = BugzillaAttachment
     attachment_endpoint = '/attachment.cgi?id={id}'
 
-    def __init__(self, max_results=None, *args, **kw):
+    def __init__(self, max_results=None, **kw):
         # most bugzilla instances default to 10k results per req
         if max_results is None:
             max_results = 10000
-        super().__init__(*args, max_results=max_results, **kw)
+        super().__init__(max_results=max_results, **kw)
 
     @property
     def cache_updates(self):
@@ -88,8 +88,8 @@ class Bugzilla(Service):
         return config_updates
 
     @steal_docs(Service)
-    def login(self, *args, restrict_login=False, **kw):
-        super().login(*args, restrict_login=restrict_login, **kw)
+    def login(self, restrict_login=False, **kw):
+        super().login(restrict_login=restrict_login, **kw)
 
     @steal_docs(Service)
     def inject_auth(self, request, params):
@@ -180,8 +180,8 @@ class Bugzilla(Service):
 class Bugzilla5_0(Bugzilla):
     """Generic bugzilla 5.0 service support."""
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
+    def __init__(self, **kw):
+        super().__init__(**kw)
         self.apikeys = self.ApiKeys(self)
         self.saved_searches = self.SavedSearches(self)
 

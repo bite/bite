@@ -119,7 +119,7 @@ class Service(object):
             None, None, None))
 
         self.authenticated = False
-        self.cache = self._cache_cls(connection)
+        self.cache = self._cache_cls(connection=connection)
         self.auth = Auth(connection, path=auth_file, token=auth_token)
 
         self.cookies = Cookies(connection)
@@ -131,14 +131,14 @@ class Service(object):
 
         # login if user/pass was specified and the auth token isn't set
         if not self.auth and all((user, password)):
-            self.login(user, password, **kw)
+            self.login(user=user, password=password, **kw)
 
     @property
     def cache_updates(self):
         """Pull latest data from service for cache update."""
         return {}
 
-    def login(self, user, password, **kw):
+    def login(self, *, user, password, **kw):
         """Authenticate a session."""
         if user is None or password is None:
             raise BiteError('both user and password parameters must be specified')

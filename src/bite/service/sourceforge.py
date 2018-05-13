@@ -176,7 +176,7 @@ class Sourceforge(JsonREST):
         raise SourceforgeError(msg=msg, code=code)
 
 
-class SourceforgePagedRequest(RESTRequest, PagedRequest):
+class SourceforgePagedRequest(PagedRequest, RESTRequest):
     """Support navigating paged requests from Sourceforge."""
 
     _page_key = 'page'
@@ -184,7 +184,7 @@ class SourceforgePagedRequest(RESTRequest, PagedRequest):
     _total_key = 'count'
 
 
-class SourceforgeFlaggedPagedRequest(RESTRequest, FlaggedPagedRequest):
+class SourceforgeFlaggedPagedRequest(FlaggedPagedRequest, RESTRequest):
     """Support navigating paged requests from Sourceforge."""
 
     _page_key = 'page'
@@ -192,7 +192,7 @@ class SourceforgeFlaggedPagedRequest(RESTRequest, FlaggedPagedRequest):
 
 
 @req_cmd(Sourceforge, cmd='search')
-class _SearchRequest(SourceforgePagedRequest, ParseRequest):
+class _SearchRequest(ParseRequest, SourceforgePagedRequest):
     """Construct a search request.
 
     Currently using on Solr on the backend, see the following docs for query help:
@@ -209,11 +209,11 @@ class _SearchRequest(SourceforgePagedRequest, ParseRequest):
         'assignee': 'assigned_to',
     }
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, endpoint='/search', **kw)
+    def __init__(self, **kw):
+        super().__init__(endpoint='/search', **kw)
 
     def parse(self, data):
-        super().parse(data)
+        data = super().parse(data)
         tickets = data['tickets']
         for ticket in tickets:
             yield self.service.item(self.service, **ticket)
@@ -241,8 +241,8 @@ class _SearchRequest(SourceforgePagedRequest, ParseRequest):
             'patch': '_patch_s',
         }
 
-        def __init__(self, request):
-            super().__init__(request)
+        def __init__(self, **kw):
+            super().__init__(**kw)
             self.query = {}
 
         def _finalize(self, **kw):
@@ -386,7 +386,7 @@ class _ThreadRequest(Request):
                 posts = item['thread']['posts']
                 yield posts
                 if not posts:
-                    self._consumed = True
+                    self._exhausted = True
 
 
 @req_cmd(Sourceforge, cmd='comments')
@@ -478,9 +478,8 @@ class _ChangesRequest(_ThreadRequest):
 class _GetRequest(_GetItemRequest):
     """Construct requests to retrieve all known data for given issue IDs."""
 
-    def __init__(self, *args, get_comments=False, get_attachments=False,
-                 get_changes=False, **kw):
-        super().__init__(*args, get_desc=get_comments, get_attachments=get_attachments, **kw)
+    def __init__(self, get_comments=False, get_attachments=False, get_changes=False, **kw):
+        super().__init__(get_desc=get_comments, get_attachments=get_attachments, **kw)
         self._get_comments = get_comments
         self._get_attachments = get_attachments
         self._get_changes = get_changes

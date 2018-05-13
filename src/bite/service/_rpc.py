@@ -18,39 +18,39 @@ class Rpc(Service):
     def _encode_params(params):
         return params
 
-    def multicall(self, *args, **kw):
-        return Multicall(service=self, *args, **kw)
+    def multicall(self, **kw):
+        return Multicall(service=self, **kw)
 
-    def merged_multicall(self, reqs, *args, **kw):
-        return MergedMulticall(reqs=reqs, service=self, *args, **kw)
+    def merged_multicall(self, *, reqs, **kw):
+        return MergedMulticall(reqs=reqs, service=self, **kw)
 
 
 class RPCRequest(Request):
     """Construct an RPC request."""
 
-    def __init__(self, method, **kw):
+    def __init__(self, *, command, **kw):
         super().__init__(method='POST', **kw)
-        self.method = method
+        self.command = command
 
     def _finalize(self):
         """Encode the data body of the request."""
         super()._finalize()
         params = self.params if self.params else None
-        self._req.data = self.service._encode_request(self.method, params)
+        self._req.data = self.service._encode_request(self.command, params)
 
 
 class Multicall(RPCRequest):
     """Construct a system.multicall request."""
 
-    def __init__(self, method, *args, **kw):
-        self.methods = method
-        super().__init__(*args, method='system.multicall', **kw)
+    def __init__(self, *, command, **kw):
+        self.commands = command
+        super().__init__(command='system.multicall', **kw)
 
     def _finalize(self):
-        methods = repeat(self.methods) if isinstance(self.methods, str) else self.methods
-        self.params = (tuple(x) if nonstring_iterable(x) else (x,) for x in self.params)
+        commands = repeat(self.commands) if isinstance(self.commands, str) else self.commands
+        self.params = (tuple(p) if nonstring_iterable(p) else (p,) for p in self.params)
         self.params = tuple(
-            {self.service._multicall_method: m, 'params': x} for m, x in zip(methods, self.params))
+            {self.service._multicall_method: c, 'params': p} for c, p in zip(commands, self.params))
         self.params = self.service._encode_params(self.params)
         super()._finalize()
 
@@ -60,10 +60,10 @@ class Multicall(RPCRequest):
 
 class MergedMulticall(RPCRequest):
 
-    def __init__(self, reqs, *args, **kw):
+    def __init__(self, reqs=None, **kw):
         self.req_groups = []
         self.reqs = reqs
-        super().__init__(*args, method='system.multicall', **kw)
+        super().__init__(command='system.multicall', **kw)
 
     def _finalize(self):
         params = []

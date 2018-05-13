@@ -16,7 +16,7 @@ def req_cmd(service_cls, name=None, cmd=None, obj_args=False):
         setattr(service_cls, req_name, req_func)
         if cmd is not None:
             send = getattr(service_cls, 'send')
-            # TODO: figure out a better funcion overloading method
+            # TODO: figure out a better function overloading method
             def send_func(self, *args, **kw):
                 # support passing in item object iterables for marked reqs
                 if obj_args and (args and not kw):
@@ -40,17 +40,18 @@ def generator(func):
 class Request(object):
     """Construct a request."""
 
-    def __init__(self, service, url=None, method=None, params=None, reqs=None, options=None, **kw):
+    def __init__(self, *, service, url=None, method=None, params=None,
+                 reqs=None, options=None, **kw):
         self.service = service
         self.options = options if options is not None else []
         self.params = params if params is not None else {}
-        self._req = None
         self._finalized = False
 
         if method is not None:
-            if url is None:
-                url = self.service._base
+            url = url if url is not None else self.service._base
             self._req = requests.Request(method=method, url=url)
+        else:
+            self._req = None
 
         self._reqs = tuple(reqs) if reqs is not None else ()
 
@@ -341,10 +342,10 @@ class ParseRequest(Request):
     # map from args dest name to expected service parameter name
     _params_map = {}
 
-    def __init__(self, service, method=None, **kw):
-        super().__init__(service=service, method=method, **kw)
-        self.param_parser = self.ParamParser(self)
-        self.params = self.parse_params(**kw)
+    def __init__(self, *, params, **kw):
+        super().__init__(**kw)
+        self.param_parser = self.ParamParser(request=self)
+        self.params = self.parse_params(**params)
 
     def parse_params(self, **kw):
         for k, v in ((k, v) for (k, v) in kw.items() if v):
@@ -368,7 +369,7 @@ class ParseRequest(Request):
 
     class ParamParser(object):
 
-        def __init__(self, request):
+        def __init__(self, *, request):
             self.request = request
             self.remap = request._params_map
             self.service = request.service
@@ -407,19 +408,23 @@ class NullRequest(Request):
 class GetRequest(Request):
     """Construct requests to retrieve all known data for given item IDs."""
 
-    def __init__(self, ids, service, get_comments=False, get_attachments=False,
-                 get_changes=False, *args, **kw):
+    def __init__(self, ids, get_comments=False, get_attachments=False,
+                 get_changes=False, **kw):
+        super().__init__(**kw)
         if not ids:
-            raise ValueError('No {service.item.type} ID(s) specified')
+            raise ValueError('No {self.service.item.type} ID(s) specified')
 
-        reqs = [service.GetItemRequest(ids=ids)]
+        self._get_comments = get_comments
+        self._get_attachments = get_attachments
+        self._get_changes = get_changes
+
+        reqs = [self.service.GetItemRequest(ids=ids)]
         for call in ('comments', 'attachments', 'changes'):
-            if locals()[f'get_{call}']:
-                reqs.append(getattr(service, f'{call.capitalize()}Request')(ids=ids))
+            if getattr(self, f'_get_{call}'):
+                reqs.append(getattr(self.service, f'{call.capitalize()}Request')(ids=ids))
             else:
                 reqs.append(NullRequest())
-
-        super().__init__(service=service, reqs=reqs)
+        self._reqs = tuple(reqs)
 
     def parse(self, data):
         items, comments, attachments, changes = data

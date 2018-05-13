@@ -24,7 +24,7 @@ def ident(x):
 
 class Cache(object):
 
-    def __init__(self, connection, defaults=None, converters=None):
+    def __init__(self, *, connection, defaults=None, converters=None):
         self._settings = {}
         if defaults is not None:
             self._settings.update(defaults)

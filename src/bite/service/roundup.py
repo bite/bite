@@ -141,7 +141,7 @@ class RoundupAttachment(Attachment):
 
 class RoundupCache(Cache):
 
-    def __init__(self, *args, **kw):
+    def __init__(self, **kw):
         # default to empty values
         defaults = {
             'status': (),
@@ -157,7 +157,7 @@ class RoundupCache(Cache):
             'users': csv2tuple,
         }
 
-        super().__init__(defaults=defaults, converters=converters, *args, **kw)
+        super().__init__(defaults=defaults, converters=converters, **kw)
 
 
 class Roundup(Xmlrpc):
@@ -190,7 +190,7 @@ class Roundup(Xmlrpc):
         attrs = ('status', 'priority', 'keyword', 'user')
         reqs = []
         # pull list of specified attribute types
-        names = list(self.multicall(method='list', params=attrs).send())
+        names = list(self.multicall(command='list', params=attrs).send())
 
         # The list command doesn't return the related values in the order that
         # values their underlying IDs so we have to roll lookups across the
@@ -199,7 +199,7 @@ class Roundup(Xmlrpc):
             data = names[i]
             values[attr] = data
             params = ([attr, x] for x in data)
-            reqs.append(self.multicall(method='lookup', params=params))
+            reqs.append(self.multicall(command='lookup', params=params))
 
         data = self.merged_multicall(reqs=reqs).send()
         for attr in ('status', 'priority', 'keyword', 'user'):
@@ -245,7 +245,7 @@ class Roundup(Xmlrpc):
 
 
 @req_cmd(Roundup, cmd='search')
-class _SearchRequest(RPCRequest, ParseRequest):
+class _SearchRequest(ParseRequest, RPCRequest):
     """Construct a search request."""
 
     # map from standardized kwargs name to expected service parameter name
@@ -254,8 +254,8 @@ class _SearchRequest(RPCRequest, ParseRequest):
         'modified': 'activity',
     }
 
-    def __init__(self, *args, fields=None, **kw):
-        super().__init__(*args, method='filter', **kw)
+    def __init__(self, fields=None, **kw):
+        super().__init__(command='filter', **kw)
 
         # limit fields by default to decrease requested data size and speed up response
         if fields is None:
@@ -300,8 +300,8 @@ class _SearchRequest(RPCRequest, ParseRequest):
             'type': 'type',
         }
 
-        def __init__(self, *args, **kw):
-            super().__init__(*args, **kw)
+        def __init__(self, **kw):
+            super().__init__(**kw)
             self._sort = None
 
         def _finalize(self, **kw):
@@ -355,8 +355,8 @@ class _SearchRequest(RPCRequest, ParseRequest):
 class _GetItemRequest(Multicall):
     """Construct an item request."""
 
-    def __init__(self, ids, fields=None, **kw):
-        super().__init__(method='display', **kw)
+    def __init__(self, *, ids, fields=None, **kw):
+        super().__init__(command='display', **kw)
         if ids is None:
             raise ValueError(f'No {self.service.item.type} ID(s) specified')
 
@@ -379,8 +379,8 @@ class _GetItemRequest(Multicall):
 class _GetRequest(_GetItemRequest):
     """Construct a get request."""
 
-    def __init__(self, *args, get_comments=False, get_attachments=False, **kw):
-        super().__init__(*args, **kw)
+    def __init__(self, get_comments=False, get_attachments=False, **kw):
+        super().__init__(**kw)
         self._get_comments = get_comments
         self._get_attachments = get_attachments
 
@@ -431,7 +431,7 @@ class _AttachmentsRequest(Multicall):
         # TODO: add support for specifying issue IDs
         if attachment_ids is None:
             raise ValueError('No attachment ID(s) specified')
-        super().__init__(method='display', **kw)
+        super().__init__(command='display', **kw)
 
         fields = ['name', 'type', 'creator', 'creation']
         if get_data:
@@ -465,7 +465,7 @@ class _CommentsRequest(Multicall):
         if not any((ids, comment_ids)):
             raise ValueError('No ID(s) specified')
 
-        super().__init__(method='display', **kw)
+        super().__init__(command='display', **kw)
         if ids is not None:
             self.options.append(f"IDs: {', '.join(map(str, ids))}")
 
@@ -514,5 +514,5 @@ class _CommentsRequest(Multicall):
 class _SchemaRequest(RPCRequest):
     """Construct a schema request."""
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, method='schema', **kw)
+    def __init__(self, **kw):
+        super().__init__(command='schema', **kw)

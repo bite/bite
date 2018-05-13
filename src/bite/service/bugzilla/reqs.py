@@ -18,7 +18,7 @@ class _GetRequest(GetRequest):
     """Construct a get request."""
 
 
-class SearchRequest4_4(OffsetPagedRequest, ParseRequest):
+class SearchRequest4_4(ParseRequest, OffsetPagedRequest):
     """Construct a bugzilla-4.4 compatible search request.
 
     API docs: https://www.bugzilla.org/docs/4.4/en/html/api/Bugzilla/WebService/Bug.html#search
@@ -146,8 +146,8 @@ class SearchRequest5_0(SearchRequest4_4):
             'whiteboard': 'status_whiteboard',
         }
 
-        def __init__(self, *args, **kw):
-            super().__init__(*args, **kw)
+        def __init__(self, **kw):
+            super().__init__(**kw)
             self._sort = None
 
         def _finalize(self):
@@ -279,7 +279,7 @@ class AttachmentsRequest(Request):
     """Construct an attachments request."""
 
     def __init__(self, ids=None, attachment_ids=None, fields=None,
-                 get_data=False, *args, **kw):
+                 get_data=False, **kw):
         super().__init__(**kw)
         if ids is None and attachment_ids is None:
             raise ValueError(f'No {self.service.item.type} or attachment ID(s) specified')
@@ -570,7 +570,7 @@ class CreateRequest(Request):
 
 
 class GetItemRequest(Request):
-    """Construct a get request."""
+    """Construct an item retrieval request."""
 
     def __init__(self, ids, fields=None, **kw):
         super().__init__(**kw)
