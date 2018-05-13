@@ -14,8 +14,8 @@ class SourceforgeOpts(args.ServiceOpts):
 @args.subcmd(SourceforgeOpts)
 class Search(args.Search):
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
+    def add_args(self):
+        super().add_args()
         # optional args
         self.opts.add_argument(
             '--sort', action='csv', metavar='TERM',
@@ -54,8 +54,8 @@ class Search(args.Search):
 @args.subcmd(SourceforgeOpts)
 class Get(args.Get):
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
+    def add_args(self):
+        super().add_args()
         # optional args
         self.opts.add_argument(
             '-H', '--no-history', dest='get_changes', action='store_false',
@@ -65,8 +65,8 @@ class Get(args.Get):
 @args.subcmd(SourceforgeOpts)
 class Changes(args.Changes):
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
+    def add_args(self):
+        super().add_args()
         # optional args
         self.opts.add_argument(
             '-c', '--created', dest='creation_time',
@@ -80,8 +80,8 @@ class Changes(args.Changes):
 @args.subcmd(SourceforgeOpts)
 class Comments(args.Comments):
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
+    def add_args(self):
+        super().add_args()
         # optional args
         self.opts.add_argument(
             '-c', '--created', dest='creation_time',

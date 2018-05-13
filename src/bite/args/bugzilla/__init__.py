@@ -91,8 +91,8 @@ class Bugzilla5_2Opts(Bugzilla5_0Opts):
 @args.subcmd(Bugzilla4_4Opts)
 class Attach(args.Attach):
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
+    def add_args(self):
+        super().add_args()
         # positional args
         self.parser.add_argument(
             'filepath', type=str,
@@ -113,8 +113,8 @@ class Attach(args.Attach):
 @args.subcmd(Bugzilla4_4Opts)
 class Attachments(args.Attachments):
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
+    def add_args(self):
+        super().add_args()
         # optional args
         self.opts.add_argument(
             '-l', '--list', action='store_true', dest='show_metadata',
@@ -124,8 +124,8 @@ class Attachments(args.Attachments):
 @args.subcmd(Bugzilla4_4Opts)
 class Create(args.Create):
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
+    def add_args(self):
+        super().add_args()
         # optional args
         person = self.parser.add_argument_group('Person related')
         person.add_argument(
@@ -194,8 +194,8 @@ class Create(args.Create):
 @args.subcmd(Bugzilla4_4Opts)
 class Get(args.Get):
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
+    def add_args(self):
+        super().add_args()
         # optional args
         self.opts.add_argument(
             '-H', '--show-history', dest='get_changes', action='store_true',
@@ -208,8 +208,8 @@ class Get(args.Get):
 @args.subcmd(Bugzilla4_4Opts)
 class Modify(args.Modify):
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
+    def add_args(self):
+        super().add_args()
         # optional args
         self.attr.add_argument(
             '-S', '--severity',
@@ -372,8 +372,8 @@ class Modify(args.Modify):
 @args.subcmd(Bugzilla4_4Opts)
 class Search(args.PagedSearch):
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
+    def add_args(self):
+        super().add_args()
         # optional args
         self.opts.add_argument(
             '--output',
@@ -459,8 +459,8 @@ class Search(args.PagedSearch):
 @args.subcmd(Bugzilla5_0Opts, 'search')
 class Search5_0(Search):
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
+    def add_args(self):
+        super().add_args()
         self.opts.add_argument(
             '--sort', action='csv', metavar='TERM',
             help='sorting order for search query',
@@ -533,10 +533,10 @@ class Search5_0(Search):
 
 @args.subcmd(Bugzilla5_0Opts)
 class APIKeys(args.Subcmd):
-    """Interface to working with bugzilla apikeys."""
+    """generate, revoke, or list API keys"""
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, desc='generate, revoke, or list API keys', **kw)
+    def add_args(self):
+        super().add_args()
         action = self.parser.add_argument_group('Action')
         single_action = action.add_mutually_exclusive_group()
         single_action.add_argument(
@@ -559,10 +559,10 @@ class APIKeys(args.Subcmd):
 
 @args.subcmd(Bugzilla5_0Opts)
 class SavedSearches(args.Subcmd):
-    """Interface to working with bugzilla saved searches."""
+    """save, remove, or list saved searches"""
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, desc='save, remove, or list saved searches', **kw)
+    def add_args(self):
+        super().add_args()
         action = self.parser.add_argument_group('Action')
         single_action = action.add_mutually_exclusive_group()
         single_action.add_argument(
@@ -579,8 +579,8 @@ class SavedSearches(args.Subcmd):
 @args.subcmd(Bugzilla4_4Opts)
 class Changes(args.Changes):
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
+    def add_args(self):
+        super().add_args()
         # optional args
         self.opts.add_argument(
             '-c', '--created', dest='creation_time',
@@ -598,8 +598,8 @@ class Changes(args.Changes):
 @args.subcmd(Bugzilla4_4Opts)
 class Comments(args.Comments):
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
+    def add_args(self):
+        super().add_args()
         # optional args
         self.opts.add_argument(
             '-c', '--created', dest='creation_time',
@@ -615,23 +615,20 @@ class Comments(args.Comments):
 
 @args.subcmd(Bugzilla4_4Opts)
 class Version(args.Subcmd):
-
-    def __init__(self, *args, **kw):
-        super().__init__(*args, desc='get bugzilla version', **kw)
+    """get bugzilla version"""
 
 
 @args.subcmd(Bugzilla4_4Opts)
 class Extensions(args.Subcmd):
-
-    def __init__(self, *args, **kw):
-        super().__init__(*args, desc='get bugzilla extensions', **kw)
+    """get bugzilla extensions"""
 
 
 @args.subcmd(Bugzilla4_4Opts)
 class Products(args.Subcmd):
+    """get bugzilla products"""
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, desc='get bugzilla products', **kw)
+    def add_args(self):
+        super().add_args()
         # positional args
         self.parser.add_argument(
             'products', nargs='?',
@@ -641,9 +638,10 @@ class Products(args.Subcmd):
 
 @args.subcmd(Bugzilla4_4Opts)
 class Users(args.Subcmd):
+    """get bugzilla users"""
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, desc='get bugzilla users', **kw)
+    def add_args(self):
+        super().add_args()
         # positional args
         self.parser.add_argument(
             'users', nargs='+', action=parse_stdin,
@@ -652,9 +650,10 @@ class Users(args.Subcmd):
 
 @args.subcmd(Bugzilla4_4Opts)
 class Fields(args.Subcmd):
+    """get bugzilla fields"""
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, desc='get bugzilla fields', **kw)
+    def add_args(self):
+        super().add_args()
         # positional args
         self.parser.add_argument(
             'fields', nargs='?',

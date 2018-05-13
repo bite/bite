@@ -11,8 +11,8 @@ class RoundupOpts(args.ServiceOpts):
 @args.subcmd(RoundupOpts)
 class Search(args.Search):
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
+    def add_args(self):
+        super().add_args()
         self.opts.add_argument(
             '--sort', action='csv', metavar='TERM',
             help='sorting order for search query',
@@ -52,6 +52,4 @@ class Comments(args.Comments):
 
 @args.subcmd(RoundupOpts)
 class Schema(args.Subcmd):
-
-    def __init__(self, *args, **kw):
-        super().__init__(*args, desc='get Roundup db schema', **kw)
+    """get Roundup db schema"""

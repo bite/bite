@@ -25,13 +25,22 @@ def subcmd(service_cls, name=None):
 
 class Subcmd(object):
 
-    def __init__(self, parser, service, name=None, desc=None):
+    def __init__(self, parser, service, name=None):
         name = name if name is not None else getattr(self, '_subcmd_name')
         self.service = service
         self.parser = parser.add_parser(
-            name, cls=arghparse.ArgumentParser, quiet=False, color=False, description=desc)
+            name, cls=arghparse.ArgumentParser,
+            quiet=False, color=False, description=self.description)
         self.parser.set_defaults(fcn=name)
         self.opts = self.parser.add_argument_group(f'{name.capitalize()} options')
+        self.add_args()
+
+    @property
+    def description(self):
+        return self.__doc__
+
+    def add_args(self):
+        """Add arguments to the subcommand parser."""
 
 
 class ServiceOpts(object):
@@ -101,8 +110,8 @@ class ServiceOpts(object):
 
 class RequestSubcmd(Subcmd):
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
+    def add_args(self):
+        super().add_args()
         self.opts.add_argument(
             '--dry-run', action='store_true',
             help='do everything except requesting or sending data')
@@ -110,8 +119,8 @@ class RequestSubcmd(Subcmd):
 
 class SendSubcmd(RequestSubcmd):
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
+    def add_args(self):
+        super().add_args()
         self.opts.add_argument(
             '--ask', action='store_true',
             help='require confirmation before submitting modifications')
@@ -119,8 +128,8 @@ class SendSubcmd(RequestSubcmd):
 
 class ReceiveSubcmd(RequestSubcmd):
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
+    def add_args(self):
+        super().add_args()
         self.opts.add_argument(
             '-f', '--fields', type=string_list,
             metavar='FIELD | FIELD,FIELD,...',
@@ -129,21 +138,22 @@ class ReceiveSubcmd(RequestSubcmd):
 
 class Search(ReceiveSubcmd):
 
-    def __init__(self, *args, desc=None, **kw):
-        if desc is None:
-            desc = f"search for {kw['service'].item.type}s"
-        super().__init__(*args, desc=desc, **kw)
+    @property
+    def description(self):
+        return f"search for {self.service.item.type}s"
 
+    def add_args(self):
+        super().add_args()
         # positional args
         self.parser.add_argument(
             'terms', nargs='*', metavar='TERM', action=parse_stdin,
-            help=f"string(s) to search for in {kw['service'].item.type} summary/title")
+            help=f"string(s) to search for in {self.service.item.type} summary/title")
 
 
 class PagedSearch(Search):
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
+    def add_args(self):
+        super().add_args()
         # optional args
         self.opts.add_argument(
             '--limit', type=int,
@@ -155,15 +165,16 @@ class PagedSearch(Search):
 
 class Get(ReceiveSubcmd):
 
-    def __init__(self, *args, desc=None, **kw):
-        if desc is None:
-            desc = f"get {kw['service'].item.type}(s)"
-        super().__init__(*args, desc=desc, **kw)
+    @property
+    def description(self):
+        return f"get {self.service.item.type}(s)"
 
+    def add_args(self):
+        super().add_args()
         # positional args
         self.parser.add_argument(
             'ids', type=ids, nargs='+', metavar='ID', action=parse_stdin,
-            help=f"ID(s) or alias(es) of the {kw['service'].item.type}(s) to retrieve")
+            help=f"ID(s) or alias(es) of the {self.service.item.type}(s) to retrieve")
 
         # optional args
         single_action = self.opts.add_mutually_exclusive_group()
@@ -185,15 +196,16 @@ class Get(ReceiveSubcmd):
 
 class Attachments(Subcmd):
 
-    def __init__(self, *args, desc=None, **kw):
-        if desc is None:
-            desc = f"get attachments from {kw['service'].item.type}(s)"
-        super().__init__(*args, desc=desc, **kw)
+    @property
+    def description(self):
+        return f"get attachments from {self.service.item.type}(s)"
 
+    def add_args(self):
+        super().add_args()
         # positional args
         self.parser.add_argument(
             'ids', type=ids, nargs='+', metavar='ID', action=parse_stdin,
-            help=f"attachment ID(s) (or {kw['service'].item.type} ID(s) when --item-id is used)")
+            help=f"attachment ID(s) (or {self.service.item.type} ID(s) when --item-id is used)")
 
         # optional args
         single_action = self.opts.add_mutually_exclusive_group()
@@ -216,14 +228,16 @@ class Attachments(Subcmd):
 
 class Changes(ReceiveSubcmd):
 
-    def __init__(self, *args, desc=None, **kw):
-        if desc is None:
-            desc = f"get changes from {kw['service'].item.type}(s)"
-        super().__init__(*args, desc=desc, **kw)
+    @property
+    def description(self):
+        return f"get changes from {self.service.item.type}(s)"
+
+    def add_args(self):
+        super().add_args()
         # positional args
         self.parser.add_argument(
             'ids', type=ids, nargs='+', metavar='ID', action=parse_stdin,
-            help=f"ID(s) or alias(es) of the {kw['service'].item.type}(s) "
+            help=f"ID(s) or alias(es) of the {self.service.item.type}(s) "
                  "to retrieve all changes")
         # optional args
         self.opts.add_argument(
@@ -239,14 +253,16 @@ class Changes(ReceiveSubcmd):
 
 class Comments(ReceiveSubcmd):
 
-    def __init__(self, *args, desc=None, **kw):
-        if desc is None:
-            desc = f"get comments from {kw['service'].item.type}(s)"
-        super().__init__(*args, desc=desc, **kw)
+    @property
+    def description(self):
+        return f"get comments from {self.service.item.type}(s)"
+
+    def add_args(self):
+        super().add_args()
         # positional args
         self.parser.add_argument(
             'ids', type=ids, nargs='+', metavar='ID', action=parse_stdin,
-            help=f"ID(s) or alias(es) of the {kw['service'].item.type}(s) "
+            help=f"ID(s) or alias(es) of the {self.service.item.type}(s) "
                  "to retrieve all comments")
         # optional args
         self.opts.add_argument(
@@ -260,11 +276,12 @@ class Comments(ReceiveSubcmd):
 
 class Attach(SendSubcmd):
 
-    def __init__(self, *args, desc=None, **kw):
-        if desc is None:
-            desc = f"attach file to {kw['service'].item.type}(s)"
-        super().__init__(*args, desc=desc, **kw)
+    @property
+    def description(self):
+        return f"attach file to {self.service.item.type}(s)"
 
+    def add_args(self):
+        super().add_args()
         self.opts.add_argument(
             '-d', '--description',
             help='a long description of the attachment',
@@ -276,15 +293,16 @@ class Attach(SendSubcmd):
 
 class Modify(SendSubcmd):
 
-    def __init__(self, *args, desc=None, **kw):
-        if desc is None:
-            desc = f"modify {kw['service'].item.type}(s)"
-        super().__init__(*args, desc=desc, **kw)
+    @property
+    def description(self):
+        return f"modify {self.service.item.type}(s)"
 
+    def add_args(self):
+        super().add_args()
         # positional args
         self.parser.add_argument(
             'ids', type=ids, nargs='+', metavar='ID', action=parse_stdin,
-            help=f"ID(s) of the {kw['service'].item.type}(s) to modify")
+            help=f"ID(s) of the {self.service.item.type}(s) to modify")
 
         # optional args
         self.attr = self.parser.add_argument_group('Attribute related')
@@ -296,11 +314,12 @@ class Modify(SendSubcmd):
 
 class Create(SendSubcmd):
 
-    def __init__(self, *args, desc=None, **kw):
-        if desc is None:
-            desc = f"create a new {kw['service'].item.type}"
-        super().__init__(*args, desc=desc, **kw)
+    @property
+    def description(self):
+        return f"create a new {self.service.item.type}"
 
+    def add_args(self):
+        super().add_args()
         self.opts.add_argument(
             '-F', '--description-from',
             help='description from contents of file')

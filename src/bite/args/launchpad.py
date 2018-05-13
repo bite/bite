@@ -11,8 +11,9 @@ class LaunchpadOpts(args.ServiceOpts):
 
 @args.subcmd(LaunchpadOpts)
 class Search(args.PagedSearch):
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
+
+    def add_args(self):
+        super().add_args()
         # optional args
         self.opts.add_argument(
             '--sort', action='csv', metavar='TERM',

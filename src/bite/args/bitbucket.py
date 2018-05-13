@@ -14,8 +14,8 @@ class BitbucketOpts(args.ServiceOpts):
 @args.subcmd(BitbucketOpts)
 class Search(args.Search):
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
+    def add_args(self):
+        super().add_args()
         # optional args
         self.opts.add_argument(
             '--sort', metavar='TERM',
@@ -80,8 +80,8 @@ class Search(args.Search):
 @args.subcmd(BitbucketOpts)
 class Get(args.Get):
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
+    def add_args(self):
+        super().add_args()
         # optional args
         self.opts.add_argument(
             '-H', '--no-history', dest='get_changes', action='store_false',

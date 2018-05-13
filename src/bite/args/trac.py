@@ -22,8 +22,8 @@ class TracXmlrpcOpts(TracOpts):
 @args.subcmd(TracOpts)
 class Search(args.Search):
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
+    def add_args(self):
+        super().add_args()
         self.opts.add_argument(
             '--sort', metavar='TERM',
             help='sorting order for search query',
@@ -56,8 +56,8 @@ class Search(args.Search):
 @args.subcmd(TracOpts)
 class Get(args.Get):
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
+    def add_args(self):
+        super().add_args()
         # optional args
         self.opts.add_argument(
             '-H', '--no-history', dest='get_changes', action='store_false',
@@ -66,6 +66,4 @@ class Get(args.Get):
 
 @args.subcmd(TracOpts)
 class Version(args.Subcmd):
-
-    def __init__(self, *args, **kw):
-        super().__init__(*args, desc='get Trac version', **kw)
+    """get Trac version"""
