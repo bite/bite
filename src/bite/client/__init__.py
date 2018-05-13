@@ -339,6 +339,7 @@ class Cli(Client):
         print(*lines, sep='\n')
 
     @dry_run
+    @login_retry
     def search(self, **kw):
         """Search for items on the service."""
         request = self.service.SearchRequest(params=kw)
@@ -481,6 +482,7 @@ class Cli(Client):
                     yield str(value)
 
     @dry_run
+    @login_retry
     def changes(self, ids, **kw):
         change_num = kw.get('change_num', None)
         creator = kw.get('creator', None)
@@ -550,6 +552,7 @@ class Cli(Client):
                 yield from self._iter_lines(changes)
 
     @dry_run
+    @login_retry
     def comments(self, ids, **kw):
         creation_time = kw.get('creation_time', None)
         creator = kw.get('creator', None)
