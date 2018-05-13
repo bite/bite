@@ -120,6 +120,8 @@ class _BasePagedRequest(Request):
 
     # total results parameter key for a related service query
     _total_key = None
+    # total results response header key
+    _total_header = None
 
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
@@ -135,12 +137,15 @@ class _BasePagedRequest(Request):
 
     def parse(self, data):
         """Extract the total number of results expected."""
-        if self._total is None and self._total_key is not None:
+        if self._total is None:
             # Some services variably insert the total results number in
             # response objects based on how expensive it is to compute so allow
             # it to be missing.
-            self._total = data.get(self._total_key, None)
-        return super().parse(data)
+            if self._total_key is not None:
+                self._total = data.get(self._total_key)
+            elif self._total_header is not None:
+                self._total = response.headers.get(self._total_header)
+        return super().parse(response, data)
 
 
 # TODO: run these asynchronously
@@ -154,7 +159,8 @@ class PagedRequest(_BasePagedRequest):
     def __init__(self, limit=None, page=None, *args, **kw):
         super().__init__(*args, **kw)
 
-        if not all((self._page_key, self._size_key, self._total_key)):
+        if not (all((self._page_key, self._size_key)) and
+                any((self._total_key, self._total_header))):
             raise ValueError('page, size, and total keys must be set')
 
         # set a search limit to make continued requests work as expected
@@ -316,8 +322,8 @@ class LinkPagedRequest(_BasePagedRequest):
 
     def parse(self, data):
         """Parse the data returned from a given request."""
-        self._next_page = data.get(self._next, None)
-        return super().parse(data)
+        self._next_page = data.get(self._next)
+        return super().parse(response, data)
 
 
 # TODO: run these asynchronously
@@ -352,7 +358,7 @@ class LinkHeaderPagedRequest(_BasePagedRequest):
     def parse(self, response, data):
         """Parse the data returned from a given request."""
         self._next_page = response.links.get('next', {}).get('url')
-        return super().parse(data)
+        return super().parse(response, data)
 
 
 class ParseRequest(Request):
