@@ -320,6 +320,41 @@ class LinkPagedRequest(_BasePagedRequest):
         return super().parse(data)
 
 
+# TODO: run these asynchronously
+class LinkHeaderPagedRequest(_BasePagedRequest):
+    """Keep requesting matching records until all relevant result pages are returned."""
+
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
+
+        if all((self.service.max_results, self._pagelen)):
+            self.params[self._pagelen] = self.service.max_results
+
+        # link to next page
+        self._next_page = None
+
+    def send(self):
+        while True:
+            data = self.service.send(self)
+            seen = 0
+            for x in data:
+                seen += 1
+                yield x
+
+            # no more results exist, stop requesting them
+            if self._next_page is None:
+                break
+
+            # set offset and send new request
+            self._seen += seen
+            self._req.url = self._next_page
+
+    def parse(self, response, data):
+        """Parse the data returned from a given request."""
+        self._next_page = response.links.get('next', {}).get('url')
+        return super().parse(data)
+
+
 class ParseRequest(Request):
     """Parse parameters according to defined methods for a request."""
 
