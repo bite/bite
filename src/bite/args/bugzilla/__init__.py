@@ -559,7 +559,7 @@ class APIKeys(args.Subcmd):
 
 @args.subcmd(Bugzilla5_0Opts)
 class SavedSearches(args.Subcmd):
-    """save, remove, or list saved searches"""
+    """save, edit, remove, or list saved searches"""
 
     def add_args(self):
         super().add_args()
@@ -571,6 +571,9 @@ class SavedSearches(args.Subcmd):
         single_action.add_argument(
             '-s', '--save', nargs=2, metavar=('NAME', 'URL'),
             help='create a saved search')
+        single_action.add_argument(
+            '-e', '--edit', nargs='+', metavar='NAME',
+            help='edit saved search(es) in the browser')
         single_action.add_argument(
             '-r', '--remove', action='csv', metavar='NAME',
             help='remove saved search(es)')

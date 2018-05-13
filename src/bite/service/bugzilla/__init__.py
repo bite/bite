@@ -4,7 +4,8 @@ import re
 from dateutil.parser import parse as parsetime
 import lxml.html
 from snakeoil.demandload import demandload
-from snakeoil.klass import steal_docs
+from snakeoil.klass import steal_docs, jit_attr
+from snakeoil.mappings import ImmutableDict
 from snakeoil.sequences import namedtuple
 
 from .objects import BugzillaBug, BugzillaAttachment
@@ -289,7 +290,7 @@ class Bugzilla5_0(Bugzilla):
             self._search_url = f"{self._service.base.rstrip('/')}/buglist.cgi"
             self._doc = None
 
-        @property
+        @jit_attr
         def _searches(self):
             with self._service.web_session() as session:
                 # get the saved searches page
@@ -336,7 +337,7 @@ class Bugzilla5_0(Bugzilla):
                                 'forget': forget,
                             }
 
-            return existing_searches
+            return ImmutableDict(existing_searches)
 
         def save(self, name, data):
             """Save a given search."""

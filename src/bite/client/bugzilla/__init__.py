@@ -9,7 +9,7 @@ from snakeoil.strings import pluralism
 
 from .. import Cli, login_required
 from ...exceptions import BiteError
-from ...utils import block_edit, get_input
+from ...utils import block_edit, get_input, launch_browser
 
 demandload('bite:const')
 
@@ -327,12 +327,21 @@ class Bugzilla5_0(Bugzilla):
                 for k in (x for x in keys if not x.revoked):
                     print(f'{k.key} {k.desc}')
 
-    def savedsearches(self, save=None, remove=None, *args, **kw):
+    def savedsearches(self, save=None, remove=None, edit=None, **kw):
         if save is not None:
             name, url = save
             self.service.saved_searches.save(name, url)
         elif remove is not None:
             self.service.saved_searches.remove(remove)
+        elif edit is not None:
+            for name in edit:
+                saved_search = self.service.saved_searches.get(name)
+                if saved_search is None:
+                    raise BiteError(f'no matching saved search: {name!r}')
+                query = saved_search['query']
+                url = f"{self.service.base.rstrip('/')}/query.cgi?{query}"
+                self.log_t(f'Launching saved search {name!r} in browser: {const.BROWSER}')
+                launch_browser(url)
         else:
             # fallback to listing available saved searches
             for k in self.service.saved_searches.keys():
