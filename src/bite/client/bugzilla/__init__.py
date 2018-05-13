@@ -11,7 +11,11 @@ from .. import Cli, login_required
 from ...exceptions import BiteError
 from ...utils import block_edit, get_input, launch_browser
 
-demandload('bite:const')
+demandload(
+    'pprint',
+    'urllib.parse:parse_qs',
+    'bite:const',
+)
 
 
 class Bugzilla(Cli):
@@ -344,5 +348,12 @@ class Bugzilla5_0(Bugzilla):
                 launch_browser(url)
         else:
             # fallback to listing available saved searches
-            for k in self.service.saved_searches.keys():
-                print(k)
+            if self.verbose:
+                pp = pprint.PrettyPrinter(indent=4)
+                for k, v in self.service.saved_searches.items():
+                    print(f'Name: {k}')
+                    print('Params:')
+                    pp.pprint(parse_qs(v['query']))
+                    print()
+            else:
+                print(*self.service.saved_searches, sep='\n')
