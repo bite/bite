@@ -120,11 +120,9 @@ class _BasePagedRequest(Request):
 
     # total results parameter key for a related service query
     _total_key = None
-    # total results response header key
-    _total_header = None
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
+    def __init__(self, **kw):
+        super().__init__(**kw)
 
         # total number of elements parsed
         self._seen = 0
@@ -143,9 +141,20 @@ class _BasePagedRequest(Request):
             # it to be missing.
             if self._total_key is not None:
                 self._total = data.get(self._total_key)
-            elif self._total_header is not None:
-                self._total = response.headers.get(self._total_header)
-        return super().parse(response, data)
+        return super().parse(data)
+
+    def send(self):
+        """Send a request object to the related service."""
+        while True:
+            data = self.service.send(self)
+            for x in data:
+                self._seen += 1
+                yield x
+            self.next_page()
+
+    def next_page(self):
+        """Modify a request in order to grab the next page of results."""
+        raise StopIteration
 
 
 # TODO: run these asynchronously
@@ -156,11 +165,10 @@ class PagedRequest(_BasePagedRequest):
     _page_key = None
     _size_key = None
 
-    def __init__(self, limit=None, page=None, *args, **kw):
-        super().__init__(*args, **kw)
+    def __init__(self, limit=None, page=None, **kw):
+        super().__init__(**kw)
 
-        if not (all((self._page_key, self._size_key)) and
-                any((self._total_key, self._total_header))):
+        if not all((self._page_key, self._size_key, self._total_key)):
             raise ValueError('page, size, and total keys must be set')
 
         # set a search limit to make continued requests work as expected
@@ -174,34 +182,26 @@ class PagedRequest(_BasePagedRequest):
         else:
             self.params[self._page_key] = 0
 
-    def send(self):
-        while True:
-            data = self.service.send(self)
-            seen = 0
-            for x in data:
-                seen += 1
-                yield x
+    def next_page(self):
+        # if no more results exist, stop requesting them
+        if self._total is None or self._seen >= self._total:
+            raise StopIteration
 
-            # if no more results exist, stop requesting them
-            self._seen += seen
-            if self._total is None or self._seen >= self._total:
-                break
-
-            # increment page and send new request
-            self.params[self._page_key] += 1
-            self._finalized = False
+        # increment page param
+        self.params[self._page_key] += 1
+        self._finalized = False
 
 
 # TODO: run these asynchronously
-class FlaggedPagedRequest(Request):
+class FlaggedPagedRequest(_BasePagedRequest):
     """Keep requesting matching records until all relevant results are returned."""
 
     # page, query size, and total results parameter keys for a related service query
     _page_key = None
     _size_key = None
 
-    def __init__(self, limit=None, page=None, *args, **kw):
-        super().__init__(*args, **kw)
+    def __init__(self, limit=None, page=None, **kw):
+        super().__init__(**kw)
 
         if not all((self._page_key, self._size_key)):
             raise ValueError('page and size keys must be set')
@@ -217,28 +217,16 @@ class FlaggedPagedRequest(Request):
         else:
             self.params[self._page_key] = 0
 
-        # total number of elements parsed
-        self._seen = 0
-
         # flag to note when all data has been consumed
-        self._consumed = False
+        self._exhausted = False
 
-    def send(self):
-        while True:
-            data = self.service.send(self)
-            seen = 0
-            for x in data:
-                seen += 1
-                yield x
+    def next_page(self):
+        if self._exhausted:
+            raise StopIteration
 
-            # if no more results exist, stop requesting them
-            if self._consumed:
-                break
-
-            # increment page and send new request
-            self._seen += seen
-            self.params[self._page_key] += 1
-            self._finalized = False
+        # increment page param
+        self.params[self._page_key] += 1
+        self._finalized = False
 
 
 # TODO: run these asynchronously
@@ -249,8 +237,8 @@ class OffsetPagedRequest(_BasePagedRequest):
     _offset_key = None
     _size_key = None
 
-    def __init__(self, limit=None, offset=None, *args, **kw):
-        super().__init__(*args, **kw)
+    def __init__(self, limit=None, offset=None, **kw):
+        super().__init__(**kw)
 
         if not all((self._offset_key, self._size_key)):
             raise ValueError('offset and size keys must be set')
@@ -264,22 +252,20 @@ class OffsetPagedRequest(_BasePagedRequest):
         if offset is not None:
             self.params[self._offset_key] = offset
 
-    def send(self):
-        while True:
-            data = self.service.send(self)
-            seen = 0
-            for x in data:
-                seen += 1
-                yield x
+        # total number of elements parsed at previous paged request
+        self._prev_seen = 0
 
-            # no more results exist, stop requesting them
-            if self.service.max_results is None or seen < self.service.max_results:
-                break
+    def next_page(self):
+        seen = self._seen - self._prev_seen
 
-            # set offset and send new request
-            self._seen += seen
-            self.params[self._offset_key] = self._seen
-            self._finalized = False
+        # no more results exist, stop requesting them
+        if self.service.max_results is None or seen < self.service.max_results:
+            raise StopIteration
+
+        # set offset and send new request
+        self._prev_seen = self._seen
+        self.params[self._offset_key] = self._seen
+        self._finalized = False
 
 
 # TODO: run these asynchronously
@@ -292,8 +278,8 @@ class LinkPagedRequest(_BasePagedRequest):
     _next = None
     _previous = None
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
+    def __init__(self, **kw):
+        super().__init__(**kw)
 
         if not all((self._page, self._pagelen, self._next, self._previous)):
             raise ValueError('page, pagelen, next, and previous keys must be set')
@@ -304,34 +290,30 @@ class LinkPagedRequest(_BasePagedRequest):
         # link to next page
         self._next_page = None
 
-    def send(self):
-        while True:
-            data = self.service.send(self)
-            seen = 0
-            for x in data:
-                seen += 1
-                yield x
+    def next_page(self):
+        # no more results exist, stop requesting them
+        if self._next_page is None:
+            raise StopIteration
 
-            # no more results exist, stop requesting them
-            if self._next_page is None:
-                break
-
-            # set offset and send new request
-            self._seen += seen
-            self._req.url = self._next_page
+        # set offset and send new request
+        self._req.url = self._next_page
 
     def parse(self, data):
         """Parse the data returned from a given request."""
         self._next_page = data.get(self._next)
-        return super().parse(response, data)
+        return super().parse(data)
 
 
 # TODO: run these asynchronously
 class LinkHeaderPagedRequest(_BasePagedRequest):
     """Keep requesting matching records until all relevant result pages are returned."""
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
+    # total results response header key
+    _pagelen = None
+    _total_header = None
+
+    def __init__(self, **kw):
+        super().__init__(**kw)
 
         if all((self.service.max_results, self._pagelen)):
             self.params[self._pagelen] = self.service.max_results
@@ -339,26 +321,18 @@ class LinkHeaderPagedRequest(_BasePagedRequest):
         # link to next page
         self._next_page = None
 
-    def send(self):
-        while True:
-            data = self.service.send(self)
-            seen = 0
-            for x in data:
-                seen += 1
-                yield x
-
-            # no more results exist, stop requesting them
-            if self._next_page is None:
-                break
-
-            # set offset and send new request
-            self._seen += seen
-            self._req.url = self._next_page
-
-    def parse(self, response, data):
-        """Parse the data returned from a given request."""
+    def parse_response(self, response):
+        if self._total_header is not None:
+            self._total = response.headers.get(self._total_header)
         self._next_page = response.links.get('next', {}).get('url')
-        return super().parse(response, data)
+
+    def next_page(self):
+        # no more results exist, stop requesting them
+        if self._next_page is None:
+            raise StopIteration
+
+        # set offset and send new request
+        self._req.url = self._next_page
 
 
 class ParseRequest(Request):

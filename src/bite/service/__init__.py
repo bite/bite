@@ -1,4 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor
+from functools import partial
 from multiprocessing import cpu_count
 from urllib.parse import urlparse, urlunparse
 
@@ -270,6 +271,7 @@ class Service(object):
             jobs = []
             for req in iflatten_instance(reqs, Request):
                 parse = getattr(req, 'parse', ident)
+                req_parse = getattr(req, 'parse_response', None)
                 handle = getattr(req, 'handle_exception', _raise)
 
                 if isinstance(req, Request) and len(req) > 1:
@@ -283,7 +285,7 @@ class Service(object):
 
                     for r in iflatten_instance(req, requests.Request):
                         if isinstance(r, requests.Request):
-                            func = self._http_send
+                            func = partial(self._http_send, req_parse=req_parse)
                         else:
                             func = ident
                         http_reqs.append(self.executor.submit(func, r))
@@ -300,7 +302,7 @@ class Service(object):
         else:
             return data
 
-    def _http_send(self, req, **kw):
+    def _http_send(self, req, req_parse=None, **kw):
         """Send an HTTP request and return the parsed response."""
         response = self.session.send(req, **kw)
 
@@ -310,6 +312,8 @@ class Service(object):
             raise RequestError(f'service moved permanently: {old} -> {new}')
 
         if response.ok:
+            if req_parse is not None:
+                req_parse(response)
             return self.parse_response(response)
         else:
             self._failed_http_response(response)
