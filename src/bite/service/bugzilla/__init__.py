@@ -1,4 +1,4 @@
-from urllib.parse import parse_qs, urlencode
+from urllib.parse import urlencode
 import re
 
 from dateutil.parser import parse as parsetime
@@ -308,7 +308,6 @@ class Bugzilla5_0(Bugzilla):
 
                     # extract saved searches from tables
                     names = self._doc.xpath(f'//table[@id="{table}"]/tr/td[1]/text()')
-                    forgets = [None] * len(names)
                     # determine the column number pull elements from it
                     edit_col_num = len(self._doc.xpath(
                         f'//table[@id="{table}"]/tr/th[.="Edit"][1]/preceding-sibling::th')) + 1
@@ -319,31 +318,23 @@ class Bugzilla5_0(Bugzilla):
                     forget_col = self._doc.xpath(
                         f'//table[@id="{table}"]/tr/td[{forget_col_num}]')
 
-                    queries = []
                     for i, (q, f) in enumerate(zip(query_col, forget_col)):
-                        try:
-                            # find the query edit link
-                            queries.append(next(q.iterlinks())[2])
-                            forgets[i] = next(f.iterlinks())[2]
-                        except StopIteration:
-                            # skip searches that don't have advanced search edit links
-                            # (usually only the default "My Bugs" search)
-                            queries.append(None)
-                            forgets[i] = None
+                        # find the query edit/forget links
+                        query = tuple(q.iterlinks())
+                        forget = tuple(f.iterlinks())
+                        query = query[0][2] if query else None
+                        forget = forget[0][2] if forget else None
 
-
-                    for name, query, forget in zip(names, queries, forgets):
                         # skip the default "My Bugs" search which is uneditable
                         # and not removable
-                        if query is None:
-                            continue
-                        if forget is not None:
-                            forget = forget.split('?', 1)[1]
-                        url_params = query.split('?', 1)[1]
-                        existing_searches[name.strip()] = {
-                            'params': parse_qs(url_params),
-                            'forget': forget,
-                        }
+                        if query is not None:
+                            if forget is not None:
+                                forget = forget.split('?', 1)[1]
+                            query = query.split('?', 1)[1]
+                            existing_searches[names[i].strip()] = {
+                                'query': query,
+                                'forget': forget,
+                            }
 
             return existing_searches
 
@@ -408,7 +399,7 @@ class Bugzilla5_0(Bugzilla):
         def __contains__(self, name):
             return name in self._searches
 
-        def get(self, name, default):
+        def get(self, name, default=None):
             return self._searches.get(name, default)
 
         def items(self):

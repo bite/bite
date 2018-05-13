@@ -212,11 +212,11 @@ class SearchRequest5_0(SearchRequest4_4):
                     self.params[k] = v if len(v) > 1 else v[0]
 
         def saved_search(self, k, v):
-            saved_search_params = self.service.saved_searches.get(v, None)
-            if saved_search_params is None:
+            saved_search = self.service.saved_searches.get(v)
+            if saved_search is None:
                 raise BiteError(f'no matching saved search: {v!r}')
             self.options.append(f'Using saved search: {v}')
-            for k, v in saved_search_params['params'].items():
+            for k, v in parse_qs(saved_search['query']).items():
                 if k not in self.params:
                     self.params[k] = v if len(v) > 1 else v[0]
 
