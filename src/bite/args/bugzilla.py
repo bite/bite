@@ -7,11 +7,11 @@ import sys
 from dateutil.parser import parse as parsetime
 from dateutil.relativedelta import *
 
-from ... import args
-from ...argparser import parse_stdin, string_list, id_list, ids
-from ...objects import DateTime
-from ...utc import utc
-from ...utils import str2bool
+from .. import args
+from ..argparser import parse_stdin, string_list, id_list, ids
+from ..objects import DateTime
+from ..utc import utc
+from ..utils import str2bool
 
 
 def parse_date(s):
@@ -74,7 +74,7 @@ class Bugzilla4_4Opts(args.ServiceOpts):
 
     def main_opts(self):
         """Add service specific arguments."""
-        from ...scripts.bite import auth_opts
+        from ..scripts.bite import auth_opts
         auth_opts.add_argument(
             '--restrict', action='store_true', dest='restrict_login',
             help='restrict the login to your IP address')
@@ -659,3 +659,52 @@ class Fields(args.Subcmd):
             'fields', nargs='?',
             type=string_list, action=parse_stdin,
             help='either ID or name')
+
+
+## Service classes
+class Bugzilla4_4JsonrpcOpts(Bugzilla4_4Opts):
+    __doc__ = Bugzilla4_4Opts.__doc__
+
+    _service = 'bugzilla4.4-jsonrpc'
+
+
+class Bugzilla5_0JsonrpcOpts(Bugzilla5_0Opts):
+    __doc__ = Bugzilla5_0Opts.__doc__
+
+    _service = 'bugzilla5.0-jsonrpc'
+
+
+class Bugzilla5_2JsonrpcOpts(Bugzilla5_2Opts):
+    __doc__ = Bugzilla5_2Opts.__doc__
+
+    _service = 'bugzilla5.2-jsonrpc'
+
+
+class Bugzilla4_4XmlrpcOpts(Bugzilla4_4Opts):
+    __doc__ = Bugzilla4_4Opts.__doc__
+
+    _service = 'bugzilla4.4-xmlrpc'
+
+
+class Bugzilla5_0XmlrpcOpts(Bugzilla5_0Opts):
+    __doc__ = Bugzilla5_0Opts.__doc__
+
+    _service = 'bugzilla5.0-xmlrpc'
+
+
+class Bugzilla5_2XmlrpcOpts(Bugzilla5_2Opts):
+    __doc__ = Bugzilla5_2Opts.__doc__
+
+    _service = 'bugzilla5.2-xmlrpc'
+
+
+class Bugzilla5_0RestOpts(Bugzilla5_0Opts):
+    __doc__ = Bugzilla5_0Opts.__doc__
+
+    _service = 'bugzilla5.0-rest'
+
+
+class Bugzilla5_2RestOpts(Bugzilla5_2Opts):
+    __doc__ = Bugzilla5_2Opts.__doc__
+
+    _service = 'bugzilla5.2-rest'
