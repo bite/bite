@@ -486,7 +486,7 @@ class _ChangesRequest(Request):
 class _GetRequest(GetRequest):
     """Construct requests to retrieve all known data for given issue IDs."""
 
-    def __init__(self, get_comments=False, **kw):
+    def __init__(self, get_comments=True, **kw):
         super().__init__(get_comments=get_comments, **kw)
         self._get_comments = get_comments
 

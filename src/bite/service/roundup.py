@@ -379,7 +379,7 @@ class _GetItemRequest(Multicall):
 class _GetRequest(_GetItemRequest):
     """Construct a get request."""
 
-    def __init__(self, get_comments=False, get_attachments=False, **kw):
+    def __init__(self, get_comments=True, get_attachments=True, **kw):
         super().__init__(**kw)
         self._get_comments = get_comments
         self._get_attachments = get_attachments

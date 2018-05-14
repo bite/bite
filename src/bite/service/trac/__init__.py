@@ -359,7 +359,7 @@ class _ChangesRequest(_ChangelogRequest):
 class _GetRequest(MergedMulticall):
     """Construct requests to retrieve all known data for given ticket IDs."""
 
-    def __init__(self, ids, get_comments=False, get_attachments=False,
+    def __init__(self, ids, get_comments=True, get_attachments=True,
                  get_changes=False, **kw):
         super().__init__(**kw)
 

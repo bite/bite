@@ -196,16 +196,14 @@ class Get(ReceiveSubcmd):
                 '-U', '--url', dest='output_url', action='store_true',
                 help=f'output {self.service.item.type} URL(s)')
         self.opts.add_argument(
-            '-A', '--no-attachments', action='store_false',
-            help='do not show attachments',
-            dest='get_attachments')
+            '-A', '--no-attachments', action='store_false', dest='get_attachments',
+            help='do not show attachments')
         self.opts.add_argument(
-            '-C', '--no-comments', action='store_false',
-            help='do not show comments',
-            dest='get_comments')
+            '-C', '--no-comments', action='store_false', dest='get_comments',
+            help='do not show comments')
         if history:
             self.opts.add_argument(
-                '-H', '--show-history', dest='get_changes', action='store_true',
+                '-H', '--show-history', action='store_true', dest='get_changes',
                 help=f'show {self.service.item.type} history')
 
 

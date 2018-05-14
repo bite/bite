@@ -478,7 +478,7 @@ class _ChangesRequest(_ThreadRequest):
 class _GetRequest(_GetItemRequest):
     """Construct requests to retrieve all known data for given issue IDs."""
 
-    def __init__(self, get_comments=False, get_attachments=False, get_changes=False, **kw):
+    def __init__(self, get_comments=True, get_attachments=True, get_changes=False, **kw):
         super().__init__(get_desc=get_comments, get_attachments=get_attachments, **kw)
         self._get_comments = get_comments
         self._get_attachments = get_attachments
