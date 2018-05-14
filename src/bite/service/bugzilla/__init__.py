@@ -4,7 +4,7 @@ import re
 from dateutil.parser import parse as parsetime
 import lxml.html
 from snakeoil.demandload import demandload
-from snakeoil.klass import steal_docs, jit_attr
+from snakeoil.klass import steal_docs, jit_attr_none
 from snakeoil.mappings import ImmutableDict
 from snakeoil.sequences import namedtuple
 
@@ -290,7 +290,7 @@ class Bugzilla5_0(Bugzilla):
             self._search_url = f"{self._service.base.rstrip('/')}/buglist.cgi"
             self._doc = None
 
-        @jit_attr
+        @jit_attr_none
         def _searches(self):
             with self._service.web_session() as session:
                 # get the saved searches page
@@ -372,6 +372,9 @@ class Bugzilla5_0(Bugzilla):
                 if not msg or msg[0] != name:
                     raise RequestError(f'failed saving search: {name!r}')
 
+            # reset jitted attr to force refresh
+            self.__searches = None
+
         def remove(self, names):
             """Remove a given saved search."""
             searches = dict(self._searches.items())
@@ -393,6 +396,9 @@ class Bugzilla5_0(Bugzilla):
                     msg = doc.xpath('//div[@id="bugzilla-body"]/div/b/text()')
                     if not msg or msg[0] != name:
                         raise RequestError(f'failed removing search: {name!r}')
+
+            # reset jitted attr to force refresh
+            self.__searches = None
 
         def __iter__(self):
             return iter(self._searches)
