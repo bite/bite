@@ -31,9 +31,16 @@ class Subcmd(object):
         if self.description is None:
             raise ValueError(
                 f'missing description for subcommand {name!r}: {self.__class__}')
+
+        # Suppress empty attribute creation during parse_args() calls, this
+        # means that only the args passed in will create attributes in the
+        # returned namespace instead of attributes for all options using their
+        # default values.
+        subcmd_parser = partial(
+            arghparse.ArgumentParser, argument_default=argparse.SUPPRESS)
+
         self.parser = parser.add_parser(
-            name, cls=arghparse.ArgumentParser,
-            quiet=False, color=False, description=self.description)
+            name, cls=subcmd_parser, quiet=False, color=False, description=self.description)
         self.parser.set_defaults(fcn=name)
         self.opts = self.parser.add_argument_group(f'{name.capitalize()} options')
         self.add_args()

@@ -150,7 +150,7 @@ class parse_stdin(Action):
                     raise ArgumentError(self, 'missing required values piped via stdin')
 
         # append multiple args by default for array-based options
-        previous = getattr(namespace, self.dest)
+        previous = getattr(namespace, self.dest, None)
         if self.append and isinstance(previous, list):
             values = previous + values
 
@@ -564,7 +564,7 @@ class ArgumentParser(arghparse.ArgumentParser):
         # client settings that override unset service level args
         for attr in ('verbose', 'debug'):
             if not getattr(service, attr):
-                setattr(service, attr, fcn_args[attr])
+                setattr(service, attr, fcn_args.get(attr))
 
         # set args namespace items for the client
         initial_args.service = service

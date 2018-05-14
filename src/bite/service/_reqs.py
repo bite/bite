@@ -348,7 +348,7 @@ class ParseRequest(Request):
         self.params = self.parse_params(**params)
 
     def parse_params(self, **kw):
-        for k, v in ((k, v) for (k, v) in kw.items() if v):
+        for k, v in kw.items():
             parse = getattr(self.param_parser, k, self.param_parser._default_parser)
             if not callable(parse):
                 raise ValueError(f"invalid parameter parsing function: {k!r}")
