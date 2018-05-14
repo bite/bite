@@ -99,6 +99,7 @@ class Service(object):
                  max_results=None, debug=None, verbose=None, **kw):
         self.base = base
         self.webbase = base
+        self.connection = connection
         self.user = user
         self.password = password
         self.suffix = suffix
@@ -121,9 +122,6 @@ class Service(object):
         self.authenticated = False
         self.cache = self._cache_cls(connection=connection)
         self.auth = Auth(connection, path=auth_file, token=auth_token)
-
-        self.cookies = Cookies(connection)
-        self.cookies.load()
 
         concurrent = self.executor._max_workers
         self.session = Session(concurrent=concurrent, verify=verify, timeout=timeout)
@@ -189,7 +187,8 @@ class Service(object):
             self.authenticate = login
             self.authenticated = False
             self.session = Session()
-            self.session.cookies = self.service.cookies
+            self.session.cookies = Cookies(self.service.connection)
+            self.session.cookies.load()
             self.params = {}
 
         def add_params(self, user, password):
