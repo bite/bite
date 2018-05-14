@@ -94,7 +94,7 @@ class Service(object):
     attachment = Attachment
     attachment_endpoint = None
 
-    def __init__(self, base, endpoint='', connection=None, verify=True, user=None, password=None,
+    def __init__(self, *, base, endpoint='', connection=None, verify=True, user=None, password=None,
                  auth_file=None, auth_token=None, suffix=None, timeout=None, concurrent=None,
                  max_results=None, debug=None, verbose=None, **kw):
         self.base = base
