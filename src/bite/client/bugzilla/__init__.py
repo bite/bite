@@ -151,12 +151,12 @@ class Bugzilla(Cli):
                     elif v['added']:
                         yield f"{field}: +{v['added']}"
         else:
-            if 'comment-body' not in kw:
+            if 'comment' not in kw:
                 yield 'No changes made'
 
-        if kw.get('comment-body', None) is not None:
+        if kw.get('comment') is not None:
             yield self._header('-', 'Added comment')
-            yield kw['comment-body']
+            yield kw['comment']
 
     def version(self, **kw):
         version = self.service.version()

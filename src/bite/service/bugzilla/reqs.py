@@ -321,23 +321,23 @@ class AttachmentsRequest(Request):
 class ModifyRequest(ParseRequest):
     """Construct a modify request."""
 
-    def __init__(self, ids=None, **kw):
-        self.ids = ids
-        super().__init__(**kw)
-
     def parse(self, data):
         return data['bugs']
 
     @aliased
     class ParamParser(ParseRequest.ParamParser):
 
+        def __init__(self, **kw):
+            super().__init__(**kw)
+            self._ids = None
+
         def _finalize(self):
             if not self.params:
                 raise ValueError('No changes specified')
 
-            if not self.request.ids:
+            if not self._ids:
                 raise ValueError('No bug ID(s) specified')
-            self.params['ids'] = self.request.ids
+            self.params['ids'] = self._ids
 
             if self.options:
                 prefix = '--- Modifying fields '
@@ -358,6 +358,9 @@ class ModifyRequest(ParseRequest):
                 self.options.append('{:<10}: {}'.format(self.service.item.attributes[k], v))
             else:
                 super()._default_parser(k, v)
+
+        def ids(self, k, v):
+            self._ids = v
 
         # fields that can be added or removed
         @alias('groups', 'see_also', 'cc')
@@ -501,72 +504,62 @@ class AttachRequest(Request):
         return data['attachments']
 
 
-class CreateRequest(Request):
+class CreateRequest(ParseRequest):
     """Construct a bug creation request."""
 
-    def __init__(self, product, component, version, summary, description=None, op_sys=None,
-                 platform=None, priority=None, severity=None, alias=None, assigned_to=None,
-                 cc=None, target_milestone=None, groups=None, status=None, **kw):
-        """
-        :returns: ID of the newly created bug
-        :rtype: int
-        """
-        super().__init__(**kw)
-        # TODO: check param settings for validity against cached values?
-        self.params.update({
-            'product': product,
-            'component': component,
-            'version': version,
-            'summary': summary,
-        })
-        self.options.extend([
-            '=' * const.COLUMNS,
-            f"Product: {product}",
-            f"Component: {component}",
-            f"Version: {version}",
-            f"Title: {summary}",
-        ])
-
-        if op_sys:
-            self.params['op_sys'] = op_sys
-            self.options.append(f"OS: {op_sys}")
-        if platform:
-            self.params['platform'] = platform
-            self.options.append(f"Platform: {platform}")
-        if priority:
-            self.params['priority'] = priority
-            self.options.append(f"Priority: {priority}")
-        if severity:
-            self.params['severity'] = severity
-            self.options.append(f"Severity: {severity}")
-        if alias:
-            self.params['alias'] = alias
-            self.options.append(f"Alias: {alias}")
-        if assigned_to:
-            self.params['assigned_to'] = list(map(service._resuffix, assigned_to))
-            self.options.append(f"Assigned to: {service._desuffix(assigned_to)}")
-        if cc:
-            self.params['cc'] = list(map(service._resuffix, cc))
-            self.options.append(f"CC: {', '.join(map(service._desuffix, cc))}")
-        if target_milestone:
-            self.params['target_milestone'] = target_milestone
-            self.options.append(f"Milestone: {target_milestone}")
-        if groups:
-            self.params['groups'] = groups
-            self.options.append(f"Groups: {', '.join(groups)}")
-        if status:
-            self.params['status'] = status
-            self.options.append(f"Status: {status}")
-
-        if description:
-            self.params['description'] = description
-            msg = 'Description'
-            self.options.append(f'{"-" * 3} {msg} {"-" * (const.COLUMNS - len(msg) - 5)}')
-            self.options.append(description)
-        self.options.append('=' * const.COLUMNS)
+    # map from standardized kwargs name to expected service parameter name
+    _params_map = {
+        'milestone': 'target_milestone',
+    }
 
     def parse(self, data):
         return data['id']
+
+    @aliased
+    class ParamParser(ParseRequest.ParamParser):
+
+        def __init__(self, **kw):
+            super().__init__(**kw)
+            self.options.append('=' * const.COLUMNS)
+
+        def _finalize(self):
+            # TODO: check param value validity against cached values?
+            required_params = {
+                'product', 'component', 'version', 'summary', 'op_sys', 'platform'}
+            missing_params = required_params - self.params.keys()
+            if missing_params:
+                raise ValueError(f"missing required params: {', '.join(missing_params)}")
+
+            # make sure description is last in the options output
+            if 'description' in self.params:
+                msg_prefix = 'Description'
+                self.options.append(
+                    f'{"-" * 3} {msg_prefix} {"-" * (const.COLUMNS - len(msg_prefix) - 5)}')
+                self.options.append(self.params['description'])
+
+            self.options.append('=' * const.COLUMNS)
+
+        def _default_parser(self, k, v):
+            if k in self.service.item.attributes:
+                self.params[k] = v
+                self.options.append('{:<10}: {}'.format(self.service.item.attributes[k], v))
+            else:
+                super()._default_parser(k, v)
+
+        def assigned_to(self, k, v):
+            self.params[k] = list(map(self.service._resuffix, v))
+            self.options.append(f"Assigned to: {self.service._desuffix(v)}")
+
+        def cc(self, k, v):
+            self.params[k] = list(map(service._resuffix, v))
+            self.options.append(f"CC: {', '.join(map(service._desuffix, v))}")
+
+        def milestone(self, k, v):
+            self.params[k] = v
+            self.options.append(f"Milestone: {v}")
+
+        def description(self, k, v):
+            self.params[k] = v
 
 
 class GetItemRequest(Request):
