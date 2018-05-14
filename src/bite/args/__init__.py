@@ -187,13 +187,14 @@ class Get(ReceiveSubcmd):
             help=f"ID(s) or alias(es) of the {self.service.item.type}(s) to retrieve")
 
         # optional args
-        single_action = self.opts.add_mutually_exclusive_group()
-        single_action.add_argument(
-            '-B', '--browser', action='store_true',
-            help="open item URL(s) in a browser")
-        single_action.add_argument(
-            '-U', '--url', dest='output_url', action='store_true',
-            help='output the URL(s) of the item(s)')
+        if self.service.item_endpoint is not None:
+            single_action = self.opts.add_mutually_exclusive_group()
+            single_action.add_argument(
+                '-B', '--browser', action='store_true',
+                help=f'open {self.service.item.type} URL(s) in a browser')
+            single_action.add_argument(
+                '-U', '--url', dest='output_url', action='store_true',
+                help=f'output {self.service.item.type} URL(s)')
         self.opts.add_argument(
             '-A', '--no-attachments', action='store_false',
             help='do not show attachments',
@@ -219,12 +220,13 @@ class Attachments(Subcmd):
 
         # optional args
         single_action = self.opts.add_mutually_exclusive_group()
-        single_action.add_argument(
-            '-B', '--browser', action='store_true',
-            help="open attachment URL(s) in a browser")
-        single_action.add_argument(
-            '-U', '--url', dest='output_url', action='store_true',
-            help='output the URL(s) of the attachment(s)')
+        if self.service.attachment_endpoint is not None:
+            single_action.add_argument(
+                '-B', '--browser', action='store_true',
+                help="open attachment URL(s) in a browser")
+            single_action.add_argument(
+                '-U', '--url', dest='output_url', action='store_true',
+                help='output attachment URL(s)')
         single_action.add_argument(
             '-V', '--view', action='store_true', dest='view_attachment',
             help='output attachment data')
