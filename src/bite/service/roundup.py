@@ -452,7 +452,7 @@ class _AttachmentsRequest(Multicall):
             ids = self.ids
 
         yield tuple(RoundupAttachment(
-            id=ids[i], filename=d['name'], data=d.get('content', None),
+            id=ids[i], filename=d['name'], data=d.get('content'),
             creator=d['creator'], created=parsetime(d['creation']), mimetype=d['type'])
             for i, d in enumerate(data))
 

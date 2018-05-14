@@ -79,7 +79,7 @@ class BitbucketIssue(Item):
 
     def __init__(self, service, issue, get_desc=True):
         for k in self.attributes.keys():
-            v = issue.get(k, None)
+            v = issue.get(k)
             if k in ('assignee', 'reporter') and v:
                 v = v['username']
             elif k == 'reporter' and v is None:
@@ -153,7 +153,7 @@ class Bitbucket(JsonREST):
 
     def parse_response(self, response):
         data = super().parse_response(response)
-        if data.get('type', None) != 'error':
+        if data.get('type') != 'error':
             return data
         else:
             self.handle_error(code=response.status_code, msg=data['error']['message'])

@@ -172,7 +172,7 @@ class BugzillaComment(Comment):
         self.comment_id = comment['id']
 
         if rest:
-            if comment['creator'].get('real_name', None):
+            if comment['creator'].get('real_name'):
                 creator = f"{comment['creator']['real_name']} ({comment['creator']['name']}"
             else:
                 creator = comment['creator']['name']

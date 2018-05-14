@@ -75,7 +75,7 @@ class Bugzilla(Service):
         open_status = []
         closed_status = []
         for status in statuses[0].get('values', []):
-            if status.get('name', None) is not None:
+            if status.get('name') is not None:
                 if status.get('is_open', False):
                     open_status.append(status['name'])
                 else:
@@ -377,7 +377,7 @@ class Bugzilla5_0(Bugzilla):
             searches = dict(self._searches.items())
             removals = []
             for name in names:
-                search = searches.get(name, None)
+                search = searches.get(name)
                 if search is None:
                     raise RequestError(f'nonexistent saved search: {name!r}')
                 forget = search['forget']

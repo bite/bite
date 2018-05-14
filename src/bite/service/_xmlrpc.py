@@ -97,7 +97,7 @@ class Xmlrpc(Xml, Rpc):
             raise ParsingError(msg='failed parsing XML') from e
 
         try:
-            faults = data.get('faults', None)
+            faults = data.get('faults')
         except AttributeError:
             faults = None
 

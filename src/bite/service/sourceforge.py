@@ -80,7 +80,7 @@ class SourceforgeTicket(Item):
         self.changes = None
 
         for k in self.attributes.keys():
-            v = kw.get(k, None)
+            v = kw.get(k)
             if k in ('created_date', 'mod_date') and v:
                 # sourceforge doesn't specify an offset for its timestamps, assume UTC
                 v = dateparse(v).astimezone(utc)
@@ -165,7 +165,7 @@ class Sourceforge(JsonREST):
 
     def parse_response(self, response):
         data = super().parse_response(response)
-        if data.get('type', None) != 'error':
+        if data.get('type') != 'error':
             return data
         else:
             self.handle_error(code=response.status_code, msg=data['error']['message'])

@@ -122,7 +122,7 @@ class _SearchRequest(ParseRequest, JiraPagedRequest):
             self.params['jql'] = ' AND '.join(self.query)
 
             # limit fields by default to decrease requested data size and speed up response
-            fields = kw.get('fields', None)
+            fields = kw.get('fields')
             if fields is None:
                 fields = ['id', 'assignee', 'summary']
             else:
