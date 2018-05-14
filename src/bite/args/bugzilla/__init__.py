@@ -195,13 +195,10 @@ class Create(args.Create):
 class Get(args.Get):
 
     def add_args(self):
-        super().add_args()
+        super().add_args(history=True)
         # optional args
         self.opts.add_argument(
-            '-H', '--show-history', dest='get_changes', action='store_true',
-            help='show bug history')
-        self.opts.add_argument(
-            '--show-obsolete', action='store_true',
+            '-O', '--show-obsolete', action='store_true',
             help='show obsolete attachments')
 
 

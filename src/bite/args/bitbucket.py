@@ -81,11 +81,7 @@ class Search(args.Search):
 class Get(args.Get):
 
     def add_args(self):
-        super().add_args()
-        # optional args
-        self.opts.add_argument(
-            '-H', '--no-history', dest='get_changes', action='store_false',
-            help="don't show bug history")
+        super().add_args(history=True)
 
 
 @args.subcmd(BitbucketOpts)

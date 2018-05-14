@@ -179,7 +179,7 @@ class Get(ReceiveSubcmd):
     def description(self):
         return f"get {self.service.item.type}(s)"
 
-    def add_args(self):
+    def add_args(self, history=False):
         super().add_args()
         # positional args
         self.parser.add_argument(
@@ -203,6 +203,10 @@ class Get(ReceiveSubcmd):
             '-C', '--no-comments', action='store_false',
             help='do not show comments',
             dest='get_comments')
+        if history:
+            self.opts.add_argument(
+                '-H', '--show-history', dest='get_changes', action='store_true',
+                help=f'show {self.service.item.type} history')
 
 
 class Attachments(Subcmd):
