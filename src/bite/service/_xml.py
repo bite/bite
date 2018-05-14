@@ -102,5 +102,6 @@ class LXMLParser(object):
         self._parser.close()
 
 
+# TODO: implement this for XML REST clients
 class UnmarshallToDict(object):
     pass
