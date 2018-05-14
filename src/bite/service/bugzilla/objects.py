@@ -258,10 +258,15 @@ class BugzillaEvent(Change):
             created = parsetime(change['when'])
         changes = {}
         for c in change['changes']:
+            field = c['field_name']
             removed, added = c['removed'], c['added']
             removed = self._change_map.get(removed, removed)
             added = self._change_map.get(added, added)
-            changes[c['field_name']] = (removed, added)
+            change = (removed, added)
+            if field == 'attachments.isobsolete':
+                changes[field] = (c['attachment_id'], change)
+            else:
+                changes[field] = change
         super().__init__(
             creator=creator, created=created, id=id,
             changes=changes, count=count)
@@ -280,7 +285,7 @@ class BugzillaEvent(Change):
                     field = field.replace('_', ' ')
 
             if k == 'attachments.isobsolete':
-                lines.append(f"{field}: {change['attachment_id']}")
+                lines.append(f"{field}: {v[0]}")
             else:
                 if removed and added:
                     changes = f"{removed} -> {added}"
