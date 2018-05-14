@@ -27,7 +27,7 @@ class Bugzilla(Cli):
         super().attach(*args, **kw)
 
     def create(self, *args, **kw):
-        # TODO: check if cache exists, if it doesn't pull a copy
+        # TODO: check if cache exists, if it doesn't pull a copy to use for default values
         # load description from file or stdin
         description_from = kw.get('description_from')
         if description_from:
@@ -43,7 +43,7 @@ class Bugzilla(Cli):
         if not kw.get('batch'):
             self.log('Press Ctrl+C at any time to abort.')
 
-            while not kw.get('summary') or not kw['summary']:
+            while not kw.get('summary'):
                 kw['summary'] = get_input('Title: ')
 
             if not kw.get('description'):
@@ -51,34 +51,31 @@ class Bugzilla(Cli):
                 if data:
                     kw['description'] = data
 
-            while not kw.get('product') or not kw['product']:
+            while not kw.get('product'):
                 kw['product'] = get_input('Product: ')
 
-            while not kw.get('component') or not kw['component']:
+            while not kw.get('component'):
                 kw['component'] = get_input('Component: ')
 
-            if not kw.get('version'):
-                cached_versions = self.service.cache.get('versions')
-                default_str = ''
-                if cached_versions:
-                    # assume default version has the lowest ID
-                    default_version = cached_versions[0]
-                    default_str = f' (default: {default_version})'
-                version = get_input(f"Version{default_str}: ")
-                if version:
-                    kw['version'] = version
-                else:
-                    kw['version'] = default_version
+            while not kw.get('version'):
+                kw['version'] = get_input('Version: ')
+                # cached_versions = self.service.cache.get('versions')
+                # default_str = ''
+                # if cached_versions:
+                #     # assume default version has the lowest ID
+                #     default_version = cached_versions[0]
+                #     default_str = f' (default: {default_version})'
+                # version = get_input(f"Version{default_str}: ")
+                # if version:
+                #     kw['version'] = version
+                # else:
+                #     kw['version'] = default_version
 
-            if not kw.get('op_sys'):
-                data = get_input('OS: ')
-                if data:
-                    kw['op_sys'] = data
+            while not kw.get('op_sys'):
+                kw['op_sys'] = get_input('OS: ')
 
-            if not kw.get('platform'):
-                data = get_input('Hardware: ')
-                if data:
-                    kw['platform'] = data
+            while not kw.get('platform'):
+                kw['platform'] = get_input('Hardware: ')
 
             if not kw.get('priority'):
                 data = get_input('Priority (optional): ')
