@@ -174,7 +174,7 @@ class BitbucketPagedRequest(RESTRequest, LinkPagedRequest):
 
 
 @req_cmd(Bitbucket, cmd='search')
-class _SearchRequest(BitbucketPagedRequest, ParseRequest):
+class _SearchRequest(ParseRequest, BitbucketPagedRequest):
     """Construct a search request."""
 
     # map from standardized kwargs name to expected service parameter name
