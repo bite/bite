@@ -452,7 +452,7 @@ class _AttachmentsRequest(Multicall):
 class _CommentsRequest(Multicall):
     """Construct a comments request."""
 
-    def __init__(self, ids=None, comment_ids=None, created=None, fields=(), **kw):
+    def __init__(self, ids=None, comment_ids=None, fields=(), **kw):
         if not any((ids, comment_ids)):
             raise ValueError('No ID(s) specified')
 
