@@ -95,3 +95,8 @@ class Search(args.PagedSearch):
 @args.subcmd(LaunchpadOpts)
 class Get(args.Get):
     pass
+
+
+@args.subcmd(LaunchpadOpts)
+class Comments(args.Comments):
+    pass

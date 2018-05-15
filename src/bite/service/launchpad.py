@@ -333,24 +333,26 @@ class _GetItemRequest(Request):
 class _CommentsRequest(Request):
     """Construct a comments request."""
 
-    def __init__(self, ids=None, created=None, service=None, **kw):
+    def __init__(self, ids=None, **kw):
         if ids is None:
-            raise ValueError(f'No {service.item.type} specified')
+            raise ValueError(f'No IDs specified')
+
+        super().__init__(**kw)
+        self.options.append(f"IDs: {', '.join(map(str, ids))}")
 
         reqs = []
         for i in ids:
             reqs.extend([
                 RESTRequest(
-                    service=service, endpoint=f'{service._api_base}/bugs/{i}/messages'),
+                    service=self.service, endpoint=f'{self.service._api_base}/bugs/{i}/messages'),
                 RESTRequest(
-                    service=service, endpoint=f'{service._api_base}/bugs/{i}/attachments'),
+                    service=self.service, endpoint=f'{self.service._api_base}/bugs/{i}/attachments'),
             ])
 
 
-        super().__init__(service=service, reqs=reqs)
         self.ids = ids
+        self._reqs = tuple(reqs)
 
-    @generator
     def parse(self, data):
         # merge attachments into related comments similar to the web UI
         for id in self.ids:
