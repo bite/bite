@@ -2,6 +2,7 @@
 Launchpad
 =========
 
-.. include:: ../generated/launchpad/main_synopsis.rst
-.. include:: ../generated/launchpad/main_description.rst
-.. include:: ../generated/launchpad/main_options.rst
+.. include:: ../generated/launchpad/_synopsis.rst
+.. include:: ../generated/launchpad/_description.rst
+.. include:: ../generated/launchpad/_options.rst
+.. include:: ../generated/launchpad/_subcommands.rst

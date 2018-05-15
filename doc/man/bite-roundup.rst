@@ -2,6 +2,7 @@
 Roundup
 =======
 
-.. include:: ../generated/roundup/main_synopsis.rst
-.. include:: ../generated/roundup/main_description.rst
-.. include:: ../generated/roundup/main_options.rst
+.. include:: ../generated/roundup/_synopsis.rst
+.. include:: ../generated/roundup/_description.rst
+.. include:: ../generated/roundup/_options.rst
+.. include:: ../generated/roundup/_subcommands.rst

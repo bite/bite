@@ -2,6 +2,7 @@
 Sourceforge
 ===========
 
-.. include:: ../generated/sourceforge/main_synopsis.rst
-.. include:: ../generated/sourceforge/main_description.rst
-.. include:: ../generated/sourceforge/main_options.rst
+.. include:: ../generated/sourceforge/_synopsis.rst
+.. include:: ../generated/sourceforge/_description.rst
+.. include:: ../generated/sourceforge/_options.rst
+.. include:: ../generated/sourceforge/_subcommands.rst
