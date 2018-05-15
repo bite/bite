@@ -12,7 +12,7 @@ import re
 from datetime import datetime
 from snakeoil.klass import aliased, alias
 
-from ._reqs import NullRequest, ParseRequest, req_cmd, generator
+from ._reqs import NullRequest, ParseRequest, req_cmd
 from ._rpc import Multicall, RPCRequest
 from ._xmlrpc import Xmlrpc, XmlrpcError
 from ..cache import Cache, csv2tuple
@@ -433,7 +433,6 @@ class _AttachmentsRequest(Multicall):
         self.ids = ids
         self.attachment_ids = attachment_ids
 
-    @generator
     def parse(self, data):
         # unwrap multicall result
         data = super().parse(data)
@@ -480,7 +479,6 @@ class _CommentsRequest(Multicall):
         self.params = (chain([f'msg{i}'], self.fields) for i in self.comment_ids)
         super()._finalize()
 
-    @generator
     def parse(self, data):
         # unwrap multicall result
         data = super().parse(data)
