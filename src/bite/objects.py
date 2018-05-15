@@ -302,8 +302,16 @@ class Attachment(object):
             with open(path, 'wb+') as f:
                 os.chmod(path, stat.S_IREAD | stat.S_IWRITE)
                 f.write(self.read(raw=True))
-        except IOError as e:
-            raise BiteError(f'failed writing file: {path!r}: {e.strerror}')
+        except Exception as e:
+            # toss file stub if it got created
+            try:
+                os.remove(path)
+            except FileNotFoundError:
+                pass
+
+            if isinstance(e, IOError):
+                raise BiteError(f'failed writing file: {path!r}: {e.strerror}')
+            raise
 
 
 class TarAttachment(object):
