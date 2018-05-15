@@ -31,6 +31,10 @@ def parsetime(time):
 class RoundupError(RequestError):
 
     def __init__(self, msg, code=None, text=None):
+        # extract roundup error code and msg if it exists
+        roundup_exc = re.match(r"^<\w+ '(.+)'>:(.+)$", msg)
+        if roundup_exc:
+            code, msg = roundup_exc.groups()
         msg = 'Roundup error: ' + msg
         super().__init__(msg, code, text)
 
@@ -165,6 +169,7 @@ class Roundup(Xmlrpc):
 
     _service = 'roundup'
     _cache_cls = RoundupCache
+    _rpc_error = RoundupError
 
     item = RoundupIssue
     item_endpoint = '/issue{id}'
@@ -229,19 +234,6 @@ class Roundup(Xmlrpc):
             password = password.encode('latin1')
         authstr = 'Basic ' + (b64encode(b':'.join((user, password))).strip()).decode()
         return authstr
-
-    def parse_response(self, response):
-        """Send request object and perform checks on the response."""
-        try:
-            data = super().parse_response(response)
-        except XmlrpcError as e:
-            roundup_exc = re.match(r"^<\w+ '(.+)'>:(.+)$", e.msg)
-            if roundup_exc:
-                code, msg = roundup_exc.groups()
-                raise RoundupError(msg=msg.lower(), code=code)
-            raise
-
-        return data
 
 
 @req_cmd(Roundup, cmd='search')

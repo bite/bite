@@ -9,6 +9,7 @@ class Rpc(Service):
 
     _multicall_method = 'method'
     _multicall_iter = None
+    _rpc_error = None
 
     @staticmethod
     def _extract_params(params):
@@ -55,7 +56,7 @@ class Multicall(RPCRequest):
         super()._finalize()
 
     def parse(self, data):
-        return self.service._multicall_iter(data)
+        return self.service._multicall_iter(data, service=self.service)
 
 
 class MergedMulticall(RPCRequest):

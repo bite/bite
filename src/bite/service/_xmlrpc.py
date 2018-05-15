@@ -34,8 +34,9 @@ class MulticallIterator(object):
     Raising any XML-RPC faults that are found.
     """
 
-    def __init__(self, results):
+    def __init__(self, results, service):
         self.results = tuple(results)
+        self.service = service
         self.idx = 0
 
     def __iter__(self):
@@ -48,7 +49,8 @@ class MulticallIterator(object):
             raise StopIteration
 
         if isinstance(item, dict):
-            raise Fault(item['faultCode'], item['faultString'])
+            raise self.service._rpc_error(
+                code=item['faultCode'], msg=item['faultString'])
         elif isinstance(item, list):
             self.idx += 1
             return item[0]
@@ -64,6 +66,7 @@ class Xmlrpc(Xml, Rpc):
 
     _multicall_method = 'methodName'
     _multicall_iter = MulticallIterator
+    _rpc_error = XmlrpcError
 
     @steal_docs(Service)
     def _encode_request(self, method, params=None):
@@ -92,7 +95,7 @@ class Xmlrpc(Xml, Rpc):
         try:
             data = super().parse_response(response)
         except Fault as e:
-            raise XmlrpcError(msg=e.faultString, code=e.faultCode)
+            raise self._rpc_error(msg=e.faultString, code=e.faultCode)
         except ResponseError as e:
             raise ParsingError(msg='failed parsing XML') from e
 

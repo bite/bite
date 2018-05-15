@@ -11,11 +11,12 @@ from ._rpc import Rpc
 class MulticallIterator(object):
     """Iterate over the results of a multicall."""
 
-    def __init__(self, results):
+    def __init__(self, results, service):
         # TODO: refactor send/parsing to drop this hack
         if isinstance(results, dict):
             results = (results,)
         self.results = tuple(results)
+        self.service = service
         self.idx = 0
 
     def __iter__(self):
