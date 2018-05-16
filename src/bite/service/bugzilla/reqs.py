@@ -109,11 +109,6 @@ class SearchRequest5_0(SearchRequest4_4):
     API docs: https://bugzilla.readthedocs.io/en/5.0/api/core/v1/bug.html#search-bugs
     """
 
-    def parse_params(self, **kw):
-        # current advanced search field number
-        self.adv_num = 1
-        return super().parse_params(**kw)
-
     @aliased
     class ParamParser(SearchRequest4_4.ParamParser):
 
@@ -149,6 +144,7 @@ class SearchRequest5_0(SearchRequest4_4):
         def __init__(self, **kw):
             super().__init__(**kw)
             self._sort = None
+            self.adv_num = 1
 
         def _finalize(self):
             super()._finalize()
@@ -171,6 +167,14 @@ class SearchRequest5_0(SearchRequest4_4):
             self.params[f'v{self.adv_num}'] = v
             self.adv_num += 1
             self.options.append(f"{k.capitalize()}: {v}")
+
+        def attachments(self, k, v):
+            val = 'isnotempty' if v else 'isempty'
+            display_val = 'yes' if v else 'no'
+            self.params[f'f{self.adv_num}'] = 'attach_data.thedata'
+            self.params[f'o{self.adv_num}'] = val
+            self.adv_num += 1
+            self.options.append(f"{k.capitalize()}: {display_val}")
 
         def sort(self, k, v):
             sorting_terms = []

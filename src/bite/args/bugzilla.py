@@ -526,6 +526,16 @@ class Search5_0(Search):
         self.attr.add_argument(
             '--comments', type=int,
             help='restrict bugs by the specified number of comments or greater')
+        self.attr.add_argument(
+            '--attachments', nargs='?', type=int, const=1,
+            help='restrict bugs by attachment status',
+            docs="""
+                Search for bugs by their attachment status.
+
+                With no argument, this restricts bugs returned to those that
+                have attachments. If passed an argument of '0', returned bugs
+                will not have any attachments.
+            """)
 
 
 @args.subcmd(Bugzilla5_0Opts)
