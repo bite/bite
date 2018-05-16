@@ -87,3 +87,8 @@ class Get(args.Get):
 @args.subcmd(BitbucketOpts)
 class Comments(args.Comments):
     pass
+
+
+@args.subcmd(BitbucketOpts)
+class Changes(args.Changes):
+    pass

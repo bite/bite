@@ -465,6 +465,8 @@ class _ChangesRequest(Request):
         if ids is None:
             raise ValueError(f'No {self.service.item.type} ID(s) specified')
 
+        self.options.append(f"IDs: {', '.join(map(str, ids))}")
+
         reqs = []
         for i in ids:
             reqs.append(BitbucketPagedRequest(
@@ -478,7 +480,7 @@ class _ChangesRequest(Request):
         for i, changes in zip(self.ids, data):
             changes = changes['values']
             yield tuple(BitbucketEvent(
-                self.service, id=c['id'], count=j, change=c)
+                self.service, id=c['id'], count=j+1, change=c)
                 for j, c in enumerate(changes))
 
 
