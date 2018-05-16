@@ -102,7 +102,8 @@ class Launchpad(JsonREST):
     item = LaunchpadBug
     item_endpoint = 'https://bugs.launchpad.net/bugs/{id}'
     attachment = LaunchpadAttachment
-    # attachment_endpoint = '/file'
+    # requires authentication to access -- non-auth endpoint requires the filename
+    # attachment_endpoint = 'https://bugs.launchpad.net/bugs/{id}/+attachment/{a_id}'
 
     def __init__(self, base, **kw):
         # launchpad supports up to 300, but often times out for higher values
