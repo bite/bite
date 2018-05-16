@@ -247,7 +247,7 @@ class Service(object):
                 self.session.cookies.save()
             self.session.close()
 
-    def send(self, *reqs):
+    def send(self, *reqs, **kw):
         """Send requests and return parsed response data."""
         if not reqs:
             return None
@@ -271,6 +271,7 @@ class Service(object):
             for req in iflatten_instance(reqs, Request):
                 parse = getattr(req, 'parse', ident)
                 req_parse = getattr(req, 'parse_response', None)
+                raw = getattr(req, '_raw', False)
                 handle = getattr(req, 'handle_exception', _raise)
 
                 if isinstance(req, Request) and len(req) > 1:
@@ -284,7 +285,8 @@ class Service(object):
 
                     for r in iflatten_instance(req, requests.Request):
                         if isinstance(r, requests.Request):
-                            func = partial(self._http_send, req_parse=req_parse)
+                            func = partial(
+                                self._http_send, raw=raw, req_parse=req_parse, **kw)
                         else:
                             func = ident
                         http_reqs.append(self.executor.submit(func, r))
@@ -301,7 +303,7 @@ class Service(object):
         else:
             return data
 
-    def _http_send(self, req, req_parse=None, **kw):
+    def _http_send(self, req, raw=False, req_parse=None, **kw):
         """Send an HTTP request and return the parsed response."""
         response = self.session.send(req, **kw)
 
@@ -313,6 +315,8 @@ class Service(object):
         if response.ok:
             if req_parse is not None:
                 req_parse(response)
+            if raw:
+                return response.content
             return self.parse_response(response)
         else:
             self._failed_http_response(response)

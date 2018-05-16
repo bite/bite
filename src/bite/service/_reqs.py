@@ -41,10 +41,11 @@ class Request(object):
     """Construct a request."""
 
     def __init__(self, *, service, url=None, method=None, params=None,
-                 reqs=None, options=None, **kw):
+                 reqs=None, options=None, raw=False, **kw):
         self.service = service
         self.options = options if options is not None else []
         self.params = params if params is not None else {}
+        self._raw = raw
         self._finalized = False
 
         if method is not None:
@@ -103,9 +104,9 @@ class Request(object):
         """Parse the data returned from a given request."""
         return data
 
-    def send(self):
+    def send(self, **kw):
         """Send a request object to the related service."""
-        return self.service.send(self)
+        return self.service.send(self, **kw)
 
     def handle_exception(self, e):
         raise e
