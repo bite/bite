@@ -8,6 +8,8 @@ from snakeoil.klass import aliased, alias
 from . import Bugzilla
 from .objects import BugzillaEvent, BugzillaComment
 from .._reqs import OffsetPagedRequest, Request, ParseRequest, GetRequest, req_cmd
+from ...args.bugzilla import parse_date
+from ...objects import DateTime
 from ...exceptions import BiteError
 
 demandload('bite:const')
@@ -175,6 +177,36 @@ class SearchRequest5_0(SearchRequest4_4):
             self.params[f'o{self.adv_num}'] = val
             self.adv_num += 1
             self.options.append(f"{k.capitalize()}: {display_val}")
+
+        @alias('changed_after')
+        def changed_before(self, k, v):
+            field, value = v
+            date = DateTime(value, parse_date(value))
+            self.params[f'f{self.adv_num}'] = field
+            self.params[f'o{self.adv_num}'] = k.replace('_', '')
+            self.params[f'v{self.adv_num}'] = date.isoformat()
+            self.adv_num += 1
+            self.options.append(
+                f"{field.capitalize()} changed {k.split('_')[1]}: "
+                f"{date} ({date!r} UTC)")
+
+        @alias('changed_to')
+        def changed_from(self, k, v):
+            field, value = v
+            self.params[f'f{self.adv_num}'] = field
+            self.params[f'o{self.adv_num}'] = k.replace('_', '')
+            self.params[f'v{self.adv_num}'] = value
+            self.adv_num += 1
+            self.options.append(
+                f"{field.capitalize()} changed {k.split('_')[1]}: {value!r}")
+
+        def changed_by(self, k, v):
+            field, user = v
+            self.params[f'f{self.adv_num}'] = field
+            self.params[f'o{self.adv_num}'] = 'changedby'
+            self.params[f'v{self.adv_num}'] = self.service._resuffix(user)
+            self.adv_num += 1
+            self.options.append(f"{field.capitalize()} changed by: {user}")
 
         def sort(self, k, v):
             sorting_terms = []

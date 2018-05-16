@@ -385,12 +385,12 @@ class Search(args.PagedSearch):
         self.person.add_argument(
             '--qa-contact', type=string_list, action=parse_stdin,
             help='email of the QA contact for the bug')
-        time = self.parser.add_argument_group('Time related')
-        time.add_argument(
+        self.time = self.parser.add_argument_group('Time related')
+        self.time.add_argument(
             '-c', '--created', type=date, metavar='TIME',
             action=partial(parse_stdin, date),
             help='bugs created at this time or later')
-        time.add_argument(
+        self.time.add_argument(
             '-m', '--modified', type=date, metavar='TIME',
             action=partial(parse_stdin, date),
             help='bugs modified at this time or later')
@@ -508,6 +508,22 @@ class Search5_0(Search):
         self.person.add_argument(
             '--commenter', type=string_list, action=parse_stdin,
             help='commenter in the bug')
+        self.changes = self.parser.add_argument_group('Change related')
+        self.changes.add_argument(
+            '--changed-before', nargs=2, metavar=('FIELD', 'TIME'),
+            help='restrict by changes made before a certain time')
+        self.changes.add_argument(
+            '--changed-after', nargs=2, metavar=('FIELD', 'TIME'),
+            help='restrict by changes made after a certain time')
+        self.changes.add_argument(
+            '--changed-from', nargs=2, metavar=('FIELD', 'VALUE'),
+            help='restrict by changes from a specified value')
+        self.changes.add_argument(
+            '--changed-to', nargs=2, metavar=('FIELD', 'VALUE'),
+            help='restrict by changes to a specified value')
+        self.changes.add_argument(
+            '--changed-by', nargs=2, metavar=('FIELD', 'USER'),
+            help='restrict by changes made by a specified user')
         self.attr.add_argument(
             '-K', '--keywords', type=string_list,
             action=parse_stdin,
