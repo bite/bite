@@ -202,10 +202,16 @@ class Cli(Client):
 
     @dry_run
     @login_retry
-    def attachments(self, ids, item_id=False, output_url=False, browser=False, **kw):
+    def attachments(self, ids, id_map=False, item_id=False, output_url=False, browser=False, **kw):
         """Get attachments from a service."""
         # skip pulling data if we don't need it
         get_data = (not output_url and not browser)
+
+        # extract attachment IDs to display if the service requires ID maps
+        if id_map:
+            display_ids = chain.from_iterable(x[1] for x in ids)
+        else:
+            display_ids = ids
 
         if item_id:
             request = self.service.AttachmentsRequest(ids=ids, get_data=get_data)
@@ -214,9 +220,9 @@ class Cli(Client):
         else:
             request = self.service.AttachmentsRequest(attachment_ids=ids, get_data=get_data)
             item_str = ''
-            plural = pluralism(ids)
+            plural = pluralism(display_ids)
 
-        self.log_t(f"Getting attachment{plural}{item_str}: {', '.join(map(str, ids))}")
+        self.log_t(f"Getting attachment{plural}{item_str}: {', '.join(map(str, display_ids))}")
 
         def _launch_browser(ids):
             urls = list(self._attachment_urls(ids))

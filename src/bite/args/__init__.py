@@ -220,6 +220,7 @@ class Attachments(Subcmd):
             self.parser.add_argument(
                 'ids', type=id_maps, nargs='+', metavar='ID[:A_ID[,...]]', action=parse_stdin,
                 help=f"{self.service.item.type} ID(s) or {self.service.item.type} ID to attachment ID map(s)")
+            self.parser.set_defaults(id_map=True)
         else:
             self.parser.add_argument(
                 'ids', type=ids, nargs='+', metavar='ID', action=parse_stdin,
