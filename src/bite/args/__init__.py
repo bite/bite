@@ -5,7 +5,7 @@ from snakeoil.cli import arghparse
 from snakeoil.demandload import demandload
 
 from ..exceptions import BiteError
-from ..argparser import parse_stdin, comment, string_list, id_list, ids
+from ..argparser import parse_stdin, comment, string_list, id_list, ids, id_maps
 from ..utils import str2bool
 
 demandload('bite:const')
@@ -213,12 +213,17 @@ class Attachments(Subcmd):
     def description(self):
         return f"get attachments from {self.service.item.type}(s)"
 
-    def add_args(self):
+    def add_args(self, id_map=False, item_id=True):
         super().add_args()
         # positional args
-        self.parser.add_argument(
-            'ids', type=ids, nargs='+', metavar='ID', action=parse_stdin,
-            help=f"attachment ID(s) (or {self.service.item.type} ID(s) when --item-id is used)")
+        if id_map:
+            self.parser.add_argument(
+                'ids', type=id_maps, nargs='+', metavar='ID[:A_ID[,...]]', action=parse_stdin,
+                help=f"{self.service.item.type} ID(s) or {self.service.item.type} ID to attachment ID map(s)")
+        else:
+            self.parser.add_argument(
+                'ids', type=ids, nargs='+', metavar='ID', action=parse_stdin,
+                help=f"attachment ID(s) (or {self.service.item.type} ID(s) when --item-id is used)")
 
         # optional args
         single_action = self.opts.add_mutually_exclusive_group()
@@ -232,9 +237,10 @@ class Attachments(Subcmd):
         single_action.add_argument(
             '-V', '--view', action='store_true', dest='view_attachment',
             help='output attachment data')
-        self.opts.add_argument(
-            '-I', '--item-id', action='store_true',
-            help='search by item ID(s) rather than attachment ID(s)')
+        if item_id:
+            self.opts.add_argument(
+                '-I', '--item-id', action='store_true',
+                help='search by item ID(s) rather than attachment ID(s)')
         self.opts.add_argument(
             '--save-to',
             help='save attachment(s) into a specified dir')

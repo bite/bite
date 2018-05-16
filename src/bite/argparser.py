@@ -75,6 +75,30 @@ class IDs(ArgType):
 ids = IDs()
 
 
+class ID_Maps(ArgType):
+
+    def parse(self, s):
+        id_str, _sep, a_str = s.partition(':')
+        try:
+            id = int(id_str)
+        except ValueError:
+            raise ArgumentTypeError(f'invalid ID value: {id_str!r}')
+
+        a_ids = []
+        try:
+            for x in a_str.split(','):
+                a_ids.append(int(x))
+        except ValueError:
+            raise ArgumentTypeError(f'invalid attachment ID value: {x!r}')
+
+        return id, tuple(a_ids)
+
+    def parse_stdin(self, data):
+        return [self.parse(x) for x in data]
+
+id_maps = ID_Maps()
+
+
 class Comment(ArgType):
 
     def parse(self, s):
