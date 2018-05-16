@@ -77,14 +77,10 @@ class LaunchpadComment(Comment):
 
 class LaunchpadAttachment(Attachment):
 
-    def __init__(self, data_link, self_link, message_link, title, **kw):
-        super().__init__(id=self_link.rsplit('/', 1)[1], filename=title)
+    def __init__(self, data_link, self_link, message_link, title, data=None, **kw):
+        super().__init__(id=self_link.rsplit('/', 1)[1], filename=title, data=data)
         self.comment = message_link.rsplit('/', 1)[1]
         self.data_link = data_link
-
-    def read(self):
-        # need to pull data from the data_link attr here
-        raise NotImplementedError
 
 
 class LaunchpadEvent(Change):
@@ -382,24 +378,49 @@ class _CommentsRequest(Request):
 class _AttachmentsRequest(Request):
     """Construct an attachments request."""
 
-    def __init__(self, ids=None, get_data=False, **kw):
+    def __init__(self, ids=(), attachment_ids=(), get_data=False, **kw):
         super().__init__(**kw)
-        if ids is None:
-            raise ValueError(f'No {self.service.item.type} specified')
+        if not any((ids, attachment_ids)):
+            raise ValueError('No ID(s) specified')
 
         reqs = []
         for i in ids:
             endpoint = f'{self.service._api_base}/bugs/{i}/attachments'
             reqs.append(RESTRequest(service=self.service, endpoint=endpoint))
+        for i, a_ids in attachment_ids:
+            for a_id in a_ids:
+                endpoint = f'{self.service._api_base}/bugs/{i}/+attachment/{a_id}'
+                reqs.append(RESTRequest(service=self.service, endpoint=endpoint))
 
         self.ids = ids
+        self.attachment_ids = attachment_ids
         self._reqs = tuple(reqs)
+        self._get_data = get_data
+
+    @property
+    def _none_gen(self):
+        while True:
+            yield None
 
     @generator
     def parse(self, data):
+        # wrap data similar to how an item ID response looks
+        if self.attachment_ids:
+            data = [tuple(data)]
+
         for attachments in data:
-            attachments = attachments['entries']
-            yield tuple(self.service.attachment(**a) for a in attachments)
+            if self.ids:
+                attachments = attachments['entries']
+            if self._get_data:
+                reqs = tuple(Request(
+                    service=self.service, method='GET', url=x['data_link'], raw=True)
+                    for x in attachments)
+                content = Request(
+                    service=self.service, reqs=reqs).send(allow_redirects=True)
+            else:
+                content = self._none_gen
+            yield tuple(self.service.attachment(data=c, **a)
+                        for a, c in zip(attachments, content))
 
 
 @req_cmd(Launchpad, cmd='get')

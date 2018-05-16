@@ -98,5 +98,12 @@ class Get(args.Get):
 
 
 @args.subcmd(LaunchpadOpts)
+class Attachments(args.Attachments):
+
+    def add_args(self):
+        super().add_args(id_map=True, item_id=False)
+
+
+@args.subcmd(LaunchpadOpts)
 class Comments(args.Comments):
     pass
