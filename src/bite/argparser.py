@@ -26,9 +26,9 @@ class ArgType(object):
     def __call__(self, data, stdin=False):
         if stdin:
             return self.parse_stdin(data)
-        elif sys.stdin.isatty():
-            return self.parse(data)
-        return data
+        elif not sys.stdin.isatty() and data == '-':
+            return data
+        return self.parse(data)
 
     def parse(self, s):
         """Parse string value into expected argument type."""
