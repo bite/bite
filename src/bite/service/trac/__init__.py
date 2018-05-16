@@ -286,8 +286,12 @@ class _ChangelogRequest(Multicall):
 class _CommentsRequest(_ChangelogRequest):
     """Construct a comments request."""
 
-    @generator
+    def __init__(self, **kw):
+        super().__init__(**kw)
+        self.options.append(f"IDs: {', '.join(map(str, self.ids))}")
+
     def parse(self, data):
+        # unwrap multicall result
         data = super().parse(data)
         for changes in data:
             l = []
