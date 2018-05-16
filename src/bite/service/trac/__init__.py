@@ -385,11 +385,6 @@ class _GetRequest(MergedMulticall):
         self._get_attachments = get_attachments
         self._get_changes = get_changes
 
-    @property
-    def _none_gen(self):
-        for x in self.ids:
-            yield None
-
     def parse(self, data):
         data = super().parse(data)
         items = next(data)

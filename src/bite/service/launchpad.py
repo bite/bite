@@ -398,11 +398,6 @@ class _AttachmentsRequest(Request):
         self._reqs = tuple(reqs)
         self._get_data = get_data
 
-    @property
-    def _none_gen(self):
-        while True:
-            yield None
-
     @generator
     def parse(self, data):
         # wrap data similar to how an item ID response looks

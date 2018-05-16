@@ -117,6 +117,11 @@ class Request(object):
     def __iter__(self):
         return self._requests
 
+    @property
+    def _none_gen(self):
+        while True:
+            yield None
+
 
 class _BasePagedRequest(Request):
 
@@ -402,8 +407,7 @@ class NullRequest(Request):
         return repr(self)
 
     def parse(self, data):
-        while True:
-            yield None
+        return self._none_gen
 
 
 class GetRequest(Request):
