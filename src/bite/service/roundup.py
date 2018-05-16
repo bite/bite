@@ -292,16 +292,12 @@ class _SearchRequest(ParseRequest, RPCRequest):
             'type': 'type',
         }
 
-        def __init__(self, **kw):
-            super().__init__(**kw)
-            self._sort = None
-
         def _finalize(self, **kw):
+            # default to sorting ascending by ID
+            sort = self.params.pop('sort', [('+', 'id')])
+
             if not self.params:
                 raise BiteError('no supported search terms or options specified')
-
-            # default to sorting ascending by ID
-            sort = self._sort if self._sort is not None else [('+', 'id')]
 
             # default to showing issues that aren't closed
             # TODO: use service cache with status names here
@@ -339,7 +335,7 @@ class _SearchRequest(ParseRequest, RPCRequest):
                     raise BiteError(
                         f'unable to sort by: {key!r} (available choices: {choices}')
                 sorting_terms.append((order, order_var))
-            self._sort = sorting_terms
+            self.params[k] = sorting_terms
             self.options.append(f"Sort order: {', '.join(v)}")
 
 

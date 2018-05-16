@@ -145,14 +145,13 @@ class SearchRequest5_0(SearchRequest4_4):
 
         def __init__(self, **kw):
             super().__init__(**kw)
-            self._sort = None
             self.adv_num = 1
 
         def _finalize(self):
-            super()._finalize()
-
             # default to sorting ascending by ID
-            self.params['order'] = self._sort if self._sort is not None else 'id'
+            sort = self.params.pop('sort', 'id')
+            super()._finalize()
+            self.params['order'] = sort
 
         @alias('cc')
         def commenter(self, k, v):
@@ -222,7 +221,7 @@ class SearchRequest5_0(SearchRequest4_4):
                     raise BiteError(
                         f'unable to sort by: {x!r} (available choices: {choices}')
                 sorting_terms.append(f'{order_var}{inverse}')
-            self._sort = ','.join(sorting_terms)
+            self.params[k] = ','.join(sorting_terms)
             self.options.append(f"Sort order: {', '.join(v)}")
 
         @alias('blocks', 'depends_on')
@@ -363,17 +362,15 @@ class ModifyRequest(ParseRequest):
     @aliased
     class ParamParser(ParseRequest.ParamParser):
 
-        def __init__(self, **kw):
-            super().__init__(**kw)
-            self._ids = None
-
         def _finalize(self):
+            ids = self.params.pop('id', None)
+            if not ids:
+                raise ValueError('No bug ID(s) specified')
+
             if not self.params:
                 raise ValueError('No changes specified')
 
-            if not self._ids:
-                raise ValueError('No bug ID(s) specified')
-            self.params['ids'] = self._ids
+            self.params['ids'] = ids
 
             if self.options:
                 prefix = '--- Modifying fields '
@@ -396,7 +393,7 @@ class ModifyRequest(ParseRequest):
                 super()._default_parser(k, v)
 
         def ids(self, k, v):
-            self._ids = v
+            self.params[k] = v
 
         # fields that can be added or removed
         @alias('groups', 'see_also', 'cc')

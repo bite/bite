@@ -193,16 +193,14 @@ class _SearchRequest(ParseRequest, LaunchpadPagedRequest):
             'wishlist': 'Wishlist',
         }
 
-        def __init__(self, **kw):
-            super().__init__(**kw)
-            self._sort = None
-
         def _finalize(self, **kw):
+            sort = self.params.pop('sort', ['id'])
+
             if not self.params:
                 raise BiteError('no supported search terms or options specified')
 
             # default to sorting ascending by ID
-            self.params['order_by'] = self._sort if self._sort is not None else ['id']
+            self.params['order_by'] = sort
 
             # launchpad operation flag for searching
             self.params['ws.op'] = 'searchTasks'
@@ -285,7 +283,7 @@ class _SearchRequest(ParseRequest, LaunchpadPagedRequest):
                     raise BiteError(
                         f'unable to sort by: {key!r} (available choices: {choices}')
                 sorting_terms.append(f'{inverse}{order_var}')
-            self._sort = sorting_terms
+            self.params[k] = sorting_terms
             self.options.append(f"Sort order: {', '.join(v)}")
 
         def tags(self, k, v):

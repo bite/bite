@@ -299,7 +299,7 @@ class _SearchRequest(ParseRequest, BitbucketPagedRequest):
                 choices = ', '.join(sorted(self._sorting_map.keys()))
                 raise BiteError(
                     f'unable to sort by: {key!r} (available choices: {choices}')
-            self.params['sort'] = f'{inverse}{order_var}'
+            self.params[k] = f'{inverse}{order_var}'
             self.options.append(f"Sort order: {v}")
 
         def status(self, k, v):

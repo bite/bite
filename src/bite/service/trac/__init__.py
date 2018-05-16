@@ -170,9 +170,11 @@ class _SearchRequest(ParseRequest, RPCRequest):
         def __init__(self, **kw):
             super().__init__(**kw)
             self.query = {}
-            self._sort = {'order': 'id'}
 
         def _finalize(self, **kw):
+            # default to sorting ascending by ID
+            sort = self.params.pop('sort', {'order': 'id'})
+
             if not any((self.params, self.query)):
                 raise BiteError('no supported search terms or options specified')
 
@@ -180,7 +182,7 @@ class _SearchRequest(ParseRequest, RPCRequest):
             self.params['max'] = self.service.max_results
 
             # default to sorting ascending by ID
-            self.params.update(self._sort)
+            self.params.update(sort)
 
             # default to returning only open tickets
             if 'status' not in self.params:
@@ -227,9 +229,10 @@ class _SearchRequest(ParseRequest, RPCRequest):
                 choices = ', '.join(sorted(self._sorting_map.keys()))
                 raise BiteError(
                     f'unable to sort by: {key!r} (available choices: {choices}')
-            self._sort['order'] = order_var
+            d = {'order': order_var}
             if desc:
-                self._sort['desc'] = desc
+                d['desc'] = desc
+            self.params[k] = d
             self.options.append(f"Sort order: {v}")
 
         @alias('reporter')
