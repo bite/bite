@@ -349,20 +349,37 @@ class ParseRequest(Request):
     _params_map = {}
 
     def __init__(self, *, params, **kw):
-        super().__init__(**kw)
+        self.service = kw['service']
+        self.options = kw.get('options', [])
+        self.params = {}
+
+        # parse given arguments using defined methods
         self.param_parser = self.ParamParser(request=self)
-        self.params = self.parse_params(**params)
+        unparsed_params = self.parse_params(**params)
+
+        # passed unparsed params to parent class
+        kw.update(unparsed_params)
+        kw['params'] = self.params
+        kw['options'] = self.options
+        super().__init__(**kw)
 
     def parse_params(self, **kw):
+        unused_params = kw.copy()
         for k, v in kw.items():
-            parse = getattr(self.param_parser, k, self.param_parser._default_parser)
-            if not callable(parse):
-                raise ValueError(f"invalid parameter parsing function: {k!r}")
+            parse = getattr(self.param_parser, k, None)
+            if parse is None:
+                parse = self.param_parser._default_parser
+            else:
+                if not callable(parse):
+                    raise ValueError(f"invalid parameter parsing function: {k!r}")
+                del unused_params[k]
             parse(k, v)
 
         self.params = self.remap_params(self.params)
         params = self.param_parser._finalize()
-        return params if params is not None else self.params
+        if params is not None:
+            self.params = params
+        return unused_params
 
     def remap_params(self, dct, remap=None):
         """Remap dict keys to expected service parameter names."""
