@@ -293,7 +293,10 @@ class Cli(Client):
                         print(prefix + '=' * (const.COLUMNS - len(prefix)))
                         sys.stdout.write(TarAttachment(tarfile=tar_file, cfile=tarinfo_file).data())
         else:
-            sys.stdout.write(f.read().decode())
+            data = f.read().decode()
+            sys.stdout.write(data)
+            if not data.endswith('\n'):
+                self.log('', prefix='')
 
     def _save_attachment(self, f, path):
         """Save attachment to a specified path."""
