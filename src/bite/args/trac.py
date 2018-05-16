@@ -66,5 +66,10 @@ class Comments(args.Comments):
 
 
 @args.subcmd(TracOpts)
+class Changes(args.Changes):
+    pass
+
+
+@args.subcmd(TracOpts)
 class Version(args.Subcmd):
     """get Trac version"""

@@ -337,7 +337,10 @@ class _ChangesRequest(_ChangelogRequest):
 
     _skip_fields = {'comment', 'attachment'}
 
-    @generator
+    def __init__(self, **kw):
+        super().__init__(**kw)
+        self.options.append(f"IDs: {', '.join(map(str, self.ids))}")
+
     def parse(self, data):
         data = super().parse(data)
         for changes in data:
