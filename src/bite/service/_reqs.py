@@ -181,11 +181,13 @@ class PagedRequest(_BasePagedRequest):
         # set a search limit to make continued requests work as expected
         if limit is not None:
             self.params[self._size_key] = limit
+            self.options.append(f'Limit: {limit}')
         elif self.service.max_results is not None:
             self.params[self._size_key] = self.service.max_results
 
         if page is not None:
             self.params[self._page_key] = page
+            self.options.append(f'Page: {page}')
         else:
             self.params[self._page_key] = 0
 
@@ -216,11 +218,13 @@ class FlaggedPagedRequest(_BasePagedRequest):
         # set a search limit to make continued requests work as expected
         if limit is not None:
             self.params[self._size_key] = limit
+            self.options.append(f'Limit: {limit}')
         elif self.service.max_results is not None:
             self.params[self._size_key] = self.service.max_results
 
         if page is not None:
             self.params[self._page_key] = page
+            self.options.append(f'Page: {page}')
         else:
             self.params[self._page_key] = 0
 
@@ -253,6 +257,7 @@ class OffsetPagedRequest(_BasePagedRequest):
         # set a search limit to make continued requests work as expected
         if limit is not None:
             self.params[self._size_key] = limit
+            self.options.append(f'Limit: {limit}')
         elif self.service.max_results is not None:
             self.params[self._size_key] = self.service.max_results
 
