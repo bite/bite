@@ -5,7 +5,7 @@ from snakeoil.cli import arghparse
 from snakeoil.demandload import demandload
 
 from ..exceptions import BiteError
-from ..argparser import parse_stdin, comment, string_list, id_list, ids, id_maps
+from ..argparser import ParseStdin, Comment, IDList, StringList, IDs, ID_Maps
 from ..utils import str2bool
 
 demandload('bite:const')
@@ -41,6 +41,15 @@ class Subcmd(object):
 
         self.parser = parser.add_parser(
             name, cls=subcmd_parser, quiet=False, color=False, description=self.description)
+
+        # register arg types and actions for subcmd parsing
+        self.parser.register('type', 'ids', IDs(service))
+        self.parser.register('type', 'id_list', IDList(service))
+        self.parser.register('type', 'id_maps', ID_Maps(service))
+        self.parser.register('type', 'str_list', StringList(service))
+        self.parser.register('type', 'comment', Comment(service))
+        self.parser.register('action', 'parse_stdin', ParseStdin)
+
         self.parser.set_defaults(fcn=name)
         self.opts = self.parser.add_argument_group(f'{name.capitalize()} options')
         self.add_args()
@@ -141,7 +150,7 @@ class ReceiveSubcmd(RequestSubcmd):
     def add_args(self):
         super().add_args()
         self.opts.add_argument(
-            '-f', '--fields', type=string_list,
+            '-f', '--fields', type='str_list',
             metavar='FIELD | FIELD,FIELD,...',
             help='fields to output')
 
@@ -156,7 +165,7 @@ class Search(ReceiveSubcmd):
         super().add_args()
         # positional args
         self.parser.add_argument(
-            'terms', nargs='*', metavar='TERM', action=parse_stdin,
+            'terms', nargs='*', metavar='TERM', action='parse_stdin',
             help=f"string(s) to search for in {self.service.item.type} summary/title")
 
 
@@ -183,7 +192,7 @@ class Get(ReceiveSubcmd):
         super().add_args()
         # positional args
         self.parser.add_argument(
-            'ids', type=ids, nargs='+', metavar='ID', action=parse_stdin,
+            'ids', type='ids', nargs='+', metavar='ID', action='parse_stdin',
             help=f"ID(s) or alias(es) of the {self.service.item.type}(s) to retrieve")
 
         # optional args
@@ -218,12 +227,12 @@ class Attachments(Subcmd):
         # positional args
         if id_map:
             self.parser.add_argument(
-                'ids', type=id_maps, nargs='+', metavar='ID[:A_ID[,...]]', action=parse_stdin,
+                'ids', type='id_maps', nargs='+', metavar='ID[:A_ID[,...]]', action='parse_stdin',
                 help=f"{self.service.item.type} ID(s) or {self.service.item.type} ID to attachment ID map(s)")
             self.parser.set_defaults(id_map=True)
         else:
             self.parser.add_argument(
-                'ids', type=ids, nargs='+', metavar='ID', action=parse_stdin,
+                'ids', type='ids', nargs='+', metavar='ID', action='parse_stdin',
                 help=f"attachment ID(s) (or {self.service.item.type} ID(s) when --item-id is used)")
 
         # optional args
@@ -257,18 +266,18 @@ class Changes(ReceiveSubcmd):
         super().add_args()
         # positional args
         self.parser.add_argument(
-            'ids', type=ids, nargs='+', metavar='ID', action=parse_stdin,
+            'ids', type='ids', nargs='+', metavar='ID', action='parse_stdin',
             help=f"ID(s) or alias(es) of the {self.service.item.type}(s) "
                  "to retrieve all changes")
         # optional args
         self.opts.add_argument(
             '-n', '--number',
-            dest='change_num', type=id_list,
-            action=partial(parse_stdin, ids),
+            dest='change_num', type='id_list',
+            action=partial(ParseStdin, 'ids'),
             help='restrict by change number(s)')
         self.opts.add_argument(
             '-r', '--creator',
-            type=string_list, action=parse_stdin,
+            type='str_list', action='parse_stdin',
             help='restrict by person who made the change')
 
 
@@ -282,16 +291,16 @@ class Comments(ReceiveSubcmd):
         super().add_args()
         # positional args
         self.parser.add_argument(
-            'ids', type=ids, nargs='+', metavar='ID', action=parse_stdin,
+            'ids', type='ids', nargs='+', metavar='ID', action='parse_stdin',
             help=f"ID(s) or alias(es) of the {self.service.item.type}(s) "
                  "to retrieve all comments")
         # optional args
         self.opts.add_argument(
-            '-n', '--number', dest='comment_num', type=id_list,
-            action=partial(parse_stdin, ids),
+            '-n', '--number', dest='comment_num', type='id_list',
+            action=partial(ParseStdin, 'ids'),
             help='restrict by comment number(s)')
         self.opts.add_argument(
-            '-r', '--creator', type=string_list, action=parse_stdin,
+            '-r', '--creator', type='str_list', action='parse_stdin',
             help='restrict by the email of the person who made the comment')
 
 
@@ -322,15 +331,15 @@ class Modify(SendSubcmd):
         super().add_args()
         # positional args
         self.parser.add_argument(
-            'ids', type=ids, nargs='+', metavar='ID', action=parse_stdin,
+            'ids', type='ids', nargs='+', metavar='ID', action='parse_stdin',
             help=f"ID(s) of the {self.service.item.type}(s) to modify")
 
         # optional args
         self.attr = self.parser.add_argument_group('Attribute related')
         self.attr.add_argument(
             '-c', '--comment', nargs='?', const='__BITE_EDITOR__',
-            type=comment, action=parse_stdin,
-            help='add comment from command line')
+            type='comment', action='parse_stdin',
+            help='add a comment')
 
 
 class Create(SendSubcmd):

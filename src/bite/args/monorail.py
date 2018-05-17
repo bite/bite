@@ -5,7 +5,6 @@ import datetime
 from dateutil.parser import parse as parsetime
 from dateutil.relativedelta import *
 
-from ..argparser import parse_stdin, id_list, ids
 
 def subcmds(subparsers):
     # modification related methods not supported yet
@@ -16,7 +15,7 @@ def subcmds(subparsers):
     # positional args
     parser.add_argument('ids',
         type=attachment_id,
-        action=parse_stdin,
+        action='parse_stdin',
         nargs='+',
         help='the ID(s) of the attachment(s)')
     # optional args
@@ -27,8 +26,8 @@ def subcmds(subparsers):
     parser.set_defaults(fcn='get')
     # positional args
     parser.add_argument('ids',
-        type=ids,
-        action=parse_stdin,
+        type='ids',
+        action='parse_stdin',
         nargs='+',
         metavar='ID',
         help='the ID(s) of the issues(s) to retrieve')
@@ -45,7 +44,7 @@ def subcmds(subparsers):
     parser.set_defaults(fcn='search')
     # positional args
     parser.add_argument('terms',
-        action=parse_stdin,
+        action='parse_stdin',
         nargs='*',
         help='strings to search for in title and/or body')
     # optional args

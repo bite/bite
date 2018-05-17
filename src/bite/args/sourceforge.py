@@ -1,7 +1,7 @@
 from functools import partial
 
 from .bugzilla import date
-from ..argparser import parse_stdin, id_list, ids, string_list
+from ..argparser import ParseStdin
 from .. import args
 
 
@@ -39,15 +39,15 @@ class Search(args.Search):
             help=f'{self.service.item.type}s modified at this time or later')
         attr = self.parser.add_argument_group('Attribute related')
         attr.add_argument(
-            '--id', type=id_list,
-            action=partial(parse_stdin, ids),
+            '--id', type='id_list',
+            action=partial(ParseStdin, 'ids'),
             help=f'restrict by {self.service.item.type} ID(s)')
         attr.add_argument(
-            '-a', '--assignee', type=string_list, action=parse_stdin,
+            '-a', '--assignee', type='str_list', action='parse_stdin',
             help=f'person the {self.service.item.type} is assigned to')
         attr.add_argument(
             '-r', '--creator',
-            type=string_list, action=parse_stdin,
+            type='str_list', action='parse_stdin',
             help=f'person who created the {self.service.item.type}')
 
 

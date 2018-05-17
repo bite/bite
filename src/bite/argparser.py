@@ -23,6 +23,9 @@ demandload('bite:const')
 
 class ArgType(object):
 
+    def __init__(self, service):
+        self.service = service
+
     def __call__(self, data, stdin=False):
         if stdin:
             return self.parse_stdin(data)
@@ -44,10 +47,8 @@ class StringList(ArgType):
     def parse(self, s):
         return [item for item in s.split(',') if item != ""]
 
-string_list = StringList()
 
-
-class IdList(ArgType):
+class IDList(ArgType):
 
     def parse(self, s):
         try:
@@ -57,8 +58,6 @@ class IdList(ArgType):
             return l
         except:
             raise ArgumentTypeError(f'invalid ID value: {item!r}')
-
-id_list = IdList()
 
 
 class IDs(ArgType):
@@ -71,8 +70,6 @@ class IDs(ArgType):
 
     def parse_stdin(self, data):
         return [self.parse(x) for x in data]
-
-ids = IDs()
 
 
 class ID_Maps(ArgType):
@@ -95,8 +92,6 @@ class ID_Maps(ArgType):
 
     def parse_stdin(self, data):
         return [self.parse(x) for x in data]
-
-id_maps = ID_Maps()
 
 
 class Comment(ArgType):
@@ -121,8 +116,6 @@ class Comment(ArgType):
             raise ArgumentTypeError('no comment data provided on stdin')
         return '\n'.join(data)
 
-comment = Comment()
-
 
 class parse_file(Action):
 
@@ -131,13 +124,10 @@ class parse_file(Action):
         setattr(namespace, self.dest, lines)
 
 
-class parse_stdin(Action):
+class ParseStdin(Action):
 
-    def __init__(self, convert_type=None, append=True, *args, **kwargs):
-        if convert_type is not None:
-            self.convert_type = convert_type
-        else:
-            self.convert_type = kwargs.get('type', lambda x, stdin: x)
+    def __init__(self, type_func=None, append=True, *args, **kwargs):
+        self.type_func = type_func if type_func is not None else lambda x, stdin: x
         self.append = append
         super().__init__(*args, **kwargs)
 
@@ -163,9 +153,16 @@ class parse_stdin(Action):
                 # read args from standard input for specified option
                 values = [s for s in (x.strip() for x in sys.stdin.readlines()) if s]
 
+                # get type conversion func
+                if not callable(self.type_func):
+                    try:
+                        self.type_func = parser._registries['type'][self.type_func]
+                    except KeyError:
+                        raise ArgumentTypeError(f'unknown type: {self.type_func!r}')
+
                 # convert values to expected types
                 try:
-                    values = self.convert_type(values, stdin=True)
+                    values = self.type_func(values, stdin=True)
                 except ArgumentTypeError as e:
                     raise ArgumentError(self, e)
 

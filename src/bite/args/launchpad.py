@@ -1,6 +1,6 @@
 from .bugzilla import date
 from .. import args
-from ..argparser import parse_stdin, string_list
+from ..argparser import ParseStdin
 
 
 class LaunchpadOpts(args.ServiceOpts):
@@ -58,8 +58,8 @@ class Search(args.PagedSearch):
             '-M', '--milestone',
             help='restrict by milestone')
         attr.add_argument(
-            '-s', '--status', type=string_list,
-            action=parse_stdin,
+            '-s', '--status', type='str_list',
+            action='parse_stdin',
             help='restrict by status (one or more)')
         attr.add_argument(
             '--omit-duplicates', action='store_true',

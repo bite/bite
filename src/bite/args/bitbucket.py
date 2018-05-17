@@ -2,7 +2,7 @@ from functools import partial
 
 from .bugzilla import date
 from .. import args
-from ..argparser import parse_stdin, string_list, id_list, ids
+from ..argparser import ParseStdin
 
 
 class BitbucketOpts(args.ServiceOpts):
@@ -39,11 +39,10 @@ class Search(args.Search):
             help='issues modified at this time or later')
         attr = self.parser.add_argument_group('Attribute related')
         attr.add_argument(
-            '--id', type=id_list,
-            action=partial(parse_stdin, ids),
+            '--id', type='id_list', action=partial(ParseStdin, 'ids'),
             help='restrict by issue ID(s)')
         attr.add_argument(
-            '-p', '--priority', type=string_list, action=parse_stdin,
+            '-p', '--priority', type='str_list', action='parse_stdin',
             help='restrict by priority (one or more)',
             docs="""
                 Restrict issues returned by their priority.
@@ -52,7 +51,7 @@ class Search(args.Search):
                 which case results can match any of the given values.
             """)
         attr.add_argument(
-            '-s', '--status', type=string_list, action=parse_stdin,
+            '-s', '--status', type='str_list', action='parse_stdin',
             help='restrict by status (one or more)',
             docs="""
                 Restrict issues returned by their status.
@@ -61,7 +60,7 @@ class Search(args.Search):
                 which case results can match any of the given values.
             """)
         attr.add_argument(
-            '--type', type=string_list, action=parse_stdin,
+            '--type', type='str_list', action='parse_stdin',
             help='restrict by type (one or more)',
             docs="""
                 Restrict issues returned by their type.

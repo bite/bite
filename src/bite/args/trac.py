@@ -1,6 +1,5 @@
 from .bugzilla import date
 from .. import args
-from ..argparser import parse_stdin, string_list
 
 
 class TracOpts(args.ServiceOpts):
@@ -45,11 +44,11 @@ class Search(args.Search):
             help=f'{self.service.item.type}s modified at this time or later')
         attr = self.parser.add_argument_group('Attribute related')
         attr.add_argument(
-            '-a', '--assigned-to', dest='owner', type=string_list, action=parse_stdin,
+            '-a', '--assigned-to', dest='owner', type='str_list', action='parse_stdin',
             help=f'person the {self.service.item.type} is assigned to')
         attr.add_argument(
             '-r', '--creator', dest='reporter',
-            type=string_list, action=parse_stdin,
+            type='str_list', action='parse_stdin',
             help=f'person who created the {self.service.item.type}')
 
 

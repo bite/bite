@@ -8,7 +8,7 @@ from dateutil.parser import parse as parsetime
 from dateutil.relativedelta import *
 
 from .. import args
-from ..argparser import parse_stdin, string_list, id_list, ids
+from ..argparser import ParseStdin
 from ..objects import DateTime
 from ..utc import utc
 from ..utils import str2bool
@@ -98,7 +98,7 @@ class Attach(args.Attach):
             'filepath', type=str,
             help='path of the file to attach')
         self.parser.add_argument(
-            'ids', type=ids, nargs='+', metavar='ID', action=parse_stdin,
+            'ids', type='ids', nargs='+', metavar='ID', action='parse_stdin',
             help='bug ID(s) where the file should be attached')
 
         # optional args
@@ -135,7 +135,7 @@ class Create(args.Create):
             '--qa-contact',
             help='set the QA Contact for this bug')
         person.add_argument(
-            '--cc', type=string_list,
+            '--cc', type='str_list',
             help='add a list of emails to CC list')
         attr = self.parser.add_argument_group('Attribute related')
         attr.add_argument(
@@ -178,16 +178,16 @@ class Create(args.Create):
             '--alias',
             help='set the alias for this bug')
         attr.add_argument(
-            '--groups', type=string_list,
+            '--groups', type='str_list',
             help='list of groups this bug should be put into')
         attr.add_argument(
-            '--blocks', type=id_list,
+            '--blocks', type='id_list',
             help='list of bugs this bug blocks')
         attr.add_argument(
-            '--depends', type=id_list,
+            '--depends', type='id_list',
             help='list of bugs this bug depends on')
         attr.add_argument(
-            '-K', '--keywords', type=string_list,
+            '-K', '--keywords', type='str_list',
             help='set the keywords of this bug')
 
 
@@ -377,79 +377,79 @@ class Search(args.PagedSearch):
             help='custom format for search output')
         self.person = self.parser.add_argument_group('Person related')
         self.person.add_argument(
-            '-a', '--assigned-to', type=string_list, action=parse_stdin,
+            '-a', '--assigned-to', type='str_list', action='parse_stdin',
             help='email of the person the bug is assigned to')
         self.person.add_argument(
-            '-r', '--creator', type=string_list, action=parse_stdin,
+            '-r', '--creator', type='str_list', action='parse_stdin',
             help='email of the person who created the bug')
         self.person.add_argument(
-            '--qa-contact', type=string_list, action=parse_stdin,
+            '--qa-contact', type='str_list', action='parse_stdin',
             help='email of the QA contact for the bug')
         self.time = self.parser.add_argument_group('Time related')
         self.time.add_argument(
             '-c', '--created', type=date, metavar='TIME',
-            action=partial(parse_stdin, date),
+            action=partial(ParseStdin, date),
             help='bugs created at this time or later')
         self.time.add_argument(
             '-m', '--modified', type=date, metavar='TIME',
-            action=partial(parse_stdin, date),
+            action=partial(ParseStdin, date),
             help='bugs modified at this time or later')
         self.attr = self.parser.add_argument_group('Attribute related')
         self.attr.add_argument(
-            '-s', '--status', type=string_list,
-            action=parse_stdin,
+            '-s', '--status', type='str_list',
+            action='parse_stdin',
             help='restrict by status (one or more)')
         self.attr.add_argument(
-            '-V', '--version', type=string_list,
-            action=parse_stdin,
+            '-V', '--version', type='str_list',
+            action='parse_stdin',
             help='restrict by version (one or more)')
         self.attr.add_argument(
-            '-W', '--whiteboard', type=string_list,
-            action=parse_stdin,
+            '-W', '--whiteboard', type='str_list',
+            action='parse_stdin',
             help='status whiteboard')
         self.attr.add_argument(
-            '-C', '--component', type=string_list,
-            action=parse_stdin,
+            '-C', '--component', type='str_list',
+            action='parse_stdin',
             help='restrict by component (one or more)')
         self.attr.add_argument(
-            '--alias', type=string_list,
-            action=parse_stdin,
+            '--alias', type='str_list',
+            action='parse_stdin',
             help='unique alias for this bug')
         self.attr.add_argument(
-            '--id', type=id_list,
-            action=partial(parse_stdin, ids),
+            '--id', type='id_list',
+            action=partial(ParseStdin, 'ids'),
             help='restrict by bug ID(s)')
         self.attr.add_argument(
-            '--op-sys', type=string_list,
-            action=parse_stdin,
+            '--op-sys', type='str_list',
+            action='parse_stdin',
             help='restrict by operating system (one or more)')
         self.attr.add_argument(
-            '--platform', type=string_list,
-            action=parse_stdin,
+            '--platform', type='str_list',
+            action='parse_stdin',
             help='restrict by platform (one or more)')
         self.attr.add_argument(
-            '--priority', type=string_list,
-            action=parse_stdin,
+            '--priority', type='str_list',
+            action='parse_stdin',
             help='restrict by priority (one or more)')
         self.attr.add_argument(
-            '--product', type=string_list,
-            action=parse_stdin,
+            '--product', type='str_list',
+            action='parse_stdin',
             help='restrict by product (one or more)')
         self.attr.add_argument(
-            '--resolution', type=string_list,
-            action=parse_stdin,
+            '--resolution', type='str_list',
+            action='parse_stdin',
             help='restrict by resolution')
         self.attr.add_argument(
-            '--severity', type=string_list,
-            action=parse_stdin,
+            '--severity', type='str_list',
+            action='parse_stdin',
             help='restrict by severity (one or more)')
         self.attr.add_argument(
-            '--target-milestone', type=string_list,
-            action=parse_stdin,
+            '--target-milestone', type='str_list',
+            action='parse_stdin',
             help='restrict by target milestone (one or more)')
         self.attr.add_argument(
-            '--url', type=string_list,
-            action=parse_stdin,
+            '--url', type='str_list',
+            action='parse_stdin',
             help='restrict by url (one or more)')
 
 
@@ -503,10 +503,10 @@ class Search5_0(Search):
             '-S', '--saved-search',
             help='search for bugs using a saved search')
         self.person.add_argument(
-            '--cc', type=string_list, action=parse_stdin,
+            '--cc', type='str_list', action='parse_stdin',
             help='email in the CC list for the bug')
         self.person.add_argument(
-            '--commenter', type=string_list, action=parse_stdin,
+            '--commenter', type='str_list', action='parse_stdin',
             help='commenter in the bug')
         self.changes = self.parser.add_argument_group('Change related')
         self.changes.add_argument(
@@ -525,16 +525,16 @@ class Search5_0(Search):
             '--changed-by', nargs=2, metavar=('FIELD', 'USER'),
             help='restrict by changes made by a specified user')
         self.attr.add_argument(
-            '-K', '--keywords', type=string_list,
-            action=parse_stdin,
+            '-K', '--keywords', type='str_list',
+            action='parse_stdin',
             help='restrict by keywords (one or more)')
         self.attr.add_argument(
-            '--blocks', type=id_list,
-            action=partial(parse_stdin, ids),
+            '--blocks', type='id_list',
+            action=partial(ParseStdin, 'ids'),
             help='restrict by bug blocks')
         self.attr.add_argument(
-            '--depends', type=id_list, dest='depends_on',
-            action=partial(parse_stdin, ids),
+            '--depends', type='id_list', dest='depends_on',
+            action=partial(ParseStdin, 'ids'),
             help='restrict by bug depends')
         self.attr.add_argument(
             '--votes',
@@ -611,10 +611,10 @@ class Changes(args.Changes):
         self.opts.add_argument(
             '-c', '--created', dest='creation_time',
             metavar='TIME', type=date,
-            action=partial(parse_stdin, date),
+            action=partial(ParseStdin, date),
             help='changes made at this time or later')
         self.opts.add_argument(
-            '-m', '--match', type=string_list,
+            '-m', '--match', type='str_list',
             help='restrict by matching changed fields')
         self.opts.add_argument(
             '--output',
@@ -658,7 +658,7 @@ class Products(args.Subcmd):
         # positional args
         self.parser.add_argument(
             'products', nargs='?',
-            type=string_list, action=parse_stdin,
+            type='str_list', action='parse_stdin',
             help='either ID or name')
 
 
@@ -670,7 +670,7 @@ class Users(args.Subcmd):
         super().add_args()
         # positional args
         self.parser.add_argument(
-            'users', nargs='+', action=parse_stdin,
+            'users', nargs='+', action='parse_stdin',
             help='either ID, login, or matching string')
 
 
@@ -683,7 +683,7 @@ class Fields(args.Subcmd):
         # positional args
         self.parser.add_argument(
             'fields', nargs='?',
-            type=string_list, action=parse_stdin,
+            type='str_list', action='parse_stdin',
             help='either ID or name')
 
 
