@@ -5,6 +5,7 @@ import string
 import subprocess
 import sys
 import tempfile
+from textwrap import dedent
 
 from snakeoil.demandload import demandload
 from snakeoil.sequences import iflatten_instance
@@ -38,7 +39,7 @@ def launch_browser(urls, browser=None):
         raise BiteError(f'failed running browser: {browser}: {e.strerror}')
 
 
-def launch_editor(initial_text, editor=None, comment_from='', tool=PROG):
+def launch_editor(header='', footer='', editor=None, comment_from='', tool=PROG):
     """Use an editor for interactive text input."""
     if editor is None:
         editor = os.environ.get(f'{tool}_EDITOR', os.environ.get('EDITOR', None))
@@ -46,8 +47,9 @@ def launch_editor(initial_text, editor=None, comment_from='', tool=PROG):
     if editor:
         tmpfile = tempfile.NamedTemporaryFile(mode='w+', prefix=prog, delete=False)
         with open(tmpfile.name, 'w') as f:
+            f.write(header)
             f.write(comment_from)
-            f.write(initial_text)
+            f.write(footer)
 
         try:
             subprocess.check_call([editor, tmpfile.name])
@@ -62,22 +64,23 @@ def launch_editor(initial_text, editor=None, comment_from='', tool=PROG):
     return ''
 
 
-def block_edit(comment, comment_from=''):
+def block_edit(comment, comment_from='', header=False):
     comment = '\n'.join(f'{PROG}: {line}' for line in comment.split('\n'))
-    initial_text = f"""\
-
-{PROG}: ---------------------------------------------------
-{comment}
-{PROG}: Any line beginning with '{PROG}:' will be ignored.
-{PROG}: ---------------------------------------------------
-"""
+    initial_text = dedent(f"""\
+        {PROG}: ---------------------------------------------------
+        {comment}
+        {PROG}: Any line beginning with '{PROG}:' will be ignored.
+        {PROG}: ---------------------------------------------------
+        """)
 
     editor = os.environ.get(f'{PROG}_EDITOR', os.environ.get('EDITOR', None))
     if not editor:
         print(f'{comment}: (Press Ctrl+D to end)')
         return '\n'.join(raw_input_block())
 
-    text = launch_editor(initial_text=initial_text, editor=editor, comment_from=comment_from)
+    location = 'header' if header else 'footer'
+    args = {location: initial_text}
+    text = launch_editor(editor=editor, comment_from=comment_from, **args)
 
     if text.strip():
         return text
