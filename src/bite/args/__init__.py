@@ -345,10 +345,10 @@ class Modify(SendSubcmd):
             type='comment', action='parse_stdin',
             help='add a comment')
         single_action.add_argument(
-            '-r', '--reply', type='ids', dest='reply_id',
+            '-r', '--reply', type='ids', nargs='+', dest='reply_ids',
             help='reply to a specific comment')
 
-    def get_comment_reply(self, reply_id, args):
+    def get_comment_reply(self, reply_ids, args):
         """Allow a user to reply to a specific comment."""
         item_id = args['ids'][0]
         try:
@@ -357,20 +357,23 @@ class Modify(SendSubcmd):
             self.parser.error(f'argument -r/--reply: {e}')
 
         # pull comment data in reply format
+        initial_text = []
         try:
-            reply_comment = comments[reply_id].reply
+            for i in reply_ids:
+                initial_text.append(comments[i].reply)
         except IndexError:
             self.parser.error(
                 'argument -r/--reply: '
-                f'nonexistent comment #{reply_id} '
+                f'nonexistent comment #{i} '
                 f'({self.service.item.type} #{item_id} has {len(comments)} '
                 'comments including the description)')
+        initial_text = '\n\n'.join(initial_text)
 
         # request user changes
         while True:
             comment = block_edit(
-                comment='Add a comment', comment_from=comments[reply_id].reply).strip()
-            if (comment != reply_comment or
+                header=True, comment='Add reply to the requested comment(s)', comment_from=initial_text).strip()
+            if (comment != initial_text or
                     confirm('No changes made to comment, submit anyway?')):
                 break
 
@@ -380,14 +383,14 @@ class Modify(SendSubcmd):
         args = super().check_args(args)
 
         # support interactive comment replies
-        reply_id = args.pop('reply_id', None)
-        if reply_id is not None:
+        reply_ids = args.pop('reply_ids', None)
+        if reply_ids is not None:
             # replies force singular item ID input
             if len(args['ids']) > 1:
                 self.parser.error(
                     '-r/--reply only works with singular '
                     f'{self.service.item.type} ID arguments')
-            args['comment'] = self.get_comment_reply(reply_id, args)
+            args['comment'] = self.get_comment_reply(reply_ids, args)
 
         return args
 
