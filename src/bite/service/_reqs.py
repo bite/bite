@@ -353,10 +353,16 @@ class ParseRequest(Request):
     # map from args dest name to expected service parameter name
     _params_map = {}
 
-    def __init__(self, *, params, **kw):
+    def __init__(self, params=None, **kw):
         self.service = kw['service']
         self.options = kw.get('options', [])
         self.params = {}
+        self.strict = True
+
+        # accept unsplit kwargs as well
+        if params is None:
+            params = kw
+            self.strict = False
 
         # parse given arguments using defined methods
         self.param_parser = self.ParamParser(request=self)
@@ -376,7 +382,9 @@ class ParseRequest(Request):
                 parse = self.param_parser._default_parser
             else:
                 if not callable(parse):
-                    raise ValueError(f"invalid parameter parsing function: {k!r}")
+                    if self.strict:
+                        raise ValueError(f"invalid parameter parsing function: {k!r}")
+                    continue
                 del unused_params[k]
             parse(k, v)
 
