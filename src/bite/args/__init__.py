@@ -6,7 +6,7 @@ from snakeoil.demandload import demandload
 
 from ..exceptions import BiteError
 from ..argparser import ParseStdin, Comment, IDList, StringList, IDs, ID_Maps
-from ..utils import str2bool
+from ..utils import str2bool, block_edit, confirm
 
 demandload('bite:const')
 
@@ -339,10 +339,53 @@ class Modify(SendSubcmd):
 
         # optional args
         self.attr = self.parser.add_argument_group('Attribute related')
-        self.attr.add_argument(
+        single_action = self.attr.add_mutually_exclusive_group()
+        single_action.add_argument(
             '-c', '--comment', nargs='?', const='__BITE_EDITOR__',
             type='comment', action='parse_stdin',
             help='add a comment')
+        single_action.add_argument(
+            '-r', '--reply', type='ids', dest='reply_id',
+            help='reply to a specific comment')
+
+    def get_comment_reply(self, reply_id, args):
+        """Allow a user to reply to a specific comment."""
+        item_id = args['ids'][0]
+        comments = next(self.service.CommentsRequest(ids=[item_id]).send())
+
+        # pull comment data in reply format
+        try:
+            reply_comment = comments[reply_id].reply
+        except IndexError:
+            raise BiteError(
+                f'nonexistent comment #{reply_id} '
+                f'({self.service.item.type} #{item_id} has {len(comments)} '
+                'comments including the description)')
+
+        # request user changes
+        while True:
+            comment = block_edit(
+                comment='Add a comment', comment_from=comments[reply_id].reply).strip()
+            if (comment != reply_comment or
+                    confirm('No changes made to comment, submit anyway?')):
+                break
+
+        return comment
+
+    def check_args(self, args):
+        args = super().check_args(args)
+
+        # support interactive comment replies
+        reply_id = args.pop('reply_id', None)
+        if reply_id is not None:
+            # replies force singular item ID input
+            if len(args['ids']) > 1:
+                self.parser.error(
+                    '-r/--reply only works with singular '
+                    f'{self.service.item.type} ID arguments')
+            args['comment'] = self.get_comment_reply(reply_id, args)
+
+        return args
 
 
 class Create(SendSubcmd):

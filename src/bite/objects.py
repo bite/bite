@@ -253,6 +253,12 @@ class Comment(Change):
             lines.append(self.text)
         return '\n'.join(lines)
 
+    @property
+    def reply(self):
+        lines = [f'In reply to {self.creator} from comment #{self.count}:']
+        lines.extend(f'> {line}' for line in self.text.splitlines())
+        return '\n'.join(lines)
+
 
 class Attachment(object):
     """Generic attachment to an item on a service."""
