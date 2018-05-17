@@ -97,19 +97,24 @@ class ID_Maps(ArgType):
 class Comment(ArgType):
 
     def parse(self, s):
-        if s == '__BITE_EDITOR__':
-            s = block_edit('Enter comment:').strip()
-        elif os.path.exists(s):
-            if confirm(prompt=f'Use file for comment: {s!r}?', default=True):
-                try:
-                    with open(s) as f:
-                        data = f.read().strip()
-                    if confirm(prompt=f'Edit comment?'):
-                        data = block_edit('Edit comment', comment_from=data).strip()
-                except IOError as e:
-                    raise BiteError('unable to read file: {s!r}: {e}')
-                s = data
-        return s
+        data = ''
+
+        while True:
+            if s == '__BITE_EDITOR__':
+                data = block_edit('Enter a comment').strip()
+            elif os.path.exists(s):
+                if confirm(prompt=f'Use file for comment: {s!r}?', default=True):
+                    try:
+                        with open(s) as f:
+                            data = f.read().strip()
+                        if confirm(prompt=f'Edit comment?'):
+                            data = block_edit('Edit comment', comment_from=data).strip()
+                    except IOError as e:
+                        raise BiteError('unable to read file: {s!r}: {e}')
+            if data or confirm('Empty comment, submit anyway?'):
+                break
+
+        return data
 
     def parse_stdin(self, data):
         if not data:
