@@ -256,21 +256,12 @@ class SearchRequest5_0(SearchRequest4_4):
                     self.params[k] = v if len(v) > 1 else v[0]
 
 
-class ChangesRequest(Request):
+class ChangesRequest(ParseRequest):
     """Construct a changes request."""
 
-    def __init__(self, ids, created=None, **kw):
+    def __init__(self, **kw):
         super().__init__(**kw)
-        if not ids:
-            raise ValueError('No bug ID(s) specified')
-
-        if ids is not None:
-            ids = list(map(str, ids))
-            self.params['ids'] = ids
-            self.options.append(f"IDs: {', '.join(ids)}")
-        if created is not None:
-            self.params['new_since'] = created.isoformat()
-            self.options.append(f'Created: {created} (since {created!r} UTC)')
+        self.ids = kw.get('ids')
 
     def parse(self, data):
         bugs = data['bugs']
@@ -278,36 +269,57 @@ class ChangesRequest(Request):
             yield tuple(BugzillaEvent(change=x, id=b['id'], alias=b['alias'], count=i)
                         for i, x in enumerate(b['history'], start=1))
 
+    class ParamParser(ParseRequest.ParamParser):
 
-class CommentsRequest(Request):
+        def _finalize(self):
+            if 'ids' not in self.params:
+                raise ValueError(f'No {self.service.item.type} ID(s) specified')
+
+        def ids(self, k, v):
+            ids = list(map(str, v))
+            self.params[k] = ids
+            self.options.append(f"IDs: {', '.join(ids)}")
+
+        def created(self, k, v):
+            self.params['new_since'] = v.isoformat()
+            self.options.append(f'Created: {v} (since {v!r} UTC)')
+
+
+class CommentsRequest(ParseRequest):
     """Construct a comments request."""
 
-    def __init__(self, ids=None, comment_ids=None, created=None, fields=None, **kw):
+    def __init__(self, **kw):
         super().__init__(**kw)
-        if ids is None and comment_ids is None:
-            raise ValueError(f'No {self.service.item.type} or comment ID(s) specified')
-
-        if ids is not None:
-            ids = list(map(str, ids))
-            self.params['ids'] = ids
-            self.options.append(f"IDs: {', '.join(ids)}")
-        if comment_ids is not None:
-            comment_ids = list(map(str, comment_ids))
-            self.params['comment_ids'] = comment_ids
-            self.options.append(f"Comment IDs: {', '.join(comment_ids)}")
-        if created is not None:
-            self.params['new_since'] = created.isoformat()
-            self.options.append(f'Created: {created} (since {created!r} UTC)')
-        if fields is not None:
-            self.params['include_fields'] = fields
-
-        self.ids = ids
+        self.ids = kw.get('ids')
 
     def parse(self, data):
         bugs = data['bugs']
-        for i in self.ids:
+        for i in self.params['ids']:
             yield tuple(BugzillaComment(comment=comment, id=i, count=j)
-                        for j, comment in enumerate(bugs[str(i)]['comments']))
+                        for j, comment in enumerate(bugs[i]['comments']))
+
+    class ParamParser(ParseRequest.ParamParser):
+
+        def _finalize(self):
+            if 'ids' not in self.params and 'comment_ids' not in self.params:
+                raise ValueError(f'No {self.service.item.type} or comment ID(s) specified')
+
+        def ids(self, k, v):
+            ids = list(map(str, v))
+            self.params[k] = ids
+            self.options.append(f"IDs: {', '.join(ids)}")
+
+        def comment_ids(self, k, v):
+            comment_ids = list(map(str, v))
+            self.params[k] = comment_ids
+            self.options.append(f"Comment IDs: {', '.join(comment_ids)}")
+
+        def created(self, k, v):
+            self.params['new_since'] = v.isoformat()
+            self.options.append(f'Created: {v} (since {v!r} UTC)')
+
+        def fields(self, k, v):
+            self.params['include_fields'] = v
 
 
 class AttachmentsRequest(Request):
