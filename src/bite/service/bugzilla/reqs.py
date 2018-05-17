@@ -363,7 +363,7 @@ class ModifyRequest(ParseRequest):
     class ParamParser(ParseRequest.ParamParser):
 
         def _finalize(self):
-            ids = self.params.pop('id', None)
+            ids = self.params.pop('ids', None)
             if not ids:
                 raise ValueError('No bug ID(s) specified')
 
