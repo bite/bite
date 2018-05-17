@@ -505,36 +505,8 @@ class Cli(Client):
         self.log_t(filter.options, prefix='   - ')
 
         data = filter.send()
-        lines = self._render_changes(data, **kw)
+        lines = self._render_events(data, **kw)
         print(*lines, sep='\n')
-
-    def _render_changes(self, data, fields=None, output=None, **kw):
-        if fields and output is None:
-            output = ' '.join(['{}' for x in fields])
-
-        for item_id, changes in data:
-            if output == '-':
-                for change in changes:
-                    for field in fields:
-                        try:
-                            value = getattr(change, field)
-                        except AttributeError:
-                            raise BiteError(f'invalid field: {field!r}')
-                        if value is None:
-                            continue
-                        if isinstance(value, list):
-                            yield from map(str(value))
-                        else:
-                            yield value
-            elif fields and output:
-                for change in changes:
-                    values = (getattr(change, field, None) for field in fields)
-                    yield from self._iter_lines(output.format(*values))
-            else:
-                changes = list(str(x) for x in changes)
-                if changes:
-                    yield self._header('=', f'{self.service.item.type.capitalize()}: {item_id}')
-                    yield from self._iter_lines(changes)
 
     @dry_run
     @login_retry
@@ -547,19 +519,19 @@ class Cli(Client):
         self.log_t(filter.options, prefix='   - ')
 
         data = filter.send()
-        lines = self._render_comments(data, **kw)
+        lines = self._render_events(data, **kw)
         print(*lines, sep='\n')
 
-    def _render_comments(self, data, fields=None, output=None, **kw):
+    def _render_events(self, data, fields=None, output=None, **kw):
         if fields and output is None:
             output = ' '.join(['{}' for x in fields])
 
-        for item_id, comments in data:
+        for item_id, events in data:
             if output == '-':
-                for comment in comments:
+                for event in events:
                     for field in fields:
                         try:
-                            value = getattr(comment, field)
+                            value = getattr(event, field)
                         except AttributeError:
                             raise BiteError(f'invalid field: {field!r}')
                         if value is None:
@@ -569,11 +541,11 @@ class Cli(Client):
                         else:
                             yield value
             elif fields and output:
-                for comment in comments:
-                    values = (getattr(comment, field, None) for field in fields)
+                for event in events:
+                    values = (getattr(event, field, None) for field in fields)
                     yield from self._iter_lines(output.format(*values))
             else:
-                comments = list(str(x) for x in comments)
-                if comments:
+                events = list(str(x) for x in events)
+                if events:
                     yield self._header('=', f'{self.service.item.type.capitalize()}: {item_id}')
-                    yield from self._iter_lines(comments)
+                    yield from self._iter_lines(events)
