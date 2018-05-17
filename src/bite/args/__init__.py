@@ -61,6 +61,10 @@ class Subcmd(object):
     def add_args(self):
         """Add arguments to the subcommand parser."""
 
+    def check_args(self, args):
+        """Check arguments passed to the subcommand parser."""
+        return args
+
 
 class ServiceOpts(object):
 
@@ -118,8 +122,7 @@ class ServiceOpts(object):
         # try to only add the options for the single subcmd
         try:
             cls = getattr(self, subcmd)
-            subcmd = cls(parser=subcmd_parser, service=service, name=subcmd)
-            return subcmd.parser
+            return cls(parser=subcmd_parser, service=service, name=subcmd)
         # fallback to adding all subcmd options, since the user is
         # requesting help output (-h/--help) or entering unknown input
         except AttributeError:

@@ -561,12 +561,12 @@ class ArgumentParser(arghparse.ArgumentParser):
         # add selected subcommand options
         try:
             subcmd = unparsed_args.pop(0)
-            subcmd_parser = service_opts.add_subcmd_opts(service=service, subcmd=subcmd)
+            subcmd = service_opts.add_subcmd_opts(service=service, subcmd=subcmd)
         except IndexError:
-            subcmd_parser = None
+            subcmd = None
 
         # no more args exist or help requested, run main parser to show related output
-        if subcmd_parser is None:
+        if subcmd is None:
             return super().parse_args()
 
         self.set_defaults(connection=initial_args.connection)
@@ -574,13 +574,13 @@ class ArgumentParser(arghparse.ArgumentParser):
         if initial_args.input is not None:
             fcn_args = self._substitute_args(unparsed_args, initial_args)
         else:
-            fcn_args = subcmd_parser.parse_args(unparsed_args)
+            fcn_args = subcmd.parser.parse_args(unparsed_args)
             # if an arg was piped in, remove stdin attr from fcn args and reopen stdin
             stdin = fcn_args.pop('stdin', None)
             if stdin is not None:
                 sys.stdin = open('/dev/tty')
 
-        fcn_args = vars(fcn_args)
+        fcn_args = subcmd.check_args(vars(fcn_args))
 
         # client settings that override unset service level args
         for attr in ('verbose', 'debug'):
