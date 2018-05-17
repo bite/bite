@@ -2,6 +2,7 @@ from functools import wraps, partial
 import re
 
 import requests
+from snakeoil.strings import pluralism
 
 
 def req_cmd(service_cls, name=None, cmd=None, obj_args=False):
@@ -417,6 +418,105 @@ class ParseRequest(Request):
 
         def _default_parser(self, k, v):
             """Default parameter parser."""
+
+
+class Filter(object):
+    """Stub for data filter."""
+
+    def __init__(self, *, request, service, **kw):
+        self.request = request
+        self.options = request.options
+        self.service = service
+
+    def send(self, **kw):
+        """Send a request object to the related service."""
+        return self.request.send(**kw)
+
+
+class CommentsFilter(Filter):
+
+    def __init__(self, creator=None, attachment=None, comment_num=None, **kw):
+        super().__init__(**kw)
+        self.creator = set(creator) if creator else creator
+        self.attachment = attachment
+        self.comment_num = set(comment_num) if comment_num else comment_num
+
+        if self.creator is not None:
+            self.options.append(f"Creator{pluralism(self.creator)}: {', '.join(self.creator)}")
+        if self.attachment:
+            self.options.append('Attachments: yes')
+        if self.comment_num is not None:
+            self.options.append(
+                f"Comment number{pluralism(self.comment_num)}: {', '.join(map(str, self.comment_num))}")
+
+    def send(self, **kw):
+        """Filter the returned data."""
+        data = super().send(**kw)
+
+        for i, comments in zip(self.request.ids, data):
+            if self.creator is not None:
+                comments = (x for x in comments if x.creator in self.creator)
+            if self.attachment:
+                comments = (x for x in comments if x.changes['attachment_id'] is not None)
+            if self.comment_num is not None:
+                if any(x < 0 for x in self.comment_num):
+                    comments = list(comments)
+                    selected = []
+                    for x in comment_num:
+                        try:
+                            selected.append(comments[x])
+                        except IndexError:
+                            pass
+                    comments = selected
+                else:
+                    comments = (x for x in comments if x.count in self.comment_num)
+            yield i, comments
+
+
+class ChangesFilter(Filter):
+
+    def __init__(self, creator=None, attachment=None,
+                 change_num=None, match=None, created=None, **kw):
+        super().__init__(**kw)
+        self.creator = set(map(self.service._resuffix, creator)) if creator else creator
+        self.change_num = set(change_num) if change_num else change_num
+        self.match = match
+        self.created = created
+
+        if self.creator is not None:
+            self.options.append(f"Creator{pluralism(self.creator)}: {', '.join(self.creator)}")
+        if self.change_num is not None:
+            self.options.append(
+                f"Change number{pluralism(self.change_num)}: {', '.join(map(str, self.change_num))}")
+        if self.match is not None:
+            self.options.append(f"Matching: {', '.join(self.match)}")
+        if self.created is not None:
+            self.options.append(f'Created: {self.created} (since {self.created!r} UTC)')
+
+    def send(self, **kw):
+        """Filter the returned data."""
+        data = super().send(**kw)
+
+        for i, changes in zip(self.request.ids, data):
+            if self.creator is not None:
+                changes = (x for x in changes if x.creator in self.creator)
+            if self.created is not None:
+                changes = (x for x in changes if x.created >= self.created)
+            if self.match is not None:
+                changes = (event for event in changes if event.match(fields=self.match))
+            if self.change_num is not None:
+                if any(x < 0 for x in self.change_num):
+                    changes = list(changes)
+                    selected = []
+                    for x in comment_num:
+                        try:
+                            selected.append(changes[x])
+                        except IndexError:
+                            pass
+                    changes = selected
+                else:
+                    changes = (x for x in changes if x.count in self.change_num)
+            yield i, changes
 
 
 class NullRequest(Request):

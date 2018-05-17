@@ -609,8 +609,7 @@ class Changes(args.Changes):
         super().add_args()
         # optional args
         self.opts.add_argument(
-            '-c', '--created', dest='creation_time',
-            metavar='TIME', type=date,
+            '-c', '--created', metavar='TIME', type=date,
             action=partial(ParseStdin, date),
             help='changes made at this time or later')
         self.opts.add_argument(
@@ -628,8 +627,7 @@ class Comments(args.Comments):
         super().add_args()
         # optional args
         self.opts.add_argument(
-            '-c', '--created', dest='creation_time',
-            metavar='TIME', type=date,
+            '-c', '--created', metavar='TIME', type=date,
             help='comments made at this time or later')
         self.opts.add_argument(
             '-a', '--attachment', action='store_true',

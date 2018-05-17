@@ -80,6 +80,5 @@ class Comments(args.Comments):
         super().add_args()
         # optional args
         self.opts.add_argument(
-            '-c', '--created', dest='creation_time',
-            metavar='TIME', type=date,
+            '-c', '--created', metavar='TIME', type=date,
             help='comments made at this time or later')
