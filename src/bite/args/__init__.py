@@ -351,13 +351,17 @@ class Modify(SendSubcmd):
     def get_comment_reply(self, reply_id, args):
         """Allow a user to reply to a specific comment."""
         item_id = args['ids'][0]
-        comments = next(self.service.CommentsRequest(ids=[item_id]).send())
+        try:
+            comments = next(self.service.CommentsRequest(ids=[item_id]).send())
+        except BiteError as e:
+            self.parser.error(f'argument -r/--reply: {e}')
 
         # pull comment data in reply format
         try:
             reply_comment = comments[reply_id].reply
         except IndexError:
-            raise BiteError(
+            self.parser.error(
+                'argument -r/--reply: '
                 f'nonexistent comment #{reply_id} '
                 f'({self.service.item.type} #{item_id} has {len(comments)} '
                 'comments including the description)')
