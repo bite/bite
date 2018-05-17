@@ -7,7 +7,10 @@ from snakeoil.klass import aliased, alias
 
 from . import Bugzilla
 from .objects import BugzillaEvent, BugzillaComment
-from .._reqs import OffsetPagedRequest, Request, ParseRequest, GetRequest, req_cmd
+from .._reqs import (
+    OffsetPagedRequest, Request, ParseRequest, GetRequest,
+    ChangesFilter, CommentsFilter, req_cmd,
+)
 from ...args.bugzilla import parse_date
 from ...objects import DateTime
 from ...exceptions import BiteError
@@ -18,6 +21,16 @@ demandload('bite:const')
 @req_cmd(Bugzilla, cmd='get')
 class _GetRequest(GetRequest):
     """Construct a get request."""
+
+
+@req_cmd(Bugzilla)
+class _CommentsFilter(CommentsFilter):
+    pass
+
+
+@req_cmd(Bugzilla)
+class _ChangesFilter(ChangesFilter):
+    pass
 
 
 class SearchRequest4_4(ParseRequest, OffsetPagedRequest):

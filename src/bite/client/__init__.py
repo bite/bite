@@ -14,7 +14,6 @@ from snakeoil.demandload import demandload
 from ..exceptions import AuthError, BiteError
 from ..objects import TarAttachment
 from ..service import Service
-from ..service._reqs import ChangesFilter, CommentsFilter
 from ..utils import confirm, get_input, launch_browser
 
 demandload('bite:const')
@@ -499,8 +498,8 @@ class Cli(Client):
     @dry_run
     @login_retry
     def changes(self, **kw):
-        request = self.service.ChangesRequest(**kw)
-        filter = ChangesFilter(request=request, service=self.service, **kw)
+        request = self.service.ChangesRequest(item_id=True, **kw)
+        filter = self.service.ChangesFilter(request=request, **kw)
 
         self.log('Getting changes matching the following options:')
         self.log_t(filter.options, prefix='   - ')
@@ -541,8 +540,8 @@ class Cli(Client):
     @login_retry
     def comments(self, **kw):
         """Get comments from a service."""
-        request = self.service.CommentsRequest(**kw)
-        filter = CommentsFilter(request=request, service=self.service, **kw)
+        request = self.service.CommentsRequest(item_id=True, **kw)
+        filter = self.service.CommentsFilter(request=request, **kw)
 
         self.log('Getting comments matching the following options:')
         self.log_t(filter.options, prefix='   - ')

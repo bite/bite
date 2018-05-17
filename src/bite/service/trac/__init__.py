@@ -10,7 +10,10 @@ from itertools import chain
 from snakeoil.klass import aliased, alias
 
 from .. import Service
-from .._reqs import Request, ParseRequest, NullRequest, req_cmd, generator
+from .._reqs import (
+    Request, ParseRequest, NullRequest, req_cmd, generator,
+    ChangesFilter, CommentsFilter,
+)
 from .._rpc import Multicall, MergedMulticall, RPCRequest
 from ...exceptions import BiteError, RequestError
 from ...objects import Item, Comment, Attachment, Change
@@ -285,6 +288,11 @@ class _ChangelogRequest(Multicall):
         return super().parse(data)
 
 
+@req_cmd(Trac)
+class _CommentsFilter(CommentsFilter):
+    pass
+
+
 @req_cmd(Trac, cmd='comments')
 class _CommentsRequest(_ChangelogRequest):
     """Construct a comments request."""
@@ -332,6 +340,11 @@ class _AttachmentsRequest(Multicall):
                 l.append(TracAttachment(
                     creator=creator, created=created, size=size, filename=filename))
             yield tuple(l)
+
+
+@req_cmd(Trac)
+class _ChangesFilter(ChangesFilter):
+    pass
 
 
 @req_cmd(Trac, cmd='changes')

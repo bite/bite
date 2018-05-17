@@ -16,7 +16,7 @@ from ._jsonrest import JsonREST
 from ._reqs import (
     NullRequest, Request, ParseRequest,
     FlaggedPagedRequest, PagedRequest,
-    req_cmd, generator,
+    req_cmd, generator, CommentsFilter, ChangesFilter
 )
 from ._rest import RESTRequest
 from ..exceptions import BiteError, RequestError
@@ -389,6 +389,11 @@ class _ThreadRequest(Request):
                     self._exhausted = True
 
 
+@req_cmd(Sourceforge)
+class _CommentsFilter(CommentsFilter):
+    pass
+
+
 @req_cmd(Sourceforge, cmd='comments')
 class _CommentsRequest(_ThreadRequest):
     """Construct a comments request."""
@@ -429,6 +434,11 @@ class _AttachmentsRequest(_ThreadRequest):
                         size=a['bytes'], url=a['url'], filename=a['url'].rsplit('/', 1)[1]))
                     count += 1
             yield tuple(l)
+
+
+@req_cmd(Sourceforge)
+class _ChangesFilter(ChangesFilter):
+    pass
 
 
 @req_cmd(Sourceforge, cmd='changes')

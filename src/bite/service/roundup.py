@@ -12,7 +12,7 @@ import re
 from datetime import datetime
 from snakeoil.klass import aliased, alias
 
-from ._reqs import NullRequest, ParseRequest, req_cmd
+from ._reqs import NullRequest, ParseRequest, req_cmd, CommentsFilter
 from ._rpc import Multicall, RPCRequest
 from ._xmlrpc import Xmlrpc, XmlrpcError
 from ..cache import Cache, csv2tuple
@@ -442,6 +442,11 @@ class _AttachmentsRequest(Multicall):
             id=ids[i], filename=d['name'], data=d.get('content'),
             creator=d['creator'], created=parsetime(d['creation']), mimetype=d['type'])
             for i, d in enumerate(data))
+
+
+@req_cmd(Roundup)
+class _CommentsFilter(CommentsFilter):
+    pass
 
 
 @req_cmd(Roundup, cmd='comments')

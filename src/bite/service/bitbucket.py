@@ -15,7 +15,7 @@ from ._jsonrest import JsonREST
 from ._rest import RESTRequest
 from ._reqs import (
     LinkPagedRequest, Request, GetRequest, ParseRequest,
-    generator, req_cmd,
+    ChangesFilter, CommentsFilter, generator, req_cmd,
 )
 from ..exceptions import BiteError, RequestError
 from ..objects import Item, Comment, Attachment, Change
@@ -395,6 +395,10 @@ class _GetItemRequest(Request):
             yield self.service.item(self.service, issue, get_desc=self._get_desc)
 
 
+@req_cmd(Bitbucket)
+class _CommentsFilter(CommentsFilter):
+    pass
+
 @req_cmd(Bitbucket, cmd='comments')
 class _CommentsRequest(Request):
     """Construct a comments request."""
@@ -483,6 +487,11 @@ class _AttachmentsRequest(Request):
                 self.service.attachment(
                     data=c, filename=a['name'], url=a['links']['self']['href'])
                 for a, c in zip(attachments, content))
+
+
+@req_cmd(Bitbucket)
+class _ChangesFilter(ChangesFilter):
+    pass
 
 
 @req_cmd(Bitbucket, cmd='changes')
