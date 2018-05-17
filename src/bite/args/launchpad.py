@@ -1,6 +1,5 @@
 from .bugzilla import date
 from .. import args
-from ..argparser import ParseStdin
 
 
 class LaunchpadOpts(args.ServiceOpts):
@@ -101,7 +100,7 @@ class Get(args.Get):
 class Attachments(args.Attachments):
 
     def add_args(self):
-        super().add_args(id_map=True, item_id=False)
+        super().add_args(id_map='id_maps', item_id=False)
 
 
 @args.subcmd(LaunchpadOpts)

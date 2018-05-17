@@ -94,6 +94,22 @@ class ID_Maps(ArgType):
         return [self.parse(x) for x in data]
 
 
+class ID_Str_Maps(ArgType):
+
+    def parse(self, s):
+        id_str, _sep, a_str = s.partition(':')
+        try:
+            id = int(id_str)
+        except ValueError:
+            raise ArgumentTypeError(f'invalid ID value: {id_str!r}')
+
+        a_ids = a_str.split(',') if a_str else []
+        return id, tuple(a_ids)
+
+    def parse_stdin(self, data):
+        return [self.parse(x) for x in data]
+
+
 class Comment(ArgType):
 
     def parse(self, s):

@@ -207,9 +207,14 @@ class Cli(Client):
         # skip pulling data if we don't need it
         get_data = (not output_url and not browser)
 
-        # extract attachment IDs to display if the service requires ID maps
+        # extract attachment IDs to display if the service uses ID maps
+        display_ids = []
         if id_map:
-            display_ids = chain.from_iterable(x[1] for x in ids)
+            for id, a_ids in ids:
+                if not a_ids:
+                    display_ids.append(f'from {self.service.item.type} {id}')
+                else:
+                    display_ids.extend(f'{id}:{a}' for a in a_ids)
         else:
             display_ids = ids
 

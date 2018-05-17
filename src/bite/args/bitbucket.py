@@ -84,6 +84,13 @@ class Get(args.Get):
 
 
 @args.subcmd(BitbucketOpts)
+class Attachments(args.Attachments):
+
+    def add_args(self):
+        super().add_args(id_map='id_str_maps', item_id=False)
+
+
+@args.subcmd(BitbucketOpts)
 class Comments(args.Comments):
     pass
 

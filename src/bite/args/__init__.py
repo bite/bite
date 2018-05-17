@@ -5,7 +5,7 @@ from snakeoil.cli import arghparse
 from snakeoil.demandload import demandload
 
 from ..exceptions import BiteError
-from ..argparser import ParseStdin, Comment, IDList, StringList, IDs, ID_Maps
+from ..argparser import ParseStdin, Comment, IDList, StringList, IDs, ID_Maps, ID_Str_Maps
 from ..utils import str2bool, block_edit, confirm
 
 demandload('bite:const')
@@ -46,6 +46,7 @@ class Subcmd(object):
         self.parser.register('type', 'ids', IDs(service))
         self.parser.register('type', 'id_list', IDList(service))
         self.parser.register('type', 'id_maps', ID_Maps(service))
+        self.parser.register('type', 'id_str_maps', ID_Str_Maps(service))
         self.parser.register('type', 'str_list', StringList(service))
         self.parser.register('type', 'comment', Comment(service))
         self.parser.register('action', 'parse_stdin', ParseStdin)
@@ -225,12 +226,12 @@ class Attachments(Subcmd):
     def description(self):
         return f"get attachments from {self.service.item.type}(s)"
 
-    def add_args(self, id_map=False, item_id=True):
+    def add_args(self, id_map=None, item_id=True):
         super().add_args()
         # positional args
         if id_map:
             self.parser.add_argument(
-                'ids', type='id_maps', nargs='+', metavar='ID[:A_ID[,...]]', action='parse_stdin',
+                'ids', type=id_map, nargs='+', metavar='ID[:A_ID[,...]]', action='parse_stdin',
                 help=f"{self.service.item.type} ID(s) or {self.service.item.type} ID to attachment ID map(s)")
             self.parser.set_defaults(id_map=True)
         else:

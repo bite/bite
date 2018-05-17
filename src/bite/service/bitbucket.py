@@ -25,8 +25,9 @@ class BitbucketError(RequestError):
     """Bitbucket service specific error."""
 
     def __init__(self, msg, code=None, text=None):
-        msg = f'Bitbucket error: {msg}'
-        super().__init__(msg, code, text)
+        self.orig_msg = msg
+        prefixed_msg = f'Bitbucket error: {msg}'
+        super().__init__(msg=prefixed_msg, code=code, text=text)
 
 
 class BitbucketIssue(Item):
@@ -433,10 +434,13 @@ class _CommentsRequest(Request):
 class _AttachmentsRequest(Request):
     """Construct an attachments request."""
 
-    def __init__(self, ids=None, get_data=False, **kw):
+    def __init__(self, ids=(), attachment_ids=(), get_data=False, **kw):
         super().__init__(**kw)
-        if ids is None:
-            raise ValueError(f'No {self.service.item.type} ID(s) specified')
+        if not any((ids, attachment_ids)):
+            raise ValueError(f'No ID(s) specified')
+
+        if attachment_ids:
+            ids = list(x[0] for x in attachment_ids)
 
         reqs = []
         for i in ids:
@@ -444,16 +448,41 @@ class _AttachmentsRequest(Request):
                 service=self.service, endpoint=f'/issues/{i}/attachments'))
 
         self.ids = ids
+        self.attachment_ids = attachment_ids
         self._reqs = tuple(reqs)
+        self._get_data = get_data
 
     @generator
     def parse(self, data):
         for attachments in data:
-            attachments = attachments['values']
+            if self.ids:
+                attachments = attachments['values']
+
+            if self._get_data:
+                a_names = set()
+                reqs = []
+                for i, a_ids in self.attachment_ids:
+                    if not a_ids:
+                        a_ids = [x['name'] for x in attachments]
+                    a_names.update(a_ids)
+                    for a_id in a_ids:
+                        reqs.append(RESTRequest(
+                            service=self.service, raw=True,
+                            endpoint=f'/issues/{i}/attachments/{a_id}'))
+                try:
+                    content = tuple(Request(
+                        service=self.service, reqs=reqs, raw=True).send(allow_redirects=True))
+                except BitbucketError as e:
+                    if e.code == 404 and e.orig_msg in a_names:
+                        raise BitbucketError(f'unknown attachment: {e.orig_msg!r}')
+                    raise
+            else:
+                content = self._none_gen
+
             yield tuple(
                 self.service.attachment(
-                    filename=a['name'], url=a['links']['self']['href'])
-                for a in attachments)
+                    data=c, filename=a['name'], url=a['links']['self']['href'])
+                for a, c in zip(attachments, content))
 
 
 @req_cmd(Bitbucket, cmd='changes')

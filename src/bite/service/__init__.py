@@ -255,8 +255,8 @@ class Service(object):
         def _raise(e): raise
         ident = lambda x: x
 
-        def _parse(parse, handle, reqs):
-            generator = getattr(parse, 'generator', False)
+        def _parse(parse, handle, reqs, generator=False):
+            generator = getattr(parse, 'generator', generator)
             try:
                 if len(reqs) > 1 or generator:
                     results = (x.result() for x in reqs)
@@ -272,6 +272,7 @@ class Service(object):
                 parse = getattr(req, 'parse', ident)
                 req_parse = getattr(req, 'parse_response', None)
                 raw = getattr(req, '_raw', False)
+                generator = bool(req._reqs)
                 handle = getattr(req, 'handle_exception', _raise)
 
                 if isinstance(req, Request) and len(req) > 1:
@@ -292,7 +293,8 @@ class Service(object):
                         http_reqs.append(self.executor.submit(func, r))
 
                     if http_reqs:
-                        jobs.append(self.executor.submit(_parse, parse, handle, http_reqs))
+                        jobs.append(self.executor.submit(
+                            _parse, parse, handle, http_reqs, generator))
             return jobs
 
         data = (x.result() for x in _send_jobs(reqs))
