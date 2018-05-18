@@ -69,6 +69,13 @@ class SearchRequest4_4(ParseRequest, OffsetPagedRequest):
             if 'include_fields' not in self.params:
                 self.params['include_fields'] = ['id', 'assigned_to', 'summary']
 
+        def _default_parser(self, k, v):
+            if k in self.service.item.attributes:
+                self.params[k] = v
+                values = ', '.join(map(str, v)) if isinstance(v, (list, tuple)) else v
+                self.options.append(f'{self.service.item.attributes[k]}: {values}')
+                return k
+
         def fields(self, k, v):
             available = self.service.item.attributes.keys()
             unknown_fields = set(v).difference(available)
