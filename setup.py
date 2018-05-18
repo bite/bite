@@ -67,8 +67,8 @@ def write_lookup_config(python_base, install_prefix):
                 SERVICE_OPTS = {service_opts}
             """))
         else:
-            data_path = os.path.join(install_prefix, DATA_INSTALL_OFFSET),
-            config_path = os.path.join(install_prefix, CONFIG_INSTALL_OFFSET),
+            data_path = os.path.join(install_prefix, DATA_INSTALL_OFFSET)
+            config_path = os.path.join(install_prefix, CONFIG_INSTALL_OFFSET)
             f.write(textwrap.dedent(f"""\
                 INSTALL_PREFIX = {install_prefix!r}
                 DATA_PATH = {data_path!r}
