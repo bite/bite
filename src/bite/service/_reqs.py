@@ -372,13 +372,14 @@ class ParseRequest(Request):
             parse = getattr(self.param_parser, k, None)
             if parse is None:
                 parse = self.param_parser._default_parser
+                if parse(k, v) is not None:
+                    del unused_params[k]
             else:
                 if not callable(parse):
                     if self.strict:
                         raise ValueError(f"invalid parameter parsing function: {k!r}")
                     continue
-                del unused_params[k]
-            parse(k, v)
+                parse(k, unused_params.pop(k))
 
         self.params = self.remap_params(self.params)
         params = self.param_parser._finalize()
