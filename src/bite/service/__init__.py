@@ -256,7 +256,6 @@ class Service(object):
         ident = lambda x: x
 
         def _parse(parse, handle, reqs, generator=False):
-            generator = getattr(parse, 'generator', generator)
             try:
                 if len(reqs) > 1 or generator:
                     results = (x.result() for x in reqs)

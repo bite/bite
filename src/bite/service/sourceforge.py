@@ -16,7 +16,7 @@ from ._jsonrest import JsonREST
 from ._reqs import (
     NullRequest, Request, ParseRequest,
     FlaggedPagedRequest, PagedRequest,
-    req_cmd, generator, CommentsFilter, ChangesFilter
+    req_cmd, CommentsFilter, ChangesFilter
 )
 from ._rest import RESTRequest
 from ..exceptions import BiteError, RequestError
@@ -340,10 +340,6 @@ class _GetItemRequest(Request):
         self._get_attach = get_attachments
 
     def parse(self, data):
-        # TODO: hack, rework the http send parsing rewapper to be more
-        # intelligent about unwrapping responses
-        if len(self.ids) == 1:
-            data = [data]
         for item in data:
             yield self.service.item(
                 self.service, get_desc=self._get_desc, get_attachments=self._get_attach,
@@ -377,7 +373,6 @@ class _ThreadRequest(Request):
         self._reqs = tuple(reqs)
         self._data = data
 
-    @generator
     def parse(self, data):
         if self._data is not None:
             yield from self._data
@@ -398,7 +393,6 @@ class _CommentsFilter(CommentsFilter):
 class _CommentsRequest(_ThreadRequest):
     """Construct a comments request."""
 
-    @generator
     def parse(self, data):
         thread_posts = super().parse(data)
         for posts in thread_posts:
@@ -421,7 +415,6 @@ class _CommentsRequest(_ThreadRequest):
 class _AttachmentsRequest(_ThreadRequest):
     """Construct an attachments request."""
 
-    @generator
     def parse(self, data):
         thread_posts = super().parse(data)
         for posts in thread_posts:
@@ -445,7 +438,6 @@ class _ChangesFilter(ChangesFilter):
 class _ChangesRequest(_ThreadRequest):
     """Construct a changes request."""
 
-    @generator
     def parse(self, data):
         thread_posts = super().parse(data)
         for posts in thread_posts:

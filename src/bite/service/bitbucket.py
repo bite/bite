@@ -15,7 +15,7 @@ from ._jsonrest import JsonREST
 from ._rest import RESTRequest
 from ._reqs import (
     LinkPagedRequest, Request, GetRequest, ParseRequest,
-    ChangesFilter, CommentsFilter, generator, req_cmd,
+    ChangesFilter, CommentsFilter, req_cmd,
 )
 from ..exceptions import BiteError, RequestError
 from ..objects import Item, Comment, Attachment, Change
@@ -417,7 +417,6 @@ class _CommentsRequest(Request):
         self.ids = ids
         self._reqs = tuple(reqs)
 
-    @generator
     def parse(self, data):
         # skip comments that have no content, i.e. issue attribute changes
         for i, comments in zip(self.ids, data):
@@ -456,7 +455,6 @@ class _AttachmentsRequest(Request):
         self._reqs = tuple(reqs)
         self._get_data = get_data
 
-    @generator
     def parse(self, data):
         for attachments in data:
             if self.ids:
@@ -513,7 +511,6 @@ class _ChangesRequest(Request):
         self.ids = ids
         self._reqs = tuple(reqs)
 
-    @generator
     def parse(self, data):
         for i, changes in zip(self.ids, data):
             changes = changes['values']

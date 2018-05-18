@@ -11,7 +11,7 @@ from snakeoil.klass import aliased, alias
 
 from .. import Service
 from .._reqs import (
-    Request, ParseRequest, NullRequest, req_cmd, generator,
+    Request, ParseRequest, NullRequest, req_cmd,
     ChangesFilter, CommentsFilter,
 )
 from .._rpc import Multicall, MergedMulticall, RPCRequest
@@ -280,7 +280,6 @@ class _ChangelogRequest(Multicall):
         self.ids = ids
         self._data = data
 
-    @generator
     def parse(self, data):
         if self._data is not None:
             return self._data

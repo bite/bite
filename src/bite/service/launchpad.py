@@ -9,10 +9,7 @@ from dateutil.parser import parse as dateparse
 from snakeoil.klass import aliased, alias
 
 from ._jsonrest import JsonREST
-from ._reqs import (
-    OffsetPagedRequest, Request, GetRequest, ParseRequest,
-    req_cmd, generator,
-)
+from ._reqs import OffsetPagedRequest, Request, GetRequest, ParseRequest, req_cmd
 from ._rest import RESTRequest
 from ..cache import Cache
 from ..exceptions import RequestError, BiteError
@@ -396,7 +393,6 @@ class _AttachmentsRequest(Request):
         self._reqs = tuple(reqs)
         self._get_data = get_data
 
-    @generator
     def parse(self, data):
         # wrap data similar to how an item ID response looks
         if self.attachment_ids:

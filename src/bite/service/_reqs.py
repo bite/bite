@@ -29,15 +29,6 @@ def req_cmd(service_cls, name=None, cmd=None, obj_args=False):
     return partial(wrapped, name)
 
 
-def generator(func):
-    """Register request creation function."""
-    @wraps(func)
-    def wrapped(*args, **kw):
-        return func(*args, **kw)
-    wrapped.generator = True
-    return wrapped
-
-
 class Request(object):
     """Construct a request."""
 
