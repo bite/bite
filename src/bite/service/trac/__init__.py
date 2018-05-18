@@ -298,7 +298,8 @@ class _CommentsRequest(_ChangelogRequest):
 
     def __init__(self, **kw):
         super().__init__(**kw)
-        self.options.append(f"IDs: {', '.join(map(str, self.ids))}")
+        if self.ids is not None:
+            self.options.append(f"IDs: {', '.join(map(str, self.ids))}")
 
     def parse(self, data):
         # unwrap multicall result
@@ -354,7 +355,8 @@ class _ChangesRequest(_ChangelogRequest):
 
     def __init__(self, **kw):
         super().__init__(**kw)
-        self.options.append(f"IDs: {', '.join(map(str, self.ids))}")
+        if self.ids is not None:
+            self.options.append(f"IDs: {', '.join(map(str, self.ids))}")
 
     def parse(self, data):
         data = super().parse(data)
