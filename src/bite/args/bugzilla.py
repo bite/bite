@@ -5,7 +5,7 @@ import re
 import sys
 
 from dateutil.parser import parse as parsetime
-from dateutil.relativedelta import *
+from dateutil.relativedelta import relativedelta
 
 from .. import args
 from ..argparser import ParseStdin

@@ -3,7 +3,7 @@ import re
 
 import datetime
 from dateutil.parser import parse as parsetime
-from dateutil.relativedelta import *
+from dateutil.relativedelta import relativedelta
 
 
 def subcmds(subparsers):
