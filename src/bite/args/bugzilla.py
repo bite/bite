@@ -375,6 +375,7 @@ class Search(args.PagedSearch):
         self.opts.add_argument(
             '--output',
             help='custom format for search output')
+
         self.person = self.parser.add_argument_group('Person related')
         self.person.add_argument(
             '-a', '--assigned-to', type='str_list', action='parse_stdin',
@@ -385,6 +386,7 @@ class Search(args.PagedSearch):
         self.person.add_argument(
             '--qa-contact', type='str_list', action='parse_stdin',
             help='email of the QA contact for the bug')
+
         self.time = self.parser.add_argument_group('Time related')
         self.time.add_argument(
             '-c', '--created', type=date, metavar='TIME',
@@ -394,6 +396,7 @@ class Search(args.PagedSearch):
             '-m', '--modified', type=date, metavar='TIME',
             action=partial(ParseStdin, date),
             help='bugs modified at this time or later')
+
         self.attr = self.parser.add_argument_group('Attribute related')
         self.attr.add_argument(
             '-s', '--status', type='str_list',
@@ -476,54 +479,14 @@ class Search5_0(Search):
                 sorting methods such as last-visited require an authenticated
                 session to work properly.
             """)
-        self.opts.add_argument(
-            '-q', '--quicksearch',
-            help='search for bugs using quicksearch syntax',
-            docs="""
-                Search for bugs using quicksearch syntax.
 
-                See https://bugzilla.mozilla.org/page.cgi?id=quicksearch.html
-                and http://www.squarefree.com/bugzilla/quicksearch-help.html
-                for a description of the syntax and various examples.
-            """)
-        self.opts.add_argument(
-            '--advanced-url', metavar='URL',
-            help='search for bugs using an advanced search URL',
-            docs="""
-                Search for bugs using URLs from the web UI's advanced search.
-
-                Using this, one can construct any custom search by the advanced
-                search interface in the regular web UI and then use the
-                resulting URL to peform the same query on the command line.
-
-                Note that options specified on the command line will override
-                any matching URL parameters.
-            """)
-        self.opts.add_argument(
-            '-S', '--saved-search',
-            help='search for bugs using a saved search')
         self.person.add_argument(
             '--cc', type='str_list', action='parse_stdin',
             help='email in the CC list for the bug')
         self.person.add_argument(
             '--commenter', type='str_list', action='parse_stdin',
             help='commenter in the bug')
-        self.changes = self.parser.add_argument_group('Change related')
-        self.changes.add_argument(
-            '--changed-before', nargs=2, metavar=('FIELD', 'TIME'),
-            help='restrict by changes made before a certain time')
-        self.changes.add_argument(
-            '--changed-after', nargs=2, metavar=('FIELD', 'TIME'),
-            help='restrict by changes made after a certain time')
-        self.changes.add_argument(
-            '--changed-from', nargs=2, metavar=('FIELD', 'VALUE'),
-            help='restrict by changes from a specified value')
-        self.changes.add_argument(
-            '--changed-to', nargs=2, metavar=('FIELD', 'VALUE'),
-            help='restrict by changes to a specified value')
-        self.changes.add_argument(
-            '--changed-by', nargs=2, metavar=('FIELD', 'USER'),
-            help='restrict by changes made by a specified user')
+
         self.attr.add_argument(
             '-K', '--keywords', type='str_list',
             action='parse_stdin',
@@ -552,6 +515,51 @@ class Search5_0(Search):
                 have attachments. If passed an argument of '0', returned bugs
                 will not have any attachments.
             """)
+
+        self.bugzilla = self.parser.add_argument_group('Bugzilla related')
+        self.bugzilla.add_argument(
+            '-q', '--quicksearch',
+            help='search for bugs using quicksearch syntax',
+            docs="""
+                Search for bugs using quicksearch syntax.
+
+                See https://bugzilla.mozilla.org/page.cgi?id=quicksearch.html
+                and http://www.squarefree.com/bugzilla/quicksearch-help.html
+                for a description of the syntax and various examples.
+            """)
+        self.bugzilla.add_argument(
+            '--advanced-url', metavar='URL',
+            help='search for bugs using an advanced search URL',
+            docs="""
+                Search for bugs using URLs from the web UI's advanced search.
+
+                Using this, one can construct any custom search by the advanced
+                search interface in the regular web UI and then use the
+                resulting URL to peform the same query on the command line.
+
+                Note that options specified on the command line will override
+                any matching URL parameters.
+            """)
+        self.bugzilla.add_argument(
+            '-S', '--saved-search',
+            help='search for bugs using a saved search')
+
+        self.changes = self.parser.add_argument_group('Change related')
+        self.changes.add_argument(
+            '--changed-before', nargs=2, metavar=('FIELD', 'TIME'),
+            help='restrict by changes made before a certain time')
+        self.changes.add_argument(
+            '--changed-after', nargs=2, metavar=('FIELD', 'TIME'),
+            help='restrict by changes made after a certain time')
+        self.changes.add_argument(
+            '--changed-from', nargs=2, metavar=('FIELD', 'VALUE'),
+            help='restrict by changes from a specified value')
+        self.changes.add_argument(
+            '--changed-to', nargs=2, metavar=('FIELD', 'VALUE'),
+            help='restrict by changes to a specified value')
+        self.changes.add_argument(
+            '--changed-by', nargs=2, metavar=('FIELD', 'USER'),
+            help='restrict by changes made by a specified user')
 
 
 @args.subcmd(Bugzilla5_0Opts)
