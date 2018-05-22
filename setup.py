@@ -4,6 +4,7 @@ import errno
 from itertools import chain
 import os
 import sys
+from textwrap import dedent
 
 from distutils import log
 from distutils.util import byte_compile
@@ -49,12 +50,11 @@ def write_lookup_config(python_base, install_prefix):
     services = tuple(sorted(const.SERVICES.items()))
     service_opts = tuple(sorted(const.SERVICE_OPTS.items()))
 
-    import textwrap
     with open(path, "w") as f:
         os.chmod(path, 0o644)
         # write more dynamic file for wheel installs
         if install_prefix != os.path.abspath(sys.prefix):
-            f.write(textwrap.dedent(f"""\
+            f.write(dedent(f"""\
                 import os.path as osp
                 import sys
 
@@ -69,7 +69,7 @@ def write_lookup_config(python_base, install_prefix):
         else:
             data_path = os.path.join(install_prefix, DATA_INSTALL_OFFSET)
             config_path = os.path.join(install_prefix, CONFIG_INSTALL_OFFSET)
-            f.write(textwrap.dedent(f"""\
+            f.write(dedent(f"""\
                 INSTALL_PREFIX = {install_prefix!r}
                 DATA_PATH = {data_path!r}
                 CONFIG_PATH = {config_path!r}
