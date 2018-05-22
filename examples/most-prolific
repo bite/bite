@@ -19,19 +19,21 @@ bugz = BugzillaJsonrpc(base='https://bugs.gentoo.org/')
 params = {}
 
 params['status'] = ['all']
-params['last_change_time'] = previous
-params['include_fields'] = ['id']
-bugs = [bug.id for bug in bugz.search(**params)]
-comments = bugz.comments(bugs, new_since=params['last_change_time'])
-history = bugz.history(bugs)
+params['modified'] = previous
+params['fields'] = ['id']
+bugs = [bug.id for bug in bugz.search(params=params)]
+comments = bugz.comments(ids=bugs, created=previous)
+changes = bugz.changes(ids=bugs)
+
 
 def filter_changes(change_list):
     for bug_changes in change_list:
         for change in bug_changes:
-            if change.date.replace(tzinfo=None) > previous:
+            if change.created.replace(tzinfo=None) > previous:
                 yield change.creator.partition('@')[0]
 
-changes = chain(comments, history)
+
+changes = chain(comments, changes)
 c = collections.Counter(filter_changes(changes))
 for user, i in c.most_common(10):
     print(f'{i}: {user}')

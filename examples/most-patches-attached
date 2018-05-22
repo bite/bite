@@ -18,9 +18,9 @@ bugz = BugzillaJsonrpc(base='https://bugs.gentoo.org/')
 params = {}
 
 params['status'] = ['all']
-params['last_change_time'] = previous
-params['include_fields'] = ['id']
-bugs = [bug.id for bug in bugz.search(**params)]
+params['modified'] = previous
+params['fields'] = ['id']
+bugs = [bug.id for bug in bugz.search(params=params)]
 attachments = bugz.attachments(ids=bugs)
 
 
