@@ -163,7 +163,7 @@ class Create(args.Create):
             '--version',
             help='version of the product')
         attr.add_argument(
-            '--op-sys',
+            '--os', dest='op_sys', metavar='OS',
             help='operating system for this bug')
         attr.add_argument(
             '--platform',
@@ -302,7 +302,7 @@ class Modify(args.Modify):
             '--target-milestone',
             help='set a target milestone for this bug')
         self.attr.add_argument(
-            '--op-sys',
+            '--os', dest='op_sys', metavar='OS',
             help='change the operating system for this bug')
         self.attr.add_argument(
             '--platform',
@@ -420,7 +420,7 @@ class Search(args.PagedSearch):
             action=partial(ParseStdin, 'ids'),
             help='restrict by bug ID(s)')
         self.attr.add_argument(
-            '--op-sys', type='str_list',
+            '--os', type='str_list', dest='op_sys', metavar='OS',
             action='parse_stdin',
             help='restrict by operating system (one or more)')
         self.attr.add_argument(
