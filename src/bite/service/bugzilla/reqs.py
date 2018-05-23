@@ -11,8 +11,6 @@ from .._reqs import (
     OffsetPagedRequest, Request, ParseRequest, GetRequest,
     ChangesFilter, CommentsFilter, req_cmd,
 )
-from ...args.bugzilla import parse_date
-from ...objects import DateTime
 from ...exceptions import BiteError
 
 demandload('bite:const')
@@ -199,8 +197,7 @@ class SearchRequest5_0(SearchRequest4_4):
 
         @alias('changed_after')
         def changed_before(self, k, v):
-            field, value = v
-            date = DateTime(value, parse_date(value))
+            field, date = v
             self.params[f'f{self.adv_num}'] = field
             self.params[f'o{self.adv_num}'] = k.replace('_', '')
             self.params[f'v{self.adv_num}'] = date.isoformat()

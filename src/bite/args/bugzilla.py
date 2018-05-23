@@ -1,65 +1,17 @@
 import argparse
-import datetime
 from functools import partial
-import re
-import sys
-
-from dateutil.parser import parse as parsetime
-from dateutil.relativedelta import relativedelta
 
 from .. import args
-from ..argparser import ParseStdin
-from ..objects import DateTime
-from ..utc import utc
+from ..argparser import ParseStdin, parse_date, DateTime
 from ..utils import str2bool
 
 
-def parse_date(s):
-    today = datetime.datetime.utcnow()
-    offset = re.match(r'^(\d+)([ymwdhs]|min)$', s)
+class ChangedDateTuple(argparse.Action):
 
-    if offset:
-        units = {
-            'y': 'years',
-            'm': 'months',
-            'w': 'weeks',
-            'd': 'days',
-            'h': 'hours',
-            'min': 'minutes',
-            's': 'seconds',
-        }
-        unit = units[offset.group(2)]
-        value = -int(offset.group(1))
-        kw = {unit: value}
-        date = today + relativedelta(**kw)
-    elif re.match(r'^\d\d\d\d$', s):
-        date = parsetime(s) + relativedelta(yearday=1)
-    elif re.match(r'^\d\d\d\d[-/]\d\d$', s):
-        date = parsetime(s) + relativedelta(day=1)
-    elif re.match(r'^(\d\d)?\d\d[-/]\d\d[-/]\d\d$', s):
-        date = parsetime(s)
-    elif re.match(r'^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d(\+\d\d:\d\d)?$', s):
-        try:
-            # try converting timezone if one is specified
-            date = parsetime(s).astimezone(utc)
-        except ValueError:
-            # otherwise default to UTC if none is specified
-            date = parsetime(s).replace(tzinfo=utc)
-    else:
-        raise ValueError(f'invalid date argument: {s!r}')
-
-    # drop microsecond resolution since we shouldn't need it
-    return date.replace(microsecond=0)
-
-
-def date(s):
-    if sys.stdin.isatty() or s != '-':
-        try:
-            return DateTime(s, parse_date(s))
-        except ValueError as e:
-            raise argparse.ArgumentTypeError(e)
-    else:
-        return s
+    def __call__(self, parser, namespace, values, option_string=None):
+        field, value = values
+        date = DateTime(value, parse_date(value))
+        setattr(namespace, self.dest, (field, date))
 
 
 class Bugzilla4_4Opts(args.ServiceOpts):
@@ -545,9 +497,11 @@ class Search5_0(Search):
         self.changes = self.parser.add_argument_group('Change related')
         self.changes.add_argument(
             '--changed-before', nargs=2, metavar=('FIELD', 'TIME'),
+            action=ChangedDateTuple,
             help='restrict by changes made before a certain time')
         self.changes.add_argument(
             '--changed-after', nargs=2, metavar=('FIELD', 'TIME'),
+            action=ChangedDateTuple,
             help='restrict by changes made after a certain time')
         self.changes.add_argument(
             '--changed-from', nargs=2, metavar=('FIELD', 'VALUE'),
