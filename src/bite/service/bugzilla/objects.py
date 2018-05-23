@@ -9,6 +9,7 @@ from snakeoil.osutils import sizeof_fmt
 
 from ... import utc
 from ...objects import Item, Change, Comment, Attachment, decompress
+from ...utils import nonstring_iterable
 
 demandload('bite:const')
 
@@ -145,15 +146,16 @@ class BugzillaBug(Item):
             title = title.replace('_', ' ')
 
             value = v
-            if isinstance(v, str):
+            if isinstance(v, str) and '\n' in v:
+                # split multiline custom fields
                 value = v.splitlines()
-            if len(value) > 1:
+            if nonstring_iterable(value) and len(value) > 1:
                 # output indented list for multiline custom fields
                 prefix = '\n  '
+                value = prefix + f'{prefix}'.join(value)
             else:
                 prefix = ''
-            v = prefix + f'{prefix}'.join(value)
-            yield f'{title:<12}: {v}'
+            yield f'{title:<12}: {value}'
 
     def __getattribute__(self, name):
         value = object.__getattribute__(self, name)
