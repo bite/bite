@@ -17,7 +17,7 @@ from snakeoil.osutils import sizeof_fmt
 
 from . import magic
 from .exceptions import BiteError
-from .utc import utc
+from .utc import utc, parse_date
 
 demandload('bite:const')
 
@@ -51,8 +51,10 @@ def decompress(fcn):
 class DateTime(object):
     """Object that stores a given date token and its corresponding datetime object."""
 
-    def __init__(self, token, datetime):
+    def __init__(self, token, datetime=None):
         self.token = token
+        if datetime is None:
+            datetime = parse_date(token)
         self._datetime = datetime.replace(tzinfo=utc)
 
     def __str__(self):
@@ -96,9 +98,20 @@ class DateTime(object):
 class TimeInterval(object):
     """Object that stores a given time interval token and its corresponding datetime objects."""
 
-    def __init__(self, token, interval):
+    def __init__(self, token, interval=None):
         self.token = token
+        if interval is None:
+            start, _sep, end = token.partition('/')
+            start = DateTime(start) if start else None
+            end = DateTime(end) if end else None
+            interval = (start, end)
+
         self.start, self.end = interval
+
+        if self.start and self.end and self.start > self.end:
+            raise ValueError(
+                'invalid time interval: start time after end time '
+                f'({self.start!r} -> {self.end!r})')
 
     def __str__(self):
         return self.token

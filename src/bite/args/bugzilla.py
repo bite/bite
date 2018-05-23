@@ -2,7 +2,8 @@ import argparse
 from functools import partial
 
 from .. import args
-from ..argparser import ParseStdin, parse_date, DateTime
+from ..argparser import ParseStdin
+from ..objects import TimeInterval
 from ..utils import str2bool
 
 
@@ -413,10 +414,10 @@ class Search5_0(Search):
 
     def add_time_args(self):
         self.time.add_argument(
-            '-c', '--created', type='time_interval', metavar='TIME',
+            '-c', '--created', type='time interval', metavar='TIME_INTERVAL',
             help='bugs created within a specified time interval')
         self.time.add_argument(
-            '-m', '--modified', type='time_interval', metavar='TIME',
+            '-m', '--modified', type='time interval', metavar='TIME_INTERVAL',
             help='bugs modified within a specified time interval')
 
     def add_args(self):
