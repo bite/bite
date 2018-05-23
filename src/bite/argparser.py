@@ -176,9 +176,8 @@ class TimeIntervalArg(ArgType):
 
 
 def parse_date(s):
-    offset = re.match(r'^(\d+)([ymwdhs]|min)$', s)
-
-    if offset:
+    if re.match(r'^(\d+([ymwdhs]|min))+$', s):
+        date = utcnow()
         units = {
             'y': 'years',
             'm': 'months',
@@ -188,10 +187,9 @@ def parse_date(s):
             'min': 'minutes',
             's': 'seconds',
         }
-        unit = units[offset.group(2)]
-        value = -int(offset.group(1))
-        kw = {unit: value}
-        date = utcnow() + relativedelta(**kw)
+        for value, unit in re.findall(r'(\d+)([ymwdhs]|min)', s):
+            kw = {units[unit]: -int(value)}
+            date += relativedelta(**kw)
     elif re.match(r'^\d\d\d\d$', s):
         date = parsetime(s) + relativedelta(yearday=1)
     elif re.match(r'^\d\d\d\d[-/]\d\d$', s):
