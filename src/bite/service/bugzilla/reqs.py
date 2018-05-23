@@ -180,6 +180,21 @@ class SearchRequest5_0(SearchRequest4_4):
                 self.adv_num += 1
             self.options.append(f"{k.capitalize()}: {', '.join(map(str, v))}")
 
+        @alias('modified')
+        def created(self, k, v):
+            field = 'creation_ts' if k == 'created' else 'delta_ts'
+            if v.start is not None:
+                self.params[f'f{self.adv_num}'] = field
+                self.params[f'o{self.adv_num}'] = 'greaterthan'
+                self.params[f'v{self.adv_num}'] = v.start.isoformat()
+                self.adv_num += 1
+            if v.end is not None:
+                self.params[f'f{self.adv_num}'] = field
+                self.params[f'o{self.adv_num}'] = 'lessthan'
+                self.params[f'v{self.adv_num}'] = v.end.isoformat()
+                self.adv_num += 1
+            self.options.append(f'{k.capitalize()}: {v} ({v!r} UTC)')
+
         def comments(self, k, v):
             self.params[f'f{self.adv_num}'] = 'longdescs.count'
             self.params[f'o{self.adv_num}'] = 'greaterthaneq'

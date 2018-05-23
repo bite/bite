@@ -6,7 +6,8 @@ from snakeoil.demandload import demandload
 
 from ..exceptions import BiteError
 from ..argparser import (
-    ParseStdin, Comment, IDList, StringList, IDs, ID_Maps, ID_Str_Maps, Date
+    ParseStdin, Comment, IDList, StringList, IDs, ID_Maps, ID_Str_Maps,
+    Date, TimeIntervalArg,
 )
 from ..utils import str2bool, block_edit, confirm
 
@@ -52,6 +53,7 @@ class Subcmd(object):
         self.parser.register('type', 'str_list', StringList(service))
         self.parser.register('type', 'comment', Comment(service))
         self.parser.register('type', 'date', Date(service))
+        self.parser.register('type', 'time_interval', TimeIntervalArg(service))
         self.parser.register('action', 'parse_stdin', ParseStdin)
 
         self.parser.set_defaults(fcn=name)

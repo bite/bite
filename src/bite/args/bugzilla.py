@@ -320,6 +320,14 @@ class Modify(args.Modify):
 @args.subcmd(Bugzilla4_4Opts)
 class Search(args.PagedSearch):
 
+    def add_time_args(self):
+        self.time.add_argument(
+            '-c', '--created', type='date', metavar='TIME',
+            help='bugs created at this time or later')
+        self.time.add_argument(
+            '-m', '--modified', type='date', metavar='TIME',
+            help='bugs modified at this time or later')
+
     def add_args(self):
         super().add_args()
         # optional args
@@ -339,12 +347,7 @@ class Search(args.PagedSearch):
             help='email of the QA contact for the bug')
 
         self.time = self.parser.add_argument_group('Time related')
-        self.time.add_argument(
-            '-c', '--created', type='date', metavar='TIME',
-            help='bugs created at this time or later')
-        self.time.add_argument(
-            '-m', '--modified', type='date', metavar='TIME',
-            help='bugs modified at this time or later')
+        self.add_time_args()
 
         self.attr = self.parser.add_argument_group('Attribute related')
         self.attr.add_argument(
@@ -407,6 +410,14 @@ class Search(args.PagedSearch):
 
 @args.subcmd(Bugzilla5_0Opts, 'search')
 class Search5_0(Search):
+
+    def add_time_args(self):
+        self.time.add_argument(
+            '-c', '--created', type='time_interval', metavar='TIME',
+            help='bugs created within a specified time interval')
+        self.time.add_argument(
+            '-m', '--modified', type='time_interval', metavar='TIME',
+            help='bugs modified within a specified time interval')
 
     def add_args(self):
         super().add_args()

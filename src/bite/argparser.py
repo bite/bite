@@ -18,8 +18,8 @@ from . import get_service_cls
 from .alias import substitute_alias
 from .config import get_config
 from .exceptions import BiteError
-from .objects import DateTime
-from .utc import utc
+from .objects import DateTime, TimeInterval
+from .utc import utc, utcnow
 from .utils import block_edit, confirm
 
 demandload('bite:const')
@@ -148,11 +148,34 @@ class Date(ArgType):
         try:
             return DateTime(s, parse_date(s))
         except ValueError as e:
-            raise argparse.ArgumentTypeError(e)
+            raise ArgumentTypeError(e)
+
+
+class TimeIntervalArg(ArgType):
+
+    def str2date(self, s):
+        if s:
+            try:
+                return DateTime(s, parse_date(s))
+            except ValueError as e:
+                raise ArgumentTypeError(e)
+        return None
+
+    def parse(self, s):
+        start, _sep, end = s.partition('/')
+
+        start = self.str2date(start)
+        end = self.str2date(end)
+
+        if start and end and start > end:
+            raise ArgumentTypeError(
+                'invalid time interval: start time after end time '
+                f'({start!r} -> {end!r})')
+
+        return TimeInterval(s, (start, end))
 
 
 def parse_date(s):
-    today = datetime.datetime.utcnow()
     offset = re.match(r'^(\d+)([ymwdhs]|min)$', s)
 
     if offset:
@@ -168,7 +191,7 @@ def parse_date(s):
         unit = units[offset.group(2)]
         value = -int(offset.group(1))
         kw = {unit: value}
-        date = today + relativedelta(**kw)
+        date = utcnow() + relativedelta(**kw)
     elif re.match(r'^\d\d\d\d$', s):
         date = parsetime(s) + relativedelta(yearday=1)
     elif re.match(r'^\d\d\d\d[-/]\d\d$', s):

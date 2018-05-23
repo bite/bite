@@ -93,6 +93,25 @@ class DateTime(object):
         return self._datetime <= x
 
 
+class TimeInterval(object):
+    """Object that stores a given time interval token and its corresponding datetime objects."""
+
+    def __init__(self, token, interval):
+        self.token = token
+        self.start, self.end = interval
+
+    def __str__(self):
+        return self.token
+
+    def __repr__(self):
+        if self.start and self.end:
+            return f'between {self.start!r} and {self.end!r}'
+        elif self.end is None:
+            return f'after {self.start!r}'
+        else:
+            return f'before {self.end!r}'
+
+
 class Item(object):
     """Generic bug/issue/ticket object used by a service."""
 

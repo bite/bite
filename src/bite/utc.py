@@ -59,6 +59,8 @@ class LocalTimezone(tzinfo):
 
 Local = LocalTimezone()
 
-#def localtime(pydate, format=None):
-    #if format is None:
-        #return pydate.astimezone(tzlocal()).strftime('%x %X %p %Z')
+
+def utcnow():
+    """Return current UTC date and time at second resolution level."""
+    d = datetime.utcnow()
+    return d.replace(microsecond=0)
