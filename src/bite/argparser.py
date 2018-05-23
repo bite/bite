@@ -650,7 +650,7 @@ class ArgumentParser(arghparse.ArgumentParser):
             if stdin is not None:
                 sys.stdin = open('/dev/tty')
 
-        fcn_args = subcmd.check_args(vars(fcn_args))
+        fcn_args = subcmd.finalize_args(vars(fcn_args))
 
         # client settings that override unset service level args
         for attr in ('verbose', 'debug'):

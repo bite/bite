@@ -65,8 +65,8 @@ class Subcmd(object):
     def add_args(self):
         """Add arguments to the subcommand parser."""
 
-    def check_args(self, args):
-        """Check arguments passed to the subcommand parser."""
+    def finalize_args(self, args):
+        """Check and finalize arguments passed to the subcommand parser."""
         return args
 
 
@@ -360,7 +360,7 @@ class Modify(SendSubcmd):
             help='reply to a specific comment')
 
     def get_comment_reply(self, reply_ids, args):
-        """Allow a user to reply to a specific comment."""
+        """Support reply to specific comment(s)."""
         item_id = args['ids'][0]
         try:
             comments = next(self.service.CommentsRequest(ids=[item_id]).send())
@@ -390,8 +390,8 @@ class Modify(SendSubcmd):
 
         return comment
 
-    def check_args(self, args):
-        args = super().check_args(args)
+    def finalize_args(self, args):
+        args = super().finalize_args(args)
 
         # support interactive comment replies
         reply_ids = args.pop('reply_ids', None)
