@@ -7,12 +7,11 @@ from ..objects import TimeInterval
 from ..utils import str2bool
 
 
-class ChangedDateTuple(argparse.Action):
+class ChangedTimeTuple(argparse.Action):
 
     def __call__(self, parser, namespace, values, option_string=None):
         field, value = values
-        date = DateTime(value, parse_date(value))
-        setattr(namespace, self.dest, (field, date))
+        setattr(namespace, self.dest, (field, TimeInterval(value)))
 
 
 class Bugzilla4_4Opts(args.ServiceOpts):
@@ -507,13 +506,9 @@ class Search5_0(Search):
 
         self.changes = self.parser.add_argument_group('Change related')
         self.changes.add_argument(
-            '--changed-before', nargs=2, metavar=('FIELD', 'TIME'),
-            action=ChangedDateTuple,
-            help='restrict by changes made before a certain time')
-        self.changes.add_argument(
-            '--changed-after', nargs=2, metavar=('FIELD', 'TIME'),
-            action=ChangedDateTuple,
-            help='restrict by changes made after a certain time')
+            '--changed', nargs=2, metavar=('FIELD', 'TIME_INTERVAL'),
+            action=ChangedTimeTuple,
+            help='restrict by changes made during a certain time interval')
         self.changes.add_argument(
             '--changed-from', nargs=2, metavar=('FIELD', 'VALUE'),
             help='restrict by changes from a specified value')

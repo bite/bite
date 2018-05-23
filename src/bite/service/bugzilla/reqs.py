@@ -210,16 +210,20 @@ class SearchRequest5_0(SearchRequest4_4):
             self.adv_num += 1
             self.options.append(f"{k.capitalize()}: {display_val}")
 
-        @alias('changed_after')
-        def changed_before(self, k, v):
-            field, date = v
-            self.params[f'f{self.adv_num}'] = field
-            self.params[f'o{self.adv_num}'] = k.replace('_', '')
-            self.params[f'v{self.adv_num}'] = date.isoformat()
-            self.adv_num += 1
+        def changed(self, k, v):
+            field, time = v
+            if time.start is not None:
+                self.params[f'f{self.adv_num}'] = field
+                self.params[f'o{self.adv_num}'] = 'changedafter'
+                self.params[f'v{self.adv_num}'] = time.start.isoformat()
+                self.adv_num += 1
+            if time.end is not None:
+                self.params[f'f{self.adv_num}'] = field
+                self.params[f'o{self.adv_num}'] = 'changedbefore'
+                self.params[f'v{self.adv_num}'] = time.end.isoformat()
+                self.adv_num += 1
             self.options.append(
-                f"{field.capitalize()} changed {k.split('_')[1]}: "
-                f"{date} ({date!r} UTC)")
+                f"{field.capitalize()} changed: {time} ({time!r} UTC)")
 
         @alias('changed_to')
         def changed_from(self, k, v):
