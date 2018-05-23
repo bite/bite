@@ -389,12 +389,10 @@ class Search(args.PagedSearch):
 
         self.time = self.parser.add_argument_group('Time related')
         self.time.add_argument(
-            '-c', '--created', type=date, metavar='TIME',
-            action=partial(ParseStdin, date),
+            '-c', '--created', type='date', metavar='TIME',
             help='bugs created at this time or later')
         self.time.add_argument(
-            '-m', '--modified', type=date, metavar='TIME',
-            action=partial(ParseStdin, date),
+            '-m', '--modified', type='date', metavar='TIME',
             help='bugs modified at this time or later')
 
         self.attr = self.parser.add_argument_group('Attribute related')
@@ -617,8 +615,7 @@ class Changes(args.Changes):
         super().add_args()
         # optional args
         self.opts.add_argument(
-            '-c', '--created', metavar='TIME', type=date,
-            action=partial(ParseStdin, date),
+            '-c', '--created', metavar='TIME', type='date',
             help='changes made at this time or later')
         self.opts.add_argument(
             '-m', '--match', type='str_list',
@@ -635,7 +632,7 @@ class Comments(args.Comments):
         super().add_args()
         # optional args
         self.opts.add_argument(
-            '-c', '--created', metavar='TIME', type=date,
+            '-c', '--created', metavar='TIME', type='date',
             help='comments made at this time or later')
         self.opts.add_argument(
             '-a', '--attachment', action='store_true',

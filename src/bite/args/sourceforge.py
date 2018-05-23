@@ -1,6 +1,5 @@
 from functools import partial
 
-from .bugzilla import date
 from ..argparser import ParseStdin
 from .. import args
 
@@ -32,10 +31,10 @@ class Search(args.Search):
             """)
         time = self.parser.add_argument_group('Time related')
         time.add_argument(
-            '-c', '--created', type=date, metavar='TIME',
+            '-c', '--created', type='date', metavar='TIME',
             help=f'{self.service.item.type}s created at this time or later')
         time.add_argument(
-            '-m', '--modified', type=date, metavar='TIME',
+            '-m', '--modified', type='date', metavar='TIME',
             help=f'{self.service.item.type}s modified at this time or later')
         attr = self.parser.add_argument_group('Attribute related')
         attr.add_argument(
@@ -66,7 +65,7 @@ class Changes(args.Changes):
         # optional args
         self.opts.add_argument(
             '-c', '--created', dest='creation_time',
-            metavar='TIME', type=date,
+            metavar='TIME', type='date',
             help='changes made at this time or later')
         self.opts.add_argument(
             '-m', '--match', action='csv',
@@ -80,5 +79,5 @@ class Comments(args.Comments):
         super().add_args()
         # optional args
         self.opts.add_argument(
-            '-c', '--created', metavar='TIME', type=date,
+            '-c', '--created', metavar='TIME', type='date',
             help='comments made at this time or later')

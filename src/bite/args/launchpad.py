@@ -1,4 +1,3 @@
-from .bugzilla import date
 from .. import args
 
 
@@ -42,11 +41,11 @@ class Search(args.PagedSearch):
             help='search by bug subscriber')
         time = self.parser.add_argument_group('Time related')
         time.add_argument(
-            '-c', '--created', type=date,
+            '-c', '--created', type='date',
             dest='created_since', metavar='TIME',
             help='bugs created at this time or later')
         time.add_argument(
-            '-m', '--modified', type=date,
+            '-m', '--modified', type='date',
             dest='modified_since', metavar='TIME',
             help='bugs modified at this time or later')
         attr = self.parser.add_argument_group('Attribute related')

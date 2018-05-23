@@ -1,6 +1,5 @@
 from functools import partial
 
-from .bugzilla import date
 from .. import args
 from ..argparser import ParseStdin
 
@@ -32,10 +31,10 @@ class Search(args.Search):
             """)
         time = self.parser.add_argument_group('Time related')
         time.add_argument(
-            '-c', '--created', type=date, metavar='TIME',
+            '-c', '--created', type='date', metavar='TIME',
             help='issues created at this time or later')
         time.add_argument(
-            '-m', '--modified', type=date, metavar='TIME',
+            '-m', '--modified', type='date', metavar='TIME',
             help='issues modified at this time or later')
         attr = self.parser.add_argument_group('Attribute related')
         attr.add_argument(

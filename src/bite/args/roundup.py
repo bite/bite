@@ -1,4 +1,3 @@
-from .bugzilla import date
 from .. import args
 
 
@@ -28,10 +27,10 @@ class Search(args.Search):
             """)
         time = self.parser.add_argument_group('Time related')
         time.add_argument(
-            '-c', '--created', type=date, metavar='TIME',
+            '-c', '--created', type='date', metavar='TIME',
             help=f'{self.service.item.type}s created at this time or later')
         time.add_argument(
-            '-m', '--modified', type=date, metavar='TIME',
+            '-m', '--modified', type='date', metavar='TIME',
             help=f'{self.service.item.type}s modified at this time or later')
 
 

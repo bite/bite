@@ -1,6 +1,7 @@
 from argparse import (
     SUPPRESS, Action, ArgumentError, ArgumentTypeError,
     _get_action_name, _SubParsersAction, _)
+import datetime
 from importlib import import_module
 import logging
 import os
@@ -8,6 +9,8 @@ import re
 import shlex
 import sys
 
+from dateutil.parser import parse as parsetime
+from dateutil.relativedelta import relativedelta
 from snakeoil.cli import arghparse, tool
 from snakeoil.demandload import demandload
 
@@ -15,6 +18,8 @@ from . import get_service_cls
 from .alias import substitute_alias
 from .config import get_config
 from .exceptions import BiteError
+from .objects import DateTime
+from .utc import utc
 from .utils import block_edit, confirm
 
 demandload('bite:const')
@@ -135,6 +140,53 @@ class Comment(ArgType):
         if not data:
             raise ArgumentTypeError('no comment data provided on stdin')
         return '\n'.join(data)
+
+
+class Date(ArgType):
+
+    def parse(self, s):
+        try:
+            return DateTime(s, parse_date(s))
+        except ValueError as e:
+            raise argparse.ArgumentTypeError(e)
+
+
+def parse_date(s):
+    today = datetime.datetime.utcnow()
+    offset = re.match(r'^(\d+)([ymwdhs]|min)$', s)
+
+    if offset:
+        units = {
+            'y': 'years',
+            'm': 'months',
+            'w': 'weeks',
+            'd': 'days',
+            'h': 'hours',
+            'min': 'minutes',
+            's': 'seconds',
+        }
+        unit = units[offset.group(2)]
+        value = -int(offset.group(1))
+        kw = {unit: value}
+        date = today + relativedelta(**kw)
+    elif re.match(r'^\d\d\d\d$', s):
+        date = parsetime(s) + relativedelta(yearday=1)
+    elif re.match(r'^\d\d\d\d[-/]\d\d$', s):
+        date = parsetime(s) + relativedelta(day=1)
+    elif re.match(r'^(\d\d)?\d\d[-/]\d\d[-/]\d\d$', s):
+        date = parsetime(s)
+    elif re.match(r'^\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d(\+\d\d:\d\d)?$', s):
+        try:
+            # try converting timezone if one is specified
+            date = parsetime(s).astimezone(utc)
+        except ValueError:
+            # otherwise default to UTC if none is specified
+            date = parsetime(s).replace(tzinfo=utc)
+    else:
+        raise ValueError(f'invalid date argument: {s!r}')
+
+    # drop microsecond resolution since we shouldn't need it
+    return date.replace(microsecond=0)
 
 
 class parse_file(Action):
