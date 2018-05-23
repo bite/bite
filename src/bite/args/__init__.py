@@ -85,6 +85,7 @@ class ServiceOpts(object):
             'columns': lambda x: setattr(const, 'COLUMNS', int(x)),
             'concurrent': int,
             'timeout': int,
+            'max_results': int,
         }
 
         from ..scripts.bite import service_specific_opts
