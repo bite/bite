@@ -1,0 +1,3 @@
+[webkit]
+base: https://bugs.webkit.org/
+service: bugzilla5.0-jsonrpc
