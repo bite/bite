@@ -76,6 +76,8 @@ class ServiceOpts(object):
 
     def __init__(self, parser, service_name):
         self.parser = parser
+        # flag to re-parse unparsed args for service specific options
+        self._reparse = False
 
         # type conversion mapping for config opts
         self.config_map = {
@@ -90,14 +92,17 @@ class ServiceOpts(object):
 
         from ..scripts.bite import service_specific_opts
         self.service_opts = service_specific_opts
-        self.service_opts.title = service_name.split('-')[0].capitalize() + ' specific options'
+        self.service_opts.title = f"{service_name.split('-')[0].capitalize()} specific options"
 
-        # skip multiple main_opts() run issues during doc generation
         try:
             self.main_opts()
+            self._reparse = True
         except argparse.ArgumentError as e:
+            # skip multiple main_opts() run issues during doc generation
             if 'conflicting option string' not in str(e):
                 raise
+        except NotImplementedError:
+            pass
 
     def subcmds(self):
         """Get sequence of subcommands defined for the service."""
@@ -110,6 +115,7 @@ class ServiceOpts(object):
 
     def main_opts(self):
         """Add service specific top-level options."""
+        raise NotImplementedError
 
     def add_config_opts(self, args, config_opts):
         """Add service specific config options."""

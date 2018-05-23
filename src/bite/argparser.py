@@ -610,14 +610,12 @@ class ArgumentParser(arghparse.ArgumentParser):
         service_opts = get_service_cls(
             service_name, const.SERVICE_OPTS)(parser=self, service_name=service_name)
 
+        # re-parse for any top level service-specific options that were added
+        if service_opts._reparse:
+            initial_args, unparsed_args = self.parse_optionals(unparsed_args, initial_args)
+
         # add service config options to args namespace
         service_opts.add_config_opts(args=initial_args, config_opts=config_opts)
-
-        logger = logging.getLogger(__name__)
-        #logger.setLevel(logging.DEBUG)
-
-        # re-parse for any top level service-specific options that were just added
-        initial_args, unparsed_args = self.parse_optionals(unparsed_args, initial_args)
 
         # check if unparsed args match any aliases
         if unparsed_args:
