@@ -202,7 +202,8 @@ class Cli(Client):
 
     @dry_run
     @login_retry
-    def attachments(self, ids, id_map=False, item_id=False, output_url=False, browser=False, **kw):
+    def attachments(self, ids, id_map=False, item_id=False, output_url=False,
+                    browser=False, **kw):
         """Get attachments from a service."""
         # skip pulling data if we don't need it
         get_data = (not output_url and not browser)
@@ -254,6 +255,9 @@ class Cli(Client):
             elif browser:
                 _launch_browser(x.id for x in attachments)
             else:
+                save_to = kw.get('save_to')
+                if save_to is not None:
+                    os.makedirs(save_to, exist_ok=True)
                 self._process_attachments(attachments, **kw)
 
     def _process_attachments(self, attachments, show_metadata=False, view_attachment=False,
