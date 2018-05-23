@@ -71,10 +71,7 @@ class Cache(object):
                 for k, v in d.items()}
 
             if self._settings:
-                try:
-                    os.makedirs(os.path.dirname(path))
-                except FileExistsError:
-                    pass
+                os.makedirs(os.path.dirname(path), exist_ok=True)
                 config = configparser.ConfigParser()
                 config[self.connection] = d
                 with open(path, 'w') as f:
@@ -157,11 +154,7 @@ class Auth(object):
             return
 
         if self.path is not None:
-            try:
-                os.makedirs(os.path.dirname(self.path))
-            except FileExistsError:
-                pass
-
+            os.makedirs(os.path.dirname(self.path), exist_ok=True)
             try:
                 with open(self.path, 'w+') as f:
                     os.chmod(self.path, stat.S_IREAD | stat.S_IWRITE)
@@ -221,10 +214,7 @@ class Cookies(LWPCookieJar):
         if filename is None:
             filename = self._path
         if self._path is not None:
-            try:
-                os.makedirs(os.path.dirname(self._path))
-            except FileExistsError:
-                pass
+            os.makedirs(os.path.dirname(self._path), exist_ok=True)
         try:
             super().save(filename=filename, *args, **kw)
             os.chmod(self._path, stat.S_IREAD | stat.S_IWRITE)

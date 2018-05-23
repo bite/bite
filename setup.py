@@ -37,11 +37,7 @@ class install(pkgdist.install):
 def write_lookup_config(python_base, install_prefix):
     """Generate file of install path constants."""
     path = os.path.join(python_base, pkgdist.MODULE, "_const.py")
-    try:
-        os.makedirs(os.path.dirname(path))
-    except OSError as e:
-        if e.errno != errno.EEXIST:
-            raise
+    os.makedirs(os.path.dirname(path), exist_ok=True)
     log.info("writing lookup config to %r" % path)
 
     with pkgdist.syspath(pkgdist.PACKAGEDIR):
