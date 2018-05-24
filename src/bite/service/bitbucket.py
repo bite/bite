@@ -387,10 +387,6 @@ class _GetItemRequest(Request):
         self._get_desc = get_desc
 
     def parse(self, data):
-        # TODO: hack, rework the http send parsing rewapper to be more
-        # intelligent about unwrapping responses
-        if len(self.ids) == 1:
-            data = [data]
         for issue in data:
             yield self.service.item(self.service, issue, get_desc=self._get_desc)
 
@@ -398,6 +394,7 @@ class _GetItemRequest(Request):
 @req_cmd(Bitbucket)
 class _CommentsFilter(CommentsFilter):
     pass
+
 
 @req_cmd(Bitbucket, cmd='comments')
 class _CommentsRequest(Request):

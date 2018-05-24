@@ -313,10 +313,6 @@ class _GetItemRequest(Request):
         self._reqs = tuple(reqs)
 
     def parse(self, data):
-        # TODO: hack, rework the http send parsing rewapper to be more
-        # intelligent about unwrapping responses
-        if len(self.ids) == 1:
-            data = [data]
         for i, bug in enumerate(data):
             yield self.service.item(service=self.service, **bug)
 
@@ -340,7 +336,6 @@ class _CommentsRequest(Request):
                 RESTRequest(
                     service=self.service, endpoint=f'{self.service._api_base}/bugs/{i}/attachments'),
             ])
-
 
         self.ids = ids
         self._reqs = tuple(reqs)
