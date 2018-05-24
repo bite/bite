@@ -140,8 +140,12 @@ def id_generator(size=16, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for x in range(size))
 
 
-def strikethrough(s):
-    return ''.join([(char + r'\u0336') for char in s])
+def munge(s, strike=False, under=False, over=False):
+    """Return specified text with strikethrough, underline, and/or overline characters."""
+    strike = '\u0336' if strike else ''
+    under = '\u0332' if under else ''
+    over = '\u0305' if over else ''
+    return ''.join(f'{c}{strike}{under}{over}' for c in s)
 
 
 def str2bool(s):
