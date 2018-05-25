@@ -69,7 +69,8 @@ class RedmineIssue(Item):
 
             if k == 'custom_fields':
                 for field in v:
-                    setattr(self, field['name'], field['value'])
+                    # allow fields without specified values
+                    setattr(self, field['name'], field.get('value'))
             else:
                 setattr(self, k, v)
 
