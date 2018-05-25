@@ -74,9 +74,10 @@ class RedmineIssue(Item):
             else:
                 setattr(self, k, v)
 
-        if get_desc:
+        description = getattr(self, 'description', None)
+        if get_desc and description:
             self.description = RedmineComment(
-                count=0, creator=self.author, created=self.created_on, text=self.description.strip())
+                count=0, creator=self.author, created=self.created_on, text=description.strip())
 
 
 class RedmineComment(Comment):
@@ -306,7 +307,7 @@ class _GetRequest(_GetItemRequest):
         if any((self._get_comments, self._get_attachments, self._get_changes)):
             ids = [x.id for x in items]
             if self._get_comments:
-                item_descs = ((x.description,) for x in items)
+                item_descs = ((x.description,) if getattr(x, 'description', False) else () for x in items)
                 item_comments = self.service.CommentsRequest(ids=ids).send()
                 comments = (x + y for x, y in zip(item_descs, item_comments))
 
