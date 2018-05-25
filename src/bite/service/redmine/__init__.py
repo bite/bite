@@ -109,7 +109,7 @@ class _SearchRequest(_BaseSearchRequest):
             # only return issues
             self.params['issues'] = 1
 
-            # only return open issues by default
+            # return all non-closed issues by default
             if 'status' not in self.params:
                 self.params['open_issues'] = 1
 
@@ -140,9 +140,9 @@ class _ElasticSearchRequest(_BaseSearchRequest):
             if not self.query:
                 raise BiteError('no supported search terms or options specified')
 
-            # only return open issues by default
-            if 'status' not in self.query:
-                self.query['status'] = 'status:open'
+            # return all non-closed issues by default
+            if 'status' not in self.params:
+                self.params['open_issues'] = 1
 
             query_string = ' AND '.join(self.query.values())
             self.params['q'] = f'_type:issue AND ({query_string})'
