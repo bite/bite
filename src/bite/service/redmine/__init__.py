@@ -246,10 +246,48 @@ class _GetItemRequest(ParseRequest, RedminePagedRequest):
         def terms(self, k, v):
             # raw issue search doesn't support multiple terms
             term = ' '.join(v)
-            self.params['f[]'] = 'subject'
+            self.params.setdefault('f[]', []).append('subject')
             self.params['op[subject]'] = '~'
             self.params['v[subject][]'] = term
             self.options.append(f"Summary: {term}")
+
+
+@req_cmd(Redmine3_2, name='GetItemRequest')
+class _3_2GetItemRequest(_GetItemRequest):
+    """Construct an issue request for Redmine 3.2."""
+
+    class ParamParser(_GetItemRequest.ParamParser):
+
+        # Map of allowed sorting input values to service parameters determined by
+        # looking at available values on the web interface.
+        _status_map = {
+            'open': 'o',
+            'closed': 'c',
+            'all': '*',
+        }
+
+        def _finalize(self, **kw):
+            if not self.params and not self.request._sliced:
+                raise BiteError('no supported options specified')
+
+            # return all non-closed issues by default
+            if 'op[status_id]' not in self.params:
+                self.params['p[status_id]'] = '*'
+
+            # sort by ascending ID by default
+            if 'sort' not in self.params:
+                self.params['sort'] = 'id'
+
+        # old versions of redmine don't seem to work with straight 'status_id' param mappings
+        def status(self, k, v):
+            # TODO: map between statuses and their IDs here -- only the
+            # aggregate values (open, closed, *) work unmapped
+            self.params.setdefault('f[]', []).append('status_id')
+            try:
+                self.params['op[status_id]'] = self._status_map[v]
+            except KeyError:
+                raise BiteError(f'unknown status value: {v!r}')
+            self.options.append(f"Status: {v}")
 
 
 @req_cmd(Redmine)
@@ -323,6 +361,18 @@ class _GetRequest(_GetItemRequest):
             yield item
 
 
+@req_cmd(Redmine3_2, name='SearchRequest', cmd='search')
+class _BasicSearchRequest(_3_2GetItemRequest):
+    """Construct a search request using the issues call.
+
+    For older installs of redmine that don't support the search API.
+    """
+
+    def __init__(self, *, params, **kw):
+        params.setdefault('status', 'open')
+        super().__init__(params=params, **kw)
+
+
 class _BaseSearchRequest(ParseRequest, RedminePagedRequest):
 
     def __init__(self, *, service, **kw):
@@ -348,14 +398,6 @@ class _BaseSearchRequest(ParseRequest, RedminePagedRequest):
             data = super().parse(data)
             issues = [x['id'] for x in data['results']]
         return issues
-
-
-@req_cmd(Redmine3_2, name='SearchRequest', cmd='search')
-class _BasicSearchRequest(_GetItemRequest):
-    """Construct a search request using the issues call.
-
-    For older installs of redmine that don't support the search API.
-    """
 
 
 @req_cmd(Redmine, cmd='search')
