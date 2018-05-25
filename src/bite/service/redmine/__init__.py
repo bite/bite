@@ -123,7 +123,7 @@ class _ElasticSearchRequest(_BaseSearchRequest):
             display_terms = []
             for term in v:
                 or_terms = [x.replace('"', '\\"') for x in term.split(',')]
-                or_search_terms = [f'title:({x})' for x in or_terms]
+                or_search_terms = [f'title:"{x}"' for x in or_terms]
                 or_display_terms = [f'"{x}"' for x in or_terms]
                 if len(or_terms) > 1:
                     or_queries.append(f"({' OR '.join(or_search_terms)})")
