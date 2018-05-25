@@ -9,7 +9,9 @@ from dateutil.parser import parse as dateparse
 from snakeoil.klass import aliased, alias
 
 from ._jsonrest import JsonREST
-from ._reqs import OffsetPagedRequest, Request, GetRequest, ParseRequest, req_cmd
+from ._reqs import (
+    OffsetPagedRequest, Request, GetRequest, ParseRequest, req_cmd, CommentsFilter,
+)
 from ._rest import RESTRequest
 from ..cache import Cache
 from ..exceptions import RequestError, BiteError
@@ -363,6 +365,11 @@ class _CommentsRequest(Request):
                     created=dateparse(c['date_created']),
                     creator=c['owner_link'][len(self.service.base) + 2:]))
             yield tuple(l)
+
+
+@req_cmd(Launchpad)
+class _CommentsFilter(CommentsFilter):
+    pass
 
 
 @req_cmd(Launchpad, cmd='attachments')
