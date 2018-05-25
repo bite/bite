@@ -405,7 +405,12 @@ class _BaseSearchRequest(ParseRequest, RedminePagedRequest):
         self.options.extend(self._itemreq.options)
 
     def send(self):
-        issues = list(super().send())
+        # only send search req if it actually has query params
+        if self.param_parser.query:
+            issues = list(super().send())
+        else:
+            issues = []
+
         # query and pull additional issue fields not available via search
         if issues or self._itemreq.params:
             if issues:
