@@ -4,6 +4,7 @@ API docs:
     - http://www.redmine.org/projects/redmine/wiki/Rest_api
 """
 
+from itertools import chain
 from functools import partial
 
 from dateutil.parser import parse as dateparse
@@ -33,6 +34,7 @@ class RedmineIssue(Item):
         'title': 'subject',
         'created': 'created_on',
         'modified': 'updated_on',
+        'closed': 'closed_on',
         'owner': 'assigned_to',
     }
 
@@ -132,9 +134,29 @@ class RedminePagedRequest(OffsetPagedRequest, RESTRequest):
 class _GetItemRequest(ParseRequest, RedminePagedRequest):
     """Construct an issue request."""
 
-    def __init__(self, *, service, get_desc=True, **kw):
+    def __init__(self, *, service, get_desc=True, sliced=False, **kw):
         self._get_desc = get_desc
+        self._sliced = sliced
         super().__init__(service=service, endpoint=f'/issues.{service._ext}', **kw)
+
+    def send(self, **kw):
+        # Slice request into pieces if it gets too long otherwise we get
+        # HTTP 500s due to URL length. Note that this means sorting won't
+        # work for large queries.
+        ids = self.params['issue_id'].split(',')
+        if len(ids) > 100:
+            reqs = []
+            while ids:
+                req = self.__class__(service=self.service, get_desc=self._get_desc, sliced=True)
+                req.params = dict(self.params)
+                req.params['issue_id'] = ','.join(ids[:100])
+                reqs.append(req)
+                ids = ids[100:]
+            combined_req = Request(service=self.service, reqs=reqs)
+            data = chain.from_iterable(combined_req.send(**kw))
+        else:
+            data = super().send(**kw)
+        return data
 
     def parse(self, data):
         issues = data['issues']
@@ -161,7 +183,7 @@ class _GetItemRequest(ParseRequest, RedminePagedRequest):
         }
 
         def _finalize(self, **kw):
-            if not self.params:
+            if not self.params and not self.request._sliced:
                 raise BiteError('no supported options specified')
 
             # return all non-closed issues by default
@@ -289,20 +311,28 @@ class _GetRequest(_GetItemRequest):
 class _BaseSearchRequest(ParseRequest, RedminePagedRequest):
 
     def __init__(self, *, service, **kw):
+        self._itemreq_extra_params = {}
         super().__init__(service=service, endpoint=f'/search.{service._ext}', **kw)
         self._itemreq = self.service.GetItemRequest(**self.unused_params)
         self.options.extend(self._itemreq.options)
 
-    def parse(self, data):
-        data = super().parse(data)
+    def send(self):
+        issues = list(super().send())
         # query and pull additional issue fields not available via search
-        ids = [x['id'] for x in data['results']]
-        if ids:
-            self._itemreq.parse_params(ids=ids)
+        if issues or self._itemreq.params:
+            if issues:
+                self._itemreq_extra_params['ids'] = issues
+            self._itemreq.parse_params(**self._itemreq_extra_params)
             issues = self._itemreq.send()
-        else:
-            issues = []
         yield from issues
+
+    def parse(self, data):
+        # parse the search query results if a query exists
+        issues = []
+        if self.param_parser.query:
+            data = super().parse(data)
+            issues = [x['id'] for x in data['results']]
+        return issues
 
 
 @req_cmd(Redmine, cmd='search')
@@ -316,20 +346,18 @@ class _SearchRequest(_BaseSearchRequest):
             self.query = {}
 
         def _finalize(self, **kw):
-            if not self.query:
-                raise BiteError('no supported search terms or options specified')
+            if self.query:
+                self.params['q'] = ' AND '.join(self.query.values())
 
-            self.params['q'] = ' AND '.join(self.query.values())
+                # only return issues
+                self.params['issues'] = 1
 
-            # only return issues
-            self.params['issues'] = 1
+                # return all non-closed issues by default
+                if 'status' not in self.request.unused_params:
+                    self.params['open_issues'] = 1
 
-            # return all non-closed issues by default
-            if 'status' not in self.params:
-                self.params['open_issues'] = 1
-
-            # only search titles by default
-            self.params['titles_only'] = 1
+                # only search titles by default
+                self.params['titles_only'] = 1
 
         def terms(self, k, v):
             self.query['summary'] = '+'.join(v)
