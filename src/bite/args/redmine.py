@@ -32,3 +32,8 @@ class RedmineElasticXmlOpts(RedmineElasticOpts):
 @args.subcmd(RedmineOpts)
 class Search(args.PagedSearch):
     pass
+
+
+@args.subcmd(RedmineOpts)
+class Get(args.Get):
+    pass
