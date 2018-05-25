@@ -39,6 +39,9 @@ class RedmineIssue(Item):
 
     def __init__(self, service, issue):
         for k, v in issue.items():
+            # strip "Bug #ID (status): " prefix from titles
+            if k == 'title':
+                v = v.partition(': ')[2]
             setattr(self, k, v)
 
 
