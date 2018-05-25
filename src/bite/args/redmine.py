@@ -34,6 +34,23 @@ class Search(args.PagedSearch):
     pass
 
 
+@args.subcmd(RedmineElasticOpts)
+class Search(args.PagedSearch):
+
+    def add_args(self):
+        super().add_args()
+        attr = self.parser.add_argument_group('Attribute related')
+        attr.add_argument(
+            '-s', '--status', type='str_list', action='parse_stdin',
+            help='restrict by status (one or more)',
+            docs="""
+                Restrict issues returned by their status.
+
+                Multiple statuses can be entered as comma-separated values in
+                which case results can match any of the given values.
+            """)
+
+
 @args.subcmd(RedmineOpts)
 class Get(args.Get):
     pass

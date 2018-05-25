@@ -256,13 +256,23 @@ class _SearchRequest(_BaseSearchRequest):
 
 
 @req_cmd(RedmineElastic, name='SearchRequest', cmd='search')
-class _ElasticSearchRequest(_BaseSearchRequest):
+class _ElasticSearchRequest(ParseRequest, RedminePagedRequest):
     """Construct an elasticsearch compatible search request.
 
     Assumes the elasticsearch plugin is installed:
         http://www.redmine.org/plugins/redmine_elasticsearch
         https://github.com/Restream/redmine_elasticsearch/wiki/Search-Quick-Reference
     """
+
+    def __init__(self, *, service, **kw):
+        super().__init__(service=service, endpoint=f'/search.{service._ext}', **kw)
+
+    def parse(self, data):
+        data = super().parse(data)
+        # pull additional issue fields not returned in search results
+        ids = [x['id'] for x in data['results']]
+        issues = self.service.GetItemRequest(ids=ids).send()
+        yield from issues
 
     class ParamParser(ParseRequest.ParamParser):
 
@@ -275,7 +285,7 @@ class _ElasticSearchRequest(_BaseSearchRequest):
                 raise BiteError('no supported search terms or options specified')
 
             # return all non-closed issues by default
-            if 'status' not in self.params:
+            if 'status' not in self.query:
                 self.params['open_issues'] = 1
 
             query_string = ' AND '.join(self.query.values())
@@ -296,3 +306,7 @@ class _ElasticSearchRequest(_BaseSearchRequest):
                     display_terms.append(or_display_terms[0])
             self.query['summary'] = f"{' AND '.join(or_queries)}"
             self.options.append(f"Summary: {' AND '.join(display_terms)}")
+
+        def status(self, k, v):
+            self.query['status'] = f"status:({' OR '.join(v)})"
+            self.options.append(f"Status: {', '.join(v)}")
