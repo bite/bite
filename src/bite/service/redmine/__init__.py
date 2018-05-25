@@ -51,18 +51,11 @@ class Redmine(REST):
     item = RedmineIssue
     item_endpoint = '/issues/{id}'
 
-    def __init__(self, max_results=None, elasticsearch=False, **kw):
+    def __init__(self, max_results=None, **kw):
         # most redmine instances default to 100 results per query
         if max_results is None:
             max_results = 100
         super().__init__(max_results=max_results, **kw)
-
-        # use different search function if elasticsearch plugin is available
-        if elasticsearch:
-            self.SearchRequest = partial(_ElasticSearchRequest, service=self)
-        else:
-            self.SearchRequest = partial(_SearchRequest, service=self)
-        self.search = lambda *args, **kw: self.send(self.SearchRequest(*args, **kw))
 
     def inject_auth(self, request, params):
         raise NotImplementedError
@@ -71,6 +64,10 @@ class Redmine(REST):
     def handle_error(code, msg):
         """Handle Redmine specific errors."""
         raise RedmineError(msg=msg, code=code)
+
+
+class RedmineElastic(Redmine):
+    """Service supporting the Redmine-based issue trackers with elasticsearch plugin."""
 
 
 class RedminePagedRequest(OffsetPagedRequest, RESTRequest):
@@ -93,6 +90,7 @@ class _BaseSearchRequest(ParseRequest, RedminePagedRequest):
             yield self.service.item(self.service, issue)
 
 
+@req_cmd(RedmineElastic, cmd='search')
 class _ElasticSearchRequest(_BaseSearchRequest):
     """Construct an elasticsearch compatible search request.
 
@@ -135,6 +133,7 @@ class _ElasticSearchRequest(_BaseSearchRequest):
             self.options.append(f"Summary: {' AND '.join(display_terms)}")
 
 
+@req_cmd(Redmine, cmd='search')
 class _SearchRequest(_BaseSearchRequest):
     """Construct a search request."""
 
