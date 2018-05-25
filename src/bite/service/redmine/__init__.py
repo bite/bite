@@ -121,6 +121,11 @@ class Redmine(REST):
         raise RedmineError(msg=msg, code=code)
 
 
+# TODO: toss this when upstream stops supporting it
+class Redmine3_2(Redmine):
+    """Service supporting Redmine 3.2 issue trackers."""
+
+
 class RedmineElastic(Redmine):
     """Service supporting the Redmine-based issue trackers with elasticsearch plugin."""
 
@@ -343,6 +348,14 @@ class _BaseSearchRequest(ParseRequest, RedminePagedRequest):
             data = super().parse(data)
             issues = [x['id'] for x in data['results']]
         return issues
+
+
+@req_cmd(Redmine3_2, name='SearchRequest', cmd='search')
+class _BasicSearchRequest(_GetItemRequest):
+    """Construct a search request using the issues call.
+
+    For older installs of redmine that don't support the search API.
+    """
 
 
 @req_cmd(Redmine, cmd='search')

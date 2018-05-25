@@ -14,14 +14,24 @@ class RedmineJsonOpts(RedmineOpts):
     _service = 'redmine-json'
 
 
-class RedmineElasticJsonOpts(RedmineElasticOpts):
-    __doc__ = RedmineElasticOpts.__doc__
-    _service = 'redmine-elastic-json'
-
-
 class RedmineXmlOpts(RedmineOpts):
     __doc__ = RedmineOpts.__doc__
     _service = 'redmine-xml'
+
+
+class Redmine3_2JsonOpts(RedmineOpts):
+    __doc__ = RedmineOpts.__doc__
+    _service = 'redmine3.2-json'
+
+
+class Redmine3_2XmlOpts(RedmineOpts):
+    __doc__ = RedmineOpts.__doc__
+    _service = 'redmine3.2-xml'
+
+
+class RedmineElasticJsonOpts(RedmineElasticOpts):
+    __doc__ = RedmineElasticOpts.__doc__
+    _service = 'redmine-elastic-json'
 
 
 class RedmineElasticXmlOpts(RedmineElasticOpts):
