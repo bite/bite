@@ -128,23 +128,70 @@ class RedminePagedRequest(OffsetPagedRequest, RESTRequest):
 
 
 @req_cmd(Redmine)
-class _GetItemRequest(RESTRequest):
+class _GetItemRequest(ParseRequest, RedminePagedRequest):
     """Construct an issue request."""
 
-    def __init__(self, service, ids, get_desc=True, **kw):
-        if ids is None:
-            raise ValueError(f'No {service.item.type} ID(s) specified')
-
-        endpoint = f"/issues.{service._ext}?status_id=*&issue_id={','.join(map(str, ids))}"
-        super().__init__(service=service, endpoint=endpoint, **kw)
-
-        self.ids = ids
+    def __init__(self, *, service, get_desc=True, **kw):
         self._get_desc = get_desc
+        super().__init__(service=service, endpoint=f'/issues.{service._ext}', **kw)
 
     def parse(self, data):
         issues = data['issues']
         for issue in issues:
             yield self.service.item(self.service, get_desc=self._get_desc, **issue)
+
+    class ParamParser(ParseRequest.ParamParser):
+
+        # Map of allowed sorting input values to service parameters determined by
+        # looking at available values on the web interface.
+        _sorting_map = {
+            'status': 'status',
+            'priority': 'priority',
+            'title': 'subject',
+            'id': 'id',
+            'created': 'created_on',
+            'modified': 'updated_on',
+            'closed': 'closed_on',
+            'assignee': 'assigned_to',
+            'creator': 'author',
+            'version': 'fixed_version',
+            'category': 'category',
+        }
+
+        def _finalize(self, **kw):
+            if not self.params:
+                raise BiteError('no supported options specified')
+
+            if 'status_id' not in self.params:
+                self.params['status_id'] = '*'
+
+            # sort by ascending ID by default
+            if 'sort' not in self.params:
+                self.params['sort'] = 'id'
+
+        def ids(self, k, v):
+            ids = list(map(str, v))
+            self.params['issue_id'] = ','.join(ids)
+            self.options.append(f"IDs: {', '.join(ids)}")
+
+        def sort(self, k, v):
+            sorting_terms = []
+            for sort in v:
+                if sort[0] == '-':
+                    key = sort[1:]
+                    desc = ':desc'
+                else:
+                    key = sort
+                    desc = ''
+                try:
+                    order_var = self._sorting_map[key]
+                except KeyError:
+                    choices = ', '.join(sorted(self._sorting_map.keys()))
+                    raise BiteError(
+                        f'unable to sort by: {key!r} (available choices: {choices}')
+                sorting_terms.append(f'{order_var}{desc}')
+            self.params[k] = ','.join(sorting_terms)
+            self.options.append(f"Sort order: {', '.join(v)}")
 
 
 @req_cmd(Redmine)
@@ -212,15 +259,21 @@ class _GetRequest(_GetItemRequest):
 
 
 class _BaseSearchRequest(ParseRequest, RedminePagedRequest):
-    """Construct a search request."""
 
     def __init__(self, *, service, **kw):
         super().__init__(service=service, endpoint=f'/search.{service._ext}', **kw)
+        self._itemreq = self.service.GetItemRequest(**self.unused_params)
+        self.options.extend(self._itemreq.options)
 
     def parse(self, data):
         data = super().parse(data)
-        # pull additional issue fields not returned in search results
-        issues = self.service.GetItemRequest(ids=[x['id'] for x in data['results']]).send()
+        # query and pull additional issue fields not available via search
+        ids = [x['id'] for x in data['results']]
+        if ids:
+            self._itemreq.parse_params(ids=ids)
+            issues = self._itemreq.send()
+        else:
+            issues = []
         yield from issues
 
 
@@ -256,23 +309,13 @@ class _SearchRequest(_BaseSearchRequest):
 
 
 @req_cmd(RedmineElastic, name='SearchRequest', cmd='search')
-class _ElasticSearchRequest(ParseRequest, RedminePagedRequest):
+class _ElasticSearchRequest(_BaseSearchRequest):
     """Construct an elasticsearch compatible search request.
 
     Assumes the elasticsearch plugin is installed:
         http://www.redmine.org/plugins/redmine_elasticsearch
         https://github.com/Restream/redmine_elasticsearch/wiki/Search-Quick-Reference
     """
-
-    def __init__(self, *, service, **kw):
-        super().__init__(service=service, endpoint=f'/search.{service._ext}', **kw)
-
-    def parse(self, data):
-        data = super().parse(data)
-        # pull additional issue fields not returned in search results
-        ids = [x['id'] for x in data['results']]
-        issues = self.service.GetItemRequest(ids=ids).send()
-        yield from issues
 
     class ParamParser(ParseRequest.ParamParser):
 
