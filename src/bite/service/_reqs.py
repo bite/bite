@@ -174,14 +174,17 @@ class PagedRequest(_BasePagedRequest):
         if limit is not None:
             self.params[self._size_key] = limit
             self.options.append(f'Limit: {limit}')
-        elif self.service.max_results is not None:
-            self.params[self._size_key] = self.service.max_results
 
         if page is not None:
             self.params[self._page_key] = page
             self.options.append(f'Page: {page}')
         else:
             self.params[self._page_key] = 0
+
+    def _finalize(self):
+        if self._size_key not in self.params and self.service.max_results is not None:
+            self.params[self._size_key] = self.service.max_results
+        super()._finalize()
 
     def next_page(self):
         # if no more results exist, stop requesting them
@@ -211,8 +214,6 @@ class FlaggedPagedRequest(_BasePagedRequest):
         if limit is not None:
             self.params[self._size_key] = limit
             self.options.append(f'Limit: {limit}')
-        elif self.service.max_results is not None:
-            self.params[self._size_key] = self.service.max_results
 
         if page is not None:
             self.params[self._page_key] = page
@@ -222,6 +223,11 @@ class FlaggedPagedRequest(_BasePagedRequest):
 
         # flag to note when all data has been consumed
         self._exhausted = False
+
+    def _finalize(self):
+        if self._size_key not in self.params and self.service.max_results is not None:
+            self.params[self._size_key] = self.service.max_results
+        super()._finalize()
 
     def next_page(self):
         if self._exhausted:
@@ -250,14 +256,16 @@ class OffsetPagedRequest(_BasePagedRequest):
         if limit is not None:
             self.params[self._size_key] = limit
             self.options.append(f'Limit: {limit}')
-        elif self.service.max_results is not None:
-            self.params[self._size_key] = self.service.max_results
-
         if offset is not None:
             self.params[self._offset_key] = offset
 
         # total number of elements parsed at previous paged request
         self._prev_seen = 0
+
+    def _finalize(self):
+        if self._size_key not in self.params and self.service.max_results is not None:
+            self.params[self._size_key] = self.service.max_results
+        super()._finalize()
 
     def next_page(self):
         seen = self._seen - self._prev_seen
@@ -288,11 +296,13 @@ class LinkPagedRequest(_BasePagedRequest):
         if not all((self._page, self._pagelen, self._next, self._previous)):
             raise ValueError('page, pagelen, next, and previous keys must be set')
 
-        if self.service.max_results is not None:
-            self.params[self._pagelen] = self.service.max_results
-
         # link to next page
         self._next_page = None
+
+    def _finalize(self):
+        if self._pagelen not in self.params and self.service.max_results is not None:
+            self.params[self._pagelen] = self.service.max_results
+        super()._finalize()
 
     def next_page(self):
         # no more results exist, stop requesting them
