@@ -7,6 +7,7 @@ API docs:
 from functools import partial
 
 from dateutil.parser import parse as dateparse
+from snakeoil.klass import aliased, alias
 
 from .._reqs import OffsetPagedRequest, ParseRequest, Request, req_cmd, CommentsFilter
 from .._rest import REST, RESTRequest
@@ -140,6 +141,7 @@ class _GetItemRequest(ParseRequest, RedminePagedRequest):
         for issue in issues:
             yield self.service.item(self.service, get_desc=self._get_desc, **issue)
 
+    @aliased
     class ParamParser(ParseRequest.ParamParser):
 
         # Map of allowed sorting input values to service parameters determined by
@@ -162,8 +164,9 @@ class _GetItemRequest(ParseRequest, RedminePagedRequest):
             if not self.params:
                 raise BiteError('no supported options specified')
 
+            # return all non-closed issues by default
             if 'status_id' not in self.params:
-                self.params['status_id'] = '*'
+                self.params['status_id'] = 'open'
 
             # sort by ascending ID by default
             if 'sort' not in self.params:
@@ -192,6 +195,24 @@ class _GetItemRequest(ParseRequest, RedminePagedRequest):
                 sorting_terms.append(f'{order_var}{desc}')
             self.params[k] = ','.join(sorting_terms)
             self.options.append(f"Sort order: {', '.join(v)}")
+
+        @alias('modified', 'closed')
+        def created(self, k, v):
+            if v.start and v.end:
+                range_str = f'><{v.start.utcformat()}|{v.end.utcformat()}'
+            elif v.start:
+                range_str = f'>={v.start.utcformat()}'
+            else:
+                range_str = f'<={v.end.utcformat()}'
+            field = self.service.item.attribute_aliases[k]
+            self.params[field] = range_str
+            self.options.append(f'{k.capitalize()}: {v} ({v!r} UTC)')
+
+        def status(self, k, v):
+            # TODO: map between statuses and their IDs here -- only the
+            # aggregate values (open, closed, *) work unmapped
+            self.params['status_id'] = v
+            self.options.append(f"Status: {v}")
 
 
 @req_cmd(Redmine)
@@ -324,6 +345,7 @@ class _ElasticSearchRequest(_BaseSearchRequest):
         https://github.com/Restream/redmine_elasticsearch/wiki/Search-Quick-Reference
     """
 
+    @aliased
     class ParamParser(ParseRequest.ParamParser):
 
         def __init__(self, **kw):
@@ -360,3 +382,17 @@ class _ElasticSearchRequest(_BaseSearchRequest):
         def status(self, k, v):
             self.query['status'] = f"status:({' OR '.join(v)})"
             self.options.append(f"Status: {', '.join(v)}")
+            # make sure itemreq doesn't override our status
+            self.request._itemreq_extra_params['status'] = '*'
+
+        @alias('modified', 'closed')
+        def created(self, k, v):
+            if v.start and v.end:
+                range_str = f'{v.start.isoformat()} TO {v.end.isoformat()}'
+            elif v.start:
+                range_str = f'{v.start.isoformat()} TO *'
+            else:
+                range_str = f'* TO {v.end.isoformat()}'
+            field = self.service.item.attribute_aliases[k]
+            self.query[k] = f'{field}:[{range_str}]'
+            self.options.append(f'{k.capitalize()}: {v} ({v!r} UTC)')
