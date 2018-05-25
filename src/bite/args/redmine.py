@@ -73,3 +73,8 @@ class Search(_BaseSearch):
 @args.subcmd(RedmineOpts)
 class Get(args.Get):
     pass
+
+
+@args.subcmd(RedmineOpts)
+class Comments(args.Comments):
+    pass

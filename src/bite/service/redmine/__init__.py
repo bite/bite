@@ -8,7 +8,7 @@ from functools import partial
 
 from dateutil.parser import parse as dateparse
 
-from .._reqs import OffsetPagedRequest, ParseRequest, Request, req_cmd
+from .._reqs import OffsetPagedRequest, ParseRequest, Request, req_cmd, CommentsFilter
 from .._rest import REST, RESTRequest
 from ...exceptions import BiteError, RequestError
 from ...objects import Item, Comment, Attachment, Change
@@ -203,6 +203,8 @@ class _CommentsRequest(Request):
         if ids is None:
             raise ValueError(f'No {self.service.item.type} ID(s) specified')
 
+        self.options.append(f"IDs: {', '.join(map(str, ids))}")
+
         reqs = []
         for i in ids:
             reqs.append(RESTRequest(
@@ -226,6 +228,11 @@ class _CommentsRequest(Request):
                     created=dateparse(c['created_on']), text=notes.strip()))
                 count += 1
             yield tuple(l)
+
+
+@req_cmd(Redmine)
+class _CommentsFilter(CommentsFilter):
+    pass
 
 
 @req_cmd(Redmine, cmd='get')
