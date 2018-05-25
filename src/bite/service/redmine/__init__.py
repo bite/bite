@@ -144,7 +144,7 @@ class _GetItemRequest(ParseRequest, RedminePagedRequest):
         # Slice request into pieces if it gets too long otherwise we get
         # HTTP 500s due to URL length. Note that this means sorting won't
         # work for large queries.
-        ids = self.params['issue_id'].split(',')
+        ids = self.params.get('issue_id', '').split(',')
         if len(ids) > 100:
             reqs = []
             while ids:
@@ -236,6 +236,14 @@ class _GetItemRequest(ParseRequest, RedminePagedRequest):
             # aggregate values (open, closed, *) work unmapped
             self.params['status_id'] = v
             self.options.append(f"Status: {v}")
+
+        def terms(self, k, v):
+            # raw issue search doesn't support multiple terms
+            term = ' '.join(v)
+            self.params['f[]'] = 'subject'
+            self.params['op[subject]'] = '~'
+            self.params['v[subject][]'] = term
+            self.options.append(f"Summary: {term}")
 
 
 @req_cmd(Redmine)
