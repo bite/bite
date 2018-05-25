@@ -1,0 +1,3 @@
+[pfsense]
+service: redmine3.2-json
+base: https://redmine.pfsense.org/projects/pfsense
