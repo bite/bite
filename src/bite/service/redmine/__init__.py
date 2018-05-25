@@ -90,7 +90,38 @@ class _BaseSearchRequest(ParseRequest, RedminePagedRequest):
             yield self.service.item(self.service, issue)
 
 
-@req_cmd(RedmineElastic, cmd='search')
+@req_cmd(Redmine, cmd='search')
+class _SearchRequest(_BaseSearchRequest):
+    """Construct a search request."""
+
+    class ParamParser(ParseRequest.ParamParser):
+
+        def __init__(self, **kw):
+            super().__init__(**kw)
+            self.query = {}
+
+        def _finalize(self, **kw):
+            if not self.query:
+                raise BiteError('no supported search terms or options specified')
+
+            self.params['q'] = ' AND '.join(self.query.values())
+
+            # only return issues
+            self.params['issues'] = 1
+
+            # only return open issues by default
+            if 'status' not in self.params:
+                self.params['open_issues'] = 1
+
+            # only search titles by default
+            self.params['titles_only'] = 1
+
+        def terms(self, k, v):
+            self.query['summary'] = '+'.join(v)
+            self.options.append(f"Summary: {', '.join(map(str, v))}")
+
+
+@req_cmd(RedmineElastic, name='SearchRequest', cmd='search')
 class _ElasticSearchRequest(_BaseSearchRequest):
     """Construct an elasticsearch compatible search request.
 
@@ -131,34 +162,3 @@ class _ElasticSearchRequest(_BaseSearchRequest):
                     display_terms.append(or_display_terms[0])
             self.query['summary'] = f"{' AND '.join(or_queries)}"
             self.options.append(f"Summary: {' AND '.join(display_terms)}")
-
-
-@req_cmd(Redmine, cmd='search')
-class _SearchRequest(_BaseSearchRequest):
-    """Construct a search request."""
-
-    class ParamParser(ParseRequest.ParamParser):
-
-        def __init__(self, **kw):
-            super().__init__(**kw)
-            self.query = {}
-
-        def _finalize(self, **kw):
-            if not self.query:
-                raise BiteError('no supported search terms or options specified')
-
-            self.params['q'] = ' AND '.join(self.query.values())
-
-            # only return issues
-            self.params['issues'] = 1
-
-            # only return open issues by default
-            if 'status' not in self.params:
-                self.params['open_issues'] = 1
-
-            # only search titles by default
-            self.params['titles_only'] = 1
-
-        def terms(self, k, v):
-            self.query['summary'] = '+'.join(v)
-            self.options.append(f"Summary: {', '.join(map(str, v))}")
