@@ -4,6 +4,8 @@ API docs:
     - http://www.redmine.org/projects/redmine/wiki/Rest_api
 """
 
+from functools import partial
+
 from .._reqs import OffsetPagedRequest, ParseRequest, req_cmd
 from .._rest import REST, RESTRequest
 from ...exceptions import BiteError, RequestError
@@ -46,11 +48,18 @@ class Redmine(REST):
     item = RedmineIssue
     item_endpoint = '/issues/{id}'
 
-    def __init__(self, max_results=None, **kw):
+    def __init__(self, max_results=None, elasticsearch=False, **kw):
         # most redmine instances default to 100 results per query
         if max_results is None:
             max_results = 100
         super().__init__(max_results=max_results, **kw)
+
+        # use different search function if elasticsearch plugin is available
+        if elasticsearch:
+            self.SearchRequest = partial(_ElasticSearchRequest, service=self)
+        else:
+            self.SearchRequest = partial(_SearchRequest, service=self)
+        self.search = lambda *args, **kw: self.send(self.SearchRequest(*args, **kw))
 
     def inject_auth(self, request, params):
         raise NotImplementedError
@@ -68,14 +77,8 @@ class RedminePagedRequest(OffsetPagedRequest, RESTRequest):
     _total_key = 'total_count'
 
 
-@req_cmd(Redmine, cmd='search')
-class _SearchRequest(ParseRequest, RedminePagedRequest):
-    """Construct a search request.
-
-    Assumes the elastic search plugin is installed:
-        http://www.redmine.org/plugins/redmine_elasticsearch
-        https://github.com/Restream/redmine_elasticsearch/wiki/Search-Quick-Reference
-    """
+class _BaseSearchRequest(ParseRequest, RedminePagedRequest):
+    """Construct a search request."""
 
     def __init__(self, *, service, **kw):
         super().__init__(service=service, endpoint=f'/search.{service._ext}', **kw)
@@ -86,12 +89,74 @@ class _SearchRequest(ParseRequest, RedminePagedRequest):
         for issue in issues:
             yield self.service.item(self.service, issue)
 
+
+class _ElasticSearchRequest(_BaseSearchRequest):
+    """Construct an elasticsearch compatible search request.
+
+    Assumes the elasticsearch plugin is installed:
+        http://www.redmine.org/plugins/redmine_elasticsearch
+        https://github.com/Restream/redmine_elasticsearch/wiki/Search-Quick-Reference
+    """
+
     class ParamParser(ParseRequest.ParamParser):
 
+        def __init__(self, **kw):
+            super().__init__(**kw)
+            self.query = {}
+
         def _finalize(self, **kw):
-            if not self.params:
+            if not self.query:
                 raise BiteError('no supported search terms or options specified')
 
+            # only return open issues by default
+            if 'status' not in self.query:
+                self.query['status'] = 'status:open'
+
+            query_string = ' AND '.join(self.query.values())
+            self.params['q'] = f'_type:issue AND ({query_string})'
+
         def terms(self, k, v):
-            self.params['q'] = '+'.join(v)
+            or_queries = []
+            display_terms = []
+            for term in v:
+                or_terms = [x.replace('"', '\\"') for x in term.split(',')]
+                or_search_terms = [f'title:({x})' for x in or_terms]
+                or_display_terms = [f'"{x}"' for x in or_terms]
+                if len(or_terms) > 1:
+                    or_queries.append(f"({' OR '.join(or_search_terms)})")
+                    display_terms.append(f"({' OR '.join(or_display_terms)})")
+                else:
+                    or_queries.append(or_search_terms[0])
+                    display_terms.append(or_display_terms[0])
+            self.query['summary'] = f"{' AND '.join(or_queries)}"
+            self.options.append(f"Summary: {' AND '.join(display_terms)}")
+
+
+class _SearchRequest(_BaseSearchRequest):
+    """Construct a search request."""
+
+    class ParamParser(ParseRequest.ParamParser):
+
+        def __init__(self, **kw):
+            super().__init__(**kw)
+            self.query = {}
+
+        def _finalize(self, **kw):
+            if not self.query:
+                raise BiteError('no supported search terms or options specified')
+
+            self.params['q'] = ' AND '.join(self.query.values())
+
+            # only return issues
+            self.params['issues'] = 1
+
+            # only return open issues by default
+            if 'status' not in self.params:
+                self.params['open_issues'] = 1
+
+            # only search titles by default
+            self.params['titles_only'] = 1
+
+        def terms(self, k, v):
+            self.query['summary'] = '+'.join(v)
             self.options.append(f"Summary: {', '.join(map(str, v))}")
