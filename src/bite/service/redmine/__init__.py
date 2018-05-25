@@ -189,7 +189,7 @@ class _GetItemRequest(ParseRequest, RedminePagedRequest):
 
             # return all non-closed issues by default
             if 'status_id' not in self.params:
-                self.params['status_id'] = 'open'
+                self.params['status_id'] = '*'
 
             # sort by ascending ID by default
             if 'sort' not in self.params:
