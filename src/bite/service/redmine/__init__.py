@@ -254,8 +254,14 @@ class _GetItemRequest(ParseRequest, RedminePagedRequest):
 
 @req_cmd(Redmine3_2, name='GetItemRequest')
 class _3_2GetItemRequest(_GetItemRequest):
-    """Construct an issue request for Redmine 3.2."""
+    """Construct an issue request for Redmine 3.2.
 
+    Older versions of Redmine don't seem to work with straight field parameter
+    mappings. Instead the filter params generated when using the web interface
+    are used.
+    """
+
+    @aliased
     class ParamParser(_GetItemRequest.ParamParser):
 
         # Map of allowed sorting input values to service parameters determined by
@@ -278,7 +284,6 @@ class _3_2GetItemRequest(_GetItemRequest):
             if 'sort' not in self.params:
                 self.params['sort'] = 'id'
 
-        # old versions of redmine don't seem to work with straight 'status_id' param mappings
         def status(self, k, v):
             # TODO: map between statuses and their IDs here -- only the
             # aggregate values (open, closed, *) work unmapped
@@ -288,6 +293,24 @@ class _3_2GetItemRequest(_GetItemRequest):
             except KeyError:
                 raise BiteError(f'unknown status value: {v!r}')
             self.options.append(f"Status: {v}")
+
+        @alias('modified', 'closed')
+        def created(self, k, v):
+            if v.start and v.end:
+                op = '><'
+                values = [v.start.utcformat(), v.end.utcformat()]
+            elif v.start:
+                op = '>='
+                values = [v.start.utcformat()]
+            else:
+                op = '<='
+                values = [v.end.utcformat()]
+            field = self.service.item.attribute_aliases[k]
+            self.params.setdefault('f[]', []).append(field)
+            self.params[f'op[{field}]'] = op
+            for v in values:
+                self.params.setdefault(f'v[{field}][]', []).append(v)
+            self.options.append(f'{k.capitalize()}: {v} ({v!r} UTC)')
 
 
 @req_cmd(Redmine)
