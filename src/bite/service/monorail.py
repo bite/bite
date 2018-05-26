@@ -14,7 +14,6 @@ try: import simplejson as json
 except ImportError: import json
 from lxml import etree
 import lxml.html
-import requests
 
 from ._jsonrpc import Jsonrpc
 from ..objects import decompress, Item, Comment, Attachment
