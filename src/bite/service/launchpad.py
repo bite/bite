@@ -408,7 +408,7 @@ class _AttachmentsRequest(Request):
                     service=self.service, method='GET', url=x['data_link'], raw=True)
                     for x in attachments)
                 content = Request(
-                    service=self.service, reqs=reqs).send(allow_redirects=True)
+                    service=self.service, reqs=reqs, raw=True).send(allow_redirects=True)
             else:
                 content = self._none_gen
             yield tuple(self.service.attachment(data=c, **a)
