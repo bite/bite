@@ -201,7 +201,10 @@ class _GetItemRequest(RESTParseRequest, RedminePagedRequest):
 
             # return all non-closed issues by default
             if 'status_id' not in self.params:
-                self.params['status_id'] = '*'
+                if self.request._searchreq:
+                    self.params['status_id'] = 'open'
+                else:
+                    self.params['status_id'] = '*'
 
             # sort by ascending ID by default
             if 'sort' not in self.params:
@@ -441,7 +444,7 @@ class _BaseSearchRequest(RESTParseRequest, RedminePagedRequest):
     def __init__(self, *, service, **kw):
         self._itemreq_extra_params = {}
         super().__init__(service=service, endpoint=f'/search.{service._ext}', **kw)
-        self._itemreq = self.service.GetItemRequest(**self.unused_params)
+        self._itemreq = self.service.GetItemRequest(searchreq=True, **self.unused_params)
         self.options.extend(self._itemreq.options)
 
     def send(self):
