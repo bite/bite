@@ -141,10 +141,13 @@ class RedminePagedRequest(OffsetPagedRequest, RESTRequest):
 class _GetItemRequest(ParseRequest, RedminePagedRequest):
     """Construct an issue request."""
 
-    def __init__(self, *, service, ids=None, get_desc=True, sliced=False, **kw):
+    def __init__(self, *, service, ids=None, searchreq=False, get_desc=True,
+                 sliced=False, **kw):
         self._ids = list(map(str, ids)) if ids is not None else ids
         if self._ids is not None:
             kw['ids'] = self._ids
+        # running as a search request filter
+        self._searchreq = searchreq
         self._get_desc = get_desc
         self._sliced = sliced
         super().__init__(service=service, endpoint=f'/issues.{service._ext}', **kw)
@@ -249,7 +252,7 @@ class _GetItemRequest(ParseRequest, RedminePagedRequest):
         def terms(self, k, v):
             # raw issue search doesn't support multiple terms
             term = ' '.join(v)
-            self.params.setdefault('f[]', []).append('subject')
+            self.params.add('f[]', 'subject')
             self.params['op[subject]'] = '~'
             self.params['v[subject][]'] = term
             self.options.append(f"Summary: {term}")
@@ -282,7 +285,11 @@ class _3_2GetItemRequest(_GetItemRequest):
 
                 # return all non-closed issues by default
                 if 'op[status_id]' not in self.params:
-                    self.params['p[status_id]'] = '*'
+                    self.params.add('f[]', 'status_id')
+                    if self.request._searchreq:
+                        self.params['op[status_id]'] = 'o'
+                    else:
+                        self.params['op[status_id]'] = '*'
 
                 # sort by ascending ID by default
                 if 'sort' not in self.params:
@@ -291,7 +298,7 @@ class _3_2GetItemRequest(_GetItemRequest):
         def status(self, k, v):
             # TODO: map between statuses and their IDs here -- only the
             # aggregate values (open, closed, *) work unmapped
-            self.params.setdefault('f[]', []).append('status_id')
+            self.params.add('f[]', 'status_id')
             try:
                 self.params['op[status_id]'] = self._status_map[v]
             except KeyError:
@@ -310,10 +317,10 @@ class _3_2GetItemRequest(_GetItemRequest):
                 op = '<='
                 values = [v.end.utcformat()]
             field = self.service.item.attribute_aliases[k]
-            self.params.setdefault('f[]', []).append(field)
+            self.params.add('f[]', field)
             self.params[f'op[{field}]'] = op
             for v in values:
-                self.params.setdefault(f'v[{field}][]', []).append(v)
+                self.params.add(f'v[{field}][]', v)
             self.options.append(f'{k.capitalize()}: {v} ({v!r} UTC)')
 
         def ids(self, k, v):
@@ -426,9 +433,8 @@ class _BasicSearchRequest(_3_2GetItemRequest):
     For older installs of redmine that don't support the search API.
     """
 
-    def __init__(self, *, params, **kw):
-        params.setdefault('status', 'open')
-        super().__init__(params=params, **kw)
+    def __init__(self, **kw):
+        super().__init__(searchreq=True, **kw)
 
 
 class _BaseSearchRequest(ParseRequest, RedminePagedRequest):

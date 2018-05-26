@@ -1,5 +1,6 @@
 snakeoil>=0.8.0
 requests>=2
+multidict
 chardet
 python-dateutil>=2.1
 lxml
