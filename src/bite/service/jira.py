@@ -5,6 +5,8 @@ API docs:
     - https://docs.atlassian.com/jira/REST/server/
 """
 
+import re
+
 from dateutil.parser import parse as parsetime
 from snakeoil.klass import aliased, alias
 
@@ -50,16 +52,17 @@ class Jira(JsonREST):
     _service = 'jira'
 
     item = JiraIssue
-    item_endpoint = '/issues/{project}-{{id}}'
+    _item_endpoint = '/issues/{project}-{{id}}'
 
     def __init__(self, base, max_results=None, **kw):
         try:
-            api_base, project = base.split('/projects/', 1)
+            api_base, _sep, project = base.partition('/projects/')
             project = project.strip('/')
         except ValueError as e:
             raise BiteError(f'invalid project base: {base!r}')
-        self._project = project
-        self.item_endpoint = self.item_endpoint.format(project=project)
+        self._project = project if project else None
+        if self._project:
+            self.item_endpoint = self._item_endpoint.format(project=project)
         # most jira instances default to 1k results per query
         if max_results is None:
             max_results = 1000
@@ -103,9 +106,15 @@ class _SearchRequest(RESTParseRequest, JiraPagedRequest):
         data = super().parse(data)
         issues = data['issues']
         for issue in issues:
-            id = issue.get('id')
+            # Use project ID key for issue id, the regular id field relates to
+            # the global issue ID across all projects on the service instance.
+            # Using the key value matches what is shown on the web interface.
+            id = issue.get('key')
+            if self.service._project:
+                # if configured for a specific project, strip it from the ID
+                id = id[len(self.service._project) + 1:]
             fields = issue.get('fields', {})
-            yield self.service.item(id=issue.get('id'), **fields)
+            yield self.service.item(id=id, **fields)
 
     @aliased
     class ParamParser(RESTParseRequest.ParamParser):
@@ -124,32 +133,41 @@ class _SearchRequest(RESTParseRequest, JiraPagedRequest):
             if not self.query:
                 raise BiteError('no supported search terms or options specified')
 
-            self.params['jql'] = ' AND '.join(self.query)
-
             # limit fields by default to decrease requested data size and speed up response
             if 'fields' not in self.params:
                 self.params['fields'] = ['id', 'assignee', 'summary']
 
-            # default to sorting ascending by ID
-            sort = self.params.pop('sort', ['id'])
+            jql = ' AND '.join(self.query)
 
             # if configured for a specific project, limit search to specified project
-            self.params['jql'] = (
-                f"project = {self.service._project} "
-                f"AND ( {self.params['jql']} ) "
-                f"order by {', '.join(sort)}")
+            if self.service._project:
+                jql = f"project = {self.service._project} AND ( {jql} )"
 
+            # default to sorting ascending by ID for search reqs
+            if not self.request._itemreq:
+                sort = self.params.pop('sort', ['id'])
+                jql += f" order by {', '.join(sort)}"
+
+            self.params['jql'] = jql
             self.request.fields = self.params['fields']
 
         def id(self, k, v):
             id_strs = list(map(str, v))
-            self.query.append(f"{k} in ({','.join(id_strs)})")
+            # convert to ID keys
+            id_keys = []
+            for i in id_strs:
+                if re.match(r'\d+', i) and self.service._project:
+                    id_keys.append(f'{self.service._project}-{i}')
+                else:
+                    id_keys.append(i)
+            self.query.append(f"{k} in ({','.join(id_keys)})")
             self.options.append(f"IDs: {', '.join(id_strs)}")
 
         def fields(self, k, v):
-            unknown_fields = set(v).difference(self.service.item.attributes.keys())
-            if unknown_fields:
-                raise BiteError(f"unknown fields: {', '.join(unknown_fields)}")
+            # TODO: add service attrs
+            # unknown_fields = set(v).difference(self.service.item.attributes.keys())
+            # if unknown_fields:
+            #     raise BiteError(f"unknown fields: {', '.join(unknown_fields)}")
             self.params[k] = v
             self.options.append(f"Fields: {' '.join(v)}")
 
