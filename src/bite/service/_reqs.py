@@ -394,10 +394,10 @@ class ParseRequest(Request):
                 parse(k, self.unused_params.pop(k))
 
     def _finalize(self):
-        self.params = self.remap_params(self.params)
         params = self.param_parser._finalize()
         if params is not None:
             self.params = params
+        self.params = self.remap_params(self.params)
         super()._finalize()
 
     def remap_params(self, dct, remap=None):
