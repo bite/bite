@@ -5,6 +5,7 @@ API docs:
     - https://docs.atlassian.com/jira/REST/server/
 """
 
+from dateutil.parser import parse as parsetime
 from snakeoil.klass import aliased, alias
 
 from ._jsonrest import JsonREST
@@ -34,20 +35,13 @@ class JiraIssue(Item):
 
     type = 'issue'
 
-    def __init__(self, service, issue):
-        for k, v in issue.items():
-            if k == 'id':
-                setattr(self, k, v)
-            elif k == 'fields':
-                for kp, vp in v.items():
-                    if kp == 'summary':
-                        setattr(self, kp, vp)
-                    elif kp == 'assignee':
-                        if vp:
-                            assignee = vp.get('name')
-                        else:
-                            assignee = 'unassigned'
-                        setattr(self, kp, assignee)
+    def __init__(self, **kw):
+        for k, v in kw.items():
+            if k in ('assignee', 'reporter', 'status'):
+                v = v.get('name') if v else None
+            elif k in ('updated', 'created'):
+                v = parsetime(v)
+            setattr(self, k, v)
 
 
 class Jira(JsonREST):
@@ -109,7 +103,9 @@ class _SearchRequest(RESTParseRequest, JiraPagedRequest):
         data = super().parse(data)
         issues = data['issues']
         for issue in issues:
-            yield self.service.item(self.service, issue)
+            id = issue.get('id')
+            fields = issue.get('fields', {})
+            yield self.service.item(id=issue.get('id'), **fields)
 
     @aliased
     class ParamParser(RESTParseRequest.ParamParser):
@@ -131,16 +127,8 @@ class _SearchRequest(RESTParseRequest, JiraPagedRequest):
             self.params['jql'] = ' AND '.join(self.query)
 
             # limit fields by default to decrease requested data size and speed up response
-            fields = kw.get('fields')
-            if fields is None:
-                fields = ['id', 'assignee', 'summary']
-            else:
-                unknown_fields = set(fields).difference(self.service.item.attributes.keys())
-                if unknown_fields:
-                    raise BiteError(f"unknown fields: {', '.join(unknown_fields)}")
-                self.options.append(f"Fields: {' '.join(fields)}")
-
-            self.params['fields'] = fields
+            if 'fields' not in self.params:
+                self.params['fields'] = ['id', 'assignee', 'summary']
 
             # default to sorting ascending by ID
             sort = self.params.pop('sort', ['id'])
@@ -151,12 +139,19 @@ class _SearchRequest(RESTParseRequest, JiraPagedRequest):
                 f"AND ( {self.params['jql']} ) "
                 f"order by {', '.join(sort)}")
 
-            self.request.fields = fields
+            self.request.fields = self.params['fields']
 
         def id(self, k, v):
             id_strs = list(map(str, v))
             self.query.append(f"{k} in ({','.join(id_strs)})")
             self.options.append(f"IDs: {', '.join(id_strs)}")
+
+        def fields(self, k, v):
+            unknown_fields = set(v).difference(self.service.item.attributes.keys())
+            if unknown_fields:
+                raise BiteError(f"unknown fields: {', '.join(unknown_fields)}")
+            self.params[k] = v
+            self.options.append(f"Fields: {' '.join(v)}")
 
         def attachments(self, k, v):
             val = 'not empty' if v else 'empty'
