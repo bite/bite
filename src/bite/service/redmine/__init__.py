@@ -167,17 +167,6 @@ class _GetItemRequest(ParseRequest, RedminePagedRequest):
         else:
             items = super().send(**kw)
 
-        # TODO: report this upstream
-        # check for buggy/not working issue_id filters
-        if self._ids:
-            items = tuple(items)
-            returned_ids = [str(x.id) for x in items]
-            if self._ids != returned_ids:
-                raise BiteError(
-                    "mismatching issue IDs returned, service has buggy issue_id filter:\n"
-                    f"requested ID(s): {', '.join(self._ids)}\n"
-                    f"returned ID(s): {', '.join(returned_ids)}")
-
         return items
 
     def parse(self, data):
@@ -287,16 +276,17 @@ class _3_2GetItemRequest(_GetItemRequest):
         }
 
         def _finalize(self, **kw):
-            if not self.params and not self.request._sliced:
-                raise BiteError('no supported options specified')
+            if not self.request._ids:
+                if not any((self.params, self.request._sliced)):
+                    raise BiteError('no supported options specified')
 
-            # return all non-closed issues by default
-            if 'op[status_id]' not in self.params:
-                self.params['p[status_id]'] = '*'
+                # return all non-closed issues by default
+                if 'op[status_id]' not in self.params:
+                    self.params['p[status_id]'] = '*'
 
-            # sort by ascending ID by default
-            if 'sort' not in self.params:
-                self.params['sort'] = 'id'
+                # sort by ascending ID by default
+                if 'sort' not in self.params:
+                    self.params['sort'] = 'id'
 
         def status(self, k, v):
             # TODO: map between statuses and their IDs here -- only the
@@ -325,6 +315,10 @@ class _3_2GetItemRequest(_GetItemRequest):
             for v in values:
                 self.params.setdefault(f'v[{field}][]', []).append(v)
             self.options.append(f'{k.capitalize()}: {v} ({v!r} UTC)')
+
+        def ids(self, k, v):
+            # Old redmine versions can't handle issue_id param requests so ignore it.
+            pass
 
 
 @req_cmd(Redmine)
@@ -374,6 +368,8 @@ class _GetRequest(_GetItemRequest):
 
     def __init__(self, ids, get_comments=True, get_attachments=True, get_changes=False, **kw):
         super().__init__(ids=ids, **kw)
+        if not ids:
+            raise ValueError(f'No {self.service.item.type} ID(s) specified')
         self.ids = ids
         self._get_comments = get_comments
         self._get_attachments = get_attachments
@@ -381,6 +377,9 @@ class _GetRequest(_GetItemRequest):
 
     def parse(self, data):
         items = list(super().parse(data))
+        return self.yield_items(items)
+
+    def yield_items(self, items):
         comments = self._none_gen
         attachments = self._none_gen
         changes = self._none_gen
@@ -396,6 +395,28 @@ class _GetRequest(_GetItemRequest):
             item.attachments = next(attachments)
             item.changes = next(changes)
             yield item
+
+
+@req_cmd(Redmine3_2, name='GetRequest', cmd='get')
+class _3_2GetRequest(_3_2GetItemRequest, _GetRequest):
+    """Construct requests to retrieve all known data for given issue IDs."""
+
+    def __init__(self, **kw):
+        super().__init__(**kw)
+
+        reqs = []
+        for i in self.ids:
+            endpoint = f'{self.service.webbase}/issues/{i}.{self.service._ext}'
+            reqs.append(RESTRequest(service=self.service, endpoint=endpoint))
+
+        self._reqs = tuple(reqs)
+        self._req = None
+
+    def parse(self, data):
+        items = list(
+            self.service.item(self.service, get_desc=self._get_desc, **x['issue'])
+            for x in data)
+        return self.yield_items(items)
 
 
 @req_cmd(Redmine3_2, name='SearchRequest', cmd='search')
