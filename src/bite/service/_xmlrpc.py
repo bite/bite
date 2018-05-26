@@ -1,15 +1,11 @@
-from xmlrpc.client import dumps, loads, Marshaller, Unmarshaller, Fault, ResponseError
+from xmlrpc.client import dumps, loads, Unmarshaller, Fault, ResponseError
 
 from snakeoil.klass import steal_docs
-from multidict import MultiDict
 
 from . import Service
 from ._rpc import Rpc
 from ._xml import Xml
 from ..exceptions import RequestError, ParsingError
-
-# force marshaller to treat multidicts like regular dicts
-Marshaller.dispatch[MultiDict] = Marshaller.dump_struct
 
 
 class _Unmarshaller(Unmarshaller):

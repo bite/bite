@@ -37,7 +37,7 @@ class Request(object):
                  reqs=None, options=None, raw=False, **kw):
         self.service = service
         self.options = options if options is not None else []
-        self.params = params if params is not None else MultiDict()
+        self.params = params if params is not None else {}
         self._raw = raw
         self._finalized = False
 
@@ -356,10 +356,10 @@ class ParseRequest(Request):
     # map from args dest name to expected service parameter name
     _params_map = {}
 
-    def __init__(self, params=None, **kw):
+    def __init__(self, params=None, initial_params=None, **kw):
         self.service = kw['service']
         self.options = kw.get('options', [])
-        self.params = MultiDict()
+        self.params = initial_params if initial_params is not None else {}
         self.strict = True
 
         # accept unsplit kwargs as well

@@ -1,7 +1,9 @@
 from urllib.parse import urlencode
 
+from multidict import MultiDict
+
 from . import Service
-from ._reqs import Request
+from ._reqs import Request, ParseRequest
 from ..utils import dict2tuples
 
 
@@ -18,7 +20,7 @@ class REST(Service):
 class RESTRequest(Request):
     """Construct a REST request."""
 
-    def __init__(self, service, endpoint=None, method='GET', **kw):
+    def __init__(self, service, endpoint=None, method='GET', params=None, **kw):
         self.method = method
         if endpoint is None:
             endpoint = service._base.rstrip('/')
@@ -26,7 +28,8 @@ class RESTRequest(Request):
             endpoint = f"{service._base.rstrip('/')}{endpoint}"
         self.endpoint = endpoint
         self.data = {}
-        super().__init__(service=service, method=method, **kw)
+        params = params if params is not None else MultiDict()
+        super().__init__(service=service, method=method, params=params, **kw)
 
     @property
     def url(self):
@@ -55,3 +58,10 @@ class RESTRequest(Request):
         # encode additional params to data body
         if self.data:
             self._req.data = self.service._encode_request(self.data)
+
+
+class RESTParseRequest(ParseRequest):
+
+    def __init__(self, **kw):
+        initial_params = MultiDict()
+        super().__init__(initial_params=initial_params, **kw)

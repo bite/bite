@@ -6,8 +6,8 @@ API docs:
 """
 
 from ._jsonrest import JsonREST
-from ._reqs import OffsetPagedRequest, ParseRequest, req_cmd
-from ._rest import RESTRequest
+from ._reqs import OffsetPagedRequest, req_cmd
+from ._rest import RESTRequest, RESTParseRequest
 from ..exceptions import BiteError, RequestError
 from ..objects import Item
 
@@ -96,7 +96,7 @@ class JiraPagedRequest(OffsetPagedRequest, RESTRequest):
 
 
 @req_cmd(Jira, cmd='search')
-class _SearchRequest(ParseRequest, JiraPagedRequest):
+class _SearchRequest(RESTParseRequest, JiraPagedRequest):
     """Construct a search request."""
 
     def __init__(self, **kw):
@@ -109,7 +109,7 @@ class _SearchRequest(ParseRequest, JiraPagedRequest):
         for issue in issues:
             yield self.service.item(self.service, issue)
 
-    class ParamParser(ParseRequest.ParamParser):
+    class ParamParser(RESTParseRequest.ParamParser):
 
         def __init__(self, **kw):
             super().__init__(**kw)

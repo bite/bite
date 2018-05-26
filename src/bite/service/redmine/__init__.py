@@ -5,13 +5,12 @@ API docs:
 """
 
 from itertools import chain
-from functools import partial
 
 from dateutil.parser import parse as dateparse
 from snakeoil.klass import aliased, alias
 
-from .._reqs import OffsetPagedRequest, ParseRequest, Request, req_cmd, CommentsFilter
-from .._rest import REST, RESTRequest
+from .._reqs import OffsetPagedRequest, Request, req_cmd, CommentsFilter
+from .._rest import REST, RESTRequest, RESTParseRequest
 from ...exceptions import BiteError, RequestError
 from ...objects import Item, Comment, Attachment, Change
 
@@ -138,7 +137,7 @@ class RedminePagedRequest(OffsetPagedRequest, RESTRequest):
 
 
 @req_cmd(Redmine)
-class _GetItemRequest(ParseRequest, RedminePagedRequest):
+class _GetItemRequest(RESTParseRequest, RedminePagedRequest):
     """Construct an issue request."""
 
     def __init__(self, *, service, ids=None, searchreq=False, get_desc=True,
@@ -178,7 +177,7 @@ class _GetItemRequest(ParseRequest, RedminePagedRequest):
             yield self.service.item(self.service, get_desc=self._get_desc, **issue)
 
     @aliased
-    class ParamParser(ParseRequest.ParamParser):
+    class ParamParser(RESTParseRequest.ParamParser):
 
         # Map of allowed sorting input values to service parameters determined by
         # looking at available values on the web interface.
@@ -437,7 +436,7 @@ class _BasicSearchRequest(_3_2GetItemRequest):
         super().__init__(searchreq=True, **kw)
 
 
-class _BaseSearchRequest(ParseRequest, RedminePagedRequest):
+class _BaseSearchRequest(RESTParseRequest, RedminePagedRequest):
 
     def __init__(self, *, service, **kw):
         self._itemreq_extra_params = {}
@@ -473,7 +472,7 @@ class _BaseSearchRequest(ParseRequest, RedminePagedRequest):
 class _SearchRequest(_BaseSearchRequest):
     """Construct a search request."""
 
-    class ParamParser(ParseRequest.ParamParser):
+    class ParamParser(RESTParseRequest.ParamParser):
 
         def __init__(self, **kw):
             super().__init__(**kw)
@@ -508,7 +507,7 @@ class _ElasticSearchRequest(_BaseSearchRequest):
     """
 
     @aliased
-    class ParamParser(ParseRequest.ParamParser):
+    class ParamParser(RESTParseRequest.ParamParser):
 
         def __init__(self, **kw):
             super().__init__(**kw)

@@ -14,11 +14,11 @@ from snakeoil.klass import aliased, alias
 
 from ._jsonrest import JsonREST
 from ._reqs import (
-    NullRequest, Request, ParseRequest,
+    NullRequest, Request,
     FlaggedPagedRequest, PagedRequest,
     req_cmd, CommentsFilter, ChangesFilter
 )
-from ._rest import RESTRequest
+from ._rest import RESTRequest, RESTParseRequest
 from ..exceptions import BiteError, RequestError
 from ..objects import Item, Comment, Attachment, Change
 from ..utc import utc
@@ -192,7 +192,7 @@ class SourceforgeFlaggedPagedRequest(FlaggedPagedRequest, RESTRequest):
 
 
 @req_cmd(Sourceforge, cmd='search')
-class _SearchRequest(ParseRequest, SourceforgePagedRequest):
+class _SearchRequest(RESTParseRequest, SourceforgePagedRequest):
     """Construct a search request.
 
     Currently using on Solr on the backend, see the following docs for query help:
@@ -219,7 +219,7 @@ class _SearchRequest(ParseRequest, SourceforgePagedRequest):
             yield self.service.item(self.service, **ticket)
 
     @aliased
-    class ParamParser(ParseRequest.ParamParser):
+    class ParamParser(RESTParseRequest.ParamParser):
 
         # map of allowed sorting input values to service parameters
         _sorting_map = {
