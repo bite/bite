@@ -5,6 +5,8 @@ API docs:
     - https://docs.atlassian.com/jira/REST/server/
 """
 
+from snakeoil.klass import aliased, alias
+
 from ._jsonrest import JsonREST
 from ._reqs import OffsetPagedRequest, req_cmd
 from ._rest import RESTRequest, RESTParseRequest
@@ -109,6 +111,7 @@ class _SearchRequest(RESTParseRequest, JiraPagedRequest):
         for issue in issues:
             yield self.service.item(self.service, issue)
 
+    @aliased
     class ParamParser(RESTParseRequest.ParamParser):
 
         def __init__(self, **kw):
@@ -141,3 +144,14 @@ class _SearchRequest(RESTParseRequest, JiraPagedRequest):
             for term in v:
                 self.query.append(f'summary ~ {term}')
             self.options.append(f"Summary: {', '.join(map(str, v))}")
+
+        @alias('modified')
+        def created(self, k, v):
+            field = 'created' if k == 'created' else 'updated'
+            if v.start is not None:
+                time_str = v.start.strftime('%Y-%m-%d %H:%M')
+                self.query.append(f'{field} > "{time_str}"')
+            if v.end is not None:
+                time_str = v.end.strftime('%Y-%m-%d %H:%M')
+                self.query.append(f'{field} < "{time_str}"')
+            self.options.append(f'{k.capitalize()}: {v} ({v!r} UTC)')
