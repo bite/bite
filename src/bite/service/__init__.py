@@ -315,7 +315,7 @@ class Service(object):
 
         if response.ok:
             if req_parse is not None:
-                req_parse(response)
+                response = req_parse(response)
             if raw:
                 return response.content
             return self.parse_response(response)

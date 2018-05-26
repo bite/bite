@@ -340,6 +340,7 @@ class LinkHeaderPagedRequest(_BasePagedRequest):
         if self._total_header is not None:
             self._total = response.headers.get(self._total_header)
         self._next_page = response.links.get('next', {}).get('url')
+        return response
 
     def next_page(self):
         # no more results exist, stop requesting them
