@@ -319,8 +319,8 @@ class _3_2GetItemRequest(_GetItemRequest):
             field = self.service.item.attribute_aliases[k]
             self.params.add('f[]', field)
             self.params[f'op[{field}]'] = op
-            for v in values:
-                self.params.add(f'v[{field}][]', v)
+            for x in values:
+                self.params.add(f'v[{field}][]', x)
             self.options.append(f'{k.capitalize()}: {v} ({v!r} UTC)')
 
         def ids(self, k, v):
