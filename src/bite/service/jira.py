@@ -157,5 +157,8 @@ class _SearchRequest(RESTParseRequest, JiraPagedRequest):
             self.options.append(f'{k.capitalize()}: {v} ({v!r} UTC)')
 
         def votes(self, k, v):
-            self.query.append(f'{k} >= {v}')
-            self.options.append(f"{k.capitalize()}: {v}")
+            if v.start is not None:
+                self.query.append(f'{k} >= {v.start}')
+            if v.end is not None:
+                self.query.append(f'{k} <= {v.end}')
+            self.options.append(f"{k.capitalize()}: {v} ({v!r} {k})")

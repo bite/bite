@@ -23,5 +23,5 @@ class Search(args.PagedSearch):
 
         self.attr = self.parser.add_argument_group('Attribute related')
         self.attr.add_argument(
-            '--votes',
-            help=f'{self.service.item.type}s with the specified number of votes or greater')
+            '--votes', type='int range', metavar='START[-END]',
+            help=f'{self.service.item.type}s with a specified number of votes')
