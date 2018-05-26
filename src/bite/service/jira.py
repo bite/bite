@@ -149,7 +149,7 @@ class _SearchRequest(RESTParseRequest, JiraPagedRequest):
 
         def terms(self, k, v):
             for term in v:
-                self.query.append(f'summary ~ {term}')
+                self.query.append(f'summary ~ "{term}"')
             self.options.append(f"Summary: {', '.join(map(str, v))}")
 
         @alias('modified')
