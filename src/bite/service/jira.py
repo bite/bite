@@ -100,8 +100,7 @@ class JiraPagedRequest(OffsetPagedRequest, RESTRequest):
 class _SearchRequest(RESTParseRequest, JiraPagedRequest):
     """Construct a search request."""
 
-    def __init__(self, itemreq=False, **kw):
-        self._itemreq = itemreq
+    def __init__(self, **kw):
         # use POST requests to avoid URL length issues with massive JQL queries
         super().__init__(endpoint='/search', method='POST', **kw)
 
@@ -147,9 +146,8 @@ class _SearchRequest(RESTParseRequest, JiraPagedRequest):
                 jql = f"project = {self.service._project} AND ( {jql} )"
 
             # default to sorting ascending by ID for search reqs
-            if not self.request._itemreq:
-                sort = self.params.pop('sort', ['id'])
-                jql += f" order by {', '.join(sort)}"
+            sort = self.params.pop('sort', ['id'])
+            jql += f" order by {', '.join(sort)}"
 
             self.params['jql'] = jql
             self.request.fields = self.params['fields']
@@ -219,9 +217,17 @@ class _GetItemRequest(_SearchRequest):
         if ids is None:
             raise ValueError(f'No {self.service.item.type} specified')
 
-        super().__init__(itemreq=True, id=ids, **kw)
+        super().__init__(id=ids, **kw)
         self.options.append(f"IDs: {', '.join(map(str, ids))}")
-        self.ids = ids
+        self.ids = list(map(str, ids))
+
+    def parse(self, data):
+        items = super().parse(data)
+        # Return items in the requested order, Jira doesn't appear to support
+        # search ordering by input fields.
+        d = {item.id: item for item in items}
+        for i in self.ids:
+            yield d[i]
 
     class ParamParser(_SearchRequest.ParamParser):
 
