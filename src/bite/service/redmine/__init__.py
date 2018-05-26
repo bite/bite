@@ -141,7 +141,10 @@ class RedminePagedRequest(OffsetPagedRequest, RESTRequest):
 class _GetItemRequest(ParseRequest, RedminePagedRequest):
     """Construct an issue request."""
 
-    def __init__(self, *, service, get_desc=True, sliced=False, **kw):
+    def __init__(self, *, service, ids=None, get_desc=True, sliced=False, **kw):
+        self._ids = list(map(str, ids)) if ids is not None else ids
+        if self._ids is not None:
+            kw['ids'] = self._ids
         self._get_desc = get_desc
         self._sliced = sliced
         super().__init__(service=service, endpoint=f'/issues.{service._ext}', **kw)
@@ -150,8 +153,8 @@ class _GetItemRequest(ParseRequest, RedminePagedRequest):
         # Slice request into pieces if it gets too long otherwise we get
         # HTTP 500s due to URL length. Note that this means sorting won't
         # work for large queries.
-        ids = self.params.get('issue_id', '').split(',')
-        if len(ids) > 100:
+        if self._ids and len(self._ids) > 100:
+            ids = list(self._ids)
             reqs = []
             while ids:
                 req = self.__class__(service=self.service, get_desc=self._get_desc, sliced=True)
@@ -160,10 +163,22 @@ class _GetItemRequest(ParseRequest, RedminePagedRequest):
                 reqs.append(req)
                 ids = ids[100:]
             combined_req = Request(service=self.service, reqs=reqs)
-            data = chain.from_iterable(combined_req.send(**kw))
+            items = chain.from_iterable(combined_req.send(**kw))
         else:
-            data = super().send(**kw)
-        return data
+            items = super().send(**kw)
+
+        # TODO: report this upstream
+        # check for buggy/not working issue_id filters
+        if self._ids:
+            items = tuple(items)
+            returned_ids = [str(x.id) for x in items]
+            if self._ids != returned_ids:
+                raise BiteError(
+                    "mismatching issue IDs returned, service has buggy issue_id filter:\n"
+                    f"requested ID(s): {', '.join(self._ids)}\n"
+                    f"returned ID(s): {', '.join(returned_ids)}")
+
+        return items
 
     def parse(self, data):
         issues = data['issues']
@@ -202,9 +217,8 @@ class _GetItemRequest(ParseRequest, RedminePagedRequest):
                 self.params['sort'] = 'id'
 
         def ids(self, k, v):
-            ids = list(map(str, v))
-            self.params['issue_id'] = ','.join(ids)
-            self.options.append(f"IDs: {', '.join(ids)}")
+            self.params['issue_id'] = ','.join(v)
+            self.options.append(f"IDs: {', '.join(v)}")
 
         def sort(self, k, v):
             sorting_terms = []
@@ -358,8 +372,9 @@ class _CommentsFilter(CommentsFilter):
 class _GetRequest(_GetItemRequest):
     """Construct requests to retrieve all known data for given issue IDs."""
 
-    def __init__(self, get_comments=True, get_attachments=True, get_changes=False, **kw):
-        super().__init__(**kw)
+    def __init__(self, ids, get_comments=True, get_attachments=True, get_changes=False, **kw):
+        super().__init__(ids=ids, **kw)
+        self.ids = ids
         self._get_comments = get_comments
         self._get_attachments = get_attachments
         self._get_changes = get_changes
@@ -371,10 +386,9 @@ class _GetRequest(_GetItemRequest):
         changes = self._none_gen
 
         if any((self._get_comments, self._get_attachments, self._get_changes)):
-            ids = [x.id for x in items]
             if self._get_comments:
                 item_descs = ((x.description,) if getattr(x, 'description', False) else () for x in items)
-                item_comments = self.service.CommentsRequest(ids=ids).send()
+                item_comments = self.service.CommentsRequest(ids=self.ids).send()
                 comments = (x + y for x, y in zip(item_descs, item_comments))
 
         for item in items:
