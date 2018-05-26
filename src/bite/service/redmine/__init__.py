@@ -1,7 +1,7 @@
 """Support Redmine's REST interface.
 
 API docs:
-    - http://www.redmine.org/projects/redmine/wiki/Rest_api
+    - https://www.redmine.org/projects/redmine/wiki/Rest_api
 """
 
 from itertools import chain
@@ -512,7 +512,7 @@ class _ElasticSearchRequest(_BaseSearchRequest):
     """Construct an elasticsearch compatible search request.
 
     Assumes the elasticsearch plugin is installed:
-        http://www.redmine.org/plugins/redmine_elasticsearch
+        https://www.redmine.org/plugins/redmine_elasticsearch
         https://github.com/Restream/redmine_elasticsearch/wiki/Search-Quick-Reference
     """
 
