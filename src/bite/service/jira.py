@@ -155,3 +155,7 @@ class _SearchRequest(RESTParseRequest, JiraPagedRequest):
                 time_str = v.end.strftime('%Y-%m-%d %H:%M')
                 self.query.append(f'{field} < "{time_str}"')
             self.options.append(f'{k.capitalize()}: {v} ({v!r} UTC)')
+
+        def votes(self, k, v):
+            self.query.append(f'{k} >= {v}')
+            self.options.append(f"{k.capitalize()}: {v}")
