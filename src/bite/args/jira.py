@@ -16,10 +16,13 @@ class Search(args.PagedSearch):
         self.person = self.parser.add_argument_group('Person related')
         self.person.add_argument(
             '-a', '--assigned-to', type='str_list', action='parse_stdin',
-            help=f'person the {self.service.item.type} is assigned to')
+            help=f'user the {self.service.item.type} is assigned to')
         self.person.add_argument(
             '-r', '--creator', type='str_list', action='parse_stdin',
-            help=f'person who created the {self.service.item.type}')
+            help=f'user who created the {self.service.item.type}')
+        self.person.add_argument(
+            '--watchers', type='int range', metavar='LOWER[-UPPER]',
+            help=f'{self.service.item.type} with a specified number of watchers')
 
         self.time = self.parser.add_argument_group('Time related')
         self.time.add_argument(
@@ -31,5 +34,5 @@ class Search(args.PagedSearch):
 
         self.attr = self.parser.add_argument_group('Attribute related')
         self.attr.add_argument(
-            '--votes', type='int range', metavar='START[-END]',
+            '--votes', type='int range', metavar='LOWER[-UPPER]',
             help=f'{self.service.item.type}s with a specified number of votes')

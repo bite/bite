@@ -169,6 +169,7 @@ class _SearchRequest(RESTParseRequest, JiraPagedRequest):
             self.query.append(f"{field} in ({','.join(v)})")
             self.options.append(f"{field.capitalize()}: {', '.join(map(str, v))}")
 
+        @alias('watchers')
         def votes(self, k, v):
             if v.start is not None:
                 self.query.append(f'{k} >= {v.start}')
