@@ -47,6 +47,7 @@ class RedmineIssue(Item):
         ('id', 'ID'),
         ('status', 'Status'),
         ('priority', 'Priority'),
+        ('category', 'Category'),
     )
 
     type = 'issue'
@@ -56,6 +57,7 @@ class RedmineIssue(Item):
         # initialize fields that can be blank so the service won't return them
         self.closed_on = None
         self.assigned_to = None
+        self.category = None
 
         for k, v in kw.items():
             # strip "Bug #ID (status): " prefix from titles
@@ -63,7 +65,7 @@ class RedmineIssue(Item):
                 v = v.partition(': ')[2]
             elif k in ('created_on', 'updated_on', 'closed_on',):
                 v = dateparse(v)
-            elif k in ('author', 'assigned_to', 'status', 'priority'):
+            elif k in ('author', 'assigned_to', 'status', 'priority', 'category'):
                 v = v['name']
 
             if k == 'custom_fields':
@@ -249,7 +251,12 @@ class _GetItemRequest(RESTParseRequest, RedminePagedRequest):
             # TODO: map between statuses and their IDs here -- only the
             # aggregate values (open, closed, *) work unmapped
             self.params['status_id'] = v
-            self.options.append(f"Status: {v}")
+            self.options.append(f"{k.capitalize()}: {v}")
+
+        # TODO: requires cached service categories
+        # def category(self, k, v):
+            # self.params['category_id'] = self.service.cache.category[v]
+            # self.options.append(f"{k.capitalize()}: {v}")
 
         def terms(self, k, v):
             # raw issue search doesn't support multiple terms
@@ -544,10 +551,14 @@ class _ElasticSearchRequest(_BaseSearchRequest):
             self.options.append(f"Summary: {' AND '.join(display_terms)}")
 
         def status(self, k, v):
-            self.query['status'] = f"status:({' OR '.join(v)})"
-            self.options.append(f"Status: {', '.join(v)}")
+            self.query[k] = f"{k}:({' OR '.join(v)})"
+            self.options.append(f"{k.capitalize()}: {', '.join(v)}")
             # make sure itemreq doesn't override our status
             self.request._itemreq_extra_params['status'] = '*'
+
+        def category(self, k, v):
+            self.query[k] = f"{k}:({' OR '.join(v)})"
+            self.options.append(f"{k.capitalize()}: {', '.join(v)}")
 
         @alias('modified', 'closed')
         def created(self, k, v):

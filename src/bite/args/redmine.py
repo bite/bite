@@ -76,6 +76,13 @@ class _RegularSearch(_BaseSearch):
 
     def add_args(self):
         super().add_args()
+        # TODO: requires cached service categories
+        # self.attr.add_argument(
+            # '--category',
+            # help='restrict by category',
+            # docs="""
+                # Restrict issues returned by their category.
+            # """)
         self.attr.add_argument(
             '-s', '--status',
             help='restrict by status',
@@ -90,13 +97,22 @@ class _ElasticSearch(_BaseSearch):
     def add_args(self):
         super().add_args()
         self.attr.add_argument(
+            '--category', type='str_list', action='parse_stdin',
+            help='restrict by category (one or more)',
+            docs="""
+                Restrict issues returned by their category.
+
+                Multiple categories can be entered as comma-separated values in
+                which case results match any of the given values.
+            """)
+        self.attr.add_argument(
             '-s', '--status', type='str_list', action='parse_stdin',
             help='restrict by status (one or more)',
             docs="""
                 Restrict issues returned by their status.
 
                 Multiple statuses can be entered as comma-separated values in
-                which case results can match any of the given values.
+                which case results match any of the given values.
             """)
 
 
