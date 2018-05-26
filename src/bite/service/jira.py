@@ -135,8 +135,15 @@ class _SearchRequest(RESTParseRequest, JiraPagedRequest):
                 self.options.append(f"Fields: {' '.join(fields)}")
 
             self.params['fields'] = fields
+
+            # default to sorting ascending by ID
+            sort = self.params.pop('sort', ['id'])
+
             # if configured for a specific project, limit search to specified project
-            self.params['jql'] = f"project = {self.service._project} AND ( {self.params['jql']} )"
+            self.params['jql'] = (
+                f"project = {self.service._project} "
+                f"AND ( {self.params['jql']} ) "
+                f"order by {', '.join(sort)}")
 
             self.request.fields = fields
 
