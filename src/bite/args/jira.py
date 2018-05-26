@@ -1,4 +1,7 @@
+from functools import partial
+
 from .. import args
+from ..argparser import ParseStdin
 
 
 class JiraOpts(args.ServiceOpts):
@@ -39,6 +42,21 @@ class Search(args.PagedSearch):
             help=f'{self.service.item.type}s viewed within a specified time interval')
 
         self.attr = self.parser.add_argument_group('Attribute related')
+        self.attr.add_argument(
+            '--id', type='id_list',
+            action=partial(ParseStdin, 'ids'),
+            help=f'restrict by {self.service.item.type} ID(s)')
+        self.attr.add_argument(
+            '--attachments', nargs='?', type=int, const=1,
+            help='restrict {self.service.item.type}s by attachment status',
+            docs="""
+                Search for {self.service.item.type}s by their attachment status.
+
+                With no argument, this restricts {self.service.item.type}s
+                returned to those that have attachments. If passed an argument
+                of '0', returned {self.service.item.type}s will not have any
+                attachments.
+            """)
         self.attr.add_argument(
             '--votes', type='int range', metavar='LOWER[-UPPER]',
             help=f'{self.service.item.type}s with a specified number of votes')

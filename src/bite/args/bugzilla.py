@@ -373,7 +373,7 @@ class Search(args.PagedSearch):
         self.attr.add_argument(
             '--id', type='id_list',
             action=partial(ParseStdin, 'ids'),
-            help='restrict by bug ID(s)')
+            help=f'restrict by {self.service.item.type} ID(s)')
         self.attr.add_argument(
             '--os', type='str_list', dest='op_sys', metavar='OS',
             action='parse_stdin',

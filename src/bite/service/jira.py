@@ -153,6 +153,17 @@ class _SearchRequest(RESTParseRequest, JiraPagedRequest):
 
             self.request.fields = fields
 
+        def id(self, k, v):
+            id_strs = list(map(str, v))
+            self.query.append(f"{k} in ({','.join(id_strs)})")
+            self.options.append(f"IDs: {', '.join(id_strs)}")
+
+        def attachments(self, k, v):
+            val = 'not empty' if v else 'empty'
+            display_val = 'yes' if v else 'no'
+            self.query.append(f'{k} is {val}')
+            self.options.append(f"{k.capitalize()}: {display_val}")
+
         def terms(self, k, v):
             for term in v:
                 self.query.append(f'summary ~ "{term}"')
