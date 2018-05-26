@@ -13,6 +13,14 @@ class Search(args.PagedSearch):
     def add_args(self):
         super().add_args()
 
+        self.person = self.parser.add_argument_group('Person related')
+        self.person.add_argument(
+            '-a', '--assigned-to', type='str_list', action='parse_stdin',
+            help=f'person the {self.service.item.type} is assigned to')
+        self.person.add_argument(
+            '-r', '--creator', type='str_list', action='parse_stdin',
+            help=f'person who created the {self.service.item.type}')
+
         self.time = self.parser.add_argument_group('Time related')
         self.time.add_argument(
             '-c', '--created', type='time interval', metavar='TIME_INTERVAL',

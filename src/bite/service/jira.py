@@ -163,6 +163,12 @@ class _SearchRequest(RESTParseRequest, JiraPagedRequest):
                 self.query.append(f'{field} < "{time_str}"')
             self.options.append(f'{k.capitalize()}: {v} ({v!r} UTC)')
 
+        @alias('creator')
+        def assigned_to(self, k, v):
+            field = 'assignee' if k == 'assigned_to' else 'reporter'
+            self.query.append(f"{field} in ({','.join(v)})")
+            self.options.append(f"{field.capitalize()}: {', '.join(map(str, v))}")
+
         def votes(self, k, v):
             if v.start is not None:
                 self.query.append(f'{k} >= {v.start}')
