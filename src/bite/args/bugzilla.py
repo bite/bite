@@ -338,13 +338,13 @@ class Search(args.PagedSearch):
         self.person = self.parser.add_argument_group('Person related')
         self.person.add_argument(
             '-a', '--assigned-to', type='str_list', action='parse_stdin',
-            help='email of the person the bug is assigned to')
+            help=f'person the {self.service.item.type} is assigned to')
         self.person.add_argument(
             '-r', '--creator', type='str_list', action='parse_stdin',
-            help='email of the person who created the bug')
+            help=f'person who created the {self.service.item.type}')
         self.person.add_argument(
             '--qa-contact', type='str_list', action='parse_stdin',
-            help='email of the QA contact for the bug')
+            help=f'QA contact for the {self.service.item.type}')
 
         self.time = self.parser.add_argument_group('Time related')
         self.add_time_args()
@@ -442,7 +442,7 @@ class Search5_0(Search):
 
         self.person.add_argument(
             '--cc', type='str_list', action='parse_stdin',
-            help='email in the CC list for the bug')
+            help='person in the CC list for the bug')
         self.person.add_argument(
             '--commenter', type='str_list', action='parse_stdin',
             help='commenter in the bug')
