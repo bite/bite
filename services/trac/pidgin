@@ -1,0 +1,3 @@
+[pidgin]
+service: trac-scraper
+base: https://developer.pidgin.im/

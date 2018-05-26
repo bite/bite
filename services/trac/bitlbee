@@ -1,0 +1,3 @@
+[bitlbee]
+service: trac-scraper
+base: https://bugs.bitlbee.org/

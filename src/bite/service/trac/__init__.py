@@ -44,14 +44,14 @@ class TracTicket(Item):
 
     attributes = {
         'cc': 'cc',
-        'created': 'Created',
-        'modified': 'Modified',
         'owner': 'Assignee',
         'reporter': 'Reporter',
     }
 
     attribute_aliases = {
         'title': 'summary',
+        'created': 'time',
+        'modified': 'changetime',
     }
 
     _print_fields = (
@@ -78,7 +78,7 @@ class TracTicket(Item):
 
     type = 'ticket'
 
-    def __init__(self, service, **kw):
+    def __init__(self, service, get_desc=True, **kw):
         for k, v in kw.items():
             if not v:
                 v = None
@@ -88,9 +88,10 @@ class TracTicket(Item):
         self.attachments = None
         self.changes = None
 
-        self.description = TracComment(
-            count=0, creator=self.reporter, created=self.created,
-            text=self.description.strip())
+        if get_desc:
+            self.description = TracComment(
+                count=0, creator=self.reporter, created=self.created,
+                text=self.description.strip())
 
 
 class Trac(Service):
@@ -259,9 +260,9 @@ class _GetItemRequest(Multicall):
         # unwrap multicall result
         data = super().parse(data)
         for item in data:
-            id, created, modified, attrs = item
+            id, time, changetime, attrs = item
             yield self.service.item(
-                self.service, id=id, created=created, modified=modified, **attrs)
+                self.service, id=id, time=time, changetime=changetime, **attrs)
 
 
 @req_cmd(Trac, name='_ChangelogRequest')

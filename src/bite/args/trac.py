@@ -7,13 +7,11 @@ class TracOpts(args.ServiceOpts):
 
 class TracJsonrpcOpts(TracOpts):
     __doc__ = TracOpts.__doc__
-
     _service = 'trac-jsonrpc'
 
 
 class TracXmlrpcOpts(TracOpts):
     __doc__ = TracOpts.__doc__
-
     _service = 'trac-xmlrpc'
 
 
@@ -71,3 +69,13 @@ class Changes(args.Changes):
 @args.subcmd(TracOpts)
 class Version(args.Subcmd):
     """get Trac version"""
+
+
+class TracScraperOpts(args.ServiceOpts):
+    """Trac web scraper options."""
+    _service = 'trac-scraper'
+
+
+@args.subcmd(TracScraperOpts, name='search')
+class _ScrapedSearch(Search):
+    pass
