@@ -114,6 +114,12 @@ class _SearchRequest(RESTParseRequest, JiraPagedRequest):
     @aliased
     class ParamParser(RESTParseRequest.ParamParser):
 
+        # date field key map
+        _date_fields = {
+            'modified': 'updated',
+            'viewed': 'lastViewed',
+        }
+
         def __init__(self, **kw):
             super().__init__(**kw)
             self.query = []
@@ -152,9 +158,9 @@ class _SearchRequest(RESTParseRequest, JiraPagedRequest):
                 self.query.append(f'summary ~ "{term}"')
             self.options.append(f"Summary: {', '.join(map(str, v))}")
 
-        @alias('modified')
+        @alias('modified', 'viewed', 'resolved')
         def created(self, k, v):
-            field = 'created' if k == 'created' else 'updated'
+            field = self._date_fields.get(k, k)
             if v.start is not None:
                 time_str = v.start.strftime('%Y-%m-%d %H:%M')
                 self.query.append(f'{field} > "{time_str}"')

@@ -31,6 +31,12 @@ class Search(args.PagedSearch):
         self.time.add_argument(
             '-m', '--modified', type='time interval', metavar='TIME_INTERVAL',
             help=f'{self.service.item.type}s modified within a specified time interval')
+        self.time.add_argument(
+            '--resolved', type='time interval', metavar='TIME_INTERVAL',
+            help=f'{self.service.item.type}s resolved within a specified time interval')
+        self.time.add_argument(
+            '--viewed', type='time interval', metavar='TIME_INTERVAL',
+            help=f'{self.service.item.type}s viewed within a specified time interval')
 
         self.attr = self.parser.add_argument_group('Attribute related')
         self.attr.add_argument(
