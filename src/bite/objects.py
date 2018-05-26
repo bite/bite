@@ -125,6 +125,36 @@ class TimeInterval(object):
             return f'before {self.end!r}'
 
 
+class IntRange(object):
+    """Object that stores a given integer range token and its corresponding objects."""
+
+    def __init__(self, token, interval=None):
+        self.token = token
+        if interval is None:
+            start, _sep, end = token.partition('-')
+            start = int(start) if start else None
+            end = int(end) if end else None
+            interval = (start, end)
+
+        self.start, self.end = interval
+
+        if self.start and self.end and self.start > self.end:
+            raise ValueError(
+                'invalid range: start occurs after end '
+                f'({self.start!r} -> {self.end!r})')
+
+    def __str__(self):
+        return self.token
+
+    def __repr__(self):
+        if self.start and self.end:
+            return f'between {self.start!r} and {self.end!r}'
+        elif self.end is None:
+            return f'>= {self.start!r}'
+        else:
+            return f'<= {self.end!r}'
+
+
 class Item(object):
     """Generic bug/issue/ticket object used by a service."""
 
