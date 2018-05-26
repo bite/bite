@@ -60,3 +60,8 @@ class Search(args.PagedSearch):
         self.attr.add_argument(
             '--votes', type='int range', metavar='LOWER[-UPPER]',
             help=f'{self.service.item.type}s with a specified number of votes')
+
+
+@args.subcmd(JiraOpts)
+class Get(args.Get):
+    pass

@@ -208,7 +208,7 @@ class Item(object):
         lines = []
 
         for field, title in self._print_fields:
-            value = getattr(self, field)
+            value = getattr(self, field, None)
             if value is None:
                 continue
 

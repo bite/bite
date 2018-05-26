@@ -28,6 +28,8 @@ class JiraError(RequestError):
 class JiraIssue(Item):
 
     attributes = {
+        'created': 'Created',
+        'updated': 'Modified',
     }
 
     attribute_aliases = {
@@ -98,7 +100,8 @@ class JiraPagedRequest(OffsetPagedRequest, RESTRequest):
 class _SearchRequest(RESTParseRequest, JiraPagedRequest):
     """Construct a search request."""
 
-    def __init__(self, **kw):
+    def __init__(self, itemreq=False, **kw):
+        self._itemreq = itemreq
         # use POST requests to avoid URL length issues with massive JQL queries
         super().__init__(endpoint='/search', method='POST', **kw)
 
@@ -206,3 +209,46 @@ class _SearchRequest(RESTParseRequest, JiraPagedRequest):
             if v.end is not None:
                 self.query.append(f'{k} <= {v.end}')
             self.options.append(f"{k.capitalize()}: {v} ({v!r} {k})")
+
+
+@req_cmd(Jira)
+class _GetItemRequest(_SearchRequest):
+    """Construct an issue request."""
+
+    def __init__(self, ids, **kw):
+        if ids is None:
+            raise ValueError(f'No {self.service.item.type} specified')
+
+        super().__init__(itemreq=True, id=ids, **kw)
+        self.options.append(f"IDs: {', '.join(map(str, ids))}")
+        self.ids = ids
+
+    class ParamParser(_SearchRequest.ParamParser):
+
+        def _finalize(self, **kw):
+            super()._finalize(**kw)
+            self.params['expand'] = ['changelog']
+            self.params['fields'] = ['*all']
+
+
+@req_cmd(Jira, cmd='get')
+class _GetRequest(_GetItemRequest):
+    """Construct requests to retrieve all known data for given issue IDs."""
+
+    def __init__(self, get_comments=True, get_attachments=True, get_changes=False, **kw):
+        super().__init__(get_desc=get_comments, get_attachments=get_attachments, **kw)
+        self._get_comments = get_comments
+        self._get_attachments = get_attachments
+        self._get_changes = get_changes
+
+    def parse(self, data):
+        items = super().parse(data)
+        comments = self._none_gen
+        attachments = self._none_gen
+        changes = self._none_gen
+
+        for item in items:
+            item.comments = next(comments)
+            item.attachments = next(attachments)
+            item.changes = next(changes)
+            yield item
