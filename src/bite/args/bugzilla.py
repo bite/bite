@@ -323,10 +323,10 @@ class Search(args.PagedSearch):
     def add_time_args(self):
         self.time.add_argument(
             '-c', '--created', type='date', metavar='TIME',
-            help='bugs created at this time or later')
+            help=f'{self.service.item.type}s created at this time or later')
         self.time.add_argument(
             '-m', '--modified', type='date', metavar='TIME',
-            help='bugs modified at this time or later')
+            help=f'{self.service.item.type}s modified at this time or later')
 
     def add_args(self):
         super().add_args()
@@ -414,10 +414,10 @@ class Search5_0(Search):
     def add_time_args(self):
         self.time.add_argument(
             '-c', '--created', type='time interval', metavar='TIME_INTERVAL',
-            help='bugs created within a specified time interval')
+            help=f'{self.service.item.type}s created within a specified time interval')
         self.time.add_argument(
             '-m', '--modified', type='time interval', metavar='TIME_INTERVAL',
-            help='bugs modified within a specified time interval')
+            help=f'{self.service.item.type}s modified within a specified time interval')
 
     def add_args(self):
         super().add_args()
