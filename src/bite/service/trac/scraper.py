@@ -1,5 +1,7 @@
 """Web scraper for Trac without RPC support."""
 
+import csv
+import io
 from urllib.parse import urlparse, parse_qs
 
 from dateutil.parser import parse as parsetime
@@ -8,7 +10,8 @@ from snakeoil.klass import aliased, alias
 from . import TracTicket, TracAttachment
 from .._html import HTML
 from .._rest import REST, RESTRequest
-from .._reqs import Request, ParseRequest, req_cmd
+from .._reqs import ParseRequest, req_cmd
+from ...exceptions import BiteError
 
 
 class TracScraper(HTML, REST):
@@ -27,7 +30,6 @@ class TracScraper(HTML, REST):
         super().__init__(max_results=max_results, **kw)
 
 
-@req_cmd(TracScraper, cmd='search')
 class _SearchRequest(ParseRequest, RESTRequest):
     """Construct a search request.
 
@@ -50,7 +52,8 @@ class _SearchRequest(ParseRequest, RESTRequest):
         try:
             table = data.xpath('//table[@class="listing tickets"]')[0]
         except IndexError:
-            raise BiteError('no issues exist')
+            # no issues exist
+            return ()
         for row in table.xpath('./tbody/tr'):
             cols = row.xpath('./td')
             # no issues exist
@@ -71,7 +74,7 @@ class _SearchRequest(ParseRequest, RESTRequest):
                 # strip number symbol from IDs if it exists
                 if k == 'id' and v[0] == '#':
                     v = v[1:]
-                d[c.get('class')] = v
+                d[k] = v
             yield self.service.item(self.service, get_desc=False, **d)
 
     @aliased
@@ -161,3 +164,22 @@ class _SearchRequest(ParseRequest, RESTRequest):
         def owner(self, k, v):
             self.params[k] = '|'.join(v)
             self.options.append(f"{self.service.item.attributes[k]}: {', '.join(v)}")
+
+
+# Use the CSV format by default as it's faster than parsing the raw HTML pages.
+@req_cmd(TracScraper, name='SearchRequest', cmd='search')
+class _SearchRequestCSV(_SearchRequest):
+    """Construct a search request pulling the CSV format."""
+
+    def __init__(self, **kw):
+        super().__init__(raw=True, **kw)
+        self.params['format'] = 'csv'
+
+    def parse(self, data):
+        """Parsing function for the raw CSV content."""
+        # Requesting the text content of the response doesn't remove the BOM so
+        # we request the binary content and decode it ourselves to remove it.
+        f = io.StringIO(data.decode('utf-8-sig'))
+        headers = [x.lower() for x in f.readline().strip().split(',')]
+        for item in csv.DictReader(f, fieldnames=headers):
+            yield self.service.item(self.service, get_desc=False, **item)
