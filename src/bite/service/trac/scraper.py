@@ -43,9 +43,9 @@ class TracScraper(HTML, REST):
     attachment = TracAttachment
 
     def __init__(self, max_results=None, **kw):
-        # unsure if there is a sane upper limit on the max items per page, but we'll use 250
+        # Trac uses a setting of 0 to disable paging search results.
         if max_results is None:
-            max_results = 250
+            max_results = 0
         super().__init__(max_results=max_results, **kw)
 
 
