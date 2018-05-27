@@ -260,9 +260,9 @@ class _GetItemRequest(Multicall):
         # unwrap multicall result
         data = super().parse(data)
         for item in data:
-            id, time, changetime, attrs = item
+            id, created, modified, attrs = item
             yield self.service.item(
-                self.service, id=id, time=time, changetime=changetime, **attrs)
+                self.service, id=id, created=created, modified=modified, **attrs)
 
 
 @req_cmd(Trac, name='_ChangelogRequest')
