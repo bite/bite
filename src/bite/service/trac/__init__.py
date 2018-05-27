@@ -218,8 +218,13 @@ class BaseSearchRequest(ParseRequest):
 
         @alias('modified')
         def created(self, k, v):
-            self.params[k] = f'{v.isoformat()}..'
-            self.options.append(f'{k.capitalize()}: {v} (since {v.isoformat()})')
+            if v.start and v.end:
+                self.params[k] = f'{v.start.isoformat()}..{v.end.isoformat()}'
+            elif v.start:
+                self.params[k] = f'{v.start.isoformat()}..'
+            elif v.end:
+                self.params[k] = f'..{v.end.isoformat()}'
+            self.options.append(f'{k.capitalize()}: {v} ({v!r})')
 
         def sort(self, k, v):
             if v[0] == '-':
