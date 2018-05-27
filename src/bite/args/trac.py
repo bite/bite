@@ -47,6 +47,15 @@ class Search(args.Search):
             '-r', '--creator', dest='reporter',
             type='str_list', action='parse_stdin',
             help=f'person who created the {self.service.item.type}')
+        attr.add_argument(
+            '-s', '--status', type='str_list', action='parse_stdin',
+            help='restrict by status (one or more)',
+            docs="""
+                Restrict issues returned by their status.
+
+                Multiple statuses can be entered as comma-separated values in
+                which case results match any of the given values.
+            """)
 
 
 @args.subcmd(TracOpts)

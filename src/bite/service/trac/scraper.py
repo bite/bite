@@ -121,6 +121,13 @@ class _SearchRequest(ParseRequest, RESTRequest):
             'severity': 'severity',
         }
 
+        # map of status alias names to matching query values
+        _status_aliases = {
+            'OPEN': '!closed',
+            'CLOSED': 'closed',
+            'ALL': '!*',
+        }
+
         def _finalize(self, **kw):
             # default to sorting ascending by ID
             sort = self.params.pop('sort', {'order': 'id'})
@@ -166,7 +173,12 @@ class _SearchRequest(ParseRequest, RESTRequest):
                     f"unknown field{pluralism(unknown_fields)}: {', '.join(unknown_fields)}\n"
                     f"available fields: {', '.join(self.service.cache['search_cols'])}")
             self.params[k] = [self.service.item.attribute_aliases.get(x, x) for x in v]
-            self.options.append(f"Fields: {' '.join(v)}")
+            self.options.append(f"{k.capitalize()}: {' '.join(v)}")
+
+        def status(self, k, v):
+            # TODO: cache and check available status values for configured services
+            self.params[k] = [self._status_aliases.get(x, x) for x in v]
+            self.options.append(f"{k.capitalize()}: {', '.join(v)}")
 
         @alias('modified')
         def created(self, k, v):

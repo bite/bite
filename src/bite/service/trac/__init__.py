@@ -88,7 +88,7 @@ class TracTicket(Item):
         self.attachments = None
         self.changes = None
 
-        if get_desc:
+        if get_desc and self.description:
             self.description = TracComment(
                 count=0, creator=self.reporter, created=self.created,
                 text=self.description.strip())
@@ -171,6 +171,13 @@ class _SearchRequest(ParseRequest, RPCRequest):
             'severity': 'severity',
         }
 
+        # map of status alias names to matching query values
+        _status_aliases = {
+            'OPEN': '!closed',
+            'CLOSED': 'closed',
+            'ALL': '!*',
+        }
+
         def __init__(self, **kw):
             super().__init__(**kw)
             self.query = {}
@@ -214,6 +221,11 @@ class _SearchRequest(ParseRequest, RPCRequest):
             # https://trac.edgewall.org/ticket/10152
             self.query['summary'] = f"summary~={' '.join(or_queries)}"
             self.options.append(f"Summary: {' AND '.join(display_terms)}")
+
+        def status(self, k, v):
+            # TODO: cache and check available status values for configured services
+            self.params[k] = [self._status_aliases.get(x, x) for x in v]
+            self.options.append(f"{k.capitalize()}: {', '.join(v)}")
 
         @alias('modified')
         def created(self, k, v):
