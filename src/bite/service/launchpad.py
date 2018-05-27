@@ -128,6 +128,11 @@ class _SearchRequest(RESTParseRequest, LaunchpadPagedRequest):
     for custom GET methods.
     """
 
+    # map from standardized kwargs name to expected service parameter name
+    _params_map = {
+        'sort': 'order_by',
+    }
+
     def parse(self, data):
         data = super().parse(data)
         bugs = data['entries']
@@ -193,13 +198,11 @@ class _SearchRequest(RESTParseRequest, LaunchpadPagedRequest):
         }
 
         def _finalize(self, **kw):
-            sort = self.params.pop('sort', ['id'])
-
-            if not self.params:
+            if not self.params or self.params.keys() == {'sort'}:
                 raise BiteError('no supported search terms or options specified')
 
             # default to sorting ascending by ID
-            self.params['order_by'] = sort
+            self.params.setdefault('sort', ['id'])
 
             # launchpad operation flag for searching
             self.params['ws.op'] = 'searchTasks'

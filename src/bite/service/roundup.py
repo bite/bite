@@ -269,10 +269,6 @@ class _SearchRequest(ParseRequest, RPCRequest):
     def encode_params(self):
         params = self.params.copy()
         sort = params.pop('sort')
-
-        if not params:
-            raise BiteError('no supported search terms or options specified')
-
         params = ('issue', None, params, sort)
         return super().encode_params(params)
 
@@ -303,6 +299,9 @@ class _SearchRequest(ParseRequest, RPCRequest):
         }
 
         def _finalize(self, **kw):
+            if not self.params or self.params.keys() == {'sort'}:
+                raise BiteError('no supported search terms or options specified')
+
             # default to sorting ascending by ID
             self.params.setdefault('sort', [('+', 'id')])
 

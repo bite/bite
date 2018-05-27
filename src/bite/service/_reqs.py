@@ -374,6 +374,7 @@ class ParseRequest(Request):
         # parse given arguments using defined methods
         self.param_parser = self.ParamParser(request=self)
         self.parse_params(**params)
+        self._finalize_params()
 
         # passed unparsed params to parent class
         kw.update(self.unused_params)
@@ -396,17 +397,15 @@ class ParseRequest(Request):
                     continue
                 parse(k, self.unused_params.pop(k))
 
-    def _finalize(self):
+    def _finalize_params(self):
         self.param_parser._finalize()
-        self.params = self.remap_params(self.params)
-        super()._finalize()
+        if self._params_map:
+            self.params = self.remap_params(self.params)
 
-    def remap_params(self, dct, remap=None):
+    def remap_params(self, dct):
         """Remap dict keys to expected service parameter names."""
-        if remap is None:
-            remap = self._params_map
-        for k in (remap.keys() & dct.keys()):
-            kp = remap[k]
+        for k in (self._params_map.keys() & dct.keys()):
+            kp = self._params_map[k]
             dct[kp] = dct.pop(k)
         return dct
 
