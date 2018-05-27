@@ -6,18 +6,37 @@ from urllib.parse import urlparse, parse_qs
 
 from dateutil.parser import parse as parsetime
 from snakeoil.klass import aliased, alias
+from snakeoil.strings import pluralism
 
 from . import TracTicket, TracAttachment
 from .._html import HTML
 from .._rest import REST, RESTRequest
 from .._reqs import ParseRequest, req_cmd
+from ...cache import Cache
 from ...exceptions import BiteError
+
+
+class TracScraperCache(Cache):
+
+    def __init__(self, **kw):
+        # Default columns to enable for search mode, as taken from Trac's
+        # tracker, renamed using the service's attribute aliases.
+        defaults = {
+            'search_cols': (
+                'id', 'summary', 'status', 'priority', 'owner', 'type', 'milestone',
+                'component', 'version', 'severity', 'resolution', 'created', 'modified',
+                'reporter', 'keywords', 'cc', 'description',
+            )
+        }
+
+        super().__init__(defaults=defaults, **kw)
 
 
 class TracScraper(HTML, REST):
     """Service supporting the Trac-based ticket trackers."""
 
     _service = 'trac-scraper'
+    _cache_cls = TracScraperCache
 
     item = TracTicket
     item_endpoint = '/ticket/{id}'
@@ -115,6 +134,10 @@ class _SearchRequest(ParseRequest, RESTRequest):
             # default to sorting ascending by ID
             self.params.update(sort)
 
+            # limit requested fields by default
+            fields = self.params.get('fields', ('id', 'owner', 'summary'))
+            self.params['col'] = fields
+
             # default to returning only open tickets
             if 'status' not in self.params:
                 self.params['status'] = '!closed'
@@ -135,6 +158,15 @@ class _SearchRequest(ParseRequest, RESTRequest):
             # https://trac.edgewall.org/ticket/10152
             self.params['summary'] = f"~{' '.join(or_queries)}"
             self.options.append(f"Summary: {' AND '.join(display_terms)}")
+
+        def fields(self, k, v):
+            unknown_fields = set(v).difference(self.service.cache['search_cols'])
+            if unknown_fields:
+                raise BiteError(
+                    f"unknown field{pluralism(unknown_fields)}: {', '.join(unknown_fields)}\n"
+                    f"available fields: {', '.join(self.service.cache['search_cols'])}")
+            self.params[k] = [self.service.item.attribute_aliases.get(x, x) for x in v]
+            self.options.append(f"Fields: {' '.join(v)}")
 
         @alias('modified')
         def created(self, k, v):
