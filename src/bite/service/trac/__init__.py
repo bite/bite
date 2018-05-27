@@ -5,8 +5,6 @@ API docs:
     - https://trac.videolan.org/vlc/rpc
 """
 
-from itertools import chain
-
 from snakeoil.klass import aliased, alias
 
 from .. import Service
@@ -167,32 +165,19 @@ class BaseSearchRequest(ParseRequest):
             'ALL': '!*',
         }
 
-        def __init__(self, **kw):
-            super().__init__(**kw)
-            self.query = {}
-
         def _finalize(self, **kw):
-            # default to sorting ascending by ID
-            sort = self.params.pop('sort', {'order': 'id'})
-
-            if not any((self.params, self.query)):
+            if not self.params or self.params.keys() == {'sort'}:
                 raise BiteError('no supported search terms or options specified')
+
+            # default to sorting ascending by ID
+            self.params.setdefault('sort', {'order': 'id'})
 
             # disable results paging
             self.params['max'] = self.service.max_results
 
-            # default to sorting ascending by ID
-            self.params.update(sort)
-
             # default to returning only open tickets
             if 'status' not in self.params:
                 self.params['status'] = '!closed'
-
-            # encode params into expected format
-            params = (f'{k}={v}' for k, v in dict2tuples(self.params))
-
-            # combine query/params values into a query string
-            return '&'.join(chain(self.query.values(), params))
 
         def terms(self, k, v):
             or_queries = []
@@ -208,7 +193,7 @@ class BaseSearchRequest(ParseRequest):
                     display_terms.append(or_display_terms[0])
             # space-separated AND queries are only supported in 1.2.1 onwards
             # https://trac.edgewall.org/ticket/10152
-            self.query['summary'] = f"summary~={' '.join(or_queries)}"
+            self.params['summary~'] = f"{' '.join(or_queries)}"
             self.options.append(f"Summary: {' AND '.join(display_terms)}")
 
         def status(self, k, v):
@@ -256,6 +241,10 @@ class _SearchRequest(BaseSearchRequest, RPCRequest):
 
     def __init__(self, **kw):
         super().__init__(command='ticket.query', **kw)
+
+    def encode_params(self):
+        # basically urlencode() without special character encoding
+        return '&'.join(f'{k}={v}' for k, v in dict2tuples(self.params))
 
     def parse(self, data):
         # Trac RPC search requests return a list of matching IDs that we resubmit

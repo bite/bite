@@ -266,6 +266,16 @@ class _SearchRequest(ParseRequest, RPCRequest):
             issues = self.service.GetItemRequest(ids=data, fields=self.fields).send()
             yield from issues
 
+    def encode_params(self):
+        params = self.params.copy()
+        sort = params.pop('sort')
+
+        if not params:
+            raise BiteError('no supported search terms or options specified')
+
+        params = ('issue', None, params, sort)
+        return super().encode_params(params)
+
     @aliased
     class ParamParser(ParseRequest.ParamParser):
 
@@ -294,10 +304,7 @@ class _SearchRequest(ParseRequest, RPCRequest):
 
         def _finalize(self, **kw):
             # default to sorting ascending by ID
-            sort = self.params.pop('sort', [('+', 'id')])
-
-            if not self.params:
-                raise BiteError('no supported search terms or options specified')
+            self.params.setdefault('sort', [('+', 'id')])
 
             # default to showing issues that aren't closed
             # TODO: use service cache with status names here
@@ -307,8 +314,6 @@ class _SearchRequest(ParseRequest, RPCRequest):
                     open_statuses = list(
                         i + 1 for i, x in enumerate(cached_statuses) if x != 'closed')
                     self.params['status'] = open_statuses
-
-            return 'issue', None, self.params, sort
 
         def terms(self, k, v):
             self.params['title'] = v
@@ -465,7 +470,7 @@ class _CommentsRequest(Multicall):
         self.ids = ids
         self.comment_ids = comment_ids
 
-    def _finalize(self):
+    def encode_params(self):
         # get message IDs for given issue IDs
         if self.ids is not None:
             id_info = []
@@ -477,8 +482,8 @@ class _CommentsRequest(Multicall):
                 self.comment_ids.extend(x.messages)
             self.ids = tuple(id_info)
 
-        self.params = (chain([f'msg{i}'], self.fields) for i in self.comment_ids)
-        super()._finalize()
+        params = (chain([f'msg{i}'], self.fields) for i in self.comment_ids)
+        return super().encode_params(params)
 
     def parse(self, data):
         # unwrap multicall result

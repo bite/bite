@@ -89,25 +89,11 @@ class _SearchRequest(BaseSearchRequest, RESTRequest):
     class ParamParser(BaseSearchRequest.ParamParser):
 
         def _finalize(self, **kw):
-            # default to sorting ascending by ID
-            sort = self.params.pop('sort', {'order': 'id'})
-
-            if not self.params:
-                raise BiteError('no supported search terms or options specified')
-
-            # disable results paging
-            self.params['max'] = self.service.max_results
-
-            # default to sorting ascending by ID
-            self.params.update(sort)
+            super()._finalize()
 
             # limit requested fields by default
             fields = self.params.get('fields', ('id', 'owner', 'summary'))
             self.params['col'] = fields
-
-            # default to returning only open tickets
-            if 'status' not in self.params:
-                self.params['status'] = '!closed'
 
         def terms(self, k, v):
             or_queries = []

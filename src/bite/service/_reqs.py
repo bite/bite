@@ -57,6 +57,9 @@ class Request(object):
             yield self._req
         yield from self._reqs
 
+    def encode_params(self, params=None):
+        return params if params is not None else self.params
+
     def _finalize(self):
         """Finalize a request object for sending.
 
@@ -394,14 +397,8 @@ class ParseRequest(Request):
                 parse(k, self.unused_params.pop(k))
 
     def _finalize(self):
-        params = self.param_parser._finalize()
-        if params is not None:
-            # if the request finalized the params into a different format accept that
-            self.params = params
-        else:
-            # otherwise remap the params dict keys from human-friendly to those
-            # used by the service
-            self.params = self.remap_params(self.params)
+        self.param_parser._finalize()
+        self.params = self.remap_params(self.params)
         super()._finalize()
 
     def remap_params(self, dct, remap=None):

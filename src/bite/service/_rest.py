@@ -31,11 +31,15 @@ class RESTRequest(Request):
         params = params if params is not None else MultiDict()
         super().__init__(service=service, method=method, params=params, **kw)
 
+    def encode_params(self, params=None):
+        params = params if params is not None else self.params
+        return urlencode(tuple(dict2tuples(params)))
+
     @property
     def url(self):
         """Construct a full resource URL with params encoded."""
-        params = list(dict2tuples(self.params))
-        params_str = f'?{urlencode(params)}' if params else ''
+        params = self.encode_params()
+        params_str = f'?{params}' if params else ''
         return f"{self.endpoint}{params_str}"
 
     def params_to_data(self):

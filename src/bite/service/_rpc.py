@@ -36,7 +36,9 @@ class RPCRequest(Request):
     def _finalize(self):
         """Encode the data body of the request."""
         super()._finalize()
-        params = self.params if self.params else None
+        params = self.encode_params()
+        if not params:
+            params = None
         self._req.data = self.service._encode_request(self.command, params)
 
 
@@ -47,13 +49,14 @@ class Multicall(RPCRequest):
         self.commands = command
         super().__init__(command='system.multicall', **kw)
 
-    def _finalize(self):
+    def encode_params(self, params=None):
+        params = params if params is not None else self.params
         commands = repeat(self.commands) if isinstance(self.commands, str) else self.commands
-        self.params = (tuple(p) if nonstring_iterable(p) else (p,) for p in self.params)
-        self.params = tuple(
-            {self.service._multicall_method: c, 'params': p} for c, p in zip(commands, self.params))
-        self.params = self.service._encode_params(self.params)
-        super()._finalize()
+        params = (tuple(p) if nonstring_iterable(p) else (p,) for p in params)
+        params = tuple(
+            {self.service._multicall_method: c, 'params': p} for c, p in zip(commands, params))
+        params = self.service._encode_params(params)
+        return super().encode_params(params)
 
     def parse(self, data):
         return self.service._multicall_iter(data, service=self.service)
@@ -66,16 +69,14 @@ class MergedMulticall(RPCRequest):
         self.reqs = reqs
         super().__init__(command='system.multicall', **kw)
 
-    def _finalize(self):
-        params = []
+    def encode_params(self, params=None):
+        params = params if params is not None else []
         for req in self.reqs:
-            req._finalize()
-            req_params = self.service._extract_params(req.params)
+            req_params = self.service._extract_params(req.encode_params())
             if req_params:
                 params.extend(req_params)
             self.req_groups.append(len(req_params))
-        self.params = self.service._encode_params(tuple(params))
-        super()._finalize()
+        return self.service._encode_params(tuple(params))
 
     def parse(self, data):
         start = 0
