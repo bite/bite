@@ -14,9 +14,9 @@ from snakeoil.klass import aliased, alias
 
 from ._jsonrest import JsonREST
 from ._reqs import (
-    NullRequest, Request,
+    NullRequest, Request, req_cmd,
     FlaggedPagedRequest, PagedRequest,
-    req_cmd, CommentsFilter, ChangesFilter
+    BaseCommentsRequest, BaseChangesRequest,
 )
 from ._rest import RESTRequest, RESTParseRequest
 from ..exceptions import BiteError, RequestError
@@ -384,31 +384,28 @@ class _ThreadRequest(Request):
                     self._exhausted = True
 
 
-@req_cmd(Allura)
-class _CommentsFilter(CommentsFilter):
-    pass
-
-
 @req_cmd(Allura, cmd='comments')
-class _CommentsRequest(_ThreadRequest):
+class _CommentsRequest(BaseCommentsRequest, _ThreadRequest):
     """Construct a comments request."""
 
     def parse(self, data):
-        thread_posts = super().parse(data)
-        for posts in thread_posts:
-            l = []
-            count = 1
-            for i, c in enumerate(posts):
-                # Some trackers appear to have some crazy content with multiple
-                # layers of html escaping, but we only undo one layer.
-                text = html.unescape(c['text'].strip())
-                # skip change events
-                if not re.match(r'(- \*\*\w+\*\*: |- (Attachments|Description) has changed:\n\nDiff)', text):
-                    l.append(AlluraComment(
-                        id=i, count=count, creator=c['author'],
-                        created=dateparse(c['timestamp']).astimezone(utc), text=text))
-                    count += 1
-            yield tuple(l)
+        def items():
+            thread_posts = super().parse(data)
+            for posts in thread_posts:
+                l = []
+                count = 1
+                for i, c in enumerate(posts):
+                    # Some trackers appear to have some crazy content with multiple
+                    # layers of html escaping, but we only undo one layer.
+                    text = html.unescape(c['text'].strip())
+                    # skip change events
+                    if not re.match(r'(- \*\*\w+\*\*: |- (Attachments|Description) has changed:\n\nDiff)', text):
+                        l.append(AlluraComment(
+                            id=i, count=count, creator=c['author'],
+                            created=dateparse(c['timestamp']).astimezone(utc), text=text))
+                        count += 1
+                yield tuple(l)
+        yield from self.filter(items())
 
 
 @req_cmd(Allura, cmd='attachments')
@@ -429,51 +426,48 @@ class _AttachmentsRequest(_ThreadRequest):
             yield tuple(l)
 
 
-@req_cmd(Allura)
-class _ChangesFilter(ChangesFilter):
-    pass
-
-
 @req_cmd(Allura, cmd='changes')
-class _ChangesRequest(_ThreadRequest):
+class _ChangesRequest(BaseChangesRequest, _ThreadRequest):
     """Construct a changes request."""
 
     def parse(self, data):
-        thread_posts = super().parse(data)
-        for posts in thread_posts:
-            l = []
-            count = 1
-            for i, c in enumerate(posts):
-                text = c['text'].strip()
-                # find all attribute change events
-                attr_changes = re.findall(r'- \*\*(\w+)\*\*: (.+)', text)
-                # try to extract description changes
-                field_changes = re.findall(
-                    r'- (Description|Attachments) has changed:\n\n(Diff:\n\n~~~~(.*)~~~~)', text, re.DOTALL)
-                if attr_changes or field_changes:
-                    changes = {}
-                    # don't show description changes if diff is empty
-                    for field, diff, content in field_changes:
-                        field = field.lower()
-                        if content.strip():
-                            changes[field] = f'\n{diff.strip()}'
-                    for field, change in attr_changes:
-                        field = field.lower()
-                        key = self.service.item.attributes.get(field, field)
-                        changed = change.split('-->')
-                        if len(changed) == 2:
-                            old = changed[0].strip()
-                            new = changed[1].strip()
-                            # skip empty change fields
-                            if old or new:
-                                changes[key] = (old, new)
-                        else:
-                            changes[key] = change
-                    l.append(AlluraEvent(
-                        id=i, count=count, creator=c['author'],
-                        created=dateparse(c['timestamp']).astimezone(utc), changes=changes))
-                    count += 1
-            yield tuple(l)
+        def items():
+            thread_posts = super().parse(data)
+            for posts in thread_posts:
+                l = []
+                count = 1
+                for i, c in enumerate(posts):
+                    text = c['text'].strip()
+                    # find all attribute change events
+                    attr_changes = re.findall(r'- \*\*(\w+)\*\*: (.+)', text)
+                    # try to extract description changes
+                    field_changes = re.findall(
+                        r'- (Description|Attachments) has changed:\n\n(Diff:\n\n~~~~(.*)~~~~)', text, re.DOTALL)
+                    if attr_changes or field_changes:
+                        changes = {}
+                        # don't show description changes if diff is empty
+                        for field, diff, content in field_changes:
+                            field = field.lower()
+                            if content.strip():
+                                changes[field] = f'\n{diff.strip()}'
+                        for field, change in attr_changes:
+                            field = field.lower()
+                            key = self.service.item.attributes.get(field, field)
+                            changed = change.split('-->')
+                            if len(changed) == 2:
+                                old = changed[0].strip()
+                                new = changed[1].strip()
+                                # skip empty change fields
+                                if old or new:
+                                    changes[key] = (old, new)
+                            else:
+                                changes[key] = change
+                        l.append(AlluraEvent(
+                            id=i, count=count, creator=c['author'],
+                            created=dateparse(c['timestamp']).astimezone(utc), changes=changes))
+                        count += 1
+                yield tuple(l)
+        yield from self.filter(items())
 
 
 @req_cmd(Allura, cmd='get')

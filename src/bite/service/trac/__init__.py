@@ -10,7 +10,7 @@ from snakeoil.klass import aliased, alias
 from .. import Service
 from .._reqs import (
     Request, ParseRequest, NullRequest, req_cmd,
-    ChangesFilter, CommentsFilter,
+    BaseCommentsRequest, BaseChangesRequest,
 )
 from .._rpc import Multicall, MergedMulticall, RPCRequest
 from ...exceptions import BiteError, RequestError
@@ -297,13 +297,8 @@ class _ChangelogRequest(Multicall):
         return super().parse(data)
 
 
-@req_cmd(Trac)
-class _CommentsFilter(CommentsFilter):
-    pass
-
-
 @req_cmd(Trac, cmd='comments')
-class _CommentsRequest(_ChangelogRequest):
+class _CommentsRequest(BaseCommentsRequest, _ChangelogRequest):
     """Construct a comments request."""
 
     def __init__(self, **kw):
@@ -312,21 +307,23 @@ class _CommentsRequest(_ChangelogRequest):
             self.options.append(f"IDs: {', '.join(map(str, self.ids))}")
 
     def parse(self, data):
-        # unwrap multicall result
-        data = super().parse(data)
-        for changes in data:
-            l = []
-            count = 1
-            for change in changes:
-                created, creator, field, old, new, perm = change
-                if field == 'comment':
-                    text = new.strip()
-                    # skip comments without text or only whitespace
-                    if text:
-                        l.append(TracComment(
-                            count=count, creator=creator, created=created, text=text))
-                        count += 1
-            yield tuple(l)
+        def items():
+            # unwrap multicall result
+            iterable = Multicall.parse(self, data)
+            for changes in iterable:
+                l = []
+                count = 1
+                for change in changes:
+                    created, creator, field, old, new, perm = change
+                    if field == 'comment':
+                        text = new.strip()
+                        # skip comments without text or only whitespace
+                        if text:
+                            l.append(TracComment(
+                                count=count, creator=creator, created=created, text=text))
+                            count += 1
+                yield tuple(l)
+        yield from self.filter(items())
 
 
 @req_cmd(Trac, cmd='attachments')
@@ -352,13 +349,8 @@ class _AttachmentsRequest(Multicall):
             yield tuple(l)
 
 
-@req_cmd(Trac)
-class _ChangesFilter(ChangesFilter):
-    pass
-
-
 @req_cmd(Trac, cmd='changes')
-class _ChangesRequest(_ChangelogRequest):
+class _ChangesRequest(BaseChangesRequest, _ChangelogRequest):
     """Construct a changes request."""
 
     _skip_fields = {'comment', 'attachment'}
@@ -369,24 +361,27 @@ class _ChangesRequest(_ChangelogRequest):
             self.options.append(f"IDs: {', '.join(map(str, self.ids))}")
 
     def parse(self, data):
-        data = super().parse(data)
-        for changes in data:
-            l = []
-            count = 1
-            prev_created = None
-            changes_dct = {}
-            for i, change in enumerate(changes):
-                created, creator, field, old, new, perm = change
-                if field not in self._skip_fields and any((old, new)):
-                    changes_dct[field] = (old, new)
-                    if prev_created and created != prev_created:
-                        l.append(TracEvent(
-                            id=i, count=count, creator=creator,
-                            created=created, changes=changes_dct))
-                        changes_dct = {}
-                        count += 1
-                    prev_created = created
-            yield tuple(l)
+        def items():
+            # unwrap multicall result
+            iterable = Multicall.parse(self, data)
+            for changes in iterable:
+                l = []
+                count = 1
+                prev_created = None
+                changes_dct = {}
+                for i, change in enumerate(changes):
+                    created, creator, field, old, new, perm = change
+                    if field not in self._skip_fields and any((old, new)):
+                        changes_dct[field] = (old, new)
+                        if prev_created and created != prev_created:
+                            l.append(TracEvent(
+                                id=i, count=count, creator=creator,
+                                created=created, changes=changes_dct))
+                            changes_dct = {}
+                            count += 1
+                        prev_created = created
+                yield tuple(l)
+        yield from self.filter(items())
 
 
 @req_cmd(Trac, cmd='get')

@@ -9,7 +9,7 @@ from itertools import chain
 from dateutil.parser import parse as dateparse
 from snakeoil.klass import aliased, alias
 
-from .._reqs import OffsetPagedRequest, Request, req_cmd, CommentsFilter
+from .._reqs import OffsetPagedRequest, Request, req_cmd, BaseCommentsRequest
 from .._rest import REST, RESTRequest, RESTParseRequest
 from ...exceptions import BiteError, RequestError
 from ...objects import Item, Comment, Attachment, Change
@@ -338,44 +338,40 @@ class _3_2GetItemRequest(_GetItemRequest):
 
 
 @req_cmd(Redmine)
-class _CommentsRequest(Request):
+class _CommentsRequest(BaseCommentsRequest):
     """Construct a comments request."""
 
-    def __init__(self, ids, **kw):
+    def __init__(self, **kw):
         super().__init__(**kw)
-        if ids is None:
+        if self.ids is None:
             raise ValueError(f'No {self.service.item.type} ID(s) specified')
 
-        self.options.append(f"IDs: {', '.join(map(str, ids))}")
+        self.options.append(f"IDs: {', '.join(map(str, self.ids))}")
 
         reqs = []
-        for i in ids:
+        for i in self.ids:
             reqs.append(RESTRequest(
                 service=self.service,
                 endpoint=f'{self.service.webbase}/issues/{i}.{self.service._ext}?include=journals'))
 
-        self.ids = ids
         self._reqs = tuple(reqs)
 
     def parse(self, data):
-        for x in data:
-            events = x['issue']['journals']
-            count = 1
-            l = []
-            for c in events:
-                notes = c.get('notes', None)
-                if not notes:
-                    continue
-                l.append(RedmineComment(
-                    id=c['id'], count=count, creator=c['user']['name'],
-                    created=dateparse(c['created_on']), text=notes.strip()))
-                count += 1
-            yield tuple(l)
-
-
-@req_cmd(Redmine)
-class _CommentsFilter(CommentsFilter):
-    pass
+        def items():
+            for x in data:
+                events = x['issue']['journals']
+                count = 1
+                l = []
+                for c in events:
+                    notes = c.get('notes', None)
+                    if not notes:
+                        continue
+                    l.append(RedmineComment(
+                        id=c['id'], count=count, creator=c['user']['name'],
+                        created=dateparse(c['created_on']), text=notes.strip()))
+                    count += 1
+                yield tuple(l)
+        yield from self.filter(items())
 
 
 @req_cmd(Redmine, cmd='get')

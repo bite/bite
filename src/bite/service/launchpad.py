@@ -10,7 +10,7 @@ from snakeoil.klass import aliased, alias
 
 from ._jsonrest import JsonREST
 from ._reqs import (
-    OffsetPagedRequest, Request, GetRequest, req_cmd, CommentsFilter,
+    OffsetPagedRequest, Request, BaseGetRequest, req_cmd, BaseCommentsRequest,
 )
 from ._rest import RESTRequest, RESTParseRequest
 from ..cache import Cache
@@ -323,18 +323,18 @@ class _GetItemRequest(Request):
 
 
 @req_cmd(Launchpad, cmd='comments')
-class _CommentsRequest(Request):
+class _CommentsRequest(BaseCommentsRequest):
     """Construct a comments request."""
 
-    def __init__(self, ids=None, **kw):
-        if ids is None:
+    def __init__(self, **kw):
+        super().__init__(**kw)
+        if self.ids is None:
             raise ValueError(f'No IDs specified')
 
-        super().__init__(**kw)
-        self.options.append(f"IDs: {', '.join(map(str, ids))}")
+        self.options.append(f"IDs: {', '.join(map(str, self.ids))}")
 
         reqs = []
-        for i in ids:
+        for i in self.ids:
             reqs.extend([
                 RESTRequest(
                     service=self.service, endpoint=f'{self.service._api_base}/bugs/{i}/messages'),
@@ -342,37 +342,33 @@ class _CommentsRequest(Request):
                     service=self.service, endpoint=f'{self.service._api_base}/bugs/{i}/attachments'),
             ])
 
-        self.ids = ids
         self._reqs = tuple(reqs)
 
     def parse(self, data):
-        # merge attachments into related comments similar to the web UI
-        for id in self.ids:
-            comments = next(data)['entries']
-            attachments = next(data)['entries']
-            d = {}
-            for a in attachments:
-                comment_num = int(a['message_link'].rsplit('/', 1)[1])
-                attachment_id = a['self_link'].rsplit('/', 1)[1]
-                d[comment_num] = (attachment_id, a['title'])
-            l = []
-            for i, c in enumerate(comments):
-                text = []
-                if i in d:
-                    text.append(f'Attachment: [{d[i][0]}] [{d[i][1]}]')
-                if c['content']:
-                    text.append(c['content'])
-                text = '\n\n'.join(text)
-                l.append(LaunchpadComment(
-                    id=id, count=i, text=text,
-                    created=dateparse(c['date_created']),
-                    creator=c['owner_link'][len(self.service.base) + 2:]))
-            yield tuple(l)
-
-
-@req_cmd(Launchpad)
-class _CommentsFilter(CommentsFilter):
-    pass
+        def items():
+            # merge attachments into related comments similar to the web UI
+            for id in self.ids:
+                comments = next(data)['entries']
+                attachments = next(data)['entries']
+                d = {}
+                for a in attachments:
+                    comment_num = int(a['message_link'].rsplit('/', 1)[1])
+                    attachment_id = a['self_link'].rsplit('/', 1)[1]
+                    d[comment_num] = (attachment_id, a['title'])
+                l = []
+                for i, c in enumerate(comments):
+                    text = []
+                    if i in d:
+                        text.append(f'Attachment: [{d[i][0]}] [{d[i][1]}]')
+                    if c['content']:
+                        text.append(c['content'])
+                    text = '\n\n'.join(text)
+                    l.append(LaunchpadComment(
+                        id=id, count=i, text=text,
+                        created=dateparse(c['date_created']),
+                        creator=c['owner_link'][len(self.service.base) + 2:]))
+                yield tuple(l)
+        yield from self.filter(items())
 
 
 @req_cmd(Launchpad, cmd='attachments')
@@ -419,5 +415,5 @@ class _AttachmentsRequest(Request):
 
 
 @req_cmd(Launchpad, cmd='get')
-class _GetRequest(GetRequest):
+class _GetRequest(BaseGetRequest):
     pass

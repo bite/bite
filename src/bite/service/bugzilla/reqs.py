@@ -8,8 +8,8 @@ from snakeoil.klass import aliased, alias
 from . import Bugzilla
 from .objects import BugzillaEvent, BugzillaComment
 from .._reqs import (
-    OffsetPagedRequest, Request, ParseRequest, GetRequest,
-    ChangesFilter, CommentsFilter, req_cmd,
+    OffsetPagedRequest, Request, ParseRequest, req_cmd,
+    BaseGetRequest, BaseCommentsRequest, BaseChangesRequest,
 )
 from ...exceptions import BiteError
 
@@ -17,18 +17,8 @@ demandload('bite:const')
 
 
 @req_cmd(Bugzilla, cmd='get')
-class _GetRequest(GetRequest):
+class _GetRequest(BaseGetRequest):
     """Construct a get request."""
-
-
-@req_cmd(Bugzilla)
-class _CommentsFilter(CommentsFilter):
-    pass
-
-
-@req_cmd(Bugzilla)
-class _ChangesFilter(ChangesFilter):
-    pass
 
 
 class SearchRequest4_4(ParseRequest, OffsetPagedRequest):
@@ -292,18 +282,16 @@ class SearchRequest5_0(SearchRequest4_4):
                     self.params[k] = v if len(v) > 1 else v[0]
 
 
-class ChangesRequest(ParseRequest):
+class ChangesRequest(BaseChangesRequest, ParseRequest):
     """Construct a changes request."""
 
-    def __init__(self, **kw):
-        super().__init__(**kw)
-        self.ids = kw.get('ids')
-
     def parse(self, data):
-        bugs = data['bugs']
-        for b in bugs:
-            yield tuple(BugzillaEvent(change=x, id=b['id'], alias=b['alias'], count=i)
-                        for i, x in enumerate(b['history'], start=1))
+        def items():
+            bugs = data['bugs']
+            for b in bugs:
+                yield tuple(BugzillaEvent(change=x, id=b['id'], alias=b['alias'], count=i)
+                            for i, x in enumerate(b['history'], start=1))
+        yield from self.filter(items())
 
     class ParamParser(ParseRequest.ParamParser):
 
@@ -321,18 +309,16 @@ class ChangesRequest(ParseRequest):
             self.options.append(f'Created: {v} (since {v!r} UTC)')
 
 
-class CommentsRequest(ParseRequest):
+class CommentsRequest(BaseCommentsRequest, ParseRequest):
     """Construct a comments request."""
 
-    def __init__(self, **kw):
-        super().__init__(**kw)
-        self.ids = kw.get('ids')
-
     def parse(self, data):
-        bugs = data['bugs']
-        for i in self.params['ids']:
-            yield tuple(BugzillaComment(comment=comment, id=i, count=j)
-                        for j, comment in enumerate(bugs[i]['comments']))
+        def items():
+            bugs = data['bugs']
+            for i in self.params['ids']:
+                yield tuple(BugzillaComment(comment=comment, id=i, count=j)
+                            for j, comment in enumerate(bugs[i]['comments']))
+        yield from self.filter(items())
 
     class ParamParser(ParseRequest.ParamParser):
 

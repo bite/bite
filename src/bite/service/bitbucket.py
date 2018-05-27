@@ -13,8 +13,8 @@ from snakeoil.klass import aliased, alias
 
 from ._jsonrest import JsonREST
 from ._reqs import (
-    LinkPagedRequest, Request, GetRequest,
-    ChangesFilter, CommentsFilter, req_cmd,
+    LinkPagedRequest, Request, req_cmd,
+    BaseGetRequest, BaseCommentsRequest, BaseChangesRequest,
 )
 from ._rest import RESTRequest, RESTParseRequest
 from ..exceptions import BiteError, RequestError
@@ -252,7 +252,7 @@ class _SearchRequest(RESTParseRequest, BitbucketPagedRequest):
         }
 
         def _finalize(self, **kw):
-            if not self.params or self.params.keys() == {'sort'}:
+            if not self.params or self._non_data_keys.issuperset(self.params.keys()):
                 raise BiteError('no supported search terms or options specified')
 
             query = self.params.get('q', {})
@@ -393,43 +393,39 @@ class _GetItemRequest(Request):
             yield self.service.item(self.service, issue, get_desc=self._get_desc)
 
 
-@req_cmd(Bitbucket)
-class _CommentsFilter(CommentsFilter):
-    pass
-
-
 @req_cmd(Bitbucket, cmd='comments')
-class _CommentsRequest(Request):
+class _CommentsRequest(BaseCommentsRequest):
     """Construct a comments request."""
 
-    def __init__(self, ids=None, **kw):
+    def __init__(self, **kw):
         super().__init__(**kw)
-        if ids is None:
+        if self.ids is None:
             raise ValueError(f'No {self.service.item.type} ID(s) specified')
-        self.options.append(f"IDs: {', '.join(map(str, ids))}")
+        self.options.append(f"IDs: {', '.join(map(str, self.ids))}")
 
         reqs = []
-        for i in ids:
+        for i in self.ids:
             reqs.append(BitbucketPagedRequest(
                 service=self.service, endpoint=f'/issues/{i}/comments'))
 
-        self.ids = ids
         self._reqs = tuple(reqs)
 
     def parse(self, data):
-        # skip comments that have no content, i.e. issue attribute changes
-        for i, comments in zip(self.ids, data):
-            comments = comments['values']
-            l = []
-            for j, c in enumerate(comments):
-                creator = c['user']
-                if creator is not None:
-                    creator = creator['username']
-                if c['content']['raw']:
-                    l.append(BitbucketComment(
-                        id=i, count=j+1, text=c['content']['raw'].strip(),
-                        created=dateparse(c['created_on']), creator=creator))
-            yield tuple(l)
+        def items():
+            # skip comments that have no content, i.e. issue attribute changes
+            for i, comments in zip(self.ids, data):
+                comments = comments['values']
+                l = []
+                for j, c in enumerate(comments):
+                    creator = c['user']
+                    if creator is not None:
+                        creator = creator['username']
+                    if c['content']['raw']:
+                        l.append(BitbucketComment(
+                            id=i, count=j+1, text=c['content']['raw'].strip(),
+                            created=dateparse(c['created_on']), creator=creator))
+                yield tuple(l)
+        yield from self.filter(items())
 
 
 @req_cmd(Bitbucket, cmd='attachments')
@@ -486,40 +482,36 @@ class _AttachmentsRequest(Request):
                 for a, c in zip(attachments, content))
 
 
-@req_cmd(Bitbucket)
-class _ChangesFilter(ChangesFilter):
-    pass
-
-
 @req_cmd(Bitbucket, cmd='changes')
-class _ChangesRequest(Request):
+class _ChangesRequest(BaseChangesRequest):
     """Construct a changes request."""
 
-    def __init__(self, ids=None, **kw):
+    def __init__(self, **kw):
         super().__init__(**kw)
-        if ids is None:
+        if self.ids is None:
             raise ValueError(f'No {self.service.item.type} ID(s) specified')
 
-        self.options.append(f"IDs: {', '.join(map(str, ids))}")
+        self.options.append(f"IDs: {', '.join(map(str, self.ids))}")
 
         reqs = []
-        for i in ids:
+        for i in self.ids:
             reqs.append(BitbucketPagedRequest(
                 service=self.service, endpoint=f'/issues/{i}/changes'))
 
-        self.ids = ids
         self._reqs = tuple(reqs)
 
     def parse(self, data):
-        for i, changes in zip(self.ids, data):
-            changes = changes['values']
-            yield tuple(BitbucketEvent(
-                self.service, id=c['id'], count=j+1, change=c)
-                for j, c in enumerate(changes))
+        def items():
+            for i, changes in zip(self.ids, data):
+                changes = changes['values']
+                yield tuple(BitbucketEvent(
+                    self.service, id=c['id'], count=j+1, change=c)
+                    for j, c in enumerate(changes))
+        yield from self.filter(items())
 
 
 @req_cmd(Bitbucket, cmd='get')
-class _GetRequest(GetRequest):
+class _GetRequest(BaseGetRequest):
     """Construct requests to retrieve all known data for given issue IDs."""
 
     def __init__(self, get_comments=True, **kw):

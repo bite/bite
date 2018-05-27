@@ -12,7 +12,7 @@ import re
 from datetime import datetime
 from snakeoil.klass import aliased, alias
 
-from ._reqs import NullRequest, ParseRequest, req_cmd, CommentsFilter
+from ._reqs import NullRequest, ParseRequest, req_cmd, BaseCommentsRequest
 from ._rpc import Multicall, RPCRequest
 from ._xmlrpc import Xmlrpc, XmlrpcError
 from ..cache import Cache, csv2tuple
@@ -448,25 +448,19 @@ class _AttachmentsRequest(Multicall):
             for i, d in enumerate(data))
 
 
-@req_cmd(Roundup)
-class _CommentsFilter(CommentsFilter):
-    pass
-
-
 @req_cmd(Roundup, cmd='comments')
-class _CommentsRequest(Multicall):
+class _CommentsRequest(BaseCommentsRequest, Multicall):
     """Construct a comments request."""
 
-    def __init__(self, ids=None, comment_ids=None, fields=(), **kw):
-        if not any((ids, comment_ids)):
+    def __init__(self, comment_ids=None, fields=(), **kw):
+        super().__init__(command='display', **kw)
+        if not any((self.ids, comment_ids)):
             raise ValueError('No ID(s) specified')
 
-        super().__init__(command='display', **kw)
-        if ids is not None:
-            self.options.append(f"IDs: {', '.join(map(str, ids))}")
+        if self.ids is not None:
+            self.options.append(f"IDs: {', '.join(map(str, self.ids))}")
 
         self.fields = fields
-        self.ids = ids
         self.comment_ids = comment_ids
 
     def encode_params(self):
@@ -485,24 +479,26 @@ class _CommentsRequest(Multicall):
         return super().encode_params(params)
 
     def parse(self, data):
-        # unwrap multicall result
-        data = super().parse(data)
+        def items():
+            # unwrap multicall result
+            iterable = Multicall.parse(self, data)
 
-        if self.ids:
-            count = 0
-            for _id, length in self.ids:
-                l = []
-                for i, d in enumerate(islice(data, length)):
-                    l.append(RoundupComment(
-                        id=self.comment_ids[count], count=i, text=d['content'].strip(),
-                        created=parsetime(d['date']), creator=d['author']))
-                    count += 1
-                yield tuple(l)
-        else:
-            yield tuple(RoundupComment(
-                id=self.comment_ids[i], count=i, text=d['content'].strip(),
-                created=parsetime(d['date']), creator=d['author'])
-                for i, d in enumerate(data))
+            if self.ids:
+                count = 0
+                for _id, length in self.ids:
+                    l = []
+                    for i, d in enumerate(islice(iterable, length)):
+                        l.append(RoundupComment(
+                            id=self.comment_ids[count], count=i, text=d['content'].strip(),
+                            created=parsetime(d['date']), creator=d['author']))
+                        count += 1
+                    yield tuple(l)
+            else:
+                yield tuple(RoundupComment(
+                    id=self.comment_ids[i], count=i, text=d['content'].strip(),
+                    created=parsetime(d['date']), creator=d['author'])
+                    for i, d in enumerate(iterable))
+        yield from self.filter(items())
 
 
 @req_cmd(Roundup, cmd='schema')

@@ -503,12 +503,11 @@ class Cli(Client):
     @login_retry
     def changes(self, **kw):
         request = self.service.ChangesRequest(item_id=True, **kw)
-        filter = self.service.ChangesFilter(request=request, **kw)
 
         self.log('Getting changes matching the following options:')
-        self.log_t(filter.options, prefix='   - ')
+        self.log_t(request.options, prefix='   - ')
 
-        data = filter.send()
+        data = request.send()
         lines = self._render_events(data, **kw)
         print(*lines, sep='\n')
 
@@ -517,12 +516,11 @@ class Cli(Client):
     def comments(self, **kw):
         """Get comments from a service."""
         request = self.service.CommentsRequest(item_id=True, **kw)
-        filter = self.service.CommentsFilter(request=request, **kw)
 
         self.log('Getting comments matching the following options:')
-        self.log_t(filter.options, prefix='   - ')
+        self.log_t(request.options, prefix='   - ')
 
-        data = filter.send()
+        data = request.send()
         lines = self._render_events(data, **kw)
         print(*lines, sep='\n')
 

@@ -1,7 +1,6 @@
 from functools import partial
 import re
 
-from multidict import MultiDict
 import requests
 from snakeoil.strings import pluralism
 
@@ -117,6 +116,27 @@ class Request(object):
     def _none_gen(self):
         while True:
             yield None
+
+
+class NullRequest(Request):
+    """Placeholder request that does nothing."""
+
+    def __init__(self):
+        super().__init__(service=None)
+        self._reqs = (None,)
+        self._finalized = True
+
+    def _finalize(self):
+        pass
+
+    def __bool__(self):
+        return False
+
+    def __str__(self):
+        return repr(self)
+
+    def parse(self, data):
+        return self._none_gen
 
 
 class _BasePagedRequest(Request):
@@ -425,23 +445,11 @@ class ParseRequest(Request):
             """Default parameter parser."""
 
 
-class Filter(object):
-    """Stub for data filter."""
-
-    def __init__(self, *, request, service, **kw):
-        self.request = request
-        self.options = request.options
-        self.service = service
-
-    def send(self, **kw):
-        """Send a request object to the related service."""
-        return self.request.send(**kw)
-
-
-class CommentsFilter(Filter):
+class BaseCommentsRequest(Request):
 
     def __init__(self, creator=None, attachment=None, comment_num=None, **kw):
         super().__init__(**kw)
+        self.ids = kw.get('ids')
         self.creator = set(creator) if creator else creator
         self.attachment = attachment
         self.comment_num = set(comment_num) if comment_num else comment_num
@@ -454,11 +462,9 @@ class CommentsFilter(Filter):
             self.options.append(
                 f"Comment number{pluralism(self.comment_num)}: {', '.join(map(str, self.comment_num))}")
 
-    def send(self, **kw):
+    def filter(self, items):
         """Filter the returned data."""
-        data = super().send(**kw)
-
-        for i, comments in zip(self.request.ids, data):
+        for i, comments in zip(self.ids, items):
             if self.creator is not None:
                 comments = (x for x in comments if x.creator in self.creator)
             if self.attachment:
@@ -467,7 +473,7 @@ class CommentsFilter(Filter):
                 if any(x < 0 for x in self.comment_num):
                     comments = list(comments)
                     selected = []
-                    for x in comment_num:
+                    for x in self.comment_num:
                         try:
                             selected.append(comments[x])
                         except IndexError:
@@ -478,11 +484,12 @@ class CommentsFilter(Filter):
             yield i, comments
 
 
-class ChangesFilter(Filter):
+class BaseChangesRequest(Request):
 
     def __init__(self, creator=None, attachment=None,
                  change_num=None, match=None, created=None, **kw):
         super().__init__(**kw)
+        self.ids = kw.get('ids')
         self.creator = set(map(self.service._resuffix, creator)) if creator else creator
         self.change_num = set(change_num) if change_num else change_num
         self.match = match
@@ -498,11 +505,9 @@ class ChangesFilter(Filter):
         if self.created is not None:
             self.options.append(f'Created: {self.created} (since {self.created!r} UTC)')
 
-    def send(self, **kw):
+    def filter(self, items):
         """Filter the returned data."""
-        data = super().send(**kw)
-
-        for i, changes in zip(self.request.ids, data):
+        for i, changes in zip(self.ids, items):
             if self.creator is not None:
                 changes = (x for x in changes if x.creator in self.creator)
             if self.created is not None:
@@ -513,7 +518,7 @@ class ChangesFilter(Filter):
                 if any(x < 0 for x in self.change_num):
                     changes = list(changes)
                     selected = []
-                    for x in comment_num:
+                    for x in self.change_num:
                         try:
                             selected.append(changes[x])
                         except IndexError:
@@ -524,28 +529,7 @@ class ChangesFilter(Filter):
             yield i, changes
 
 
-class NullRequest(Request):
-    """Placeholder request that does nothing."""
-
-    def __init__(self):
-        super().__init__(service=None)
-        self._reqs = (None,)
-        self._finalized = True
-
-    def _finalize(self):
-        pass
-
-    def __bool__(self):
-        return False
-
-    def __str__(self):
-        return repr(self)
-
-    def parse(self, data):
-        return self._none_gen
-
-
-class GetRequest(Request):
+class BaseGetRequest(Request):
     """Construct requests to retrieve all known data for given item IDs."""
 
     def __init__(self, ids, get_comments=True, get_attachments=True,
