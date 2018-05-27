@@ -156,14 +156,14 @@ class _SearchRequest(ParseRequest, RESTRequest):
                 or_terms = [x.replace('"', '\\"') for x in term.split(',')]
                 or_display_terms = [f'"{x}"' for x in or_terms]
                 if len(or_terms) > 1:
-                    or_queries.append('|'.join(or_terms))
+                    or_queries.extend(or_terms)
                     display_terms.append(f"({' OR '.join(or_display_terms)})")
                 else:
                     or_queries.append(or_terms[0])
                     display_terms.append(or_display_terms[0])
             # space-separated AND queries are only supported in 1.2.1 onwards
             # https://trac.edgewall.org/ticket/10152
-            self.params['summary'] = f"~{' '.join(or_queries)}"
+            self.params['summary'] = [f"~{x}" for x in or_terms]
             self.options.append(f"Summary: {' AND '.join(display_terms)}")
 
         def fields(self, k, v):
