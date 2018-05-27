@@ -1,13 +1,21 @@
 from functools import partial
 
 from .. import args
-from ..argparser import ParseStdin
+from ..argparser import ParseStdin, override_attr
 
 
 class JiraOpts(args.ServiceOpts):
     """Jira options."""
 
     _service = 'jira'
+
+    def global_subcmd_opts(self, subcmd):
+        """Add global subcommand options."""
+        if subcmd.service.project is None:
+            subcmd.opts.add_argument(
+                '--project',
+                action=partial(override_attr, subcmd.service, 'project'),
+                help='define a specific project to target')
 
 
 @args.subcmd(JiraOpts)
