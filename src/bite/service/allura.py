@@ -244,15 +244,12 @@ class _SearchRequest(RESTParseRequest, AlluraPagedRequest):
             'patch': '_patch_s',
         }
 
-        def __init__(self, **kw):
-            super().__init__(**kw)
-            self.query = {}
-
         def _finalize(self, **kw):
-            if not self.query:
+            if not self.params or self.params.keys() == {'sort'}:
                 raise BiteError('no supported search terms or options specified')
 
-            self.params['q'] = ' AND '.join(self.query.values())
+            query = self.params.get('q', {})
+            self.params['q'] = ' AND '.join(query.values())
 
             # default to sorting ascending by ID
             if 'sort' not in self.params:
@@ -271,7 +268,7 @@ class _SearchRequest(RESTParseRequest, AlluraPagedRequest):
                 else:
                     or_queries.append(or_search_terms[0])
                     display_terms.append(or_display_terms[0])
-            self.query['summary'] = f"{' AND '.join(or_queries)}"
+            self.params.setdefault('q', {})['summary'] = f"{' AND '.join(or_queries)}"
             self.options.append(f"Summary: {' AND '.join(display_terms)}")
 
         def id(self, k, v):
@@ -286,7 +283,7 @@ class _SearchRequest(RESTParseRequest, AlluraPagedRequest):
                     query_str = f"({' OR '.join(or_terms)})"
             else:
                 query_str = f"ticket_num:{v[0]}"
-            self.query['id'] = query_str
+            self.params.setdefault('q', {})['id'] = query_str
             if id_str is None:
                 id_str = ', '.join(map(str, v))
             self.options.append(f"{self.service.item.type.capitalize()} IDs: {id_str}")
@@ -312,7 +309,7 @@ class _SearchRequest(RESTParseRequest, AlluraPagedRequest):
 
         @alias('modified')
         def created(self, k, v):
-            self.query[k] = f'{self.remap[k]}:[{v.utcformat()} TO NOW]'
+            self.params.setdefault('q', {})[k] = f'{self.remap[k]}:[{v.utcformat()} TO NOW]'
             self.options.append(f'{k.capitalize()}: {v} (since {v.isoformat()})')
 
         @alias('assignee')
@@ -320,7 +317,7 @@ class _SearchRequest(RESTParseRequest, AlluraPagedRequest):
             or_terms = [x.replace('"', '\\"') for x in v]
             or_search_terms = [f'{self.remap[k]}:"{x}"' for x in or_terms]
             or_display_terms = [f'"{x}"' for x in or_terms]
-            self.query[k] = f"({' OR '.join(or_search_terms)})"
+            self.params.setdefault('q', {})[k] = f"({' OR '.join(or_search_terms)})"
             self.options.append(f"{k.capitalize()}: {', '.join(or_display_terms)}")
 
 

@@ -127,19 +127,15 @@ class _SearchRequest(RESTParseRequest, JiraPagedRequest):
             'viewed': 'lastViewed',
         }
 
-        def __init__(self, **kw):
-            super().__init__(**kw)
-            self.query = []
-
         def _finalize(self, **kw):
-            if not self.query:
+            if not self.params or self.params.keys() == {'sort'}:
                 raise BiteError('no supported search terms or options specified')
 
             # limit fields by default to decrease requested data size and speed up response
             if 'fields' not in self.params:
                 self.params['fields'] = ['id', 'assignee', 'summary']
 
-            jql = ' AND '.join(self.query)
+            jql = ' AND '.join(self.params['jql'])
 
             # if configured for a specific project, limit search to specified project
             if self.service._project:
@@ -161,7 +157,7 @@ class _SearchRequest(RESTParseRequest, JiraPagedRequest):
                     id_keys.append(f'{self.service._project}-{i}')
                 else:
                     id_keys.append(i)
-            self.query.append(f"{k} in ({','.join(id_keys)})")
+            self.params.setdefault('jql', []).append(f"{k} in ({','.join(id_keys)})")
             self.options.append(f"IDs: {', '.join(id_strs)}")
 
         def fields(self, k, v):
@@ -175,12 +171,12 @@ class _SearchRequest(RESTParseRequest, JiraPagedRequest):
         def attachments(self, k, v):
             val = 'not empty' if v else 'empty'
             display_val = 'yes' if v else 'no'
-            self.query.append(f'{k} is {val}')
+            self.params.setdefault('jql', []).append(f'{k} is {val}')
             self.options.append(f"{k.capitalize()}: {display_val}")
 
         def terms(self, k, v):
             for term in v:
-                self.query.append(f'summary ~ "{term}"')
+                self.params.setdefault('jql', []).append(f'summary ~ "{term}"')
             self.options.append(f"Summary: {', '.join(map(str, v))}")
 
         @alias('modified', 'viewed', 'resolved')
@@ -188,24 +184,24 @@ class _SearchRequest(RESTParseRequest, JiraPagedRequest):
             field = self._date_fields.get(k, k)
             if v.start is not None:
                 time_str = v.start.strftime('%Y-%m-%d %H:%M')
-                self.query.append(f'{field} > "{time_str}"')
+                self.params.setdefault('jql', []).append(f'{field} > "{time_str}"')
             if v.end is not None:
                 time_str = v.end.strftime('%Y-%m-%d %H:%M')
-                self.query.append(f'{field} < "{time_str}"')
+                self.params.setdefault('jql', []).append(f'{field} < "{time_str}"')
             self.options.append(f'{k.capitalize()}: {v} ({v!r} UTC)')
 
         @alias('creator')
         def assigned_to(self, k, v):
             field = 'assignee' if k == 'assigned_to' else 'reporter'
-            self.query.append(f"{field} in ({','.join(v)})")
+            self.params.setdefault('jql', []).append(f"{field} in ({','.join(v)})")
             self.options.append(f"{field.capitalize()}: {', '.join(map(str, v))}")
 
         @alias('watchers')
         def votes(self, k, v):
             if v.start is not None:
-                self.query.append(f'{k} >= {v.start}')
+                self.params.setdefault('jql', []).append(f'{k} >= {v.start}')
             if v.end is not None:
-                self.query.append(f'{k} <= {v.end}')
+                self.params.setdefault('jql', []).append(f'{k} <= {v.end}')
             self.options.append(f"{k.capitalize()}: {v} ({v!r} {k})")
 
 

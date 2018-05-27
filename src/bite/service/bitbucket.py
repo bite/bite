@@ -251,21 +251,19 @@ class _SearchRequest(RESTParseRequest, BitbucketPagedRequest):
             'ALL': _status_map.values(),
         }
 
-        def __init__(self, **kw):
-            super().__init__(**kw)
-            self.query = {}
-
         def _finalize(self, **kw):
-            if not self.query:
+            if not self.params or self.params.keys() == {'sort'}:
                 raise BiteError('no supported search terms or options specified')
 
+            query = self.params.get('q', {})
+
             # default to showing issues that aren't closed
-            if 'status' not in self.query:
+            if 'status' not in query:
                 open_status_query = ' OR '.join(
                     f'state = "{x}"' for x in self._status_aliases['OPEN'])
-                self.query['status'] = f'({open_status_query})'
+                query['status'] = f'({open_status_query})'
 
-            self.params['q'] = ' AND '.join(self.query.values())
+            self.params['q'] = ' AND '.join(query.values())
 
             # default to sorting ascending by issue ID
             if 'sort' not in self.params:
@@ -284,7 +282,7 @@ class _SearchRequest(RESTParseRequest, BitbucketPagedRequest):
                 else:
                     or_queries.append(or_search_terms[0])
                     display_terms.append(or_display_terms[0])
-            self.query['summary'] = f"{' AND '.join(or_queries)}"
+            self.params.setdefault('q', {})['summary'] = f"{' AND '.join(or_queries)}"
             self.options.append(f"Summary: {' AND '.join(display_terms)}")
 
         def sort(self, k, v):
@@ -318,9 +316,10 @@ class _SearchRequest(RESTParseRequest, BitbucketPagedRequest):
                             f'invalid status: {status!r} '
                             f'(available choices: {choices}) '
                             f'(aliases: {aliases})')
-            self.query[k] = ' OR '.join(f'state = "{x}"' for x in or_terms)
+            q_str = ' OR '.join(f'state = "{x}"' for x in or_terms)
             if len(or_terms) > 1:
-                self.query[k] = f"({self.query[k]})"
+                q_str = f"({q_str})"
+            self.params.setdefault('q', {})[k] = q_str
             self.options.append(f"Status: {' OR '.join(or_terms)}")
 
         def priority(self, k, v):
@@ -332,9 +331,10 @@ class _SearchRequest(RESTParseRequest, BitbucketPagedRequest):
                     choices = ', '.join(sorted(self._priority_map.keys()))
                     raise BiteError(
                         f'invalid priority: {priority!r} (available choices: {choices})')
-            self.query[k] = ' OR '.join(f'priority = "{x}"' for x in or_terms)
+            q_str = ' OR '.join(f'priority = "{x}"' for x in or_terms)
             if len(or_terms) > 1:
-                self.query[k] = f"({self.query[k]})"
+                q_str = f"({q_str})"
+            self.params.setdefault('q', {})[k] = q_str
             self.options.append(f"Priority: {' OR '.join(or_terms)}")
 
         def type(self, k, v):
@@ -346,25 +346,27 @@ class _SearchRequest(RESTParseRequest, BitbucketPagedRequest):
                     choices = ', '.join(sorted(self._type_map.keys()))
                     raise BiteError(
                         f'invalid type: {type!r} (available choices: {choices})')
-            self.query[k] = ' OR '.join(f'kind = "{x}"' for x in or_terms)
+            q_str = ' OR '.join(f'kind = "{x}"' for x in or_terms)
             if len(or_terms) > 1:
-                self.query[k] = f"({self.query[k]})"
+                q_str = f"({q_str})"
+            self.params.setdefault('q', {})[k] = q_str
             self.options.append(f"Type: {' OR '.join(or_terms)}")
 
         @alias('modified')
         def created(self, k, v):
-            self.query[k] = f'{self.remap[k]} >= {v.isoformat()}'
+            self.params.setdefault('q', {})[k] = f'{self.remap[k]} >= {v.isoformat()}'
             self.options.append(f'{k.capitalize()}: {v} (since {v.isoformat()})')
 
         @alias('watchers')
         def votes(self, k, v):
-            self.query[k] = f'{self.remap.get(k, k)} >= {v}'
+            self.params.setdefault('q', {})[k] = f'{self.remap.get(k, k)} >= {v}'
             self.options.append(f'{k.capitalize()}: >= {v}')
 
         def id(self, k, v):
-            self.query[k] = ' OR '.join(f'id = {x}' for x in v)
+            q_str = ' OR '.join(f'id = {x}' for x in v)
             if len(v) > 1:
-                self.query[k] = f"({self.query[k]})"
+                q_str = f"({q_str})"
+            self.params.setdefault('q', {})[k] = q_str
             self.options.append(f"IDs: {', '.join(map(str, v))}")
 
 
