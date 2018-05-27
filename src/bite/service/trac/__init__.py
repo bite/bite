@@ -121,8 +121,7 @@ class Trac(Service):
         raise TracError(msg=msg, code=code)
 
 
-@req_cmd(Trac, cmd='search')
-class _SearchRequest(ParseRequest, RPCRequest):
+class BaseSearchRequest(ParseRequest):
     """Construct a search request.
 
     Query docs:
@@ -135,16 +134,6 @@ class _SearchRequest(ParseRequest, RPCRequest):
         'modified': 'changetime',
         'sort': 'order',
     }
-
-    def __init__(self, **kw):
-        super().__init__(command='ticket.query', **kw)
-
-    def parse(self, data):
-        # Trac search requests return a list of matching IDs that we resubmit
-        # via a multicall to grab ticket data if any matches exist.
-        if data:
-            tickets = self.service.GetItemRequest(ids=data).send()
-            yield from tickets
 
     @aliased
     class ParamParser(ParseRequest.ParamParser):
@@ -255,6 +244,20 @@ class _SearchRequest(ParseRequest, RPCRequest):
         def owner(self, k, v):
             self.params[k] = '|'.join(v)
             self.options.append(f"{self.service.item.attributes[k]}: {', '.join(v)}")
+
+
+@req_cmd(Trac, cmd='search')
+class _SearchRequest(BaseSearchRequest, RPCRequest):
+
+    def __init__(self, **kw):
+        super().__init__(command='ticket.query', **kw)
+
+    def parse(self, data):
+        # Trac RPC search requests return a list of matching IDs that we resubmit
+        # via a multicall to grab ticket data if any matches exist.
+        if data:
+            tickets = self.service.GetItemRequest(ids=data).send()
+            yield from tickets
 
 
 @req_cmd(Trac)

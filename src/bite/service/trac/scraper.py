@@ -8,7 +8,7 @@ from dateutil.parser import parse as parsetime
 from snakeoil.klass import aliased, alias
 from snakeoil.strings import pluralism
 
-from . import TracTicket, TracAttachment
+from . import TracTicket, TracAttachment, BaseSearchRequest
 from .._html import HTML
 from .._rest import REST, RESTRequest
 from .._reqs import ParseRequest, req_cmd
@@ -49,19 +49,8 @@ class TracScraper(HTML, REST):
         super().__init__(max_results=max_results, **kw)
 
 
-class _SearchRequest(ParseRequest, RESTRequest):
-    """Construct a search request.
-
-    Query docs:
-        https://trac.edgewall.org/wiki/TracQuery
-    """
-
-    # map from standardized kwargs name to expected service parameter name
-    _params_map = {
-        'created': 'time',
-        'modified': 'changetime',
-        'sort': 'order',
-    }
+class _SearchRequest(BaseSearchRequest, RESTRequest):
+    """Construct a web search request."""
 
     def __init__(self, **kw):
         super().__init__(endpoint='/query', **kw)
@@ -97,36 +86,7 @@ class _SearchRequest(ParseRequest, RESTRequest):
             yield self.service.item(self.service, get_desc=False, **d)
 
     @aliased
-    class ParamParser(ParseRequest.ParamParser):
-
-        # Map of allowed sorting input values to service parameters.
-        _sorting_map = {
-            'assignee': 'owner',
-            'id': 'id',
-            'created': 'created',
-            'modified': 'modified',
-            'status': 'status',
-            'description': 'description',
-            'creator': 'reporter',
-            'milestone': 'milestone',
-            'component': 'component',
-            'summary': 'summary',
-            'priority': 'priority',
-            'keywords': 'keywords',
-            'version': 'version',
-            'platform': 'platform',
-            'difficulty': 'difficulty',
-            'type': 'type',
-            'wip': 'wip',
-            'severity': 'severity',
-        }
-
-        # map of status alias names to matching query values
-        _status_aliases = {
-            'OPEN': '!closed',
-            'CLOSED': 'closed',
-            'ALL': '!*',
-        }
+    class ParamParser(BaseSearchRequest.ParamParser):
 
         def _finalize(self, **kw):
             # default to sorting ascending by ID
@@ -175,38 +135,9 @@ class _SearchRequest(ParseRequest, RESTRequest):
             self.params[k] = [self.service.item.attribute_aliases.get(x, x) for x in v]
             self.options.append(f"{k.capitalize()}: {' '.join(v)}")
 
-        def status(self, k, v):
-            # TODO: cache and check available status values for configured services
-            self.params[k] = [self._status_aliases.get(x, x) for x in v]
-            self.options.append(f"{k.capitalize()}: {', '.join(v)}")
-
-        @alias('modified')
-        def created(self, k, v):
-            self.params[k] = f'{v.isoformat()}..'
-            self.options.append(f'{k.capitalize()}: {v} (since {v.isoformat()})')
-
-        def sort(self, k, v):
-            if v[0] == '-':
-                key = v[1:]
-                desc = 1
-            else:
-                key = v
-                desc = 0
-            try:
-                order_var = self._sorting_map[key]
-            except KeyError:
-                choices = ', '.join(sorted(self._sorting_map.keys()))
-                raise BiteError(
-                    f'unable to sort by: {key!r} (available choices: {choices}')
-            d = {'order': order_var}
-            if desc:
-                d['desc'] = desc
-            self.params[k] = d
-            self.options.append(f"Sort order: {v}")
-
         @alias('reporter')
         def owner(self, k, v):
-            self.params[k] = '|'.join(v)
+            self.params[k] = [f"~{x}" for x in v]
             self.options.append(f"{self.service.item.attributes[k]}: {', '.join(v)}")
 
 
