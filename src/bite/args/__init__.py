@@ -28,7 +28,7 @@ def subcmd(service_cls, name=None):
 
 class Subcmd(object):
 
-    def __init__(self, parser, service, name=None):
+    def __init__(self, parser, service, global_opts, name=None):
         name = name if name is not None else getattr(self, '_subcmd_name')
         self.service = service
         if self.description is None:
@@ -59,6 +59,10 @@ class Subcmd(object):
 
         self.parser.set_defaults(fcn=name)
         self.opts = self.parser.add_argument_group(f'{name.capitalize()} options')
+
+        # add global subcmd options
+        global_opts(self)
+        # add subcmd specific options
         self.add_args()
 
     @property
@@ -130,18 +134,23 @@ class ServiceOpts(object):
         except ValueError as e:
             raise BiteError(f'invalid config value for {k!r}: {v!r}')
 
+    def global_subcmd_opts(self, subcmd):
+        """Add global subcommand options."""
+
     def add_subcmd_opts(self, service, subcmd):
         """Add subcommand specific options."""
         subcmd_parser = self.parser.add_subparsers(help='help for subcommands')
         # try to only add the options for the single subcmd
         try:
             cls = getattr(self, subcmd)
-            return cls(parser=subcmd_parser, service=service, name=subcmd)
+            return cls(
+                parser=subcmd_parser, service=service,
+                global_opts=self.global_subcmd_opts, name=subcmd)
         # fallback to adding all subcmd options, since the user is
         # requesting help output (-h/--help) or entering unknown input
         except AttributeError:
             for subcmd, cls in self.subcmds():
-                cls(parser=subcmd_parser, service=service)
+                cls(parser=subcmd_parser, service=service, global_opts=self.global_subcmd_opts)
 
 
 class RequestSubcmd(Subcmd):
