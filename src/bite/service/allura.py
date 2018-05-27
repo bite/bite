@@ -90,7 +90,10 @@ class AlluraTicket(Item):
                 if not v:
                     v = None
                 else:
-                    v = tuple(x.rstrip('/').rsplit(f'/{service._tracker}/', 1)[1] for x in v)
+                    try:
+                        v = tuple(x.rstrip('/').rsplit(f'/{service._tracker}/', 1)[1] for x in v)
+                    except IndexError:
+                        continue
             elif k == 'summary':
                 v = html.unescape(v)
             setattr(self, k, v)
