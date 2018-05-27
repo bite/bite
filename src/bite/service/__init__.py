@@ -270,7 +270,7 @@ class Service(object):
             for req in iflatten_instance(reqs, Request):
                 parse = getattr(req, 'parse', ident)
                 req_parse = getattr(req, 'parse_response', None)
-                raw = getattr(req, '_raw', False)
+                raw = getattr(req, '_raw', None)
                 generator = bool(req._reqs)
                 handle = getattr(req, 'handle_exception', _raise)
 
@@ -304,7 +304,7 @@ class Service(object):
         else:
             return data
 
-    def _http_send(self, req, raw=False, req_parse=None, **kw):
+    def _http_send(self, req, raw=None, req_parse=None, **kw):
         """Send an HTTP request and return the parsed response."""
         response = self.session.send(req, **kw)
 
@@ -314,10 +314,13 @@ class Service(object):
             raise RequestError(f'service moved permanently: {old} -> {new}')
 
         if response.ok:
+            # allow the request to parse itself as required
             if req_parse is not None:
-                response = req_parse(response)
-            if raw:
-                return response.content
+                return req_parse(response)
+            # return the raw content of the response either in bytes or unicode
+            elif raw:
+                raw = 'content' if raw is True else raw
+                return getattr(response, raw)
             return self.parse_response(response)
         else:
             self._failed_http_response(response)

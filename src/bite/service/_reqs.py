@@ -34,7 +34,7 @@ class Request(object):
     """Construct a request."""
 
     def __init__(self, *, service, url=None, method=None, params=None,
-                 reqs=None, options=None, raw=False, **kw):
+                 reqs=None, options=None, raw=None, **kw):
         self.service = service
         self.options = options if options is not None else []
         self.params = params if params is not None else {}
@@ -340,7 +340,7 @@ class LinkHeaderPagedRequest(_BasePagedRequest):
         if self._total_header is not None:
             self._total = response.headers.get(self._total_header)
         self._next_page = response.links.get('next', {}).get('url')
-        return response
+        return self.service.parse_response(response)
 
     def next_page(self):
         # no more results exist, stop requesting them
