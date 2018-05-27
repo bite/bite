@@ -396,8 +396,12 @@ class ParseRequest(Request):
     def _finalize(self):
         params = self.param_parser._finalize()
         if params is not None:
+            # if the request finalized the params into a different format accept that
             self.params = params
-        self.params = self.remap_params(self.params)
+        else:
+            # otherwise remap the params dict keys from human-friendly to those
+            # used by the service
+            self.params = self.remap_params(self.params)
         super()._finalize()
 
     def remap_params(self, dct, remap=None):
