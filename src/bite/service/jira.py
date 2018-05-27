@@ -62,8 +62,8 @@ class Jira(JsonREST):
             project = project.strip('/')
         except ValueError as e:
             raise BiteError(f'invalid project base: {base!r}')
-        self._project = project if project else None
-        if self._project:
+        self.project = project if project else None
+        if self.project:
             self.item_endpoint = self._item_endpoint.format(project=project)
         # most jira instances default to 1k results per query
         if max_results is None:
@@ -112,9 +112,9 @@ class _SearchRequest(RESTParseRequest, JiraPagedRequest):
             # the global issue ID across all projects on the service instance.
             # Using the key value matches what is shown on the web interface.
             id = issue.get('key')
-            if self.service._project:
+            if self.service.project:
                 # if configured for a specific project, strip it from the ID
-                id = id[len(self.service._project) + 1:]
+                id = id[len(self.service.project) + 1:]
             fields = issue.get('fields', {})
             yield self.service.item(id=id, **fields)
 
@@ -138,8 +138,8 @@ class _SearchRequest(RESTParseRequest, JiraPagedRequest):
             jql = ' AND '.join(self.params['jql'])
 
             # if configured for a specific project, limit search to specified project
-            if self.service._project:
-                jql = f"project = {self.service._project} AND ( {jql} )"
+            if self.service.project:
+                jql = f"project = {self.service.project} AND ( {jql} )"
 
             # default to sorting ascending by ID for search reqs
             sort = self.params.pop('sort', ['id'])
@@ -153,8 +153,8 @@ class _SearchRequest(RESTParseRequest, JiraPagedRequest):
             # convert to ID keys
             id_keys = []
             for i in id_strs:
-                if re.match(r'\d+', i) and self.service._project:
-                    id_keys.append(f'{self.service._project}-{i}')
+                if re.match(r'\d+', i) and self.service.project:
+                    id_keys.append(f'{self.service.project}-{i}')
                 else:
                     id_keys.append(i)
             self.params.setdefault('jql', []).append(f"{k} in ({','.join(id_keys)})")
