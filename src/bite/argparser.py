@@ -202,18 +202,21 @@ class ParseStdin(Action):
 class override_attr(Action):
     """Override or set the value of a module's attribute."""
 
-    def __init__(self, attr, *args, **kwargs):
-        try:
-            self.module, self.attr = attr.rsplit('.', 1)
-        except ValueError:
-            raise ArgumentTypeError('full path to attribute required')
+    def __init__(self, target, attr, *args, **kwargs):
+        self.target = target
+        self.attr = attr
         super().__init__(*args, **kwargs)
 
     def __call__(self, parser, namespace, values, option_string=None):
-        try:
-            setattr(import_module(self.module), self.attr, values)
-        except ImportError:
-            raise ArgumentTypeError(f"couldn't import module: {self.module!r}")
+        if isinstance(self.target, str):
+            try:
+                target = import_module(self.target)
+            except ImportError:
+                raise ArgumentTypeError(f"couldn't import module: {self.target!r}")
+        else:
+            target = self.target
+
+        setattr(target, self.attr, values)
 
 
 class parse_append(Action):

@@ -44,7 +44,7 @@ argparser.add_argument(
     help='read data from an input file')
 argparser.add_argument(
     '--columns', type=int,
-    action=partial(override_attr, 'bite.const.COLUMNS'),
+    action=partial(override_attr, 'bite.const', 'COLUMNS'),
     help='maximum number of columns output should use')
 argparser.add_argument(
     '--suffix',
