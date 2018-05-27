@@ -502,7 +502,7 @@ class Cli(Client):
     @dry_run
     @login_retry
     def changes(self, **kw):
-        request = self.service.ChangesRequest(item_id=True, **kw)
+        request = self.service.ChangesRequest(item_id=True, filtered=True, **kw)
 
         self.log('Getting changes matching the following options:')
         self.log_t(request.options, prefix='   - ')
@@ -515,7 +515,7 @@ class Cli(Client):
     @login_retry
     def comments(self, **kw):
         """Get comments from a service."""
-        request = self.service.CommentsRequest(item_id=True, **kw)
+        request = self.service.CommentsRequest(item_id=True, filtered=True, **kw)
 
         self.log('Getting comments matching the following options:')
         self.log_t(request.options, prefix='   - ')

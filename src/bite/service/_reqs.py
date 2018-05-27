@@ -447,86 +447,98 @@ class ParseRequest(Request):
 
 class BaseCommentsRequest(Request):
 
-    def __init__(self, creator=None, attachment=None, comment_num=None, **kw):
+    def __init__(self, creator=None, attachment=None, comment_num=None, filtered=False, **kw):
         super().__init__(**kw)
         self.ids = kw.get('ids')
-        self.creator = set(creator) if creator else creator
-        self.attachment = attachment
-        self.comment_num = set(comment_num) if comment_num else comment_num
 
-        if self.creator is not None:
-            self.options.append(f"Creator{pluralism(self.creator)}: {', '.join(self.creator)}")
-        if self.attachment:
-            self.options.append('Attachments: yes')
-        if self.comment_num is not None:
-            self.options.append(
-                f"Comment number{pluralism(self.comment_num)}: {', '.join(map(str, self.comment_num))}")
+        self._filtered = filtered
+        if self._filtered:
+            self.creator = set(creator) if creator else creator
+            self.attachment = attachment
+            self.comment_num = set(comment_num) if comment_num else comment_num
+
+            if self.creator is not None:
+                self.options.append(f"Creator{pluralism(self.creator)}: {', '.join(self.creator)}")
+            if self.attachment:
+                self.options.append('Attachments: yes')
+            if self.comment_num is not None:
+                self.options.append(
+                    f"Comment number{pluralism(self.comment_num)}: {', '.join(map(str, self.comment_num))}")
 
     def filter(self, items):
         """Filter the returned data."""
-        for i, comments in zip(self.ids, items):
-            if self.creator is not None:
-                comments = (x for x in comments if x.creator in self.creator)
-            if self.attachment:
-                comments = (x for x in comments if x.changes['attachment_id'] is not None)
-            if self.comment_num is not None:
-                if any(x < 0 for x in self.comment_num):
-                    comments = list(comments)
-                    selected = []
-                    for x in self.comment_num:
-                        try:
-                            selected.append(comments[x])
-                        except IndexError:
-                            pass
-                    comments = selected
-                else:
-                    comments = (x for x in comments if x.count in self.comment_num)
-            yield i, comments
+        if self._filtered:
+            for i, comments in zip(self.ids, items):
+                if self.creator is not None:
+                    comments = (x for x in comments if x.creator in self.creator)
+                if self.attachment:
+                    comments = (x for x in comments if x.changes['attachment_id'] is not None)
+                if self.comment_num is not None:
+                    if any(x < 0 for x in self.comment_num):
+                        comments = list(comments)
+                        selected = []
+                        for x in self.comment_num:
+                            try:
+                                selected.append(comments[x])
+                            except IndexError:
+                                pass
+                        comments = selected
+                    else:
+                        comments = (x for x in comments if x.count in self.comment_num)
+                yield i, comments
+        else:
+            yield from items
 
 
 class BaseChangesRequest(Request):
 
     def __init__(self, creator=None, attachment=None,
-                 change_num=None, match=None, created=None, **kw):
+                 change_num=None, match=None, created=None, filtered=False, **kw):
         super().__init__(**kw)
         self.ids = kw.get('ids')
-        self.creator = set(map(self.service._resuffix, creator)) if creator else creator
-        self.change_num = set(change_num) if change_num else change_num
-        self.match = match
-        self.created = created
 
-        if self.creator is not None:
-            self.options.append(f"Creator{pluralism(self.creator)}: {', '.join(self.creator)}")
-        if self.change_num is not None:
-            self.options.append(
-                f"Change number{pluralism(self.change_num)}: {', '.join(map(str, self.change_num))}")
-        if self.match is not None:
-            self.options.append(f"Matching: {', '.join(self.match)}")
-        if self.created is not None:
-            self.options.append(f'Created: {self.created} (since {self.created!r} UTC)')
+        self._filtered = filtered
+        if self._filtered:
+            self.creator = set(map(self.service._resuffix, creator)) if creator else creator
+            self.change_num = set(change_num) if change_num else change_num
+            self.match = match
+            self.created = created
+
+            if self.creator is not None:
+                self.options.append(f"Creator{pluralism(self.creator)}: {', '.join(self.creator)}")
+            if self.change_num is not None:
+                self.options.append(
+                    f"Change number{pluralism(self.change_num)}: {', '.join(map(str, self.change_num))}")
+            if self.match is not None:
+                self.options.append(f"Matching: {', '.join(self.match)}")
+            if self.created is not None:
+                self.options.append(f'Created: {self.created} (since {self.created!r} UTC)')
 
     def filter(self, items):
         """Filter the returned data."""
-        for i, changes in zip(self.ids, items):
-            if self.creator is not None:
-                changes = (x for x in changes if x.creator in self.creator)
-            if self.created is not None:
-                changes = (x for x in changes if x.created >= self.created)
-            if self.match is not None:
-                changes = (event for event in changes if event.match(fields=self.match))
-            if self.change_num is not None:
-                if any(x < 0 for x in self.change_num):
-                    changes = list(changes)
-                    selected = []
-                    for x in self.change_num:
-                        try:
-                            selected.append(changes[x])
-                        except IndexError:
-                            pass
-                    changes = selected
-                else:
-                    changes = (x for x in changes if x.count in self.change_num)
-            yield i, changes
+        if self._filtered:
+            for i, changes in zip(self.ids, items):
+                if self.creator is not None:
+                    changes = (x for x in changes if x.creator in self.creator)
+                if self.created is not None:
+                    changes = (x for x in changes if x.created >= self.created)
+                if self.match is not None:
+                    changes = (event for event in changes if event.match(fields=self.match))
+                if self.change_num is not None:
+                    if any(x < 0 for x in self.change_num):
+                        changes = list(changes)
+                        selected = []
+                        for x in self.change_num:
+                            try:
+                                selected.append(changes[x])
+                            except IndexError:
+                                pass
+                        changes = selected
+                    else:
+                        changes = (x for x in changes if x.count in self.change_num)
+                yield i, changes
+        else:
+            yield from items
 
 
 class BaseGetRequest(Request):
