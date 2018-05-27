@@ -1,12 +1,12 @@
-"""Support Sourceforge's REST interface.
+"""Support Allura's REST interface.
 
 API docs:
     https://sourceforge.net/p/forge/documentation/API/
     https://sourceforge.net/p/forge/documentation/Allura%20API/
+    https://forge-allura.apache.org/docs/getting_started/administration.html#public-api
 """
 
 import html
-from itertools import chain
 import re
 
 from dateutil.parser import parse as dateparse
@@ -24,15 +24,15 @@ from ..objects import Item, Comment, Attachment, Change
 from ..utc import utc
 
 
-class SourceforgeError(RequestError):
-    """Sourceforge service specific error."""
+class AlluraError(RequestError):
+    """Allura service specific error."""
 
     def __init__(self, msg, code=None, text=None):
-        msg = f'Sourceforge error: {msg}'
+        msg = f'Allura error: {msg}'
         super().__init__(msg, code, text)
 
 
-class SourceforgeTicket(Item):
+class AlluraTicket(Item):
 
     attributes = {
         'status': 'Status',
@@ -82,7 +82,7 @@ class SourceforgeTicket(Item):
         for k in self.attributes.keys():
             v = kw.get(k)
             if k in ('created_date', 'mod_date') and v:
-                # sourceforge doesn't specify an offset for its timestamps, assume UTC
+                # allura doesn't specify an offset for its timestamps, assume UTC
                 v = dateparse(v).astimezone(utc)
             elif k == 'labels' and not v:
                 v = None
@@ -107,35 +107,35 @@ class SourceforgeTicket(Item):
                 desc = html.unescape(kw['description'].strip())
             except KeyError:
                 desc = ''
-            self.description = SourceforgeComment(
+            self.description = AlluraComment(
                 count=0, creator=self.reported_by, created=self.created_date, text=desc)
 
         if get_attachments:
             self.attachments = tuple(
-                SourceforgeAttachment(
+                AlluraAttachment(
                     size=a['bytes'], url=a['url'], creator=self.reported_by,
                     created=self.created_date, filename=a['url'].rsplit('/', 1)[1])
                 for a in kw['attachments'])
 
 
-class SourceforgeComment(Comment):
+class AlluraComment(Comment):
     pass
 
 
-class SourceforgeAttachment(Attachment):
+class AlluraAttachment(Attachment):
     pass
 
 
-class SourceforgeEvent(Change):
+class AlluraEvent(Change):
     pass
 
 
-class Sourceforge(JsonREST):
-    """Service supporting the Sourceforge trackers."""
+class Allura(JsonREST):
+    """Service supporting the Allura trackers."""
 
-    _service = 'sourceforge'
+    _service = 'allura'
 
-    item = SourceforgeTicket
+    item = AlluraTicket
     item_endpoint = '/{id}'
 
     def __init__(self, base, max_results=None, **kw):
@@ -149,7 +149,7 @@ class Sourceforge(JsonREST):
         self._tracker = tracker
         endpoint = f'/rest/p/{self._project}/{self._tracker}'
 
-        # Sourceforge allows projects to name/mount their ticket trackers under
+        # Allura allows projects to name/mount their ticket trackers under
         # any name (e.g. issues, bugs, tickets), try to determine the item name from this.
         self.item.type = self._tracker.rstrip('s')
 
@@ -172,27 +172,27 @@ class Sourceforge(JsonREST):
 
     @staticmethod
     def handle_error(code, msg):
-        """Handle Sourceforge specific errors."""
-        raise SourceforgeError(msg=msg, code=code)
+        """Handle Allura specific errors."""
+        raise AlluraError(msg=msg, code=code)
 
 
-class SourceforgePagedRequest(PagedRequest, RESTRequest):
-    """Support navigating paged requests from Sourceforge."""
+class AlluraPagedRequest(PagedRequest, RESTRequest):
+    """Support navigating paged requests from Allura."""
 
     _page_key = 'page'
     _size_key = 'limit'
     _total_key = 'count'
 
 
-class SourceforgeFlaggedPagedRequest(FlaggedPagedRequest, RESTRequest):
-    """Support navigating paged requests from Sourceforge."""
+class AlluraFlaggedPagedRequest(FlaggedPagedRequest, RESTRequest):
+    """Support navigating paged requests from Allura."""
 
     _page_key = 'page'
     _size_key = 'limit'
 
 
-@req_cmd(Sourceforge, cmd='search')
-class _SearchRequest(RESTParseRequest, SourceforgePagedRequest):
+@req_cmd(Allura, cmd='search')
+class _SearchRequest(RESTParseRequest, AlluraPagedRequest):
     """Construct a search request.
 
     Currently using on Solr on the backend, see the following docs for query help:
@@ -321,7 +321,7 @@ class _SearchRequest(RESTParseRequest, SourceforgePagedRequest):
             self.options.append(f"{k.capitalize()}: {', '.join(or_display_terms)}")
 
 
-@req_cmd(Sourceforge)
+@req_cmd(Allura)
 class _GetItemRequest(Request):
     """Construct an issue request."""
 
@@ -364,7 +364,7 @@ class _ThreadRequest(Request):
         if data is None:
             reqs = []
             for i in ids:
-                reqs.append(SourceforgeFlaggedPagedRequest(
+                reqs.append(AlluraFlaggedPagedRequest(
                     service=self.service, endpoint=f'/_discuss/thread/{i}'))
         else:
             reqs = [NullRequest()]
@@ -384,12 +384,12 @@ class _ThreadRequest(Request):
                     self._exhausted = True
 
 
-@req_cmd(Sourceforge)
+@req_cmd(Allura)
 class _CommentsFilter(CommentsFilter):
     pass
 
 
-@req_cmd(Sourceforge, cmd='comments')
+@req_cmd(Allura, cmd='comments')
 class _CommentsRequest(_ThreadRequest):
     """Construct a comments request."""
 
@@ -404,14 +404,14 @@ class _CommentsRequest(_ThreadRequest):
                 text = html.unescape(c['text'].strip())
                 # skip change events
                 if not re.match(r'(- \*\*\w+\*\*: |- (Attachments|Description) has changed:\n\nDiff)', text):
-                    l.append(SourceforgeComment(
+                    l.append(AlluraComment(
                         id=i, count=count, creator=c['author'],
                         created=dateparse(c['timestamp']).astimezone(utc), text=text))
                     count += 1
             yield tuple(l)
 
 
-@req_cmd(Sourceforge, cmd='attachments')
+@req_cmd(Allura, cmd='attachments')
 class _AttachmentsRequest(_ThreadRequest):
     """Construct an attachments request."""
 
@@ -422,19 +422,19 @@ class _AttachmentsRequest(_ThreadRequest):
             count = 0
             for p in posts:
                 for a in p['attachments']:
-                    l.append(SourceforgeAttachment(
+                    l.append(AlluraAttachment(
                         creator=p['author'], created=dateparse(p['timestamp']).astimezone(utc),
                         size=a['bytes'], url=a['url'], filename=a['url'].rsplit('/', 1)[1]))
                     count += 1
             yield tuple(l)
 
 
-@req_cmd(Sourceforge)
+@req_cmd(Allura)
 class _ChangesFilter(ChangesFilter):
     pass
 
 
-@req_cmd(Sourceforge, cmd='changes')
+@req_cmd(Allura, cmd='changes')
 class _ChangesRequest(_ThreadRequest):
     """Construct a changes request."""
 
@@ -469,14 +469,14 @@ class _ChangesRequest(_ThreadRequest):
                                 changes[key] = (old, new)
                         else:
                             changes[key] = change
-                    l.append(SourceforgeEvent(
+                    l.append(AlluraEvent(
                         id=i, count=count, creator=c['author'],
                         created=dateparse(c['timestamp']).astimezone(utc), changes=changes))
                     count += 1
             yield tuple(l)
 
 
-@req_cmd(Sourceforge, cmd='get')
+@req_cmd(Allura, cmd='get')
 class _GetRequest(_GetItemRequest):
     """Construct requests to retrieve all known data for given issue IDs."""
 

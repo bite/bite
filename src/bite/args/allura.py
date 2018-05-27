@@ -4,13 +4,13 @@ from ..argparser import ParseStdin
 from .. import args
 
 
-class SourceforgeOpts(args.ServiceOpts):
-    """Sourceforge options."""
+class AlluraOpts(args.ServiceOpts):
+    """Allura options."""
 
-    _service = 'sourceforge'
+    _service = 'allura'
 
 
-@args.subcmd(SourceforgeOpts)
+@args.subcmd(AlluraOpts)
 class Search(args.Search):
 
     def add_args(self):
@@ -50,14 +50,14 @@ class Search(args.Search):
             help=f'person who created the {self.service.item.type}')
 
 
-@args.subcmd(SourceforgeOpts)
+@args.subcmd(AlluraOpts)
 class Get(args.Get):
 
     def add_args(self):
         super().add_args(history=True)
 
 
-@args.subcmd(SourceforgeOpts)
+@args.subcmd(AlluraOpts)
 class Changes(args.Changes):
 
     def add_args(self):
@@ -72,7 +72,7 @@ class Changes(args.Changes):
             help='restrict by matching changed fields')
 
 
-@args.subcmd(SourceforgeOpts)
+@args.subcmd(AlluraOpts)
 class Comments(args.Comments):
 
     def add_args(self):
