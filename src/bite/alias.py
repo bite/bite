@@ -12,6 +12,10 @@ from .exceptions import BiteError
 demandload('bite:const')
 
 
+class ConfigInterpolationError(configparser.InterpolationError):
+    pass
+
+
 class BiteInterpolation(configparser.ExtendedInterpolation):
     """Modified version of ExtendedInterpolation.
 
@@ -20,9 +24,6 @@ class BiteInterpolation(configparser.ExtendedInterpolation):
     """
 
     _KEYCRE = re.compile(r"\%\{([^}]+)\}")
-
-    def __init__(self, config_opts):
-        self.config_opts = config_opts
 
     def before_get(self, parser, section, option, value, defaults):
         L = []
@@ -61,6 +62,7 @@ class BiteInterpolation(configparser.ExtendedInterpolation):
                         option, section,
                         "bad interpolation variable reference %r" % rest)
                 path = m.group(1).split(':')
+                orig_rest = rest
                 rest = rest[m.end():]
                 sect = section
                 opt = option
@@ -75,13 +77,23 @@ class BiteInterpolation(configparser.ExtendedInterpolation):
                     elif len(path) == 2:
                         # try to pull value from config
                         if path[0] == 'CONFIG':
-                            try:
-                                v = self.config_opts[path[1]]
-                            except KeyError:
+                            if parser.config_opts is not None:
+                                try:
+                                    v = parser.config_opts[path[1]]
+                                except KeyError:
+                                    msg = (
+                                        f"{option}: {section} config section doesn't contain "
+                                        f"{path[1]!r} (from config lookup '%{{{':'.join(path)}}}')")
+                                    raise configparser.InterpolationError(option, section, msg)
+                            elif not parser.raw:
                                 msg = (
-                                    f"{option}: {section} config section doesn't contain "
-                                    f"{path[1]!r} (from config lookup '%{{{':'.join(path)}}}')")
-                                raise configparser.InterpolationError(option, section, msg)
+                                    f"skipping alias {option!r} since config options "
+                                    f"aren't available to expand: {orig_rest!r}")
+                                raise ConfigInterpolationError(option, section, msg)
+                            else:
+                                # skipping config interpolation since we don't have config opts
+                                accum.append(orig_rest)
+                                continue
                         else:
                             sect = path[0]
                             opt = parser.optionxform(path[1])
