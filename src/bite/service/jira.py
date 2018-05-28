@@ -37,14 +37,34 @@ class JiraIssue(Item):
         'owner': 'assignee',
     }
 
+    _print_fields = (
+        ('assignee', 'Assignee'),
+        ('summary', 'Title'),
+        ('id', 'ID'),
+        ('priority', 'Priority'),
+        ('reporter', 'Reporter'),
+        ('creator', 'Creator'),
+        ('status', 'Status'),
+        ('created', 'Created'),
+        ('updated', 'Modified'),
+        ('votes', 'Votes'),
+        ('watches', 'Watchers'),
+        # ('comment', 'Comments'),
+        # ('attachment', 'Attachments'),
+    )
+
     type = 'issue'
 
     def __init__(self, **kw):
         for k, v in kw.items():
-            if k in ('assignee', 'reporter', 'status'):
+            if k in ('assignee', 'reporter', 'creator', 'status', 'priority'):
                 v = v.get('name') if v else None
             elif k in ('updated', 'created'):
                 v = parsetime(v)
+            elif k == 'votes':
+                v = v.get('votes')
+            elif k == 'watches':
+                v = v.get('watchCount')
             setattr(self, k, v)
 
 
