@@ -9,10 +9,10 @@ class JiraOpts(args.ServiceOpts):
 
     _service = 'jira'
 
-    def main_opts(self):
-        if self.service.project is None:
+    def add_main_opts(self, service):
+        if service.project is None:
             self.service_opts.add_argument(
-                '--project', action=partial(override_attr, self.service, 'project'),
+                '--project', action=partial(override_attr, service, 'project'),
                 help='define a specific project to target')
 
 

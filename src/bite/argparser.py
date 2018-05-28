@@ -567,18 +567,27 @@ class ArgumentParser(arghparse.ArgumentParser):
         if service_name not in const.SERVICES:
             self.error(f"invalid service: {service_name!r} (available services: {', '.join(const.SERVICES)}")
 
-        # initialize requested service
-        service = get_service_cls(service_name, const.SERVICES)(**vars(initial_args))
-
         service_opts = get_service_cls(
-            service_name, const.SERVICE_OPTS)(parser=self, service=service)
-
-        # re-parse for any top level service-specific options that were added
-        if service_opts._reparse:
-            initial_args, unparsed_args = self.parse_optionals(unparsed_args, initial_args)
+            service_name, const.SERVICE_OPTS)(parser=self, service_name=service_name)
 
         # add service config options to args namespace
         service_opts.add_config_opts(args=initial_args, config_opts=config_opts)
+
+        # initialize requested service
+        service = get_service_cls(service_name, const.SERVICES)(**vars(initial_args))
+
+        try:
+            # add service specific main opts to the argparser
+            service_opts.add_main_opts(service=service)
+            # re-parse for any top level service-specific options that were added
+            initial_args, unparsed_args = self.parse_optionals(unparsed_args, initial_args)
+        except ArgumentError as e:
+            # skip multiple main_opts() run issues during doc generation
+            if 'conflicting option string' not in str(e):
+                raise
+        except NotImplementedError:
+            # no main opts to add
+            pass
 
         # check if unparsed args match any aliases
         if unparsed_args:

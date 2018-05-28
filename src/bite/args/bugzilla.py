@@ -17,13 +17,10 @@ class ChangedTimeTuple(argparse.Action):
 class Bugzilla4_4Opts(args.ServiceOpts):
     """Bugzilla 4.4 options."""
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
-        self.config_map.update({
-            'restrict_login': str2bool,
-        })
+    _config_map = args.ServiceOpts._config_map.copy()
+    _config_map['restrict_login'] = str2bool
 
-    def main_opts(self):
+    def add_main_opts(self, service):
         """Add service specific arguments."""
         from ..scripts.bite import auth_opts
         auth_opts.add_argument(

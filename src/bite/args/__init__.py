@@ -81,36 +81,25 @@ class ServiceOpts(object):
 
     _service = None
 
-    def __init__(self, parser, service):
+    # type conversion mapping for config opts
+    _config_map = {
+        'skip_auth': str2bool,
+        'verify': str2bool,
+        'quiet': str2bool,
+        'columns': lambda x: setattr(const, 'COLUMNS', int(x)),
+        'concurrent': int,
+        'timeout': int,
+        'max_results': int,
+    }
+
+    def __init__(self, parser, service_name):
         self.parser = parser
-        self.service = service
         # flag to re-parse unparsed args for service specific options
         self._reparse = False
 
-        # type conversion mapping for config opts
-        self.config_map = {
-            'skip_auth': str2bool,
-            'verify': str2bool,
-            'quiet': str2bool,
-            'columns': lambda x: setattr(const, 'COLUMNS', int(x)),
-            'concurrent': int,
-            'timeout': int,
-            'max_results': int,
-        }
-
         from ..scripts.bite import service_specific_opts
         self.service_opts = service_specific_opts
-        self.service_opts.title = f"{self.service._service.split('-')[0].capitalize()} specific options"
-
-        try:
-            self.main_opts()
-            self._reparse = True
-        except argparse.ArgumentError as e:
-            # skip multiple main_opts() run issues during doc generation
-            if 'conflicting option string' not in str(e):
-                raise
-        except NotImplementedError:
-            pass
+        self.service_opts.title = f"{service_name.split('-')[0].capitalize()} specific options"
 
     def subcmds(self):
         """Get sequence of subcommands defined for the service."""
@@ -121,7 +110,7 @@ class ServiceOpts(object):
                 l.append((x, attr))
         return tuple(l)
 
-    def main_opts(self):
+    def add_main_opts(self, service):
         """Add service specific top-level options."""
         raise NotImplementedError
 
@@ -131,7 +120,7 @@ class ServiceOpts(object):
             # merge config options, command line options override these
             for k, v in config_opts.items():
                 if getattr(args, k, None) is None:
-                    setattr(args, k, self.config_map.get(k, str)(v))
+                    setattr(args, k, self._config_map.get(k, str)(v))
         except ValueError as e:
             raise BiteError(f'invalid config value for {k!r}: {v!r}')
 
