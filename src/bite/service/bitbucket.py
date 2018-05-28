@@ -252,7 +252,7 @@ class _SearchRequest(RESTParseRequest, BitbucketPagedRequest):
         }
 
         def _finalize(self, **kw):
-            if not self.params or self._non_data_keys.issuperset(self.params.keys()):
+            if not self.params or self.params.keys() == {'sort'}:
                 raise BiteError('no supported search terms or options specified')
 
             query = self.params.get('q', {})
