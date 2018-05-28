@@ -9,12 +9,10 @@ class JiraOpts(args.ServiceOpts):
 
     _service = 'jira'
 
-    def global_subcmd_opts(self, subcmd):
-        """Add global subcommand options."""
-        if subcmd.service.project is None:
-            subcmd.opts.add_argument(
-                '--project',
-                action=partial(override_attr, subcmd.service, 'project'),
+    def main_opts(self):
+        if self.service.project is None:
+            self.service_opts.add_argument(
+                '--project', action=partial(override_attr, self.service, 'project'),
                 help='define a specific project to target')
 
 
