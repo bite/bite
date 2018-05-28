@@ -113,10 +113,15 @@ class Cli(Client):
         """Request user/password info from the user."""
         user = self.service.user
         password = self.service.password
+
         if msg is not None:
             self.log(msg)
+
         if user is None:
             user = get_input('Username: ')
+        else:
+            print(f'Username: {user}')
+
         if password is None:
             if not self.passwordcmd:
                 password = getpass.getpass()
