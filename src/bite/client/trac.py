@@ -9,11 +9,6 @@ class Trac(Cli):
         print(f'Trac version: {version}')
 
 
-class TracScraper(Cli):
-
-    _service = 'trac-scraper'
-
-
 class TracJsonrpc(Trac):
 
     _service = 'trac-jsonrpc'
