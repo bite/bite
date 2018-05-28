@@ -63,8 +63,6 @@ class Jira(JsonREST):
         except ValueError as e:
             raise BiteError(f'invalid project base: {base!r}')
         self.project = project if project else None
-        if self.project:
-            self.item_endpoint = self._item_endpoint.format(project=project)
         # most jira instances default to 1k results per query
         if max_results is None:
             max_results = 1000
@@ -72,6 +70,12 @@ class Jira(JsonREST):
         super().__init__(
             endpoint=f"/rest/api/2", base=api_base, max_results=max_results, **kw)
         self.webbase = base
+
+    @property
+    def item_endpoint(self):
+        """Allow the item endpoint to be dynamically altered by changing the project attr."""
+        if self.project:
+            return self._item_endpoint.format(project=self.project)
 
     def inject_auth(self, request, params):
         raise NotImplementedError
