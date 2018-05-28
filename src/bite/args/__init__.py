@@ -81,8 +81,9 @@ class ServiceOpts(object):
 
     _service = None
 
-    def __init__(self, parser, service_name):
+    def __init__(self, parser, service):
         self.parser = parser
+        self.service = service
         # flag to re-parse unparsed args for service specific options
         self._reparse = False
 
@@ -99,7 +100,7 @@ class ServiceOpts(object):
 
         from ..scripts.bite import service_specific_opts
         self.service_opts = service_specific_opts
-        self.service_opts.title = f"{service_name.split('-')[0].capitalize()} specific options"
+        self.service_opts.title = f"{self.service._service.split('-')[0].capitalize()} specific options"
 
         try:
             self.main_opts()

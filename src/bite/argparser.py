@@ -2,7 +2,6 @@ from argparse import (
     SUPPRESS, Action, ArgumentError, ArgumentTypeError,
     _get_action_name, _SubParsersAction, _)
 from importlib import import_module
-import logging
 import os
 import re
 import shlex
@@ -12,10 +11,9 @@ from snakeoil.cli import arghparse, tool
 from snakeoil.demandload import demandload
 
 from . import get_service_cls
-from .alias import substitute_alias
+from .alias import Aliases
 from .config import get_config
 from .exceptions import BiteError
-from .utc import utc, utcnow
 from .utils import block_edit, confirm
 
 demandload('bite:const')
@@ -546,6 +544,16 @@ class ArgumentParser(arghparse.ArgumentParser):
         initial_args, unparsed_args = self.parse_optionals(args, namespace)
         config_file = initial_args.pop('config_file')
 
+        # load alias files
+        aliases = Aliases()
+
+        # check if unparsed args match any global aliases
+        if unparsed_args:
+            alias_unparsed_args = aliases.substitute(unparsed_args)
+            # re-parse optionals to catch any added by aliases
+            if unparsed_args != alias_unparsed_args:
+                initial_args, unparsed_args = self.parse_optionals(alias_unparsed_args, initial_args)
+
         # load config files
         config, config_opts = get_config(initial_args, config_file=config_file)
 
@@ -559,8 +567,11 @@ class ArgumentParser(arghparse.ArgumentParser):
         if service_name not in const.SERVICES:
             self.error(f"invalid service: {service_name!r} (available services: {', '.join(const.SERVICES)}")
 
+        # initialize requested service
+        service = get_service_cls(service_name, const.SERVICES)(**vars(initial_args))
+
         service_opts = get_service_cls(
-            service_name, const.SERVICE_OPTS)(parser=self, service_name=service_name)
+            service_name, const.SERVICE_OPTS)(parser=self, service=service)
 
         # re-parse for any top level service-specific options that were added
         if service_opts._reparse:
@@ -571,14 +582,12 @@ class ArgumentParser(arghparse.ArgumentParser):
 
         # check if unparsed args match any aliases
         if unparsed_args:
-            alias_unparsed_args = substitute_alias(
-                config_opts, unparsed_args, initial_args.connection, service_name)
+            alias_unparsed_args = aliases.substitute(
+                unparsed_args, config_opts=config_opts,
+                connection=initial_args.connection, service_name=service_name)
             # re-parse optionals to catch any added by aliases
             if unparsed_args != alias_unparsed_args:
                 initial_args, unparsed_args = self.parse_optionals(alias_unparsed_args, initial_args)
-
-        # initialize requested service
-        service = get_service_cls(service_name, const.SERVICES)(**vars(initial_args))
 
         # add selected subcommand options
         try:

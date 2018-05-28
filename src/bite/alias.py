@@ -123,100 +123,105 @@ class BiteInterpolation(configparser.ExtendedInterpolation):
 class AliasConfigParser(configparser.ConfigParser):
     """Alias config parser using our customized interpolation."""
 
-    def __init__(self, config_opts, *args, **kwargs):
-        interpolation = BiteInterpolation(config_opts=config_opts)
+    def __init__(self, *args, config_opts=None, raw=False, **kwargs):
+        self.config_opts = config_opts
+        self.raw = raw
+        interpolation = BiteInterpolation()
         super().__init__(*args, interpolation=interpolation, **kwargs)
 
 
-def load_aliases(config_opts=None):
-    """Create a config object loaded with alias file info."""
-    if config_opts is not None:
-        # load aliases with custom interpolation
-        aliases = AliasConfigParser(config_opts=config_opts)
-    else:
-        # load aliases with no interpolation
-        aliases = configparser.ConfigParser(interpolation=configparser.Interpolation())
+class Aliases(object):
 
-    system_aliases = os.path.join(const.CONFIG_PATH, 'aliases')
-    user_aliases = os.path.join(const.USER_CONFIG_PATH, 'aliases')
+    def __init__(self, path=None, config_opts=None, **kw):
+        self._aliases = AliasConfigParser(config_opts=config_opts, **kw)
 
-    try:
-        with open(system_aliases) as f:
-            aliases.read_file(f)
-        aliases.read(user_aliases)
-    except IOError as e:
-        raise BiteError(f'cannot load aliases file {e.filename!r}: {e.strerror}')
-    except (configparser.DuplicateSectionError, configparser.DuplicateOptionError) as e:
-        raise BiteError(e)
+        system_aliases = os.path.join(const.CONFIG_PATH, 'aliases')
+        user_aliases = os.path.join(const.USER_CONFIG_PATH, 'aliases')
 
-    return aliases
+        paths = [(system_aliases, True), (user_aliases, False)]
+        if path: paths.append((path, True))
+
+        for path, force in paths:
+            self.load(path, force)
+
+    def load(self, path, force=False):
+        """Create a config object loaded with alias file info."""
+        try:
+            if force:
+                with open(path) as f:
+                    self._aliases.read_file(f)
+            else:
+                self._aliases.read(path)
+        except IOError as e:
+            raise BiteError(f'cannot load aliases file {e.filename!r}: {e.strerror}')
+        except (configparser.DuplicateSectionError, configparser.DuplicateOptionError) as e:
+            raise BiteError(e)
+
+    def substitute(self, unparsed_args, *, config_opts=None, connection=None, service_name=None):
+        # load alias files
+        if config_opts is not None:
+            self._aliases.config_opts = config_opts
+
+        alias_name = unparsed_args[0]
+        extra_cmds = unparsed_args[1:]
+
+        # first check for connection specific aliases, then service specific aliases
+        for section in self.get_sections(connection, service_name):
+            if self._aliases.has_section(section):
+                try:
+                    alias_cmd = self._aliases.get(section, alias_name, fallback=None)
+                except configparser.InterpolationError as e:
+                    raise BiteError(f'failed parsing alias: {e}')
+                if alias_cmd is not None:
+                    break
+        else:
+            # finally fallback to checking global aliases
+            try:
+                alias_cmd = self._aliases.get(self._aliases.default_section, alias_name, fallback=None)
+            except ConfigInterpolationError as e:
+                alias_cmd = None
+            if alias_cmd is None:
+                return unparsed_args
+
+        alias_cmd = alias_cmd.strip()
+
+        if alias_cmd[0] == '!':
+            run_shell_cmd(alias_cmd[1:] + ' ' + ' '.join(shlex.quote(s) for s in extra_cmds))
+
+        params = shell_split(alias_cmd)
+        params.extend(extra_cmds)
+        return params
+
+    @staticmethod
+    def get_sections(connection, service_name):
+        """Generator for alias section precendence.
+
+        connection -> full service name -> versioned service -> generic service
+
+        Note that service sections use headers of the form: [:service:],
+        e.g. [:bugzilla:] for a generic service
+            [:bugzilla5.0:] for a version specific section
+            [:bugzilla5.0-jsonrpc:] for a full service name section
+        """
+        if connection is not None:
+            yield connection
+        if service_name is not None:
+            yield f":{service_name}:"
+            service_versioned = service_name.split('-')[0]
+            if service_versioned != service_name:
+                yield f":{service_versioned}:"
+                service_match = re.match(r'([a-z]+)[\d.]+', service_versioned)
+                if service_match:
+                    yield f":{service_match.group(1)}:"
+
+    def items(self, section):
+        return self._aliases.items(section)
 
 
 def shell_split(string):
     lex = shlex.shlex(string)
     lex.whitespace_split = True
     return list(lex)
-
-
-def get_alias(args, section, alias):
-    value = args.config[section]['alias'][alias]
-    if value[0] == '$':
-        value = value[1:]
-    return value
-
-
-def get_sections(connection, service_name):
-    """Generator for alias section precendence.
-
-    connection -> full service name -> versioned service -> generic service
-
-    Note that service sections use headers of the form: [:service:],
-    e.g. [:bugzilla:] for a generic service
-         [:bugzilla5.0:] for a version specific section
-         [:bugzilla5.0-jsonrpc:] for a full service name section
-    """
-    if connection is not None:
-        yield connection
-    if service_name is not None:
-        yield f":{service_name}:"
-        service_versioned = service_name.split('-')[0]
-        if service_versioned != service_name:
-            yield f":{service_versioned}:"
-            service_match = re.match(r'([a-z]+)[\d.]+', service_versioned)
-            if service_match:
-                yield f":{service_match.group(1)}:"
-
-
-def substitute_alias(config_opts, unparsed_args, connection=None, service_name=None):
-    # load alias files
-    aliases = load_aliases(config_opts)
-
-    alias_name = unparsed_args[0]
-    extra_cmds = unparsed_args[1:]
-
-    # first check for connection specific aliases, then service specific aliases
-    for section in get_sections(connection, service_name):
-        if aliases.has_section(section):
-            try:
-                alias_cmd = aliases.get(section, alias_name, fallback=None)
-            except configparser.InterpolationError as e:
-                raise BiteError(f'failed parsing alias: {e}')
-            if alias_cmd is not None:
-                break
-    else:
-        # finally fallback to checking global aliases
-        alias_cmd = aliases.defaults().get(alias_name, None)
-        if alias_cmd is None:
-            return unparsed_args
-
-    alias_cmd = alias_cmd.strip()
-
-    if alias_cmd[0] == '!':
-        run_shell_cmd(alias_cmd[1:] + ' ' + ' '.join(shlex.quote(s) for s in extra_cmds))
-
-    params = shell_split(alias_cmd)
-    params.extend(extra_cmds)
-    return params
 
 
 def run_shell_cmd(cmd):

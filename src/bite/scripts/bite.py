@@ -12,7 +12,7 @@ import os
 from snakeoil.demandload import demandload
 
 from ..argparser import ArgumentParser, parse_file, override_attr
-from ..alias import load_aliases
+from ..alias import Aliases
 from ..config import load_full_config
 from ..exceptions import RequestError
 
@@ -121,8 +121,8 @@ def get_cli(args):
 @ls.bind_main_func
 def _ls(options, out, err):
     if options.item == 'aliases':
-        aliases = load_aliases()
-        section = options.connection if options.connection else aliases.default_section
+        aliases = Aliases(raw=True)
+        section = options.connection if options.connection else 'DEFAULT'
         for name, value in aliases.items(section):
             if options.verbose:
                 out.write(f'{name}: {value}')
