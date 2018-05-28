@@ -358,8 +358,8 @@ class Modify(SendSubcmd):
             type='comment', action='parse_stdin',
             help='add a comment')
         single_action.add_argument(
-            '-r', '--reply', type='ids', nargs='+', dest='reply_ids',
-            help='reply to a specific comment')
+            '-r', '--reply', type='id_list', dest='reply_ids',
+            help='reply to specific comment(s)')
 
     def get_comment_reply(self, reply_ids, args):
         """Support reply to specific comment(s)."""
