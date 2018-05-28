@@ -7,9 +7,9 @@ import sys
 from snakeoil.demandload import demandload
 from snakeoil.strings import pluralism
 
-from .. import Cli, login_required
-from ...exceptions import BiteError
-from ...utils import block_edit, get_input, launch_browser
+from . import Cli, login_required
+from ..exceptions import BiteError
+from ..utils import block_edit, get_input, launch_browser
 
 demandload(
     'pprint',
@@ -20,6 +20,8 @@ demandload(
 
 class Bugzilla(Cli):
     """CLI for Bugzilla service."""
+
+    _service = 'bugzilla'
 
     def attach(self, *args, **kw):
         if kw['comment'] is None:
@@ -308,6 +310,8 @@ class Bugzilla(Cli):
 class Bugzilla5_0(Bugzilla):
     """CLI for Bugzilla 5.0 service."""
 
+    _service = 'bugzilla5.0'
+
     def apikeys(self, generate=None, revoke=None, *args, **kw):
         if generate is not None:
             # TODO: cache generated key for use with bite if it's named 'bite'
@@ -354,3 +358,9 @@ class Bugzilla5_0(Bugzilla):
                     print()
             else:
                 print(*self.service.saved_searches, sep='\n')
+
+
+class Bugzilla5_2(Bugzilla5_0):
+    """CLI for Bugzilla 5.2 service."""
+
+    _service = 'bugzilla5.2'
