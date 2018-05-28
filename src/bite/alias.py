@@ -7,6 +7,7 @@ import sys
 
 from snakeoil.demandload import demandload
 
+from . import service_classes
 from .exceptions import BiteError
 
 demandload('bite:const')
@@ -205,14 +206,8 @@ class Aliases(object):
         """
         if connection is not None:
             yield connection
-        if service_name is not None:
-            yield f":{service_name}:"
-            service_versioned = service_name.split('-')[0]
-            if service_versioned != service_name:
-                yield f":{service_versioned}:"
-                service_match = re.match(r'([a-z]+)[\d.]+', service_versioned)
-                if service_match:
-                    yield f":{service_match.group(1)}:"
+        for cls in service_classes(service_name): 
+            yield f":{cls}:"
 
     def items(self, section):
         return self._aliases.items(section)

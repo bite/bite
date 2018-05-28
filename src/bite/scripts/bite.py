@@ -11,13 +11,14 @@ import os
 
 from snakeoil.demandload import demandload
 
+from .. import get_service_cls
 from ..argparser import ArgumentParser, parse_file, override_attr
 from ..alias import Aliases
 from ..client import Cli
 from ..config import load_full_config
 from ..exceptions import RequestError
 
-demandload('bite:get_service_cls,const')
+demandload('bite:const')
 
 
 argparser = ArgumentParser(
@@ -115,7 +116,8 @@ def get_cli(args):
         if val:
             args[attr] = val
 
-    client = get_service_cls(args['service'], const.CLIENTS, fallback=Cli)(**args)
+    service_name = args['service']._service
+    client = get_service_cls(service_name, const.CLIENTS, fallbacks=(Cli,))(**args)
     return client, fcn_args
 
 
