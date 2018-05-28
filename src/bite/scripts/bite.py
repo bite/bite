@@ -13,6 +13,7 @@ from snakeoil.demandload import demandload
 
 from ..argparser import ArgumentParser, parse_file, override_attr
 from ..alias import Aliases
+from ..client import Cli
 from ..config import load_full_config
 from ..exceptions import RequestError
 
@@ -114,7 +115,7 @@ def get_cli(args):
         if val:
             args[attr] = val
 
-    client = get_service_cls(args['service'], const.CLIENTS)(**args)
+    client = get_service_cls(args['service'], const.CLIENTS, fallback=Cli)(**args)
     return client, fcn_args
 
 

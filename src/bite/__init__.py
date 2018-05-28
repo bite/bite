@@ -11,13 +11,15 @@ __title__ = 'bite'
 __version__ = '0.0.1'
 
 
-def get_service_cls(service, options):
+def get_service_cls(service, options, fallback=None):
     """Return the class for a given, supported service type."""
     # support getting passed service objects and service name strings
     service = getattr(service, '_service', service)
     try:
         mod_name, cls_name = options[service].rsplit('.', 1)
     except KeyError:
+        if fallback is not None:
+            return fallback
         raise BiteError('invalid service: {!r}\n(available services: {})'.format(
             service, ', '.join(sorted(options))))
     return getattr(import_module(mod_name), cls_name)
