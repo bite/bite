@@ -70,4 +70,10 @@ class Search(args.PagedSearch):
 
 @args.subcmd(JiraOpts)
 class Get(args.Get):
-    pass
+
+    def add_args(self, **kw):
+        # Allow "project-ID" based item IDs for conglomerate jira connections
+        # that encompass all the projects available on the service.
+        if self.service.project is None:
+            kw['id_type'] = str
+        super().add_args(**kw)
