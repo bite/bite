@@ -323,7 +323,11 @@ class Comments(ReceiveSubcmd):
             help='restrict by the email of the person who made the comment')
         self.opts.add_argument(
             '-c', '--created', type='time interval', metavar='TIME_INTERVAL',
-            help='comments made within a specified time interval')
+            help='comments created within a specified time interval')
+        self.opts.add_argument(
+            '-m', '--modified', nargs='?', const='/now',
+            type='time interval', metavar='TIME_INTERVAL',
+            help='comments modified within a specified time interval')
 
 
 class Attach(SendSubcmd):

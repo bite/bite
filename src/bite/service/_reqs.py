@@ -447,7 +447,7 @@ class ParseRequest(Request):
 
 class BaseCommentsRequest(Request):
 
-    def __init__(self, creator=None, created=None, attachment=None,
+    def __init__(self, creator=None, created=None, modified=None, attachment=None,
                  comment_num=None, filtered=False, **kw):
         super().__init__(**kw)
         self.ids = list(map(str, kw.get('ids', ())))
@@ -457,6 +457,7 @@ class BaseCommentsRequest(Request):
             # TODO: handle de/re-suffixing for creator args, perhaps use a regex instead?
             self.creator = set(creator) if creator else creator
             self.created = created
+            self.modified = modified
             self.attachment = attachment
             self.comment_num = set(comment_num) if comment_num else comment_num
 
@@ -464,6 +465,8 @@ class BaseCommentsRequest(Request):
                 self.options.append(f"Creator{pluralism(self.creator)}: {', '.join(self.creator)}")
             if self.created is not None:
                 self.options.append(f'Created: {self.created} ({self.created!r} UTC)')
+            if self.modified is not None:
+                self.options.append(f'Modified: {self.modified} ({self.modified!r} UTC)')
             if self.attachment:
                 self.options.append('Attachments: yes')
             if self.comment_num is not None:
@@ -478,6 +481,8 @@ class BaseCommentsRequest(Request):
                     comments = (x for x in comments if x.creator in self.creator)
                 if self.created is not None:
                     comments = (x for x in comments if x.created in self.created)
+                if self.modified is not None:
+                    comments = (x for x in comments if x.modified in self.modified)
                 if self.attachment:
                     comments = (x for x in comments if x.changes['attachment_id'] is not None)
                 if self.comment_num is not None:
