@@ -77,3 +77,8 @@ class Get(args.Get):
         if self.service.project is None:
             kw['id_type'] = str
         super().add_args(**kw)
+
+
+@args.subcmd(JiraOpts)
+class Version(args.Subcmd):
+    """get Jira version"""

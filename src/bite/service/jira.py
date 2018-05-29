@@ -471,3 +471,14 @@ class _GetRequest(_GetItemRequest):
             item.attachments = next(attachments)
             item.changes = next(changes)
             yield item
+
+
+@req_cmd(Jira, cmd='version')
+class VersionRequest(RESTRequest):
+    """Construct a version request."""
+
+    def __init__(self, **kw):
+        super().__init__(endpoint='/serverInfo', **kw)
+
+    def parse(self, data):
+        return data['version']
