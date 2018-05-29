@@ -204,12 +204,13 @@ class Get(ReceiveSubcmd):
     def description(self):
         return f"get {self.service.item.type}(s)"
 
-    def add_args(self, id_type='ids', history=False):
+    def add_args(self, ids=True, history=False):
         super().add_args()
         # positional args
-        self.parser.add_argument(
-            'ids', type=id_type, nargs='+', metavar='ID', action='parse_stdin',
-            help=f"ID(s) or alias(es) of the {self.service.item.type}(s) to retrieve")
+        if ids:
+            self.parser.add_argument(
+                'ids', type='ids', nargs='+', metavar='ID', action='parse_stdin',
+                help=f"ID(s) or alias(es) of the {self.service.item.type}(s) to retrieve")
 
         # optional args
         single_action = self.opts.add_mutually_exclusive_group()

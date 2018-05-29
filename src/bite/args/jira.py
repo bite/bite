@@ -1,7 +1,40 @@
+from argparse import ArgumentTypeError
 from functools import partial
+import re
 
 from .. import args
-from ..argparser import ParseStdin, override_attr
+from ..argparser import ParseStdin, override_attr, ArgType
+
+
+class JiraIDs(ArgType):
+    """ID type for global Jira IDs."""
+
+    @staticmethod
+    def parse(s):
+        if not re.match(r'[A-Z]+-\d+', s):
+            raise ArgumentTypeError(f'invalid item ID: {s!r}')
+        return s
+
+    def parse_stdin(self, data):
+        return [self.parse(x) for x in data]
+
+
+class JiraIDList(ArgType):
+
+    @staticmethod
+    def parse(s):
+        l = []
+        for item in s.split(','):
+            l.append(JiraIDs.parse(item))
+        return l
+
+
+class JiraSubcmd(args.Subcmd):
+
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
+        self.parser.register('type', 'jira_ids', JiraIDs(self.service))
+        self.parser.register('type', 'jira_id_list', JiraIDList(self.service))
 
 
 class JiraOpts(args.ServiceOpts):
@@ -17,7 +50,7 @@ class JiraOpts(args.ServiceOpts):
 
 
 @args.subcmd(JiraOpts)
-class Search(args.PagedSearch):
+class Search(JiraSubcmd, args.PagedSearch):
 
     def add_args(self):
         super().add_args()
@@ -48,10 +81,16 @@ class Search(args.PagedSearch):
             help=f'{self.service.item.type}s viewed within a specified time interval')
 
         self.attr = self.parser.add_argument_group('Attribute related')
-        self.attr.add_argument(
-            '--id', type='id_list',
-            action=partial(ParseStdin, 'ids'),
-            help=f'restrict by {self.service.item.type} ID(s)')
+        if self.service.project is not None:
+            self.attr.add_argument(
+                '--id', type='id_list',
+                action=partial(ParseStdin, 'ids'),
+                help=f'restrict by {self.service.item.type} ID(s)')
+        else:
+            self.attr.add_argument(
+                '--id', type='jira_id_list',
+                action=partial(ParseStdin, 'jira_ids'),
+                help=f'restrict by {self.service.item.type} ID(s)')
         self.attr.add_argument(
             '--attachments', nargs='?', type=int, const=1,
             help='restrict {self.service.item.type}s by attachment status',
@@ -69,14 +108,20 @@ class Search(args.PagedSearch):
 
 
 @args.subcmd(JiraOpts)
-class Get(args.Get):
+class Get(JiraSubcmd, args.Get):
 
-    def add_args(self, **kw):
-        # Allow "project-ID" based item IDs for conglomerate jira connections
+    def add_args(self):
+        # Force "project-ID" based item IDs for conglomerate jira connections
         # that encompass all the projects available on the service.
         if self.service.project is None:
-            kw['id_type'] = str
-        super().add_args(**kw)
+            # positional args
+            self.parser.add_argument(
+                'ids', type='jira_ids', nargs='+',
+                metavar='PROJECT-ID', action=partial(ParseStdin, 'jira_ids'),
+                help=f"ID(s) of the {self.service.item.type}(s) to retrieve")
+
+        add_ids = self.service.project is not None
+        super().add_args(ids=add_ids)
 
 
 @args.subcmd(JiraOpts)
