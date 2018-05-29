@@ -212,14 +212,13 @@ class Get(ReceiveSubcmd):
             help=f"ID(s) or alias(es) of the {self.service.item.type}(s) to retrieve")
 
         # optional args
-        if self.service.item_endpoint is not None:
-            single_action = self.opts.add_mutually_exclusive_group()
-            single_action.add_argument(
-                '-B', '--browser', action='store_true',
-                help=f'open {self.service.item.type} URL(s) in a browser')
-            single_action.add_argument(
-                '-U', '--url', dest='output_url', action='store_true',
-                help=f'output {self.service.item.type} URL(s)')
+        single_action = self.opts.add_mutually_exclusive_group()
+        single_action.add_argument(
+            '-B', '--browser', action='store_true',
+            help=f'open {self.service.item.type} URL(s) in a browser')
+        single_action.add_argument(
+            '-U', '--url', dest='output_url', action='store_true',
+            help=f'output {self.service.item.type} URL(s)')
         self.opts.add_argument(
             '-A', '--no-attachments', action='store_false', dest='get_attachments',
             help='do not show attachments')
