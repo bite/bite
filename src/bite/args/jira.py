@@ -11,7 +11,7 @@ class JiraIDs(ArgType):
 
     @staticmethod
     def parse(s):
-        if not re.match(r'[A-Z]+-\d+', s):
+        if not re.match(r'[A-Z0-9]+-\d+', s):
             raise ArgumentTypeError(f'invalid item ID: {s!r}')
         return s
 
