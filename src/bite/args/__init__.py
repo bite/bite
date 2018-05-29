@@ -139,8 +139,11 @@ class ServiceOpts(object):
         # fallback to adding all subcmd options, since the user is
         # requesting help output (-h/--help) or entering unknown input
         except AttributeError:
-            for subcmd, cls in self.subcmds():
-                cls(parser=subcmd_parser, service=service, global_opts=self.global_subcmd_opts)
+            for name, cls in self.subcmds():
+                subcmd = cls(
+                    parser=subcmd_parser, service=service,
+                    global_opts=self.global_subcmd_opts)
+                subcmd.add_args()
 
 
 class RequestSubcmd(Subcmd):
