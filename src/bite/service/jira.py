@@ -59,7 +59,12 @@ class JiraIssue(Item):
 
     type = 'issue'
 
-    def __init__(self, get_desc=False, **kw):
+    def __init__(self, get_comments=False, get_attachments=False, get_changes=False, **kw):
+        # TODO: add support for parsing changes
+        self.changes = None
+        self.attachments = None
+        self.comments = None
+
         for k, v in kw.items():
             if k in ('assignee', 'reporter', 'creator', 'status', 'priority'):
                 v = v.get('name') if v else None
@@ -69,14 +74,22 @@ class JiraIssue(Item):
                 v = v.get('votes')
             elif k == 'watches':
                 v = v.get('watchCount')
+            elif k == 'attachment' and get_attachments:
+                k = 'attachments'
+                v = JiraAttachment.parse(v)
+            elif k == 'comment' and get_comments:
+                k = 'comments'
+                v = JiraComment.parse(v['comments'])
             setattr(self, k, v)
 
-        if get_desc:
+        if get_comments:
             desc = self.description.strip() if self.description else None
             if desc:
                 desc = JiraComment(
                     count=0, creator=self.creator, created=self.created, text=desc)
             self.description = desc
+            if self.description:
+                self.comments = (self.description,) + self.comments
 
 
 class JiraComment(Comment):
@@ -183,9 +196,8 @@ class JiraPagedRequest(OffsetPagedRequest, RESTRequest):
 class _SearchRequest(RESTParseRequest, JiraPagedRequest):
     """Construct a search request."""
 
-    def __init__(self, get_desc=False, **kw):
+    def __init__(self, **kw):
         # use POST requests to avoid URL length issues with massive JQL queries
-        self._get_desc = get_desc
         super().__init__(endpoint='/search', method='POST', **kw)
 
     def parse(self, data):
@@ -200,7 +212,7 @@ class _SearchRequest(RESTParseRequest, JiraPagedRequest):
                 # if configured for a specific project, strip it from the ID
                 id = id[len(self.service.project) + 1:]
             fields = issue.get('fields', {})
-            yield self.service.item(id=id, get_desc=self._get_desc, **fields)
+            yield self.service.item(id=id, **fields)
 
     @aliased
     class ParamParser(RESTParseRequest.ParamParser):
@@ -289,29 +301,33 @@ class _SearchRequest(RESTParseRequest, JiraPagedRequest):
             self.options.append(f"{k.capitalize()}: {v} ({v!r} {k})")
 
 
-@req_cmd(Jira)
-class _GetItemRequest(Request):
+@req_cmd(Jira, cmd='get')
+class _GetRequest(Request):
     """Construct an issue request."""
 
-    def __init__(self, ids, get_desc=True, **kw):
+    def __init__(self, ids, get_comments=True, get_attachments=True,
+                 get_changes=False, **kw):
         super().__init__(**kw)
         if ids is None:
             raise ValueError(f'No {self.service.item.type} specified')
 
+        self._get_comments = get_comments
+        self._get_attachments = get_attachments
+        self._get_changes = get_changes
         self.ids = list(map(str, ids))
         self.options.append(f"IDs: {', '.join(self.ids)}")
 
-        self._get_desc = get_desc
-        reqs = []
-
         # enable/disable field retrieval and expansion based on requested fields
+        self.item_params = {}
         params = {}
         expand = []
         fields = ['*all']
-        for attr, field in (('comments', 'comment'),
-                            ('changes', 'changelog'),
-                            ('attachments', 'attachment')):
-            if getattr(self, f'_get_{attr}'):
+        for attr, field in (('get_comments', 'comment'),
+                            ('get_changes', 'changelog'),
+                            ('get_attachments', 'attachment')):
+            enabled = getattr(self, f'_{attr}')
+            self.item_params[attr] = enabled
+            if enabled:
                 expand.append(field)
             else:
                 fields.append(f'-{field}')
@@ -319,6 +335,7 @@ class _GetItemRequest(Request):
         params['expand'] = expand
         params['fields'] = fields
 
+        reqs = []
         for i in self.ids:
             if re.match(r'\d+', i) and self.service.project:
                 id_key = f'{self.service.project}-{i}'
@@ -326,7 +343,6 @@ class _GetItemRequest(Request):
                 id_key = i
             endpoint = f'{self.service._base}/issue/{id_key}'
             reqs.append(RESTRequest(service=self.service, endpoint=endpoint, params=params))
-
         self._reqs = tuple(reqs)
 
     def parse(self, data):
@@ -340,7 +356,7 @@ class _GetItemRequest(Request):
                 # if configured for a specific project, strip it from the ID
                 id = id[len(self.service.project) + 1:]
             fields = issue.get('fields', {})
-            yield self.service.item(id=id, get_desc=self._get_desc, **fields)
+            yield self.service.item(id=id, **self.item_params, **fields)
 
 
 class _SearchGetItemRequest(_SearchRequest):
@@ -439,44 +455,6 @@ class _AttachmentsRequest(Request):
 class _ChangesRequest(BaseChangesRequest):
     """Construct a comments request."""
 
-
-@req_cmd(Jira, cmd='get')
-class _GetRequest(_GetItemRequest):
-    """Construct requests to retrieve all known data for given issue IDs."""
-
-    def __init__(self, get_comments=True, get_attachments=True, get_changes=False, **kw):
-        self._get_comments = get_comments
-        self._get_attachments = get_attachments
-        self._get_changes = get_changes
-        super().__init__(get_desc=get_comments, **kw)
-
-    def parse(self, data):
-        items = list(super().parse(data))
-        comments = self._none_gen
-        attachments = self._none_gen
-        changes = self._none_gen
-
-        if any((self._get_comments, self._get_attachments, self._get_changes)):
-            if self._get_comments:
-                item_descs = ((x.description,) if x.description else () for x in items)
-                item_comments = (x.comment['comments'] for x in items)
-                item_comments = self.service.CommentsRequest(
-                    ids=self.ids, data=item_comments).send()
-                comments = (x + y for x, y in zip(item_descs, item_comments))
-            if self._get_attachments:
-                item_attachments = (getattr(x, 'attachment', ()) for x in items)
-                attachments = self.service.AttachmentsRequest(
-                    ids=self.ids, data=item_attachments).send()
-            if self._get_changes:
-                item_changes = (x.changelog for x in items)
-                changes = self.service.ChangesRequest(
-                    ids=self.ids, data=item_changes).send()
-
-        for item in items:
-            item.comments = next(comments)
-            item.attachments = next(attachments)
-            item.changes = next(changes)
-            yield item
 
 
 @req_cmd(Jira, cmd='version')
