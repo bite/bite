@@ -80,11 +80,30 @@ class JiraIssue(Item):
 
 
 class JiraComment(Comment):
-    pass
+
+    @classmethod
+    def parse(cls, data):
+        l = []
+        for i, c in enumerate(data, start=1):
+            l.append(cls(
+                id=c['id'], count=i, creator=c['author']['name'],
+                created=parsetime(c['created']), modified=parsetime(c['updated']),
+                text=c['body'].strip()))
+        return tuple(l)
 
 
 class JiraAttachment(Attachment):
-    pass
+
+    @classmethod
+    def parse(cls, data):
+        l = []
+        for a in data:
+            l.append(cls(
+                id=a['id'], creator=a['author']['name'],
+                created=parsetime(a['created']), size=a['size'],
+                filename=a['filename'], mimetype=a['mimeType'],
+                url=a['content']))
+        return tuple(l)
 
 
 class JiraEvent(Change):
@@ -382,13 +401,7 @@ class _CommentsRequest(BaseCommentsRequest):
     def parse(self, data):
         if self._data is not None:
             for comments in self._data:
-                l = []
-                for i, c in enumerate(comments, start=1):
-                    l.append(JiraComment(
-                        id=c['id'], count=i, creator=c['author']['name'],
-                        created=parsetime(c['created']), modified=parsetime(c['updated']),
-                        text=c['body'].strip()))
-                yield tuple(l)
+                yield JiraComment.parse(comments)
         else:
             # TODO
             pass
@@ -416,14 +429,7 @@ class _AttachmentsRequest(Request):
     def parse(self, data):
         if self._data is not None:
             for attachments in self._data:
-                l = []
-                for a in attachments:
-                    l.append(JiraAttachment(
-                        id=a['id'], creator=a['author']['name'],
-                        created=parsetime(a['created']), size=a['size'],
-                        filename=a['filename'], mimetype=a['mimeType'],
-                        url=a['content']))
-                yield tuple(l)
+                yield JiraAttachment.parse(attachments)
         else:
             # TODO
             pass
