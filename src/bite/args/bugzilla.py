@@ -589,9 +589,6 @@ class Comments(args.Comments):
         super().add_args()
         # optional args
         self.opts.add_argument(
-            '-c', '--created', metavar='TIME', type='date',
-            help='comments made at this time or later')
-        self.opts.add_argument(
             '-a', '--attachment', action='store_true',
             help='restrict by comments that include attachments')
         self.opts.add_argument(

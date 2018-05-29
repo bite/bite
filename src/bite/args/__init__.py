@@ -318,6 +318,9 @@ class Comments(ReceiveSubcmd):
         self.opts.add_argument(
             '-r', '--creator', type='str_list', action='parse_stdin',
             help='restrict by the email of the person who made the comment')
+        self.opts.add_argument(
+            '-c', '--created', metavar='TIME', type='date',
+            help='comments made at this time or later')
 
 
 class Attach(SendSubcmd):
