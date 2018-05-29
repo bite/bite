@@ -62,8 +62,6 @@ class Subcmd(object):
 
         # add global subcmd options
         global_opts(self)
-        # add subcmd specific options
-        self.add_args()
 
     @property
     def description(self):
@@ -133,9 +131,11 @@ class ServiceOpts(object):
         # try to only add the options for the single subcmd
         try:
             cls = getattr(self, subcmd)
-            return cls(
+            subcmd = cls(
                 parser=subcmd_parser, service=service,
                 global_opts=self.global_subcmd_opts, name=subcmd)
+            subcmd.add_args()
+            return subcmd
         # fallback to adding all subcmd options, since the user is
         # requesting help output (-h/--help) or entering unknown input
         except AttributeError:
