@@ -98,9 +98,12 @@ class JiraComment(Comment):
     def parse(cls, data):
         l = []
         for i, c in enumerate(data, start=1):
+            # don't count creation as a modification
+            updated = parsetime(c['updated']) if c['updated'] != c['created'] else None
+
             l.append(cls(
                 id=c['id'], count=i, creator=c['author']['name'],
-                created=parsetime(c['created']), modified=parsetime(c['updated']),
+                created=parsetime(c['created']), modified=updated,
                 text=c['body'].strip()))
         return tuple(l)
 
