@@ -8,8 +8,9 @@ from snakeoil.demandload import demandload
 from ..exceptions import BiteError
 from ..argparser import (
     ParseStdin, Comment, IDList, StringList, IDs, ID_Maps, ID_Str_Maps,
+    TimeIntervalArg,
 )
-from ..objects import DateTime, TimeInterval, IntRange
+from ..objects import DateTime, IntRange
 from ..utils import str2bool, block_edit, confirm
 
 demandload('bite:const')
@@ -59,7 +60,7 @@ class Subcmd(object):
         self.parser.register('type', 'str_list', StringList(service))
         self.parser.register('type', 'comment', Comment(service))
         self.parser.register('type', 'date', DateTime)
-        self.parser.register('type', 'time interval', TimeInterval)
+        self.parser.register('type', 'time interval', TimeIntervalArg(service))
         self.parser.register('type', 'int range', IntRange)
         self.parser.register('action', 'parse_stdin', ParseStdin)
 

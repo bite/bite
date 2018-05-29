@@ -14,6 +14,7 @@ from . import get_service_cls
 from .alias import Aliases
 from .config import get_config
 from .exceptions import BiteError
+from .objects import TimeInterval
 from .utils import block_edit, confirm
 
 demandload('bite:const')
@@ -141,6 +142,16 @@ class Comment(ArgType):
         if not data:
             raise ArgumentTypeError('no comment data provided on stdin')
         return '\n'.join(data)
+
+
+class TimeIntervalArg(ArgType):
+
+    @staticmethod
+    def parse(s):
+        try:
+            return TimeInterval(s)
+        except ValueError as e:
+            raise ArgumentTypeError(e)
 
 
 class parse_file(Action):
