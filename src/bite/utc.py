@@ -97,6 +97,8 @@ def parse_date(s):
         except ValueError:
             # otherwise default to UTC if none is specified
             date = parsetime(s).replace(tzinfo=utc)
+    elif s == 'now':
+        return utcnow()
     else:
         raise ValueError(f'invalid time value: {s!r}')
 
