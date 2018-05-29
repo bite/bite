@@ -31,7 +31,8 @@ class ArgType(object):
             return data
         return self.parse(data)
 
-    def parse(self, s):
+    @staticmethod
+    def parse(s):
         """Parse string value into expected argument type."""
         return s
 
@@ -42,13 +43,15 @@ class ArgType(object):
 
 class StringList(ArgType):
 
-    def parse(self, s):
+    @staticmethod
+    def parse(s):
         return [item for item in s.split(',') if item != ""]
 
 
 class IDList(ArgType):
 
-    def parse(self, s):
+    @staticmethod
+    def parse(s):
         try:
             l = []
             for item in s.split(','):
@@ -60,7 +63,8 @@ class IDList(ArgType):
 
 class IDs(ArgType):
 
-    def parse(self, s):
+    @staticmethod
+    def parse(s):
         try:
             return int(s)
         except:
@@ -72,7 +76,8 @@ class IDs(ArgType):
 
 class ID_Maps(ArgType):
 
-    def parse(self, s):
+    @staticmethod
+    def parse(s):
         id_str, _sep, a_str = s.partition(':')
         try:
             id = int(id_str)
@@ -94,7 +99,8 @@ class ID_Maps(ArgType):
 
 class ID_Str_Maps(ArgType):
 
-    def parse(self, s):
+    @staticmethod
+    def parse(s):
         id_str, _sep, a_str = s.partition(':')
         try:
             id = int(id_str)
@@ -110,7 +116,8 @@ class ID_Str_Maps(ArgType):
 
 class Comment(ArgType):
 
-    def parse(self, s):
+    @staticmethod
+    def parse(s):
         data = ''
 
         while True:
