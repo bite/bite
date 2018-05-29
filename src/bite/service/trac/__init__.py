@@ -303,8 +303,10 @@ class _CommentsRequest(BaseCommentsRequest, _ChangelogRequest):
 
     def __init__(self, **kw):
         super().__init__(**kw)
-        if self.ids is not None:
-            self.options.append(f"IDs: {', '.join(map(str, self.ids))}")
+
+        if self.ids is None:
+            raise ValueError(f'No {self.service.item.type} ID(s) specified')
+        self.options.append(f"IDs: {', '.join(self.ids)}")
 
     def parse(self, data):
         def items():

@@ -454,11 +454,11 @@ class _CommentsRequest(BaseCommentsRequest, Multicall):
 
     def __init__(self, comment_ids=None, fields=(), **kw):
         super().__init__(command='display', **kw)
+
         if not any((self.ids, comment_ids)):
             raise ValueError('No ID(s) specified')
-
         if self.ids is not None:
-            self.options.append(f"IDs: {', '.join(map(str, self.ids))}")
+            self.options.append(f"IDs: {', '.join(self.ids)}")
 
         self.fields = fields
         self.comment_ids = comment_ids

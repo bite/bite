@@ -449,10 +449,11 @@ class BaseCommentsRequest(Request):
 
     def __init__(self, creator=None, attachment=None, comment_num=None, filtered=False, **kw):
         super().__init__(**kw)
-        self.ids = kw.get('ids')
+        self.ids = list(map(str, kw.get('ids', ())))
 
         self._filtered = filtered
         if self._filtered:
+            # TODO: handle de/re-suffixing for creator args, perhaps use a regex instead?
             self.creator = set(creator) if creator else creator
             self.attachment = attachment
             self.comment_num = set(comment_num) if comment_num else comment_num

@@ -328,10 +328,10 @@ class _CommentsRequest(BaseCommentsRequest):
 
     def __init__(self, **kw):
         super().__init__(**kw)
+
         if self.ids is None:
             raise ValueError(f'No IDs specified')
-
-        self.options.append(f"IDs: {', '.join(map(str, self.ids))}")
+        self.options.append(f"IDs: {', '.join(self.ids)}")
 
         reqs = []
         for i in self.ids:

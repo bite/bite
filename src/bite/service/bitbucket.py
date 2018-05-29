@@ -399,9 +399,10 @@ class _CommentsRequest(BaseCommentsRequest):
 
     def __init__(self, **kw):
         super().__init__(**kw)
+
         if self.ids is None:
             raise ValueError(f'No {self.service.item.type} ID(s) specified')
-        self.options.append(f"IDs: {', '.join(map(str, self.ids))}")
+        self.options.append(f"IDs: {', '.join(self.ids)}")
 
         reqs = []
         for i in self.ids:
@@ -488,10 +489,10 @@ class _ChangesRequest(BaseChangesRequest):
 
     def __init__(self, **kw):
         super().__init__(**kw)
+
         if self.ids is None:
             raise ValueError(f'No {self.service.item.type} ID(s) specified')
-
-        self.options.append(f"IDs: {', '.join(map(str, self.ids))}")
+        self.options.append(f"IDs: {', '.join(self.ids)}")
 
         reqs = []
         for i in self.ids:
@@ -502,7 +503,7 @@ class _ChangesRequest(BaseChangesRequest):
 
     def parse(self, data):
         def items():
-            for i, changes in zip(self.ids, data):
+            for changes in data:
                 changes = changes['values']
                 yield tuple(BitbucketEvent(
                     self.service, id=c['id'], count=j+1, change=c)
