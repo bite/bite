@@ -124,6 +124,13 @@ class TimeInterval(object):
         else:
             return f'before {self.end!r}'
 
+    def __contains__(self, obj):
+        if self.start is not None and obj < self.start:
+            return False
+        if self.end is not None and obj > self.end:
+            return False
+        return True
+
 
 class IntRange(object):
     """Object that stores a given integer range token and its corresponding objects."""
