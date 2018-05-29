@@ -271,8 +271,65 @@ class _SearchRequest(RESTParseRequest, JiraPagedRequest):
 
 
 @req_cmd(Jira)
-class _GetItemRequest(_SearchRequest):
+class _GetItemRequest(Request):
     """Construct an issue request."""
+
+    def __init__(self, ids, get_desc=True, **kw):
+        super().__init__(**kw)
+        if ids is None:
+            raise ValueError(f'No {self.service.item.type} specified')
+
+        self.ids = list(map(str, ids))
+        self.options.append(f"IDs: {', '.join(self.ids)}")
+
+        self._get_desc = get_desc
+        reqs = []
+
+        # enable/disable field retrieval and expansion based on requested fields
+        params = {}
+        expand = []
+        fields = ['*all']
+        for attr, field in (('comments', 'comment'),
+                            ('changes', 'changelog'),
+                            ('attachments', 'attachment')):
+            if getattr(self, f'_get_{attr}'):
+                expand.append(field)
+            else:
+                fields.append(f'-{field}')
+
+        params['expand'] = expand
+        params['fields'] = fields
+
+        for i in self.ids:
+            if re.match(r'\d+', i) and self.service.project:
+                id_key = f'{self.service.project}-{i}'
+            else:
+                id_key = i
+            endpoint = f'{self.service._base}/issue/{id_key}'
+            reqs.append(RESTRequest(service=self.service, endpoint=endpoint, params=params))
+
+        self._reqs = tuple(reqs)
+
+    def parse(self, data):
+        data = super().parse(data)
+        for issue in data:
+            # Use project ID key for issue id, the regular id field relates to
+            # the global issue ID across all projects on the service instance.
+            # Using the key value matches what is shown on the web interface.
+            id = issue.get('key')
+            if self.service.project:
+                # if configured for a specific project, strip it from the ID
+                id = id[len(self.service.project) + 1:]
+            fields = issue.get('fields', {})
+            yield self.service.item(id=id, get_desc=self._get_desc, **fields)
+
+
+class _SearchGetItemRequest(_SearchRequest):
+    """Construct an issue request using a search request.
+
+    Note that the returned items are not in the same order the specified IDs
+    are in and Jira currently doesn't seem to support ordering them in that fashion.
+    """
 
     def __init__(self, ids, **kw):
         if ids is None:
@@ -282,14 +339,6 @@ class _GetItemRequest(_SearchRequest):
 
         self.options.append(f"IDs: {', '.join(map(str, ids))}")
         self.ids = list(map(str, ids))
-
-    def parse(self, data):
-        items = super().parse(data)
-        # Return items in the requested order, Jira doesn't appear to support
-        # search ordering by input fields.
-        d = {item.id: item for item in items}
-        for i in self.ids:
-            yield d[i]
 
     class ParamParser(_SearchRequest.ParamParser):
 
