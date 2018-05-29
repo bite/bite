@@ -11,10 +11,13 @@ from dateutil.parser import parse as parsetime
 from snakeoil.klass import aliased, alias
 
 from ._jsonrest import JsonREST
-from ._reqs import OffsetPagedRequest, req_cmd
+from ._reqs import (
+    OffsetPagedRequest, req_cmd, BaseCommentsRequest, BaseChangesRequest,
+    NullRequest, Request
+)
 from ._rest import RESTRequest, RESTParseRequest
 from ..exceptions import BiteError, RequestError
-from ..objects import Item
+from ..objects import Item, Comment, Change, Attachment
 
 
 class JiraError(RequestError):
@@ -49,13 +52,14 @@ class JiraIssue(Item):
         ('updated', 'Modified'),
         ('votes', 'Votes'),
         ('watches', 'Watchers'),
-        # ('comment', 'Comments'),
-        # ('attachment', 'Attachments'),
+        ('comments', 'Comments'),
+        ('attachments', 'Attachments'),
+        ('changes', 'Changes'),
     )
 
     type = 'issue'
 
-    def __init__(self, **kw):
+    def __init__(self, get_desc=False, **kw):
         for k, v in kw.items():
             if k in ('assignee', 'reporter', 'creator', 'status', 'priority'):
                 v = v.get('name') if v else None
@@ -66,6 +70,25 @@ class JiraIssue(Item):
             elif k == 'watches':
                 v = v.get('watchCount')
             setattr(self, k, v)
+
+        if get_desc:
+            desc = self.description.strip() if self.description else None
+            if desc:
+                desc = JiraComment(
+                    count=0, creator=self.creator, created=self.created, text=desc)
+            self.description = desc
+
+
+class JiraComment(Comment):
+    pass
+
+
+class JiraAttachment(Attachment):
+    pass
+
+
+class JiraEvent(Change):
+    pass
 
 
 class Jira(JsonREST):
@@ -141,8 +164,9 @@ class JiraPagedRequest(OffsetPagedRequest, RESTRequest):
 class _SearchRequest(RESTParseRequest, JiraPagedRequest):
     """Construct a search request."""
 
-    def __init__(self, **kw):
+    def __init__(self, get_desc=False, **kw):
         # use POST requests to avoid URL length issues with massive JQL queries
+        self._get_desc = get_desc
         super().__init__(endpoint='/search', method='POST', **kw)
 
     def parse(self, data):
@@ -157,7 +181,7 @@ class _SearchRequest(RESTParseRequest, JiraPagedRequest):
                 # if configured for a specific project, strip it from the ID
                 id = id[len(self.service.project) + 1:]
             fields = issue.get('fields', {})
-            yield self.service.item(id=id, **fields)
+            yield self.service.item(id=id, get_desc=self._get_desc, **fields)
 
     @aliased
     class ParamParser(RESTParseRequest.ParamParser):
@@ -255,6 +279,7 @@ class _GetItemRequest(_SearchRequest):
             raise ValueError(f'No {self.service.item.type} specified')
 
         super().__init__(id=ids, **kw)
+
         self.options.append(f"IDs: {', '.join(map(str, ids))}")
         self.ids = list(map(str, ids))
 
@@ -269,9 +294,95 @@ class _GetItemRequest(_SearchRequest):
     class ParamParser(_SearchRequest.ParamParser):
 
         def _finalize(self, **kw):
+            expand = []
+            fields = ['*all']
+
+            # enable/disable field retrieval and expansion based on requested fields
+            for attr, field in (('comments', 'comment'),
+                                ('changes', 'changelog'),
+                                ('attachments', 'attachment')):
+                if getattr(self.request, f'_get_{attr}'):
+                    expand.append(field)
+                else:
+                    fields.append(f'-{field}')
+
+            self.params['expand'] = expand
+            self.params['fields'] = fields
             super()._finalize(**kw)
-            self.params['expand'] = ['changelog']
-            self.params['fields'] = ['*all']
+
+
+@req_cmd(Jira, cmd='comments')
+class _CommentsRequest(BaseCommentsRequest):
+    """Construct a comments request."""
+
+    def __init__(self, ids=None, item_id=False, data=None, **kw):
+        super().__init__(**kw)
+        if ids is None:
+            raise ValueError(f'No ID(s) specified')
+
+        if data is None:
+            # TODO
+            pass
+        else:
+            reqs = [NullRequest()]
+
+        self.ids = ids
+        self._reqs = tuple(reqs)
+        self._data = data
+
+    def parse(self, data):
+        if self._data is not None:
+            for comments in self._data:
+                l = []
+                for i, c in enumerate(comments, start=1):
+                    l.append(JiraComment(
+                        id=c['id'], count=i, creator=c['author']['name'],
+                        created=parsetime(c['created']), modified=parsetime(c['updated']),
+                        text=c['body'].strip()))
+                yield tuple(l)
+        else:
+            # TODO
+            pass
+
+
+@req_cmd(Jira, cmd='attachments')
+class _AttachmentsRequest(Request):
+    """Construct an attachments request."""
+
+    def __init__(self, ids=None, item_id=False, data=None, **kw):
+        super().__init__(**kw)
+        if ids is None:
+            raise ValueError(f'No ID(s) specified')
+
+        if data is None:
+            # TODO
+            pass
+        else:
+            reqs = [NullRequest()]
+
+        self.ids = ids
+        self._reqs = tuple(reqs)
+        self._data = data
+
+    def parse(self, data):
+        if self._data is not None:
+            for attachments in self._data:
+                l = []
+                for a in attachments:
+                    l.append(JiraAttachment(
+                        id=a['id'], creator=a['author']['name'],
+                        created=parsetime(a['created']), size=a['size'],
+                        filename=a['filename'], mimetype=a['mimeType'],
+                        url=a['content']))
+                yield tuple(l)
+        else:
+            # TODO
+            pass
+
+
+@req_cmd(Jira, cmd='changes')
+class _ChangesRequest(BaseChangesRequest):
+    """Construct a comments request."""
 
 
 @req_cmd(Jira, cmd='get')
@@ -279,16 +390,32 @@ class _GetRequest(_GetItemRequest):
     """Construct requests to retrieve all known data for given issue IDs."""
 
     def __init__(self, get_comments=True, get_attachments=True, get_changes=False, **kw):
-        super().__init__(get_desc=get_comments, get_attachments=get_attachments, **kw)
         self._get_comments = get_comments
         self._get_attachments = get_attachments
         self._get_changes = get_changes
+        super().__init__(get_desc=get_comments, **kw)
 
     def parse(self, data):
-        items = super().parse(data)
+        items = list(super().parse(data))
         comments = self._none_gen
         attachments = self._none_gen
         changes = self._none_gen
+
+        if any((self._get_comments, self._get_attachments, self._get_changes)):
+            if self._get_comments:
+                item_descs = ((x.description,) for x in items)
+                item_comments = (x.comment['comments'] for x in items)
+                item_comments = self.service.CommentsRequest(
+                    ids=self.ids, data=item_comments).send()
+                comments = (x + y for x, y in zip(item_descs, item_comments))
+            if self._get_attachments:
+                item_attachments = (getattr(x, 'attachment', ()) for x in items)
+                attachments = self.service.AttachmentsRequest(
+                    ids=self.ids, data=item_attachments).send()
+            if self._get_changes:
+                item_changes = (x.changelog for x in items)
+                changes = self.service.ChangesRequest(
+                    ids=self.ids, data=item_changes).send()
 
         for item in items:
             item.comments = next(comments)
