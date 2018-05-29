@@ -399,28 +399,28 @@ class _SearchGetItemRequest(_SearchRequest):
 class _CommentsRequest(BaseCommentsRequest):
     """Construct a comments request."""
 
-    def __init__(self, ids=None, item_id=False, data=None, **kw):
+    def __init__(self, **kw):
         super().__init__(**kw)
-        if ids is None:
-            raise ValueError(f'No ID(s) specified')
 
-        if data is None:
-            # TODO
-            pass
-        else:
-            reqs = [NullRequest()]
+        if self.ids is None:
+            raise ValueError(f'No {self.service.item.type} ID(s) specified')
+        self.options.append(f"IDs: {', '.join(self.ids)}")
 
-        self.ids = ids
+        reqs = []
+        for i in self.ids:
+            if re.match(r'\d+', i) and self.service.project:
+                id_key = f'{self.service.project}-{i}'
+            else:
+                id_key = i
+            endpoint = f'{self.service._base}/issue/{id_key}/comment'
+            reqs.append(JiraPagedRequest(service=self.service, endpoint=endpoint))
         self._reqs = tuple(reqs)
-        self._data = data
 
     def parse(self, data):
-        if self._data is not None:
-            for comments in self._data:
-                yield JiraComment.parse(comments)
-        else:
-            # TODO
-            pass
+        def items():
+            for x in data:
+                yield JiraComment.parse(x['comments'])
+        yield from self.filter(items())
 
 
 @req_cmd(Jira, cmd='attachments')

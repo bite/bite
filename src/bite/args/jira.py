@@ -125,5 +125,10 @@ class Get(JiraSubcmd, args.Get):
 
 
 @args.subcmd(JiraOpts)
+class Comments(args.Comments):
+    pass
+
+
+@args.subcmd(JiraOpts)
 class Version(args.Subcmd):
     """get Jira version"""
