@@ -1,4 +1,5 @@
 import argparse
+from collections import OrderedDict
 from functools import partial
 
 from snakeoil.cli import arghparse
@@ -18,8 +19,13 @@ def subcmd(service_cls, name=None):
     """Register service subcommands."""
     def wrapped(cls, *args, **kwds):
         subcmd_name = name if name is not None else cls.__name__.lower()
-        # add subcommand to its related service class
-        setattr(service_cls, subcmd_name, cls)
+        # register subcommand with its related service class
+        try:
+            subcmds = getattr(service_cls, 'subcmds')
+        except AttributeError:
+            subcmds = OrderedDict()
+            setattr(service_cls, 'subcmds', subcmds)
+        subcmds[subcmd_name] = cls
         # store the subcommand name inside its class for consistent help output
         setattr(cls, '_subcmd_name', subcmd_name)
         return cls
@@ -99,15 +105,6 @@ class ServiceOpts(object):
         self.service_opts = service_specific_opts
         self.service_opts.title = f"{service_name.split('-')[0].capitalize()} specific options"
 
-    def subcmds(self):
-        """Get sequence of subcommands defined for the service."""
-        l = []
-        for x in dir(self):
-            attr = getattr(self, x)
-            if isinstance(attr, type) and issubclass(attr, Subcmd):
-                l.append((x, attr))
-        return tuple(l)
-
     def add_main_opts(self, service):
         """Add service specific top-level options."""
         raise NotImplementedError
@@ -130,7 +127,7 @@ class ServiceOpts(object):
         subcmd_parser = self.parser.add_subparsers(help='help for subcommands')
         # try to only add the options for the single subcmd
         try:
-            cls = getattr(self, subcmd)
+            cls = self.subcmds[subcmd]
             subcmd = cls(
                 parser=subcmd_parser, service=service,
                 global_opts=self.global_subcmd_opts, name=subcmd)
@@ -138,8 +135,8 @@ class ServiceOpts(object):
             return subcmd
         # fallback to adding all subcmd options, since the user is
         # requesting help output (-h/--help) or entering unknown input
-        except AttributeError:
-            for name, cls in self.subcmds():
+        except KeyError:
+            for name, cls in self.subcmds.items():
                 subcmd = cls(
                     parser=subcmd_parser, service=service,
                     global_opts=self.global_subcmd_opts)
