@@ -403,7 +403,7 @@ class _GetRequest(_GetItemRequest):
 
         if any((self._get_comments, self._get_attachments, self._get_changes)):
             if self._get_comments:
-                item_descs = ((x.description,) for x in items)
+                item_descs = ((x.description,) if x.description else () for x in items)
                 item_comments = (x.comment['comments'] for x in items)
                 item_comments = self.service.CommentsRequest(
                     ids=self.ids, data=item_comments).send()
