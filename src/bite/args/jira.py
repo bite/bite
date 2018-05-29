@@ -125,8 +125,20 @@ class Get(JiraSubcmd, args.Get):
 
 
 @args.subcmd(JiraOpts)
-class Comments(args.Comments):
-    pass
+class Comments(JiraSubcmd, args.Comments):
+
+    def add_args(self):
+        # Force "project-ID" based item IDs for conglomerate jira connections
+        # that encompass all the projects available on the service.
+        if self.service.project is None:
+            # positional args
+            self.parser.add_argument(
+                'ids', type='jira_ids', nargs='+',
+                metavar='PROJECT-ID', action=partial(ParseStdin, 'jira_ids'),
+                help=f"ID(s) of the {self.service.item.type}(s) to retrieve")
+
+        add_ids = self.service.project is not None
+        super().add_args(ids=add_ids)
 
 
 @args.subcmd(JiraOpts)

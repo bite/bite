@@ -304,13 +304,15 @@ class Comments(ReceiveSubcmd):
     def description(self):
         return f"get comments from {self.service.item.type}(s)"
 
-    def add_args(self):
+    def add_args(self, ids=True):
         super().add_args()
         # positional args
-        self.parser.add_argument(
-            'ids', type='ids', nargs='+', metavar='ID', action='parse_stdin',
-            help=f"ID(s) or alias(es) of the {self.service.item.type}(s) "
-                 "to retrieve all comments")
+        if ids:
+            self.parser.add_argument(
+                'ids', type='ids', nargs='+', metavar='ID', action='parse_stdin',
+                help=f"ID(s) or alias(es) of the {self.service.item.type}(s) "
+                    "to retrieve all comments")
+
         # optional args
         self.opts.add_argument(
             '-n', '--number', dest='comment_num', type='id_list',
