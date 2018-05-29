@@ -151,6 +151,40 @@ class Service(object):
     def __str__(self):
         return f'{self.webbase} -- {self._service}'
 
+    def item_urls(self, ids):
+        """Generate item URLs for specified item IDs."""
+        if self.item_endpoint is None:
+            raise BiteError(f"no web endpoint defined for {self.item.type}s")
+
+        if self.item_endpoint.startswith('/'):
+            url = self.webbase.rstrip('/') + self.item_endpoint
+        else:
+            url = self.item_endpoint
+
+        yield from self._format_item_urls(url, ids)
+
+    def _format_item_urls(self, url, ids):
+        """Format item URLs from given information."""
+        for i in ids:
+            yield url.format(id=i)
+
+    def attachment_urls(self, ids):
+        """Generate attachment URLs for specified attachment IDs."""
+        if self.attachment_endpoint is None:
+            raise BiteError("no web endpoint defined for attachments")
+
+        if self.attachment_endpoint.startswith('/'):
+            url = self.webbase.rstrip('/') + self.attachment_endpoint
+        else:
+            url = self.attachment_endpoint
+
+        yield from self._format_attachment_urls(url, ids)
+
+    def _format_attachment_urls(self, url, ids):
+        """Format attachment URLs from given information."""
+        for i in ids:
+            yield url.format(id=i)
+
     @staticmethod
     def _encode_request(method, params=None):
         """Encode the data body for a request."""

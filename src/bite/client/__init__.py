@@ -156,25 +156,13 @@ class Cli(Client):
         if not ids:
             raise RuntimeError(f'No {self.service.item.type} ID(s) specified')
 
-        def _item_urls(ids):
-            if self.service.item_endpoint is None:
-                raise BiteError(f"no web endpoint defined for {self.service.item.type}s")
-
-            if self.service.item_endpoint.startswith('/'):
-                item_url = self.service.webbase.rstrip('/') + self.service.item_endpoint
-            else:
-                item_url = self.service.item_endpoint
-
-            for id in ids:
-                yield item_url.format(id=id)
-
         if browser:
-            urls = list(_item_urls(ids))
+            urls = list(self.service.item_urls(ids))
             self.log_t(f'Launching {self.service.item.type}{pluralism(ids)} in browser: {const.BROWSER}')
             self.log(urls, prefix='   - ')
             launch_browser(urls)
         elif output_url:
-            print(*_item_urls(ids), sep='\n')
+            print(*self.service.item_urls(ids), sep='\n')
         else:
             request = self.service.GetRequest(ids=ids, **kw)
             self.log_t(f"Getting {self.service.item.type}{pluralism(ids)}: {', '.join(map(str, ids))}")
@@ -192,18 +180,6 @@ class Cli(Client):
         data = request.send()
         self.log_t(f"{filename!r} attached to {self.service.item.type}{pluralism(ids)}: \
                    {', '.join(map(str, ids))}")
-
-    def _attachment_urls(self, ids):
-        if self.service.attachment_endpoint is None:
-            raise BiteError("no web endpoint defined for attachments")
-
-        if self.service.attachment_endpoint.startswith('/'):
-            attachment_url = self.service.webbase.rstrip('/') + self.service.attachment_endpoint
-        else:
-            attachment_url = self.service.attachment_endpoint
-
-        for id in ids:
-            yield attachment_url.format(id=id)
 
     @dry_run
     @login_retry
@@ -236,14 +212,14 @@ class Cli(Client):
         self.log_t(f"Getting attachment{plural}{item_str}: {', '.join(map(str, display_ids))}")
 
         def _launch_browser(ids):
-            urls = list(self._attachment_urls(ids))
+            urls = list(self.service.attachment_urls(ids))
             self.log_t(f'Launching attachment{pluralism(ids)} in browser: {const.BROWSER}')
             self.log(urls, prefix='   - ')
             launch_browser(urls)
 
         if not item_id and (output_url or browser):
             if output_url:
-                print(*self._attachment_urls(ids), sep='\n')
+                print(*self.service.attachment_urls(ids), sep='\n')
             elif browser:
                 _launch_browser(ids)
         else:
