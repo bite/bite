@@ -1,5 +1,6 @@
 from itertools import chain
 import bz2
+from datetime import datetime
 import lzma
 import os
 import re
@@ -125,6 +126,8 @@ class TimeInterval(object):
             return f'before {self.end!r}'
 
     def __contains__(self, obj):
+        if not isinstance(obj, datetime):
+            return False
         if self.start is not None and obj < self.start:
             return False
         if self.end is not None and obj > self.end:
