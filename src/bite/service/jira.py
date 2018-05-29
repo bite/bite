@@ -74,7 +74,8 @@ class Jira(JsonREST):
     _service = 'jira'
 
     item = JiraIssue
-    _item_endpoint = '/issues/{project}-{{id}}'
+    _item_endpoint = '/browse/{project}-{{id}}'
+    attachment_endpoint = '/secure/attachment/{id}'
 
     def __init__(self, base, max_results=None, **kw):
         try:
@@ -89,13 +90,29 @@ class Jira(JsonREST):
         # TODO: generalize and allow versioned API support
         super().__init__(
             endpoint=f"/rest/api/2", base=api_base, max_results=max_results, **kw)
-        self.webbase = base
+        self.webbase = api_base
 
     @property
     def item_endpoint(self):
         """Allow the item endpoint to be dynamically altered by changing the project attr."""
         if self.project:
             return self._item_endpoint.format(project=self.project)
+        return self._item_endpoint
+
+    def _format_item_urls(self, url, ids):
+        """Format item URLs from given information.
+
+        This adds support for conglomerate connections that have to add the
+        project IDs to the requested ID.
+        """
+        for i in ids:
+            if isinstance(i, str):
+                project, _sep, id = i.partition('-')
+                if not all((project, id)):
+                    raise BiteError(f'invalid item ID missing project or item number: {i!r}')
+                url = url.format(project=project)
+                i = id
+            yield url.format(id=i)
 
     def inject_auth(self, request, params):
         raise NotImplementedError
