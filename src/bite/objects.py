@@ -300,7 +300,9 @@ class Change(object):
 class Comment(Change):
     """Generic comment on a service."""
 
-    def __init__(self, creator, created, id=None, count=None, changes=None, text=None):
+    def __init__(self, creator, created, modified=None,
+                 id=None, count=None, changes=None, text=None):
+        self.modified = modified
         self.text = text
         super().__init__(id=id, creator=creator, created=created, changes=changes, count=count)
 
