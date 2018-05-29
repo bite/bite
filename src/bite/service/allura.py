@@ -389,8 +389,8 @@ class _CommentsRequest(BaseCommentsRequest, _ThreadRequest):
     """Construct a comments request."""
 
     def parse(self, data):
+        thread_posts = super().parse(data)
         def items():
-            thread_posts = super().parse(data)
             for posts in thread_posts:
                 l = []
                 count = 1
@@ -431,8 +431,8 @@ class _ChangesRequest(BaseChangesRequest, _ThreadRequest):
     """Construct a changes request."""
 
     def parse(self, data):
+        thread_posts = super().parse(data)
         def items():
-            thread_posts = super().parse(data)
             for posts in thread_posts:
                 l = []
                 count = 1
