@@ -50,16 +50,22 @@ def get_service(connection):
 def service_classes(service_name):
     """Generator for service classes from specific to generic.
 
-    full service name -> versioned service -> generic service
+    Service types yielded in order if they exist:
+        - full service name
+        - protocol agnostic and/or versioned services (can be multiple)
+        - generic nonversioned service
 
     For example, with bugzilla5.0-jsonrpc passed in this will yield
     bugzilla5.0-jsonrpc, bugzilla5.0, and bugzilla, respectively.
     """
     if service_name:
         yield service_name
-        service_versioned = service_name.split('-')[0]
-        if service_versioned != service_name:
-            yield service_versioned
-            service_match = re.match(r'([a-z]+)[\d.]+', service_versioned)
-            if service_match:
-                yield service_match.group(1)
+        while True:
+            base_service, _sep, _specific = service_name.rpartition('-')
+            if not _sep:
+                break
+            yield base_service
+            service_name = base_service
+        service_match = re.match(r'([a-z]+)[\d.]+', service_name)
+        if service_match:
+            yield service_match.group(1)
