@@ -79,20 +79,10 @@ class ID_Maps(ArgType):
 
     @staticmethod
     def parse(s):
-        id_str, _sep, a_str = s.partition(':')
-        try:
-            id = int(id_str)
-        except ValueError:
-            raise ArgumentTypeError(f'invalid ID value: {id_str!r}')
-
-        a_ids = []
-        try:
-            for x in a_str.split(','):
-                a_ids.append(int(x))
-        except ValueError:
-            raise ArgumentTypeError(f'invalid attachment ID value: {x!r}')
-
-        return id, tuple(a_ids)
+        id_str, _sep, map_str = s.partition(':')
+        id = IDs.parse(id_str)
+        mapped_ids = [IDs.parse(x) for x in map_str.split(',')]
+        return id, tuple(mapped_ids)
 
     def parse_stdin(self, data):
         return [self.parse(x) for x in data]
@@ -102,14 +92,10 @@ class ID_Str_Maps(ArgType):
 
     @staticmethod
     def parse(s):
-        id_str, _sep, a_str = s.partition(':')
-        try:
-            id = int(id_str)
-        except ValueError:
-            raise ArgumentTypeError(f'invalid ID value: {id_str!r}')
-
-        a_ids = a_str.split(',') if a_str else []
-        return id, tuple(a_ids)
+        id_str, _sep, map_str = s.partition(':')
+        id = IDs.parse(id_str)
+        mapped_ids = map_str.split(',') if map_str else []
+        return id, tuple(mapped_ids)
 
     def parse_stdin(self, data):
         return [self.parse(x) for x in data]
