@@ -616,7 +616,7 @@ class Products(args.Subcmd, Bugzilla4_4Opts):
         super().add_args()
         # positional args
         self.parser.add_argument(
-            'products', nargs='?',
+            'products', nargs='?', default=None,
             type='str_list', action='parse_stdin',
             help='either ID or name')
 
@@ -643,6 +643,6 @@ class Fields(args.Subcmd, Bugzilla4_4Opts):
         super().add_args()
         # positional args
         self.parser.add_argument(
-            'fields', nargs='?',
+            'fields', nargs='?', default=None,
             type='str_list', action='parse_stdin',
             help='either ID or name')
