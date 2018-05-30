@@ -236,10 +236,6 @@ class _SearchRequest(RESTParseRequest, JiraPagedRequest):
 
             jql = ' AND '.join(self.params['jql'])
 
-            # if configured for a specific project, limit search to specified project
-            if self.service.project:
-                jql = f"project = {self.service.project} AND ( {jql} )"
-
             # default to sorting ascending by ID for search reqs
             sort = self.params.pop('sort', ['id'])
             jql += f" order by {', '.join(sort)}"
@@ -272,6 +268,10 @@ class _SearchRequest(RESTParseRequest, JiraPagedRequest):
             display_val = 'yes' if v else 'no'
             self.params.setdefault('jql', []).append(f'{k} is {val}')
             self.options.append(f"{k.capitalize()}: {display_val}")
+
+        def project(self, k, v):
+            self.params.setdefault('jql', []).append(f"project in ({','.join(v)})")
+            self.options.append(f"Project: {', '.join(map(str, v))}")
 
         def terms(self, k, v):
             for term in v:

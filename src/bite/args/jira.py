@@ -85,11 +85,19 @@ class Search(JiraSubcmd, args.PagedSearch, JiraOpts):
                 '--id', type='id_list',
                 action=partial(ParseStdin, 'ids'),
                 help=f'restrict by {self.service.item.type} ID(s)')
+            # limit search to specified project by default if one is configured
+            self.attr.add_argument(
+                '--project', type='str_list', action='parse_stdin',
+                default=self.service.project,
+                help=f'restrict by project(s)')
         else:
             self.attr.add_argument(
                 '--id', type='jira_id_list',
                 action=partial(ParseStdin, 'jira_ids'),
                 help=f'restrict by {self.service.item.type} ID(s)')
+            self.attr.add_argument(
+                '--project', type='str_list', action='parse_stdin',
+                help=f'restrict by project(s)')
         self.attr.add_argument(
             '--attachments', nargs='?', type=int, const=1,
             help='restrict {self.service.item.type}s by attachment status',
