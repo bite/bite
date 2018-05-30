@@ -4,39 +4,13 @@ from .. import args
 class RedmineOpts(args.ServiceOpts):
     """Redmine options."""
 
+    _service = 'redmine'
+
 
 class RedmineElasticOpts(RedmineOpts):
     """Redmine with elasticsearch options."""
 
-
-class RedmineJsonOpts(RedmineOpts):
-    __doc__ = RedmineOpts.__doc__
-    _service = 'redmine-json'
-
-
-class RedmineXmlOpts(RedmineOpts):
-    __doc__ = RedmineOpts.__doc__
-    _service = 'redmine-xml'
-
-
-class Redmine3_2JsonOpts(RedmineOpts):
-    __doc__ = RedmineOpts.__doc__
-    _service = 'redmine3.2-json'
-
-
-class Redmine3_2XmlOpts(RedmineOpts):
-    __doc__ = RedmineOpts.__doc__
-    _service = 'redmine3.2-xml'
-
-
-class RedmineElasticJsonOpts(RedmineElasticOpts):
-    __doc__ = RedmineElasticOpts.__doc__
-    _service = 'redmine-elastic-json'
-
-
-class RedmineElasticXmlOpts(RedmineElasticOpts):
-    __doc__ = RedmineElasticOpts.__doc__
-    _service = 'redmine-elastic-xml'
+    _service = 'redmine-elastic'
 
 
 class _BaseSearch(args.PagedSearch):
@@ -71,8 +45,7 @@ class _BaseSearch(args.PagedSearch):
         self.attr = self.parser.add_argument_group('Attribute related')
 
 
-@args.subcmd(RedmineOpts, name='search')
-class _RegularSearch(_BaseSearch):
+class _RegularSearch(_BaseSearch, RedmineOpts):
 
     def add_args(self):
         super().add_args()
@@ -91,8 +64,7 @@ class _RegularSearch(_BaseSearch):
             """)
 
 
-@args.subcmd(RedmineElasticOpts, name='search')
-class _ElasticSearch(_BaseSearch):
+class _ElasticSearch(_BaseSearch, RedmineElasticOpts):
 
     def add_args(self):
         super().add_args()
@@ -116,11 +88,9 @@ class _ElasticSearch(_BaseSearch):
             """)
 
 
-@args.subcmd(RedmineOpts)
-class Get(args.Get):
+class Get(args.Get, RedmineOpts):
     pass
 
 
-@args.subcmd(RedmineOpts)
-class Comments(args.Comments):
+class Comments(args.Comments, RedmineOpts):
     pass

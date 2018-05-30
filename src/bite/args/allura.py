@@ -10,8 +10,7 @@ class AlluraOpts(args.ServiceOpts):
     _service = 'allura'
 
 
-@args.subcmd(AlluraOpts)
-class Search(args.Search):
+class Search(args.Search, AlluraOpts):
 
     def add_args(self):
         super().add_args()
@@ -50,15 +49,13 @@ class Search(args.Search):
             help=f'person who created the {self.service.item.type}')
 
 
-@args.subcmd(AlluraOpts)
-class Get(args.Get):
+class Get(args.Get, AlluraOpts):
 
     def add_args(self):
         super().add_args(history=True)
 
 
-@args.subcmd(AlluraOpts)
-class Changes(args.Changes):
+class Changes(args.Changes, AlluraOpts):
 
     def add_args(self):
         super().add_args()
@@ -72,6 +69,5 @@ class Changes(args.Changes):
             help='restrict by matching changed fields')
 
 
-@args.subcmd(AlluraOpts)
-class Comments(args.Comments):
+class Comments(args.Comments, AlluraOpts):
     pass

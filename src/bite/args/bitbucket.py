@@ -10,8 +10,7 @@ class BitbucketOpts(args.ServiceOpts):
     _service = 'bitbucket'
 
 
-@args.subcmd(BitbucketOpts)
-class Search(args.Search):
+class Search(args.Search, BitbucketOpts):
 
     def add_args(self):
         super().add_args()
@@ -75,25 +74,21 @@ class Search(args.Search):
             help='restrict by number of watchers or greater')
 
 
-@args.subcmd(BitbucketOpts)
-class Get(args.Get):
+class Get(args.Get, BitbucketOpts):
 
     def add_args(self):
         super().add_args(history=True)
 
 
-@args.subcmd(BitbucketOpts)
-class Attachments(args.Attachments):
+class Attachments(args.Attachments, BitbucketOpts):
 
     def add_args(self):
         super().add_args(id_map='id_str_maps', item_id=False)
 
 
-@args.subcmd(BitbucketOpts)
-class Comments(args.Comments):
+class Comments(args.Comments, BitbucketOpts):
     pass
 
 
-@args.subcmd(BitbucketOpts)
-class Changes(args.Changes):
+class Changes(args.Changes, BitbucketOpts):
     pass

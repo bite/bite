@@ -93,12 +93,13 @@ def _services():
 def _service_opts():
     from . import args as mod
     opts = []
+    service_opts_cls = lambda x: _service_cls(x) and not issubclass(x, mod.Subcmd)
     for imp, name, _ in pkgutil.walk_packages(mod.__path__, mod.__name__ + '.'):
         try:
             module = import_module(name)
         except ImportError as e:
             raise Exception(f'failed importing {name!r}: {e}')
-        for name, cls in inspect.getmembers(module, _service_cls):
+        for name, cls in inspect.getmembers(module, service_opts_cls):
             opts.append((cls._service, '.'.join([module.__name__, cls.__name__])))
     return opts
 

@@ -7,8 +7,7 @@ class RoundupOpts(args.ServiceOpts):
     _service = 'roundup'
 
 
-@args.subcmd(RoundupOpts)
-class Search(args.Search):
+class Search(args.Search, RoundupOpts):
 
     def add_args(self):
         super().add_args()
@@ -34,21 +33,19 @@ class Search(args.Search):
             help=f'{self.service.item.type}s modified at this time or later')
 
 
-@args.subcmd(RoundupOpts)
-class Get(args.Get):
+class Get(args.Get, RoundupOpts):
     pass
 
 
-@args.subcmd(RoundupOpts)
-class Attachments(args.Attachments):
+class Attachments(args.Attachments, RoundupOpts):
     pass
 
 
-@args.subcmd(RoundupOpts)
-class Comments(args.Comments):
+class Comments(args.Comments, RoundupOpts):
     pass
 
 
-@args.subcmd(RoundupOpts)
-class Schema(args.Subcmd):
+class Schema(args.Subcmd, RoundupOpts):
     """get Roundup db schema"""
+
+    _name = 'schema'

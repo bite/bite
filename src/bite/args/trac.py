@@ -4,19 +4,10 @@ from .. import args
 class TracOpts(args.ServiceOpts):
     """Trac options."""
 
-
-class TracJsonrpcOpts(TracOpts):
-    __doc__ = TracOpts.__doc__
-    _service = 'trac-jsonrpc'
+    _service = 'trac'
 
 
-class TracXmlrpcOpts(TracOpts):
-    __doc__ = TracOpts.__doc__
-    _service = 'trac-xmlrpc'
-
-
-@args.subcmd(TracOpts)
-class Search(args.Search):
+class Search(args.Search, TracOpts):
 
     def add_args(self):
         super().add_args()
@@ -58,33 +49,31 @@ class Search(args.Search):
             """)
 
 
-@args.subcmd(TracOpts)
-class Get(args.Get):
+class Get(args.Get, TracOpts):
 
     def add_args(self):
         super().add_args(history=True)
 
 
-@args.subcmd(TracOpts)
-class Comments(args.Comments):
+class Comments(args.Comments, TracOpts):
     pass
 
 
-@args.subcmd(TracOpts)
-class Changes(args.Changes):
+class Changes(args.Changes, TracOpts):
     pass
 
 
-@args.subcmd(TracOpts)
-class Version(args.Subcmd):
+class Version(args.Subcmd, TracOpts):
     """get Trac version"""
+
+    _name = 'version'
 
 
 class TracScraperOpts(args.ServiceOpts):
     """Trac web scraper options."""
+
     _service = 'trac-scraper'
 
 
-@args.subcmd(TracScraperOpts, name='search')
-class _ScrapedSearch(Search):
+class _ScrapedSearch(Search, TracScraperOpts):
     pass

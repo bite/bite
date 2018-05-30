@@ -16,31 +16,15 @@ from ..utils import str2bool, block_edit, confirm
 demandload('bite:const')
 
 
-def subcmd(service_cls, name=None):
-    """Register service subcommands."""
-    def wrapped(cls, *args, **kwds):
-        subcmd_name = name if name is not None else cls.__name__.lower()
-        # register subcommand with its related service class
-        try:
-            subcmds = getattr(service_cls, 'subcmds')
-        except AttributeError:
-            subcmds = OrderedDict()
-            setattr(service_cls, 'subcmds', subcmds)
-        subcmds[subcmd_name] = cls
-        # store the subcommand name inside its class for consistent help output
-        setattr(cls, '_subcmd_name', subcmd_name)
-        return cls
-    return wrapped
-
-
 class Subcmd(object):
 
-    def __init__(self, parser, service, global_opts, name=None):
-        name = name if name is not None else getattr(self, '_subcmd_name')
+    _name = None
+
+    def __init__(self, parser, service, global_opts):
         self.service = service
         if self.description is None:
             raise ValueError(
-                f'missing description for subcommand {name!r}: {self.__class__}')
+                f'missing description for subcommand {self._name!r}: {self.__class__}')
 
         # Suppress empty attribute creation during parse_args() calls, this
         # means that only the args passed in will create attributes in the
@@ -50,7 +34,7 @@ class Subcmd(object):
             arghparse.ArgumentParser, argument_default=argparse.SUPPRESS)
 
         self.parser = parser.add_parser(
-            name, cls=subcmd_parser, quiet=False, color=False, description=self.description)
+            self._name, cls=subcmd_parser, quiet=False, color=False, description=self.description)
 
         # register arg types and actions for subcmd parsing
         self.parser.register('type', 'ids', IDs(service))
@@ -64,8 +48,8 @@ class Subcmd(object):
         self.parser.register('type', 'int range', IntRange)
         self.parser.register('action', 'parse_stdin', ParseStdin)
 
-        self.parser.set_defaults(fcn=name)
-        self.opts = self.parser.add_argument_group(f'{name.capitalize()} options')
+        self.parser.set_defaults(fcn=self._name)
+        self.opts = self.parser.add_argument_group(f'{self._name.capitalize()} options')
 
         # add global subcmd options
         global_opts(self)
@@ -82,7 +66,25 @@ class Subcmd(object):
         return args
 
 
-class ServiceOpts(object):
+class _RegisterSubcmds(type):
+    """Metaclass that registers subcommand classes to their related service classes."""
+
+    def __new__(meta, name, bases, cls_dict):
+        cls = type.__new__(meta, name, bases, cls_dict)
+        subcmd_name = getattr(cls, '_name', None)
+        if subcmd_name is not None:
+            opts_cls = next(x for x in bases if not issubclass(x, Subcmd))
+            subcmds = getattr(opts_cls, f'_{opts_cls.__name__}_subcmds', None)
+            if subcmds is None:
+                subcmds = OrderedDict()
+                setattr(opts_cls, f'_{opts_cls.__name__}_subcmds', subcmds)
+            subcmds[subcmd_name] = cls
+        elif issubclass(cls, Subcmd):
+            raise ValueError(f'missing name for subcommand: {cls}')
+        return cls
+
+
+class ServiceOpts(object, metaclass=_RegisterSubcmds):
 
     _service = None
 
@@ -123,6 +125,17 @@ class ServiceOpts(object):
     def global_subcmd_opts(self, subcmd):
         """Add global subcommand options."""
 
+    @property
+    def subcmds(self):
+        # TODO: precompute this for the installed version?
+        d = OrderedDict()
+        parents = (x for x in reversed(self.__class__.__mro__)
+                   if getattr(x, '_service', None))
+        for cls in parents:
+            subcmds = getattr(self, f'_{cls.__name__}_subcmds')
+            d.update(subcmds)
+        return d
+
     def add_subcmd_opts(self, service, subcmd):
         """Add subcommand specific options."""
         subcmd_parser = self.parser.add_subparsers(help='help for subcommands')
@@ -131,7 +144,7 @@ class ServiceOpts(object):
             cls = self.subcmds[subcmd]
             subcmd = cls(
                 parser=subcmd_parser, service=service,
-                global_opts=self.global_subcmd_opts, name=subcmd)
+                global_opts=self.global_subcmd_opts)
             subcmd.add_args()
             return subcmd
         # fallback to adding all subcmd options, since the user is
@@ -174,6 +187,8 @@ class ReceiveSubcmd(RequestSubcmd):
 
 class Search(ReceiveSubcmd):
 
+    _name = 'search'
+
     @property
     def description(self):
         return f"search for {self.service.item.type}s"
@@ -200,6 +215,8 @@ class PagedSearch(Search):
 
 
 class Get(ReceiveSubcmd):
+
+    _name = 'get'
 
     @property
     def description(self):
@@ -234,6 +251,8 @@ class Get(ReceiveSubcmd):
 
 
 class Attachments(Subcmd):
+
+    _name = 'attachments'
 
     @property
     def description(self):
@@ -275,6 +294,8 @@ class Attachments(Subcmd):
 
 class Changes(ReceiveSubcmd):
 
+    _name = 'changes'
+
     @property
     def description(self):
         return f"get changes from {self.service.item.type}(s)"
@@ -299,6 +320,8 @@ class Changes(ReceiveSubcmd):
 
 
 class Comments(ReceiveSubcmd):
+
+    _name = 'comments'
 
     @property
     def description(self):
@@ -332,6 +355,8 @@ class Comments(ReceiveSubcmd):
 
 class Attach(SendSubcmd):
 
+    _name = 'attach'
+
     @property
     def description(self):
         return f"attach file to {self.service.item.type}(s)"
@@ -348,6 +373,8 @@ class Attach(SendSubcmd):
 
 
 class Modify(SendSubcmd):
+
+    _name = 'modify'
 
     @property
     def description(self):
@@ -419,6 +446,8 @@ class Modify(SendSubcmd):
 
 
 class Create(SendSubcmd):
+
+    _name = 'create'
 
     @property
     def description(self):

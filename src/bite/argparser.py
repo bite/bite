@@ -10,7 +10,7 @@ import sys
 from snakeoil.cli import arghparse, tool
 from snakeoil.demandload import demandload
 
-from . import get_service_cls
+from . import get_service_cls, service_classes
 from .alias import Aliases
 from .config import get_config
 from .exceptions import BiteError
@@ -583,10 +583,13 @@ class ArgumentParser(arghparse.ArgumentParser):
 
         service_name = initial_args.service
         if service_name not in const.SERVICES:
-            self.error(f"invalid service: {service_name!r} (available services: {', '.join(const.SERVICES)}")
+            self.error(f"invalid service: {service_name!r} "
+                       f"(available services: {', '.join(const.SERVICES)}")
 
+        fallbacks = list(service_classes(service_name))[1:]
         service_opts = get_service_cls(
-            service_name, const.SERVICE_OPTS)(parser=self, service_name=service_name)
+            service_name, const.SERVICE_OPTS, fallbacks=fallbacks)(
+                parser=self, service_name=service_name)
 
         # add service config options to args namespace
         service_opts.add_config_opts(args=initial_args, config_opts=config_opts)

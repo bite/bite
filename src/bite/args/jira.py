@@ -49,8 +49,7 @@ class JiraOpts(args.ServiceOpts):
                 help='define a specific project to target')
 
 
-@args.subcmd(JiraOpts)
-class Search(JiraSubcmd, args.PagedSearch):
+class Search(JiraSubcmd, args.PagedSearch, JiraOpts):
 
     def add_args(self):
         super().add_args()
@@ -107,8 +106,7 @@ class Search(JiraSubcmd, args.PagedSearch):
             help=f'{self.service.item.type}s with a specified number of votes')
 
 
-@args.subcmd(JiraOpts)
-class Get(JiraSubcmd, args.Get):
+class Get(JiraSubcmd, args.Get, JiraOpts):
 
     def add_args(self):
         # Force "project-ID" based item IDs for conglomerate jira connections
@@ -124,8 +122,7 @@ class Get(JiraSubcmd, args.Get):
         super().add_args(ids=add_ids)
 
 
-@args.subcmd(JiraOpts)
-class Comments(JiraSubcmd, args.Comments):
+class Comments(JiraSubcmd, args.Comments, JiraOpts):
 
     def add_args(self):
         # Force "project-ID" based item IDs for conglomerate jira connections
@@ -141,6 +138,7 @@ class Comments(JiraSubcmd, args.Comments):
         super().add_args(ids=add_ids)
 
 
-@args.subcmd(JiraOpts)
-class Version(args.Subcmd):
+class Version(args.Subcmd, JiraOpts):
     """get Jira version"""
+
+    _name = 'version'

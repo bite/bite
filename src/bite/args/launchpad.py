@@ -7,8 +7,7 @@ class LaunchpadOpts(args.ServiceOpts):
     _service = 'launchpad'
 
 
-@args.subcmd(LaunchpadOpts)
-class Search(args.PagedSearch):
+class Search(args.PagedSearch, LaunchpadOpts):
 
     def add_args(self):
         super().add_args()
@@ -90,18 +89,15 @@ class Search(args.PagedSearch):
             """)
 
 
-@args.subcmd(LaunchpadOpts)
-class Get(args.Get):
+class Get(args.Get, LaunchpadOpts):
     pass
 
 
-@args.subcmd(LaunchpadOpts)
-class Attachments(args.Attachments):
+class Attachments(args.Attachments, LaunchpadOpts):
 
     def add_args(self):
         super().add_args(id_map='id_maps', item_id=False)
 
 
-@args.subcmd(LaunchpadOpts)
-class Comments(args.Comments):
+class Comments(args.Comments, LaunchpadOpts):
     pass

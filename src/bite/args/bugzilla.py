@@ -17,6 +17,8 @@ class ChangedTimeTuple(argparse.Action):
 class Bugzilla4_4Opts(args.ServiceOpts):
     """Bugzilla 4.4 options."""
 
+    _service = 'bugzilla4.4'
+
     _config_map = args.ServiceOpts._config_map.copy()
     _config_map['restrict_login'] = str2bool
 
@@ -31,13 +33,16 @@ class Bugzilla4_4Opts(args.ServiceOpts):
 class Bugzilla5_0Opts(Bugzilla4_4Opts):
     """Bugzilla 5.0 options."""
 
+    _service = 'bugzilla5.0'
+
 
 class Bugzilla5_2Opts(Bugzilla5_0Opts):
     """Bugzilla 5.2 options."""
 
+    _service = 'bugzilla5.2'
 
-@args.subcmd(Bugzilla4_4Opts)
-class Attach(args.Attach):
+
+class Attach(args.Attach, Bugzilla4_4Opts):
 
     def add_args(self):
         super().add_args()
@@ -58,8 +63,7 @@ class Attach(args.Attach):
             help='attachment is a patch')
 
 
-@args.subcmd(Bugzilla4_4Opts)
-class Attachments(args.Attachments):
+class Attachments(args.Attachments, Bugzilla4_4Opts):
 
     def add_args(self):
         super().add_args()
@@ -69,8 +73,7 @@ class Attachments(args.Attachments):
             help='list attachment metadata')
 
 
-@args.subcmd(Bugzilla4_4Opts)
-class Create(args.Create):
+class Create(args.Create, Bugzilla4_4Opts):
 
     def add_args(self):
         super().add_args()
@@ -139,8 +142,7 @@ class Create(args.Create):
             help='set the keywords of this bug')
 
 
-@args.subcmd(Bugzilla4_4Opts)
-class Get(args.Get):
+class Get(args.Get, Bugzilla4_4Opts):
 
     def add_args(self):
         super().add_args(history=True)
@@ -150,8 +152,7 @@ class Get(args.Get):
             help='show obsolete attachments')
 
 
-@args.subcmd(Bugzilla4_4Opts)
-class Modify(args.Modify):
+class Modify(args.Modify, Bugzilla4_4Opts):
 
     def add_args(self):
         super().add_args()
@@ -314,8 +315,7 @@ class Modify(args.Modify):
             help='set number of hours worked on this bug as part of this change'),
 
 
-@args.subcmd(Bugzilla4_4Opts)
-class Search(args.PagedSearch):
+class Search(args.PagedSearch, Bugzilla4_4Opts):
 
     def add_time_args(self):
         self.time.add_argument(
@@ -405,8 +405,7 @@ class Search(args.PagedSearch):
             help='restrict by url (one or more)')
 
 
-@args.subcmd(Bugzilla5_0Opts, 'search')
-class Search5_0(Search):
+class Search5_0(Search, Bugzilla5_0Opts):
 
     def add_time_args(self):
         self.time.add_argument(
@@ -517,9 +516,10 @@ class Search5_0(Search):
             help='restrict by changes made by a specified user')
 
 
-@args.subcmd(Bugzilla5_0Opts)
-class APIKeys(args.Subcmd):
+class APIKeys(args.Subcmd, Bugzilla5_0Opts):
     """generate, revoke, or list API keys"""
+
+    _name = 'apikeys'
 
     def add_args(self):
         super().add_args()
@@ -543,9 +543,10 @@ class APIKeys(args.Subcmd):
             """)
 
 
-@args.subcmd(Bugzilla5_0Opts)
-class SavedSearches(args.Subcmd):
+class SavedSearches(args.Subcmd, Bugzilla5_0Opts):
     """save, edit, remove, or list saved searches"""
+
+    _name = 'savedsearches'
 
     def add_args(self):
         super().add_args()
@@ -565,8 +566,7 @@ class SavedSearches(args.Subcmd):
             help='remove saved search(es)')
 
 
-@args.subcmd(Bugzilla4_4Opts)
-class Changes(args.Changes):
+class Changes(args.Changes, Bugzilla4_4Opts):
 
     def add_args(self):
         super().add_args()
@@ -582,8 +582,7 @@ class Changes(args.Changes):
             help='custom format for output')
 
 
-@args.subcmd(Bugzilla4_4Opts)
-class Comments(args.Comments):
+class Comments(args.Comments, Bugzilla4_4Opts):
 
     def add_args(self):
         super().add_args()
@@ -596,19 +595,22 @@ class Comments(args.Comments):
             help='custom format for output')
 
 
-@args.subcmd(Bugzilla4_4Opts)
-class Version(args.Subcmd):
+class Version(args.Subcmd, Bugzilla4_4Opts):
     """get bugzilla version"""
 
+    _name = 'version'
 
-@args.subcmd(Bugzilla4_4Opts)
-class Extensions(args.Subcmd):
+
+class Extensions(args.Subcmd, Bugzilla4_4Opts):
     """get bugzilla extensions"""
 
+    _name = 'extensions'
 
-@args.subcmd(Bugzilla4_4Opts)
-class Products(args.Subcmd):
+
+class Products(args.Subcmd, Bugzilla4_4Opts):
     """get bugzilla products"""
+
+    _name = 'products'
 
     def add_args(self):
         super().add_args()
@@ -619,9 +621,10 @@ class Products(args.Subcmd):
             help='either ID or name')
 
 
-@args.subcmd(Bugzilla4_4Opts)
-class Users(args.Subcmd):
+class Users(args.Subcmd, Bugzilla4_4Opts):
     """get bugzilla users"""
+
+    _name = 'users'
 
     def add_args(self):
         super().add_args()
@@ -631,9 +634,10 @@ class Users(args.Subcmd):
             help='either ID, login, or matching string')
 
 
-@args.subcmd(Bugzilla4_4Opts)
-class Fields(args.Subcmd):
+class Fields(args.Subcmd, Bugzilla4_4Opts):
     """get bugzilla fields"""
+
+    _name = 'fields'
 
     def add_args(self):
         super().add_args()
@@ -642,52 +646,3 @@ class Fields(args.Subcmd):
             'fields', nargs='?',
             type='str_list', action='parse_stdin',
             help='either ID or name')
-
-
-## Service classes
-class Bugzilla4_4JsonrpcOpts(Bugzilla4_4Opts):
-    __doc__ = Bugzilla4_4Opts.__doc__
-
-    _service = 'bugzilla4.4-jsonrpc'
-
-
-class Bugzilla5_0JsonrpcOpts(Bugzilla5_0Opts):
-    __doc__ = Bugzilla5_0Opts.__doc__
-
-    _service = 'bugzilla5.0-jsonrpc'
-
-
-class Bugzilla5_2JsonrpcOpts(Bugzilla5_2Opts):
-    __doc__ = Bugzilla5_2Opts.__doc__
-
-    _service = 'bugzilla5.2-jsonrpc'
-
-
-class Bugzilla4_4XmlrpcOpts(Bugzilla4_4Opts):
-    __doc__ = Bugzilla4_4Opts.__doc__
-
-    _service = 'bugzilla4.4-xmlrpc'
-
-
-class Bugzilla5_0XmlrpcOpts(Bugzilla5_0Opts):
-    __doc__ = Bugzilla5_0Opts.__doc__
-
-    _service = 'bugzilla5.0-xmlrpc'
-
-
-class Bugzilla5_2XmlrpcOpts(Bugzilla5_2Opts):
-    __doc__ = Bugzilla5_2Opts.__doc__
-
-    _service = 'bugzilla5.2-xmlrpc'
-
-
-class Bugzilla5_0RestOpts(Bugzilla5_0Opts):
-    __doc__ = Bugzilla5_0Opts.__doc__
-
-    _service = 'bugzilla5.0-rest'
-
-
-class Bugzilla5_2RestOpts(Bugzilla5_2Opts):
-    __doc__ = Bugzilla5_2Opts.__doc__
-
-    _service = 'bugzilla5.2-rest'
