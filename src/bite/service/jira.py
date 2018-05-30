@@ -277,11 +277,14 @@ class _SearchRequest(RESTParseRequest, JiraPagedRequest):
                     not_contain.append(x[1:])
                 else:
                     contain.append(x)
+
             if contain:
                 self.params.setdefault('jql', []).append(f"project in ({','.join(contain)})")
             if not_contain:
                 self.params.setdefault('jql', []).append(f"project not in ({','.join(not_contain)})")
-            self.options.append(f"Project: {', '.join(map(str, v))}")
+
+            if self.service.project is None or len(v) > 1 or (len(v) == 1 and self.service.project != v[0]):
+                self.options.append(f"Project: {', '.join(v)}")
 
         def terms(self, k, v):
             for term in v:
