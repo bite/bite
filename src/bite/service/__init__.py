@@ -296,10 +296,9 @@ class Service(object):
 
         def _parse(parse, handle, reqs, generator=False):
             try:
-                if len(reqs) > 1 or generator:
-                    results = (x.result() for x in reqs)
-                else:
-                    results = reqs[0].result()
+                results = (x.result() for x in reqs)
+                if len(reqs) == 1 and not generator:
+                    results = next(results)
                 return parse(results)
             except RequestError as e:
                 handle(e)
