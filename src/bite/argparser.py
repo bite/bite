@@ -49,19 +49,6 @@ class StringList(ArgType):
         return [item for item in s.split(',') if item != ""]
 
 
-class IDList(ArgType):
-
-    @staticmethod
-    def parse(s):
-        try:
-            l = []
-            for item in s.split(','):
-                l.append(int(item))
-            return l
-        except:
-            raise ArgumentTypeError(f'invalid ID value: {item!r}')
-
-
 class IDs(ArgType):
 
     @staticmethod
@@ -76,6 +63,16 @@ class IDs(ArgType):
 
     def parse_stdin(self, data):
         return [self.parse(x) for x in data]
+
+
+class IDList(ArgType):
+
+    @staticmethod
+    def parse(s):
+        l = []
+        for item in s.split(','):
+            l.append(IDs.parse(item))
+        return l
 
 
 class ID_Maps(ArgType):
