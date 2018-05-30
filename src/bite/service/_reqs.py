@@ -507,7 +507,7 @@ class BaseChangesRequest(Request):
     def __init__(self, creator=None, attachment=None,
                  change_num=None, match=None, created=None, filtered=False, **kw):
         super().__init__(**kw)
-        self.ids = kw.get('ids')
+        self.ids = list(map(str, kw.get('ids', ())))
 
         self._filtered = filtered
         if self._filtered:
