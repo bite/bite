@@ -55,12 +55,16 @@ class Session(requests.Session):
 
         try:
             return super().send(request, **kw)
-        except requests.exceptions.SSLError as e:
-            raise RequestError('SSL certificate verification failed')
-        except requests.exceptions.ConnectionError as e:
-            raise RequestError('failed to establish connection')
-        except requests.exceptions.ReadTimeout as e:
-            raise RequestError('request timed out')
+        except request.exceptions.RequestException as e:
+            if isinstance(e, requests.exceptions.SSLError):
+                msg = 'SSL certificate verification failed'
+            elif isinstance(e, requests.exceptions.ConnectionError):
+                msg = 'failed to establish connection'
+            elif isinstance(e, requests.exceptions.ReadTimeout):
+                msg = 'request timed out'
+            else:
+                msg = str(e)
+            raise RequestError(msg, request=e.request, response=e.response)
 
 
 class ClientCallbacks(object):
@@ -345,7 +349,9 @@ class Service(object):
         if response.status_code == 301:
             old = self.base
             new = response.headers['Location']
-            raise RequestError(f'service moved permanently: {old} -> {new}')
+            raise RequestError(
+                f'service moved permanently: {old} -> {new}',
+                request=req, response=response)
 
         if response.ok:
             # allow the request to parse itself as required
@@ -365,15 +371,16 @@ class Service(object):
         else:
             try:
                 raise response.raise_for_status()
-            except requests.exceptions.HTTPError:
+            except requests.exceptions.HTTPError as e:
                 error_str = f'HTTP Error {response.status_code}'
-                reason = response.reason.lower()
+                reason = e.response.reason.lower()
                 if reason:
                     error_str += f': {reason}'
                 elif not self.verbose:
                     error_str += ' (enable verbose mode to see server response)'
                 raise RequestError(
-                    error_str, text=response.text, code=response.status_code)
+                    error_str, text=e.response.text, code=e.response.status_code,
+                    request=e.request, response=e.response)
 
     def _desuffix(self, s):
         if self.suffix is not None:

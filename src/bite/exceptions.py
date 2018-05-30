@@ -22,6 +22,11 @@ class BiteError(Exception):
 class RequestError(BiteError):
     """Generic http(s) request exceptions."""
 
+    def __init__(self, *args, request=None, response=None, **kw):
+        self.request = request
+        self.response = response
+        super().__init__(*args, **kw)
+
     @property
     def message(self):
         if not self.text:

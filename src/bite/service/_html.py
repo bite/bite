@@ -14,5 +14,6 @@ class HTML(Service):
             msg = 'non-HTML response from server'
             if not self.verbose:
                 msg += ' (use verbose mode to see it)'
-            raise RequestError(code=response.status_code, msg=msg, text=response.text)
+            raise RequestError(
+                msg, code=response.status_code, text=response.text, response=response)
         return lxml.html.fromstring(response.text)
