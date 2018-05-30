@@ -132,8 +132,9 @@ class ServiceOpts(object, metaclass=_RegisterSubcmds):
         parents = (x for x in reversed(self.__class__.__mro__)
                    if getattr(x, '_service', None))
         for cls in parents:
-            subcmds = getattr(self, f'_{cls.__name__}_subcmds')
-            d.update(subcmds)
+            subcmds = getattr(self, f'_{cls.__name__}_subcmds', None)
+            if subcmds:
+                d.update(subcmds)
         return d
 
     def add_subcmd_opts(self, service, subcmd):
