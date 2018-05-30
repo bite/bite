@@ -4,6 +4,8 @@ import re
 import requests
 from snakeoil.strings import pluralism
 
+from ..exceptions import RequestError
+
 
 def req_cmd(service_cls, name=None, cmd=None, obj_args=False):
     """Register service request and command functions."""
@@ -581,3 +583,22 @@ class BaseGetRequest(Request):
             item.attachments = next(attachments)
             item.changes = next(changes)
             yield item
+
+
+class ExtractData(object):
+    """Iterate over the results of a data request call."""
+
+    def __init__(self, iterable):
+        self.iterable = iterable
+
+    def __iter__(self):
+        return self
+
+    def handle_exception(self, e):
+        raise e
+
+    def __next__(self):
+        try:
+            return next(self.iterable)
+        except RequestError as e:
+            return self.handle_exception(e)

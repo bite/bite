@@ -7,7 +7,7 @@ import requests
 from snakeoil.demandload import demandload
 from snakeoil.sequences import iflatten_instance
 
-from ._reqs import Request
+from ._reqs import Request, ExtractData
 from .. import __title__, __version__
 from ..cache import Cache, Auth, Cookies
 from ..exceptions import RequestError, AuthError, BiteError
@@ -291,31 +291,27 @@ class Service(object):
         if not reqs:
             return None
 
-        def _raise(e): raise
         ident = lambda x: x
 
-        def _parse(parse, handle, reqs, generator=False):
-            try:
-                results = (x.result() for x in reqs)
-                if len(reqs) == 1 and not generator:
-                    results = next(results)
-                return parse(results)
-            except RequestError as e:
-                handle(e)
+        def _parse(parse, iterate, reqs, generator=False):
+            results = iterate(x.result() for x in reqs)
+            if len(reqs) == 1 and not generator:
+                results = next(results)
+            return parse(results)
 
         def _send_jobs(reqs):
             jobs = []
             for req in iflatten_instance(reqs, Request):
                 parse = getattr(req, 'parse', ident)
+                iterate = getattr(req, '_iterate', ExtractData)
                 req_parse = getattr(req, 'parse_response', None)
                 raw = getattr(req, '_raw', None)
                 generator = bool(req._reqs)
-                handle = getattr(req, 'handle_exception', _raise)
 
                 if isinstance(req, Request) and len(req) > 1:
                     # force subreqs to be sent and parsed in parallel
                     data = _send_jobs(iter(req))
-                    jobs.append(self.executor.submit(_parse, parse, handle, data))
+                    jobs.append(self.executor.submit(_parse, parse, iterate, data))
                 else:
                     http_reqs = []
                     if not hasattr(req, '__iter__'):
@@ -331,7 +327,7 @@ class Service(object):
 
                     if http_reqs:
                         jobs.append(self.executor.submit(
-                            _parse, parse, handle, http_reqs, generator))
+                            _parse, parse, iterate, http_reqs, generator))
             return jobs
 
         data = (x.result() for x in _send_jobs(reqs))
