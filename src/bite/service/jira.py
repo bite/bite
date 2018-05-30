@@ -270,7 +270,17 @@ class _SearchRequest(RESTParseRequest, JiraPagedRequest):
             self.options.append(f"{k.capitalize()}: {display_val}")
 
         def project(self, k, v):
-            self.params.setdefault('jql', []).append(f"project in ({','.join(v)})")
+            contain = []
+            not_contain = []
+            for x in v:
+                if x[0] == '!':
+                    not_contain.append(x[1:])
+                else:
+                    contain.append(x)
+            if contain:
+                self.params.setdefault('jql', []).append(f"project in ({','.join(contain)})")
+            if not_contain:
+                self.params.setdefault('jql', []).append(f"project not in ({','.join(not_contain)})")
             self.options.append(f"Project: {', '.join(map(str, v))}")
 
         def terms(self, k, v):
