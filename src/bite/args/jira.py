@@ -100,8 +100,8 @@ class Search(JiraSubcmd, args.PagedSearch, JiraOpts):
                 help=f'restrict by project(s)')
         self.attr.add_argument(
             '--attachments', nargs='?', type=int, const=1,
-            help='restrict {self.service.item.type}s by attachment status',
-            docs="""
+            help=f'restrict {self.service.item.type}s by attachment status',
+            docs=f"""
                 Search for {self.service.item.type}s by their attachment status.
 
                 With no argument, this restricts {self.service.item.type}s
