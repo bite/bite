@@ -8,12 +8,14 @@ Updates:
     https://blog.bitbucket.org/
 """
 
+from warnings import warn
+
 from dateutil.parser import parse as dateparse
 from snakeoil.klass import aliased, alias
 
 from ._jsonrest import JsonREST
 from ._reqs import (
-    LinkPagedRequest, Request, req_cmd,
+    LinkPagedRequest, Request, req_cmd, ExtractData,
     BaseGetRequest, BaseCommentsRequest, BaseChangesRequest,
 )
 from ._rest import RESTRequest, RESTParseRequest
@@ -100,8 +102,41 @@ class BitbucketIssue(Item):
                 count=0, text=desc, created=self.created_on, creator=self.reporter)
 
 
+class BitbucketExtractData(ExtractData):
+    """Iterate over the results of a bitbucket data request call."""
+
+    def __init__(self, iterable):
+        self.iterable = (x['values'] for x in iterable)
+
+    def handle_exception(self, e):
+        # TODO: report this upstream
+        # bitbucket appears to have issues retrieving changes for certain
+        # issues, for example run: `bite -c sqlalchemy changes 1546`
+        #
+        # So for now if we get HTTP 500s, we toss a warning and return nothing.
+        if e.code == 500:
+            warn(f'failed retrieving data for "{e.request.url}": {e}')
+            return ()
+        else:
+            raise e
+
+
 class BitbucketComment(Comment):
-    pass
+
+    @classmethod
+    def parse(cls, data):
+        for comments in data:
+            l = []
+            for i, c in enumerate(comments, start=1):
+                creator = c['user']
+                if creator is not None:
+                    creator = creator['username']
+                # skip comments that have no content, i.e. issue attribute changes
+                if c['content']['raw']:
+                    l.append(cls(
+                        count=i, text=c['content']['raw'].strip(),
+                        created=dateparse(c['created_on']), creator=creator))
+            yield tuple(l)
 
 
 class BitbucketAttachment(Attachment):
@@ -110,7 +145,7 @@ class BitbucketAttachment(Attachment):
 
 class BitbucketEvent(Change):
 
-    def __init__(self, service, id, count, change):
+    def __init__(self, id, count, change):
         creator = change['user']
         if creator is not None:
             creator = creator['username']
@@ -120,11 +155,18 @@ class BitbucketEvent(Change):
             if k == 'content':
                 changes['description'] = 'updated'
             else:
-                changes[service.item.attributes.get(k, k)] = (v['old'], v['new'])
+                changes[BitbucketIssue.attributes.get(k, k)] = (v['old'], v['new'])
 
         super().__init__(
             creator=creator, created=created, id=id,
             changes=changes, count=count)
+
+    @classmethod
+    def parse(cls, data):
+        for changes in data:
+            yield tuple(cls(
+                id=c['id'], count=i, change=c)
+                for i, c in enumerate(changes, start=1))
 
 
 class Bitbucket(JsonREST):
@@ -399,6 +441,8 @@ class _GetItemRequest(Request):
 class _CommentsRequest(BaseCommentsRequest):
     """Construct a comments request."""
 
+    _iterate = BitbucketExtractData
+
     def __init__(self, **kw):
         super().__init__(**kw)
 
@@ -414,21 +458,7 @@ class _CommentsRequest(BaseCommentsRequest):
         self._reqs = tuple(reqs)
 
     def parse(self, data):
-        def items():
-            # skip comments that have no content, i.e. issue attribute changes
-            for i, comments in zip(self.ids, data):
-                comments = comments['values']
-                l = []
-                for j, c in enumerate(comments):
-                    creator = c['user']
-                    if creator is not None:
-                        creator = creator['username']
-                    if c['content']['raw']:
-                        l.append(BitbucketComment(
-                            id=i, count=j+1, text=c['content']['raw'].strip(),
-                            created=dateparse(c['created_on']), creator=creator))
-                yield tuple(l)
-        yield from self.filter(items())
+        yield from self.filter(BitbucketComment.parse(data))
 
 
 @req_cmd(Bitbucket, cmd='attachments')
@@ -489,6 +519,8 @@ class _AttachmentsRequest(Request):
 class _ChangesRequest(BaseChangesRequest):
     """Construct a changes request."""
 
+    _iterate = BitbucketExtractData
+
     def __init__(self, **kw):
         super().__init__(**kw)
 
@@ -504,13 +536,7 @@ class _ChangesRequest(BaseChangesRequest):
         self._reqs = tuple(reqs)
 
     def parse(self, data):
-        def items():
-            for changes in data:
-                changes = changes['values']
-                yield tuple(BitbucketEvent(
-                    self.service, id=c['id'], count=j+1, change=c)
-                    for j, c in enumerate(changes))
-        yield from self.filter(items())
+        yield from self.filter(BitbucketEvent.parse(data))
 
 
 @req_cmd(Bitbucket, cmd='get')
