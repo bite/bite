@@ -61,6 +61,8 @@ class IDs(ArgType):
         except ValueError:
             raise ArgumentTypeError(f'invalid ID value: {s!r}')
 
+        return i
+
     def parse_stdin(self, data):
         return [self.parse(x) for x in data]
 
