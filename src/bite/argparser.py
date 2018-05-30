@@ -67,8 +67,11 @@ class IDs(ArgType):
     @staticmethod
     def parse(s):
         try:
-            return int(s)
-        except:
+            i = int(s)
+            # negative IDs are invalid
+            if i < 0:
+                raise ValueError
+        except ValueError:
             raise ArgumentTypeError(f'invalid ID value: {s!r}')
 
     def parse_stdin(self, data):
