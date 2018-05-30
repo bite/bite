@@ -87,6 +87,8 @@ class BitbucketIssue(Item):
                 v = 'Anonymous'
             elif k in ('created_on', 'updated_on'):
                 v = dateparse(v)
+            elif k == 'component':
+                v = v['name']
             setattr(self, k, v)
 
         if get_desc:
