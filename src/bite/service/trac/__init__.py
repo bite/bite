@@ -439,6 +439,7 @@ class _GetRequest(MergedMulticall):
             yield item
 
     def handle_exception(self, e):
+        # TODO: move this to data iterator for various obj parsers
         if e.code == 404:
             raise RequestError('nonexistent item ID', code=e.code)
         raise e

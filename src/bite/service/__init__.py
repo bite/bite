@@ -287,6 +287,7 @@ class Service(object):
 
     def send(self, *reqs, **kw):
         """Send requests and return parsed response data."""
+        # TODO: simplify this using async/await
         if not reqs:
             return None
 
