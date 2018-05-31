@@ -63,7 +63,13 @@ class Session(requests.Session):
             if isinstance(e, requests.exceptions.SSLError):
                 msg = 'SSL certificate verification failed'
             elif isinstance(e, requests.exceptions.ConnectionError):
-                msg = 'failed to establish connection'
+                url = urlparse(req.url)
+                base_url = urlunparse((
+                    url.scheme,
+                    url.netloc,
+                    '',
+                    None, None, None))
+                msg = f'failed to establish connection: {base_url}'
             elif isinstance(e, requests.exceptions.ReadTimeout):
                 msg = f'request timed out (timeout: {self.timeout}s)'
             else:
