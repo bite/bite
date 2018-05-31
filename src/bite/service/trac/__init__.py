@@ -27,7 +27,22 @@ class TracError(RequestError):
 
 
 class TracComment(Comment):
-    pass
+
+    @classmethod
+    def parse(cls, data):
+        for changes in data:
+            l = []
+            count = 1
+            for change in changes:
+                created, creator, field, old, new, perm = change
+                if field == 'comment':
+                    text = new.strip()
+                    # skip comments without text or only whitespace
+                    if text:
+                        l.append(cls(
+                            count=count, creator=creator, created=created, text=text))
+                        count += 1
+            yield tuple(l)
 
 
 class TracAttachment(Attachment):
@@ -35,7 +50,28 @@ class TracAttachment(Attachment):
 
 
 class TracEvent(Change):
-    pass
+
+    _skip_fields = {'comment', 'attachment'}
+
+    @classmethod
+    def parse(cls, data):
+        for changes in data:
+            l = []
+            count = 1
+            prev_created = None
+            changes_dct = {}
+            for change in changes:
+                created, creator, field, old, new, perm = change
+                if field not in cls._skip_fields and any((old, new)):
+                    changes_dct[field] = (old, new)
+                    if prev_created and created != prev_created:
+                        l.append(cls(
+                            count=count, creator=creator,
+                            created=created, changes=changes_dct))
+                        changes_dct = {}
+                        count += 1
+                    prev_created = created
+            yield tuple(l)
 
 
 class TracTicket(Item):
@@ -308,21 +344,7 @@ class _CommentsRequest(BaseCommentsRequest, _ChangelogRequest):
     def parse(self, data):
         # unwrap multicall result
         data = super().parse(data)
-        def items():
-            for changes in data:
-                l = []
-                count = 1
-                for change in changes:
-                    created, creator, field, old, new, perm = change
-                    if field == 'comment':
-                        text = new.strip()
-                        # skip comments without text or only whitespace
-                        if text:
-                            l.append(TracComment(
-                                count=count, creator=creator, created=created, text=text))
-                            count += 1
-                yield tuple(l)
-        yield from self.filter(items())
+        yield from self.filter(TracComment.parse(data))
 
 
 @req_cmd(Trac, cmd='attachments')
@@ -352,8 +374,6 @@ class _AttachmentsRequest(Multicall):
 class _ChangesRequest(BaseChangesRequest, _ChangelogRequest):
     """Construct a changes request."""
 
-    _skip_fields = {'comment', 'attachment'}
-
     def __init__(self, **kw):
         super().__init__(**kw)
         if self.ids is not None:
@@ -362,25 +382,7 @@ class _ChangesRequest(BaseChangesRequest, _ChangelogRequest):
     def parse(self, data):
         # unwrap multicall result
         data = super().parse(data)
-        def items():
-            for changes in data:
-                l = []
-                count = 1
-                prev_created = None
-                changes_dct = {}
-                for i, change in enumerate(changes):
-                    created, creator, field, old, new, perm = change
-                    if field not in self._skip_fields and any((old, new)):
-                        changes_dct[field] = (old, new)
-                        if prev_created and created != prev_created:
-                            l.append(TracEvent(
-                                id=i, count=count, creator=creator,
-                                created=created, changes=changes_dct))
-                            changes_dct = {}
-                            count += 1
-                        prev_created = created
-                yield tuple(l)
-        yield from self.filter(items())
+        yield from self.filter(TracEvent.parse(data))
 
 
 @req_cmd(Trac, cmd='get')
