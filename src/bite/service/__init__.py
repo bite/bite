@@ -27,8 +27,12 @@ class Session(requests.Session):
         self.verify = verify
         self.stream = stream
         self.allow_redirects = allow_redirects
-        # default to timing out connections after 30 seconds
-        self.timeout = timeout if timeout is not None else 30
+        if timeout == 0:
+            # set timeout to 0 to never timeout
+            self.timeout = None
+        else:
+            # default to timing out connections after 30 seconds
+            self.timeout = timeout if timeout is not None else 30
 
         # block when urllib3 connection pool is full
         concurrent = concurrent if concurrent is not None else cpu_count() * 5
