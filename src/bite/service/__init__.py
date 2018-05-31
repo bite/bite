@@ -65,7 +65,7 @@ class Session(requests.Session):
             elif isinstance(e, requests.exceptions.ConnectionError):
                 msg = 'failed to establish connection'
             elif isinstance(e, requests.exceptions.ReadTimeout):
-                msg = 'request timed out'
+                msg = f'request timed out (timeout: {self.timeout}s)'
             else:
                 msg = str(e)
             raise RequestError(msg, request=e.request, response=e.response)
