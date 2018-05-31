@@ -29,8 +29,14 @@ class MulticallIterator(object):
             raise StopIteration
 
         if isinstance(item, dict):
-            self.idx += 1
-            return item['result']
+            error = item.get('error')
+            if error is None:
+                self.idx += 1
+                return item['result']
+            else:
+                # assume error object follows json-rpc 2.0 spec formatting
+                self.service.handle_error(
+                    code=error['code'], msg=error['message'])
         else:
             raise TypeError(f"unexpected multicall result: {item!r}")
 
