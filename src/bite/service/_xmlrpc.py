@@ -5,7 +5,7 @@ from snakeoil.klass import steal_docs
 from . import Service
 from ._rpc import Rpc
 from ._xml import Xml
-from ..exceptions import ParsingError
+from ..exceptions import ParsingError, RequestError
 
 
 class _Unmarshaller(Unmarshaller):
@@ -69,8 +69,11 @@ class Xmlrpc(Xml, Rpc):
             params = tuple(params)
         else:
             params = self._encode_params(params)
-        return dumps(params, method, encoding='utf-8',
-                     allow_none=True).encode('utf-8', 'xmlcharrefreplace')
+        try:
+            return dumps(params, method, encoding='utf-8',
+                         allow_none=True).encode('utf-8', 'xmlcharrefreplace')
+        except OverflowError as e:
+            raise RequestError('ID value exceeds XML-RPC limits')
 
     @steal_docs(Service)
     def _decode_request(self, request):
