@@ -61,7 +61,7 @@ connect_opts.add_argument(
     '-C', '--concurrent', type=int,
     help='maximum number of allowed concurrent requests to a service')
 connect_opts.add_argument(
-    '--timeout', type=int, metavar='SECONDS',
+    '--timeout', type=float, metavar='SECONDS',
     help='amount of time to wait before timing out requests (defaults to 30 seconds)')
 
 auth_opts = argparser.add_argument_group('Authentication options')
