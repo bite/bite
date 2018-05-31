@@ -31,8 +31,29 @@ def req_cmd(service_cls, name=None, cmd=None, obj_args=False):
     return partial(wrapped, name)
 
 
+class ExtractData(object):
+    """Iterate over the results of a data request call."""
+
+    def __init__(self, iterable):
+        self.iterable = iterable
+
+    def __iter__(self):
+        return self
+
+    def handle_exception(self, e):
+        raise e
+
+    def __next__(self):
+        try:
+            return next(self.iterable)
+        except RequestError as e:
+            return self.handle_exception(e)
+
+
 class Request(object):
     """Construct a request."""
+
+    _iterate = ExtractData
 
     def __init__(self, *, service, url=None, method=None, params=None,
                  reqs=None, options=None, raw=None, **kw):
@@ -104,9 +125,6 @@ class Request(object):
     def send(self, **kw):
         """Send a request object to the related service."""
         return self.service.send(self, **kw)
-
-    def handle_exception(self, e):
-        raise e
 
     def __len__(self):
         return len(list(self._requests))
@@ -584,21 +602,3 @@ class BaseGetRequest(Request):
             item.changes = next(changes)
             yield item
 
-
-class ExtractData(object):
-    """Iterate over the results of a data request call."""
-
-    def __init__(self, iterable):
-        self.iterable = iterable
-
-    def __iter__(self):
-        return self
-
-    def handle_exception(self, e):
-        raise e
-
-    def __next__(self):
-        try:
-            return next(self.iterable)
-        except RequestError as e:
-            return self.handle_exception(e)
