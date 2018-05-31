@@ -265,11 +265,10 @@ class Service(object):
             try:
                 self.login()
             except AuthError as e:
-                self.try_login(str(e))
+                self.try_login(msg=str(e))
 
         def __enter__(self):
             # If we're not logged in and require it, perform a login sequence.
-            msg = None
             if self.authenticate:
                 while not self.authenticated:
                     self.try_login()
