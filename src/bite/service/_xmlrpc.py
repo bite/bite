@@ -45,13 +45,19 @@ class MulticallIterator(object):
             raise StopIteration
 
         if isinstance(item, dict):
-            raise self.service._service_error_cls(
-                code=item['faultCode'], msg=item['faultString'])
+            self.handle_error(item)
         elif isinstance(item, list):
             self.idx += 1
             return item[0]
         else:
             raise TypeError(f"unexpected multicall result: {item!r}")
+
+    def handle_error(self, item):
+        if 'faultCode' in item:
+            raise self.service._service_error_cls(
+                code=item['faultCode'], msg=item['faultString'])
+        else:
+            raise ValueError(f'unknown error object: {item}')
 
 
 class Xmlrpc(Xml, Rpc):
