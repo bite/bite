@@ -14,7 +14,7 @@ from snakeoil.klass import aliased, alias
 
 from ._reqs import NullRequest, ParseRequest, req_cmd, BaseCommentsRequest
 from ._rpc import Multicall, RPCRequest
-from ._xmlrpc import Xmlrpc, XmlrpcError
+from ._xmlrpc import Xmlrpc
 from ..cache import Cache, csv2tuple
 from ..exceptions import RequestError, BiteError
 from ..objects import Item, Attachment, Comment
@@ -168,8 +168,8 @@ class Roundup(Xmlrpc):
     """Service supporting the Roundup issue tracker."""
 
     _service = 'roundup'
+    _service_error_cls = RoundupError
     _cache_cls = RoundupCache
-    _rpc_error = RoundupError
 
     item = RoundupIssue
     item_endpoint = '/issue{id}'

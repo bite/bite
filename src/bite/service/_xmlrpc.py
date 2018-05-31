@@ -5,7 +5,7 @@ from snakeoil.klass import steal_docs
 from . import Service
 from ._rpc import Rpc
 from ._xml import Xml
-from ..exceptions import RequestError, ParsingError
+from ..exceptions import ParsingError
 
 
 class _Unmarshaller(Unmarshaller):
@@ -22,10 +22,6 @@ class _Unmarshaller(Unmarshaller):
         self._value = 0
     dispatch["string"] = end_string
     dispatch["name"] = end_string # struct keys are always strings
-
-
-class XmlrpcError(RequestError):
-    pass
 
 
 class MulticallIterator(object):
@@ -49,7 +45,7 @@ class MulticallIterator(object):
             raise StopIteration
 
         if isinstance(item, dict):
-            raise self.service._rpc_error(
+            raise self.service._service_error_cls(
                 code=item['faultCode'], msg=item['faultString'])
         elif isinstance(item, list):
             self.idx += 1
@@ -66,7 +62,6 @@ class Xmlrpc(Xml, Rpc):
 
     _multicall_method = 'methodName'
     _multicall_iter = MulticallIterator
-    _rpc_error = XmlrpcError
 
     @steal_docs(Service)
     def _encode_request(self, method, params=None):
@@ -95,7 +90,7 @@ class Xmlrpc(Xml, Rpc):
         try:
             data = super().parse_response(response)
         except Fault as e:
-            raise self._rpc_error(msg=e.faultString, code=e.faultCode)
+            raise self._service_error_cls(msg=e.faultString, code=e.faultCode)
         except ResponseError as e:
             raise ParsingError(msg='failed parsing XML') from e
 

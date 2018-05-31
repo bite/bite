@@ -130,6 +130,7 @@ class Jira(JsonREST):
     """Service supporting the Jira-based issue trackers."""
 
     _service = 'jira'
+    _service_error_cls = JiraError
 
     item = JiraIssue
     _item_endpoint = '/browse/{project}-{{id}}'
@@ -181,11 +182,6 @@ class Jira(JsonREST):
             return data
         else:
             self.handle_error(code=response.status_code, msg=data['errorMessages'][0])
-
-    @staticmethod
-    def handle_error(code, msg):
-        """Handle Jira specific errors."""
-        raise JiraError(msg=msg, code=code)
 
 
 class JiraPagedRequest(OffsetPagedRequest, RESTRequest):

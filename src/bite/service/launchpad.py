@@ -96,6 +96,7 @@ class Launchpad(JsonREST):
     """Service supporting the Launchpad bug tracker."""
 
     _service = 'launchpad'
+    _service_error_cls = LaunchpadError
     _cache_cls = LaunchpadCache
 
     item = LaunchpadBug

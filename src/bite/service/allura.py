@@ -137,6 +137,7 @@ class Allura(JsonREST):
     """Service supporting the Allura trackers."""
 
     _service = 'allura'
+    _service_error_cls = AlluraError
 
     item = AlluraTicket
     item_endpoint = '/{id}'
@@ -172,11 +173,6 @@ class Allura(JsonREST):
             return data
         else:
             self.handle_error(code=response.status_code, msg=data['error']['message'])
-
-    @staticmethod
-    def handle_error(code, msg):
-        """Handle Allura specific errors."""
-        raise AlluraError(msg=msg, code=code)
 
 
 class AlluraPagedRequest(PagedRequest, RESTRequest):

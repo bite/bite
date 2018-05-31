@@ -95,6 +95,8 @@ class TracTicket(Item):
 class Trac(Service):
     """Service supporting the Trac-based ticket trackers."""
 
+    _service_error_cls = TracError
+
     item = TracTicket
     item_endpoint = '/ticket/{id}'
     attachment = TracAttachment
@@ -112,11 +114,6 @@ class Trac(Service):
 
     def inject_auth(self, request, params):
         raise NotImplementedError
-
-    @staticmethod
-    def handle_error(code, msg):
-        """Handle Trac specific errors."""
-        raise TracError(msg=msg, code=code)
 
 
 class BaseSearchRequest(ParseRequest):

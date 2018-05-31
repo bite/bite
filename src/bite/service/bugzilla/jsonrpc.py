@@ -34,6 +34,7 @@ class BugzillaJsonrpc(_BugzillaJsonrpcBase, Bugzilla5_2Rpc):
     _service = 'bugzilla5.2-jsonrpc'
 
 
+# TODO: note that this currently isn't being kept up to date
 class _StreamingBugzillaJsonrpc(BugzillaJsonrpc):
 
     _service = None

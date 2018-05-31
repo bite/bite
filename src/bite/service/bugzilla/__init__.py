@@ -45,6 +45,7 @@ class Bugzilla(Service):
     """Generic bugzilla service support."""
 
     _cache_cls = BugzillaCache
+    _service_error_cls = BugzillaError
 
     item = BugzillaBug
     item_endpoint = '/show_bug.cgi?id={id}'
@@ -150,8 +151,7 @@ class Bugzilla(Service):
 
             super().login()
 
-    @staticmethod
-    def handle_error(code, msg):
+    def handle_error(self, *, code, msg):
         """Handle bugzilla specific errors.
 
         Bugzilla web service error codes and their descriptions can be found at:

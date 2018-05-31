@@ -9,7 +9,6 @@ class Rpc(Service):
 
     _multicall_method = 'method'
     _multicall_iter = None
-    _rpc_error = None
 
     @staticmethod
     def _extract_params(params):

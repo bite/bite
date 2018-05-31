@@ -91,6 +91,7 @@ class Service(object):
     """Generic service support."""
 
     _service = None
+    _service_error_cls = RequestError
     _cache_cls = Cache
 
     item = Item
@@ -207,6 +208,10 @@ class Service(object):
         """Parse the returned response."""
         raise NotImplementedError
 
+    def handle_error(self, *, code, msg):
+        """Handle service specific errors."""
+        raise self._service_error_cls(msg=msg, code=code)
+
     def web_session(self, login=True):
         """Start a session with the service's website.
 
@@ -305,7 +310,7 @@ class Service(object):
                 iterate = getattr(req, '_iterate', ExtractData)
                 req_parse = getattr(req, 'parse_response', None)
                 raw = getattr(req, '_raw', None)
-                generator = bool(req._reqs)
+                generator = bool(getattr(req, '_reqs', ()))
 
                 if isinstance(req, Request) and len(req) > 1:
                     # force subreqs to be sent and parsed in parallel
@@ -349,7 +354,7 @@ class Service(object):
                 request=req, response=response)
 
         if response.ok:
-            # allow the request to parse itself as required
+            # allow the request to parse itself as requested
             if req_parse is not None:
                 return req_parse(response)
             # return the raw content of the response either in bytes or unicode

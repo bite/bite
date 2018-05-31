@@ -173,6 +173,7 @@ class Bitbucket(JsonREST):
     """Service supporting the Bitbucket-based issue trackers."""
 
     _service = 'bitbucket'
+    _service_error_cls = BitbucketError
 
     item = BitbucketIssue
     item_endpoint = '/issues/{id}'
@@ -202,11 +203,6 @@ class Bitbucket(JsonREST):
             return data
         else:
             self.handle_error(code=response.status_code, msg=data['error']['message'])
-
-    @staticmethod
-    def handle_error(code, msg):
-        """Handle Bitbucket specific errors."""
-        raise BitbucketError(msg=msg, code=code)
 
 
 class BitbucketPagedRequest(RESTRequest, LinkPagedRequest):

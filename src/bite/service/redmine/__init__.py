@@ -96,6 +96,8 @@ class RedmineEvent(Change):
 class Redmine(REST):
     """Service supporting the Redmine-based issue trackers."""
 
+    _service_error_cls = RedmineError
+
     item = RedmineIssue
     item_endpoint = '/issues/{id}'
 
@@ -115,11 +117,6 @@ class Redmine(REST):
 
     def inject_auth(self, request, params):
         raise NotImplementedError
-
-    @staticmethod
-    def handle_error(code, msg):
-        """Handle Redmine specific errors."""
-        raise RedmineError(msg=msg, code=code)
 
 
 # TODO: toss this when upstream stops supporting it
