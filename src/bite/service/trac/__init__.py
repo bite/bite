@@ -306,10 +306,10 @@ class _CommentsRequest(BaseCommentsRequest, _ChangelogRequest):
         self.options.append(f"IDs: {', '.join(self.ids)}")
 
     def parse(self, data):
+        # unwrap multicall result
+        data = super().parse(data)
         def items():
-            # unwrap multicall result
-            iterable = Multicall.parse(self, data)
-            for changes in iterable:
+            for changes in data:
                 l = []
                 count = 1
                 for change in changes:
@@ -360,10 +360,10 @@ class _ChangesRequest(BaseChangesRequest, _ChangelogRequest):
             self.options.append(f"IDs: {', '.join(map(str, self.ids))}")
 
     def parse(self, data):
+        # unwrap multicall result
+        data = super().parse(data)
         def items():
-            # unwrap multicall result
-            iterable = Multicall.parse(self, data)
-            for changes in iterable:
+            for changes in data:
                 l = []
                 count = 1
                 prev_created = None

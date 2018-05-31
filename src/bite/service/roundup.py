@@ -479,15 +479,14 @@ class _CommentsRequest(BaseCommentsRequest, Multicall):
         return super().encode_params(params)
 
     def parse(self, data):
+        # unwrap multicall result
+        data = super().parse(data)
         def items():
-            # unwrap multicall result
-            iterable = Multicall.parse(self, data)
-
             if self.ids:
                 count = 0
                 for _id, length in self.ids:
                     l = []
-                    for i, d in enumerate(islice(iterable, length)):
+                    for i, d in enumerate(islice(data, length)):
                         l.append(RoundupComment(
                             id=self.comment_ids[count], count=i, text=d['content'].strip(),
                             created=parsetime(d['date']), creator=d['author']))
@@ -497,7 +496,7 @@ class _CommentsRequest(BaseCommentsRequest, Multicall):
                 yield tuple(RoundupComment(
                     id=self.comment_ids[i], count=i, text=d['content'].strip(),
                     created=parsetime(d['date']), creator=d['author'])
-                    for i, d in enumerate(iterable))
+                    for i, d in enumerate(data))
         yield from self.filter(items())
 
 
