@@ -140,7 +140,17 @@ class AlluraComment(Comment):
 
 
 class AlluraAttachment(Attachment):
-    pass
+
+    @classmethod
+    def parse(cls, data):
+        for posts in data:
+            l = []
+            for p in posts:
+                for a in p['attachments']:
+                    l.append(cls(
+                        creator=p['author'], created=dateparse(p['timestamp']).astimezone(utc),
+                        size=a['bytes'], url=a['url'], filename=a['url'].rsplit('/', 1)[1]))
+            yield tuple(l)
 
 
 class AlluraEvent(Change):
@@ -443,16 +453,7 @@ class _AttachmentsRequest(_ThreadRequest):
 
     def parse(self, data):
         thread_posts = super().parse(data)
-        for posts in thread_posts:
-            l = []
-            count = 0
-            for p in posts:
-                for a in p['attachments']:
-                    l.append(AlluraAttachment(
-                        creator=p['author'], created=dateparse(p['timestamp']).astimezone(utc),
-                        size=a['bytes'], url=a['url'], filename=a['url'].rsplit('/', 1)[1]))
-                    count += 1
-            yield tuple(l)
+        yield from AlluraAttachment.parse(thread_posts)
 
 
 @req_cmd(Allura, cmd='changes')
