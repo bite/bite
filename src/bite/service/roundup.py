@@ -457,7 +457,7 @@ class _CommentsRequest(BaseCommentsRequest, Multicall):
 
         if not any((self.ids, comment_ids)):
             raise ValueError('No ID(s) specified')
-        if self.ids is not None:
+        if self.ids:
             self.options.append(f"IDs: {', '.join(self.ids)}")
 
         self.fields = fields
@@ -465,7 +465,7 @@ class _CommentsRequest(BaseCommentsRequest, Multicall):
 
     def encode_params(self):
         # get message IDs for given issue IDs
-        if self.ids is not None:
+        if self.ids:
             id_info = []
             self.comment_ids = []
             req_fields = ('id', 'messages')
@@ -473,7 +473,7 @@ class _CommentsRequest(BaseCommentsRequest, Multicall):
             for i, x in enumerate(issues):
                 id_info.append((self.ids[i], len(x.messages)))
                 self.comment_ids.extend(x.messages)
-            self.ids = tuple(id_info)
+            self._id_info = tuple(id_info)
 
         params = (chain([f'msg{i}'], self.fields) for i in self.comment_ids)
         return super().encode_params(params)
@@ -484,7 +484,7 @@ class _CommentsRequest(BaseCommentsRequest, Multicall):
         def items():
             if self.ids:
                 count = 0
-                for _id, length in self.ids:
+                for _id, length in self._id_info:
                     l = []
                     for i, d in enumerate(islice(data, length)):
                         l.append(RoundupComment(
