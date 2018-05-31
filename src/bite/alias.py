@@ -158,7 +158,8 @@ class Aliases(object):
         except (configparser.DuplicateSectionError, configparser.DuplicateOptionError) as e:
             raise BiteError(e)
 
-    def substitute(self, unparsed_args, *, config_opts=None, connection=None, service_name=None):
+    def substitute(self, unparsed_args, *,
+                   config=None, config_opts=None, connection=None, service_name=None):
         # load alias files
         if config_opts is not None:
             self._aliases.config_opts = config_opts
@@ -166,8 +167,21 @@ class Aliases(object):
         alias_name = unparsed_args[0]
         extra_cmds = unparsed_args[1:]
 
+        # sections to check in order for matching aliases
+        sections = []
+        if connection is not None:
+            sections.append(connection)
+
+        # load aliases from connection config if they exist
+        if config is not None and config.has_section('alias'):
+            d = {'alias': dict(config.items('alias'))}
+            self._aliases.read_dict(d)
+            sections.append('alias')
+
+        sections.extend(list(self.get_sections(service_name)))
+
         # first check for connection specific aliases, then service specific aliases
-        for section in self.get_sections(connection, service_name):
+        for section in sections:
             if self._aliases.has_section(section):
                 try:
                     alias_cmd = self._aliases.get(section, alias_name, fallback=None)
@@ -194,19 +208,17 @@ class Aliases(object):
         return params
 
     @staticmethod
-    def get_sections(connection, service_name):
+    def get_sections(service_name):
         """Generator for alias section precendence.
 
-        connection -> full service name -> versioned service -> generic service
+        full service name -> versioned service -> generic service
 
         Note that service sections use headers of the form: [:service:],
         e.g. [:bugzilla:] for a generic service
             [:bugzilla5.0:] for a version specific section
             [:bugzilla5.0-jsonrpc:] for a full service name section
         """
-        if connection is not None:
-            yield connection
-        for cls in service_classes(service_name): 
+        for cls in service_classes(service_name):
             yield f":{cls}:"
 
     def items(self, section):
