@@ -49,17 +49,17 @@ class Session(requests.Session):
         self.headers['User-Agent'] = f'{__title__}-{__version__}'
         self.headers['Accept-Encoding'] = ', '.join(('gzip', 'deflate', 'compress'))
 
-    def send(self, request, **kw):
+    def send(self, req, **kw):
         # use session settings if not explicitly passed
         kw.setdefault('timeout', self.timeout)
         kw.setdefault('allow_redirects', self.allow_redirects)
 
-        if not isinstance(request, requests.PreparedRequest):
-            request = self.prepare_request(request)
+        if not isinstance(req, requests.PreparedRequest):
+            req = self.prepare_request(req)
 
         try:
-            return super().send(request, **kw)
-        except request.exceptions.RequestException as e:
+            return super().send(req, **kw)
+        except requests.exceptions.RequestException as e:
             if isinstance(e, requests.exceptions.SSLError):
                 msg = 'SSL certificate verification failed'
             elif isinstance(e, requests.exceptions.ConnectionError):
