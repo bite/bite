@@ -1,6 +1,7 @@
 cython
 https://github.com/pkgcore/snakeoil/archive/py3.tar.gz#egg=snakeoil
 requests>=2
+configobj
 multidict
 chardet
 python-dateutil>=2.1

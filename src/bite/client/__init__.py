@@ -1,11 +1,7 @@
 from functools import wraps
-import getpass
-from io import BytesIO
 from itertools import chain
 import os
-import subprocess
 import sys
-import tarfile
 import textwrap
 
 from snakeoil.strings import pluralism
@@ -13,10 +9,15 @@ from snakeoil.demandload import demandload
 
 from ..exceptions import AuthError, BiteError
 from ..objects import TarAttachment
-from ..service import Service
 from ..utils import confirm, get_input, launch_browser
 
-demandload('bite:const')
+demandload(
+    'getpass',
+    'io:BytesIO',
+    'subprocess',
+    'tarfile',
+    'bite:const',
+)
 
 
 def login_retry(func):

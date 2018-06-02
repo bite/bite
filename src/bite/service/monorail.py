@@ -18,7 +18,7 @@ import lxml.html
 from ._jsonrpc import Jsonrpc
 from ..objects import decompress, Item, Comment, Attachment
 from ..exceptions import RequestError, AuthError, BadAuthToken
-from ..rfc3339 import parse_datetime as parsetime
+from .._vendor.rfc3339 import parse_datetime as parsetime
 
 
 class Monorail(Jsonrpc):

@@ -1,3 +1,0 @@
-[apache]
-service: jira
-base: https://issues.apache.org/jira

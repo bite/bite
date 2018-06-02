@@ -1,7 +1,5 @@
-import base64
 import datetime
 import re
-import string
 
 from dateutil.parser import parse as dateparse
 from snakeoil.demandload import demandload
@@ -11,7 +9,11 @@ from ... import utc
 from ...objects import Item, Change, Comment, Attachment, decompress
 from ...utils import nonstring_iterable
 
-demandload('bite:const')
+demandload(
+    'base64',
+    'string',
+    'bite:const',
+)
 
 
 def parsetime(time):

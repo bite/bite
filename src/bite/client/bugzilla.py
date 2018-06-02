@@ -1,18 +1,16 @@
 from collections import OrderedDict
-from itertools import chain
 import re
-import subprocess
 import sys
 
 from snakeoil.demandload import demandload
-from snakeoil.strings import pluralism
 
-from . import Cli, login_required
+from . import Cli
 from ..exceptions import BiteError
 from ..utils import block_edit, get_input, launch_browser
 
 demandload(
     'pprint',
+    'subprocess',
     'urllib.parse:parse_qs',
     'bite:const',
 )

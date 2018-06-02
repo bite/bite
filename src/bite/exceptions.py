@@ -36,6 +36,15 @@ class RequestError(BiteError):
         return f"{self.msg} -- (see server response below)\n\n{text}"
 
 
+class ConfigError(BiteError):
+    """Failed to parse or load config file(s)."""
+
+    def __init__(self, msg, *, path=None, **kw):
+        if path:
+            msg = f'failed loading {path!r}: {msg}'
+        super().__init__(msg=msg, **kw)
+
+
 class ParsingError(BiteError):
     """Parser failed to process the returned data."""
     pass

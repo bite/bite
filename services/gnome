@@ -1,0 +1,3 @@
+[gnome]
+  base = https://bugzilla.gnome.org/
+  service = bugzilla5.0-jsonrpc

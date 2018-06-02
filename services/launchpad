@@ -1,0 +1,3 @@
+[launchpad]
+  service = launchpad
+  base = https://bugs.launchpad.net/launchpad

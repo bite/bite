@@ -4,20 +4,21 @@ from argparse import (
 from importlib import import_module
 import os
 import re
-import shlex
 import sys
 
 from snakeoil.cli import arghparse, tool
 from snakeoil.demandload import demandload
 
-from . import get_service_cls, service_classes
-from .alias import Aliases
-from .config import get_config
+from . import get_service_cls
+from .config import Config
 from .exceptions import BiteError
 from .objects import TimeInterval
 from .utils import block_edit, confirm
 
-demandload('bite:const')
+demandload(
+    'shlex',
+    'bite:const',
+)
 
 
 class ArgType(object):
@@ -548,20 +549,30 @@ class ArgumentParser(arghparse.ArgumentParser):
     def parse_args(self, args=None, namespace=None):
         # pull config and service settings from args if they exist
         initial_args, unparsed_args = self.parse_optionals(args, namespace)
-        config_file = initial_args.pop('config_file')
-
-        # load alias files
-        aliases = Aliases()
-
-        # check if unparsed args match any global aliases
-        if unparsed_args:
-            alias_unparsed_args = aliases.substitute(unparsed_args)
-            # re-parse optionals to catch any added by aliases
-            if unparsed_args != alias_unparsed_args:
-                initial_args, unparsed_args = self.parse_optionals(alias_unparsed_args, initial_args)
+        user_config_path = initial_args.pop('config')
 
         # load config files
-        config, config_opts = get_config(initial_args, config_file=config_file)
+        config = Config(path=user_config_path)
+
+        # Fallback to using the default connection setting from the config if not
+        # specified on the command line and --base/--service options are also
+        # unspecified.
+        if initial_args.connection is not None:
+            connection = initial_args.connection
+        elif initial_args.base is None and initial_args.service is None:
+            connection = initial_args.connection = config['connection']
+        else:
+            connection = None
+
+        # load service config
+        if connection is not None:
+            config.load_service(connection)
+
+        # pop base and service settings from the config and add them to parsed args
+        # if not already specified on the command line
+        for attr in ('base', 'service'):
+            if getattr(initial_args, attr, None) is None:
+                setattr(initial_args, attr, config[connection].pop(attr, None))
 
         if initial_args.base is None or initial_args.service is None:
             self.error('both arguments -b/--base and -s/--service are required '
@@ -574,13 +585,18 @@ class ArgumentParser(arghparse.ArgumentParser):
             self.error(f"invalid service: {service_name!r} "
                        f"(available services: {', '.join(const.SERVICES)}")
 
-        fallbacks = list(service_classes(service_name))[1:]
-        service_opts = get_service_cls(
-            service_name, const.SERVICE_OPTS, fallbacks=fallbacks)(
-                parser=self, service_name=service_name)
+        service_opts = get_service_cls(service_name, const.SERVICE_OPTS)(
+            parser=self, service_name=service_name)
 
         # add service config options to args namespace
-        service_opts.add_config_opts(args=initial_args, config_opts=config_opts)
+        if connection is not None:
+            config_opts = config[connection]
+        else:
+            config_opts = {
+                k: v for k, v in config.items()
+                if not isinstance(v, dict) and k != 'connection'}
+        if config_opts:
+            service_opts.add_config_opts(args=initial_args, config_opts=config_opts)
 
         # initialize requested service
         service = get_service_cls(service_name, const.SERVICES)(**vars(initial_args))
@@ -600,9 +616,9 @@ class ArgumentParser(arghparse.ArgumentParser):
 
         # check if unparsed args match any aliases
         if unparsed_args:
-            alias_unparsed_args = aliases.substitute(
-                unparsed_args, config=config, config_opts=config_opts,
-                connection=initial_args.connection, service_name=service_name)
+            alias_unparsed_args = config.substitute_alias(
+                unparsed_args, connection=initial_args.connection,
+                config_opts=config_opts, service_name=service_name)
             # re-parse optionals to catch any added by aliases
             if unparsed_args != alias_unparsed_args:
                 initial_args, unparsed_args = self.parse_optionals(alias_unparsed_args, initial_args)

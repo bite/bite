@@ -1,0 +1,3 @@
+[asf]
+  base = https://bz.apache.org/bugzilla/
+  service = bugzilla5.0-jsonrpc

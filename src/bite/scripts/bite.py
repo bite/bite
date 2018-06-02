@@ -11,11 +11,10 @@ import os
 
 from snakeoil.demandload import demandload
 
-from .. import get_service_cls, service_classes
+from .. import get_service_cls
 from ..argparser import ArgumentParser, parse_file, override_attr
-from ..alias import Aliases
 from ..client import Cli
-from ..config import load_full_config
+from ..config import Config
 from ..exceptions import RequestError
 
 demandload('bite:const')
@@ -29,8 +28,8 @@ config_opts.add_argument(
     '-c', '--connection',
     help='use a configured connection')
 config_opts.add_argument(
-    '--config-file',
-    help='read an alternate configuration file')
+    '--config',
+    help='read user config from a specified location')
 
 service_opts = argparser.add_argument_group('Service options')
 service_opts.add_argument(
@@ -72,9 +71,11 @@ single_auth_opts.add_argument(
 single_auth_opts.add_argument(
     '-u', '--user',
     help='username for authentication')
-auth_opts.add_argument('-p', '--password',
+auth_opts.add_argument(
+    '-p', '--password',
     help='password for authentication')
-single_auth_opts.add_argument('-a', '--auth-token',
+single_auth_opts.add_argument(
+    '-a', '--auth-token',
     help='use the specified token for authentication')
 single_auth_opts.add_argument(
     '--auth-file',
@@ -117,27 +118,28 @@ def get_cli(args):
             args[attr] = val
 
     service_name = args['service']._service
-    fallbacks = list(service_classes(service_name))[1:] + [Cli]
-    client = get_service_cls(service_name, const.CLIENTS, fallbacks=fallbacks)(**args)
+    client = get_service_cls(service_name, const.CLIENTS, fallbacks=(Cli,))(**args)
     return client, fcn_args
 
 
 @ls.bind_main_func
 def _ls(options, out, err):
     if options.item == 'aliases':
-        aliases = Aliases(raw=True)
-        section = options.connection if options.connection else 'DEFAULT'
-        for name, value in aliases.items(section):
+        # TODO: take service name/connection args
+        config = Config()
+        for name, value in config.get('alias', {}).items():
             if options.verbose:
                 out.write(f'{name}: {value}')
             else:
                 out.write(name)
     elif options.item == 'connections':
-        config = load_full_config()
-        for connection in sorted(config.sections()):
+        # TODO: take service name args
+        config = Config(load=False)
+        config.load_all()
+        for connection, settings in sorted(config.items()):
             if options.verbose:
                 out.write(f'[{connection}]')
-                for (name, value) in config.items(connection):
+                for name, value in settings.items():
                     out.write(f'  {name}: {value}')
             else:
                 out.write(connection)
@@ -148,14 +150,15 @@ def _ls(options, out, err):
 
 
 @cache.bind_final_check
-def _validate_args(parser, namespace):
+def _validate_cache_args(parser, namespace):
     if not namespace.update and not namespace.remove:
         cache.error('either -u/--update or -r/--remove must be specified')
 
 
 @cache.bind_main_func
 def _cache(options, out, err):
-    config = load_full_config()
+    # TODO: load all service configs
+    config = Config()
     connections = options.pop('connections')
     if not connections:
         connections = [options.connection]

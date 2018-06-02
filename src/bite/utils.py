@@ -1,10 +1,6 @@
 import os
-import random
 import re
-import string
-import subprocess
 import sys
-import tempfile
 from textwrap import dedent
 
 from snakeoil.demandload import demandload
@@ -13,7 +9,12 @@ from snakeoil.sequences import iflatten_instance
 from . import __title__ as prog
 from .exceptions import BiteError
 
-demandload('bite:const')
+demandload(
+    'shlex',
+    'subprocess',
+    'tempfile',
+    'bite:const',
+)
 
 PROG = prog.upper()
 
@@ -136,10 +137,6 @@ def confirm(prompt='Confirm', default=False):
             return False
 
 
-def id_generator(size=16, chars=string.ascii_uppercase + string.digits):
-    return ''.join(random.choice(chars) for x in range(size))
-
-
 def munge(s, strike=False, under=False, over=False):
     """Return specified text with strikethrough, underline, and/or overline characters."""
     strike = '\u0336' if strike else ''
@@ -167,3 +164,9 @@ def dict2tuples(dct):
 
 def nonstring_iterable(obj):
     return hasattr(obj, '__iter__') and not isinstance(obj, str)
+
+
+def shell_split(string):
+    lex = shlex.shlex(string)
+    lex.whitespace_split = True
+    return list(lex)

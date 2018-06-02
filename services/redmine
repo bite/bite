@@ -1,0 +1,3 @@
+[redmine]
+  service = redmine3.2-json
+  base = https://redmine.org/projects/redmine

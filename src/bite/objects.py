@@ -16,7 +16,7 @@ from snakeoil import klass
 from snakeoil.demandload import demandload
 from snakeoil.osutils import sizeof_fmt
 
-from . import magic
+from ._vendor import magic
 from .exceptions import BiteError
 from .utc import utc, parse_date
 

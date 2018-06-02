@@ -1,3 +1,0 @@
-[freenas]
-service: redmine-json
-base: https://redmine.ixsystems.com/projects/freenas

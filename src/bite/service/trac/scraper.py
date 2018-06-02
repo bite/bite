@@ -1,7 +1,7 @@
 """Web scraper for Trac without RPC support."""
 
 import csv
-import io
+from io import StringIO
 from urllib.parse import urlparse, parse_qs
 
 from dateutil.parser import parse as parsetime
@@ -140,7 +140,7 @@ class _SearchRequestCSV(_SearchRequest):
         """Parsing function for the raw CSV content."""
         # Requesting the text content of the response doesn't remove the BOM so
         # we request the binary content and decode it ourselves to remove it.
-        f = io.StringIO(data.decode('utf-8-sig'))
+        f = StringIO(data.decode('utf-8-sig'))
         headers = [x.lower() for x in f.readline().strip().split(',')]
         for item in csv.DictReader(f, fieldnames=headers):
             yield self.service.item(self.service, get_desc=False, **item)

@@ -1,3 +1,0 @@
-[yocto]
-base: https://bugzilla.yoctoproject.org/
-service: bugzilla4.4-jsonrpc

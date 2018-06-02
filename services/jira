@@ -1,0 +1,3 @@
+[jira]
+  service = jira
+  base = https://jira.atlassian.com/projects/JRASERVER
