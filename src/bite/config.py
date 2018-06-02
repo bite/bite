@@ -41,7 +41,7 @@ def service_files(connection=None, user_dir=True):
 
     for service_dir in dirs:
         for root, _, files in os.walk(service_dir):
-            for config_file in files:
+            for config_file in (x for x in files if not x.startswith('.')):
                 if connection is None or config_file == connection:
                     yield os.path.join(root, config_file)
 
