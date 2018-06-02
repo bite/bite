@@ -1,0 +1,3 @@
+libreoffice:
+  base: https://bugs.documentfoundation.org/
+  service: bugzilla5.0-jsonrpc

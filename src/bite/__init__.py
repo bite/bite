@@ -3,20 +3,24 @@ import re
 
 from snakeoil.demandload import demandload
 
-from .config import load_service_files
 from .exceptions import BiteError
 
-demandload('bite:const')
+demandload(
+    'bite:const,Config',
+)
 
 __title__ = 'bite'
 __version__ = '0.0.1'
 
 
-def get_service_cls(service_name, options, fallbacks=()):
+def get_service_cls(service_name, options, service_fallbacks=True, fallbacks=()):
     """Return the class for a given, supported service type."""
     # support getting passed service objects and service name strings
     if isinstance(service_name, type):
         service_name = getattr(service_name, '_service')
+
+    if service_fallbacks:
+        fallbacks = tuple(service_classes(service_name))[1:] + tuple(fallbacks)
 
     try:
         mod_name, cls_name = options[service_name].rsplit('.', 1)
@@ -36,13 +40,9 @@ def get_service_cls(service_name, options, fallbacks=()):
 
 def get_service(connection):
     """Return a service object for a configured service."""
-    # support getting passed service objects and service name strings
-    config = load_service_files(connection)
-
-    if not config.has_section(connection):
-        raise BiteError(f'unknown connection: {connection!r}')
-
-    args = dict(config.items(connection))
+    config = Config()
+    config.load_service(connection)
+    args = config[connection]
     service_obj = get_service_cls(args['service'], const.SERVICES)(**args)
     return service_obj
 

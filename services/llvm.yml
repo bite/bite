@@ -1,0 +1,3 @@
+llvm:
+  base: https://bugs.llvm.org/
+  service: bugzilla5.0-jsonrpc

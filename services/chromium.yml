@@ -1,0 +1,3 @@
+chromium:
+  base: https://bugs.chromium.org/p/chromium/
+  service: monorail

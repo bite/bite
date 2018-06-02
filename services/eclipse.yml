@@ -1,0 +1,3 @@
+eclipse:
+  base: https://bugs.eclipse.org/bugs/
+  service: bugzilla5.0-jsonrpc

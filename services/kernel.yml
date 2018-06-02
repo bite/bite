@@ -1,0 +1,3 @@
+kernel:
+  base: https://bugzilla.kernel.org/
+  service: bugzilla5.2-jsonrpc

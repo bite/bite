@@ -1,3 +1,0 @@
-[alpine]
-service: redmine-json
-base: https://bugs.alpinelinux.org/projects/alpine/

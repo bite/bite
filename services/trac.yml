@@ -1,0 +1,3 @@
+trac:
+  service: trac-scraper
+  base: https://trac.edgewall.org/

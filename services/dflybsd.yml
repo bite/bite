@@ -1,0 +1,3 @@
+dflybsd:
+  service: redmine-json
+  base: https://bugs.dragonflybsd.org/projects/dragonfly/

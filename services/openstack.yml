@@ -1,0 +1,3 @@
+openstack:
+  base: https://bugs.launchpad.net/openstack/
+  service: launchpad

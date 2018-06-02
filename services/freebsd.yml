@@ -1,0 +1,3 @@
+freebsd:
+  base: https://bugs.freebsd.org/bugzilla/
+  service: bugzilla5.0-jsonrpc

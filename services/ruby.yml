@@ -1,0 +1,3 @@
+ruby:
+  service: redmine-elastic-json
+  base: https://bugs.ruby-lang.org/projects/ruby-trunk

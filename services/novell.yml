@@ -1,0 +1,3 @@
+novell:
+  base: https://bugzilla.novell.com/
+  service: bugzilla4.4-jsonrpc

@@ -1,0 +1,3 @@
+ubuntu:
+  base: https://bugs.launchpad.net/ubuntu/
+  service: launchpad

@@ -1,0 +1,3 @@
+mariadb:
+  service: jira
+  base: https://jira.mariadb.org/projects/MDEV

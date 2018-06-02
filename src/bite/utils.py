@@ -1,6 +1,7 @@
 import os
 import random
 import re
+import shlex
 import string
 import subprocess
 import sys
@@ -167,3 +168,16 @@ def dict2tuples(dct):
 
 def nonstring_iterable(obj):
     return hasattr(obj, '__iter__') and not isinstance(obj, str)
+
+
+def shell_split(string):
+    lex = shlex.shlex(string)
+    lex.whitespace_split = True
+    return list(lex)
+
+
+def run_shell_cmd(cmd):
+    # TODO: handle failures, errors, and keyboard interrupts better
+    p = subprocess.Popen(cmd, shell=True)
+    p.communicate()
+    sys.exit(p.returncode)

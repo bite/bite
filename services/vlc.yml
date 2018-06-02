@@ -1,0 +1,3 @@
+vlc:
+  service: trac-jsonrpc
+  base: https://trac.videolan.org/vlc

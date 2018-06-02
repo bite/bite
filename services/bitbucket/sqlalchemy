@@ -1,3 +1,0 @@
-[sqlalchemy]
-service: bitbucket
-base: https://bitbucket.org/zzzeek/sqlalchemy

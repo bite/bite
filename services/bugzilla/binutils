@@ -1,3 +1,0 @@
-[binutils]
-base: https://sourceware.org/bugzilla/
-service: bugzilla5.0-jsonrpc

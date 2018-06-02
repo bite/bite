@@ -1,3 +1,0 @@
-[mercurial]
-base: https://bz.mercurial-scm.org/
-service: bugzilla5.0-jsonrpc
