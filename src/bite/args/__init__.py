@@ -7,7 +7,7 @@ from snakeoil.demandload import demandload
 
 from ..exceptions import BiteError
 from ..argparser import (
-    ParseStdin, Comment, IDList, StringList, IDs, ID_Maps, ID_Str_Maps,
+    ParseStdin, Comment, IntList, IDList, StringList, IDs, ID_Maps, ID_Str_Maps,
     TimeIntervalArg,
 )
 from ..objects import DateTime, IntRange
@@ -38,6 +38,7 @@ class Subcmd(object):
 
         # register arg types and actions for subcmd parsing
         self.parser.register('type', 'ids', IDs(service))
+        self.parser.register('type', 'int_list', IntList(service))
         self.parser.register('type', 'id_list', IDList(service))
         self.parser.register('type', 'id_maps', ID_Maps(service))
         self.parser.register('type', 'id_str_maps', ID_Str_Maps(service))
@@ -311,8 +312,8 @@ class Changes(ReceiveSubcmd):
         # optional args
         self.opts.add_argument(
             '-n', '--number',
-            dest='change_num', type='id_list',
-            action=partial(ParseStdin, 'ids'),
+            dest='change_num', type='int_list',
+            action=partial(ParseStdin, int),
             help='restrict by change number(s)')
         self.opts.add_argument(
             '-r', '--creator',
@@ -339,8 +340,8 @@ class Comments(ReceiveSubcmd):
 
         # optional args
         self.opts.add_argument(
-            '-n', '--number', dest='comment_num', type='id_list',
-            action=partial(ParseStdin, 'ids'),
+            '-n', '--number', dest='comment_num', type='int_list',
+            action=partial(ParseStdin, int),
             help='restrict by comment number(s)')
         self.opts.add_argument(
             '-r', '--creator', type='str_list', action='parse_stdin',

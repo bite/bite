@@ -67,6 +67,19 @@ class IDs(ArgType):
         return [self.parse(x) for x in data]
 
 
+class IntList(ArgType):
+
+    @staticmethod
+    def parse(s):
+        l = []
+        for item in s.split(','):
+            try:
+                l.append(int(item))
+            except ValueError:
+                raise ArgumentTypeError(f'invalid integer value: {item!r}')
+        return l
+
+
 class IDList(ArgType):
 
     @staticmethod
