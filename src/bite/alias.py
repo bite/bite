@@ -200,8 +200,18 @@ class Aliases(object):
 
         alias_cmd = alias_cmd.strip()
 
+        # Run '!' prefixed aliases in the system shell, security issues with
+        # shell injections are the user's responsibility with their config.
         if alias_cmd[0] == '!':
-            run_shell_cmd(alias_cmd[1:] + ' ' + ' '.join(shlex.quote(s) for s in extra_cmds))
+            p = subprocess.run(
+                alias_cmd[1:] + ' ' + ' '.join(shlex.quote(s) for s in extra_cmds),
+                stderr=subprocess.PIPE, shell=True)
+            try:
+                p.check_returncode()
+            except subprocess.CalledProcessError as e:
+                msg = f'failed running alias {alias_name!r}:\n{p.stderr.decode().strip()}'
+                raise BiteError(msg=msg)
+            sys.exit(p.returncode)
 
         params = shell_split(alias_cmd)
         params.extend(extra_cmds)
@@ -229,10 +239,3 @@ def shell_split(string):
     lex = shlex.shlex(string)
     lex.whitespace_split = True
     return list(lex)
-
-
-def run_shell_cmd(cmd):
-    # TODO: handle failures, errors, and keyboard interrupts better
-    p = subprocess.Popen(cmd, shell=True)
-    p.communicate()
-    sys.exit(p.returncode)
