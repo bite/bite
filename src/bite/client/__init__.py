@@ -344,7 +344,7 @@ class Cli(Client):
         request = self.service.SearchRequest(params=kw)
 
         self.log(f'Searching for {self.service.item.type}s with the following options:')
-        self.log(request.options, prefix='   - ')
+        self.log_t(request.options, prefix='   - ')
 
         data = request.send()
 
