@@ -11,13 +11,13 @@
 	me: search -a %{CONFIG:user}
 
 	# meta alias takes a function as an argument and calls function for all other input
-	loop: !loop() { for i in "${@:2}"; do $1 $i; done }; loop
+	*loop: !loop() { for i in "${@:2}"; do $1 $i; done }; loop
 
 	# iterate over whitespace-separated values passed as the second argument
-	sloop: !sloop() { for i in $2; do $1 $i ${@:3}; done }; sloop
+	*sloop: !sloop() { for i in $2; do $1 $i ${@:3}; done }; sloop
 
 	# iterate over comma-separated values passed as the second argument
-	cloop: !cloop() { for i in $(echo $2 | tr "," " "); do $1 $i ${@:3}; done }; cloop
+	*cloop: !cloop() { for i in $(echo $2 | tr "," " "); do $1 $i ${@:3}; done }; cloop
 
 # aliases for all bugzilla services
 [:bugzilla:]
@@ -33,8 +33,8 @@
 			# convert them into CSV
 			DEPENDS=$(IFS=, ; echo "${DEPENDS[*]}")
 			[[ -n ${DEPENDS} ]] && bite -q search --id ${DEPENDS} ${@:2}
-		};
-		%{cloop} f
+		}
+		%{*cloop} f
 	# output list of open bug blockers
 	show-blocks: !
 		f() {
@@ -43,7 +43,7 @@
 			# convert them into CSV
 			BLOCKS=$(IFS=, ; echo "${BLOCKS[*]}")
 			[[ -n ${BLOCKS} ]] && bite -q search --id ${BLOCKS} ${@:2}
-		};
-		%{cloop} f
+		}
+		%{*cloop} f
 
 # vim: set ft=sh:
