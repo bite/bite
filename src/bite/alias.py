@@ -166,7 +166,7 @@ class Aliases(object):
             self._aliases.config_opts = config_opts
 
         alias_name = unparsed_args[0]
-        extra_cmds = unparsed_args[1:]
+        remaining_args = unparsed_args[1:]
 
         # sections to check in order for matching aliases
         sections = []
@@ -207,8 +207,10 @@ class Aliases(object):
             # assumes we're running in bash
             enable_debug = 'set -x; ' if debug else ''
             stderr = None if debug else subprocess.PIPE
-            cmd = f"{enable_debug}{alias_cmd[1:]} {' '.join(shlex.quote(s) for s in extra_cmds)}"
-            p = subprocess.run(cmd, stderr=stderr, shell=True)
+            cmd_str = (
+                f"{enable_debug}{alias_cmd[1:]} "
+                f"{' '.join(shlex.quote(s) for s in remaining_args)}")
+            p = subprocess.run(cmd_str, stderr=stderr, shell=True)
             try:
                 p.check_returncode()
             except subprocess.CalledProcessError as e:
@@ -219,7 +221,7 @@ class Aliases(object):
             sys.exit(p.returncode)
 
         params = shell_split(alias_cmd)
-        params.extend(extra_cmds)
+        params.extend(remaining_args)
         return params
 
     @staticmethod
@@ -240,7 +242,7 @@ class Aliases(object):
         return self._aliases.items(section)
 
 
-def shell_split(string):
-    lex = shlex.shlex(string)
+def shell_split(s):
+    lex = shlex.shlex(s)
     lex.whitespace_split = True
     return list(lex)
