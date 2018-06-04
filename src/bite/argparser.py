@@ -665,7 +665,7 @@ class Tool(tool.Tool):
         if isinstance(e, BiteError):
             if self.parser.debug:
                 raise e
-            else:
+            elif self.parser.verbose >= 0:
                 msg = e.message if self.parser.verbose else str(e)
                 self.parser.error(msg)
             return 1
