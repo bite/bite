@@ -134,7 +134,9 @@ def _ls(options, out, err):
                 out.write(name)
     elif options.item == 'connections':
         config = load_full_config()
-        for connection in sorted(config.sections()):
+        # filter connection-specific aliases
+        sections = (x for x in sorted(config.sections()) if x != ':alias:')
+        for connection in sections:
             if options.verbose:
                 out.write(f'[{connection}]')
                 for (name, value) in config.items(connection):

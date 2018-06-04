@@ -2,5 +2,5 @@
 base: https://bugzilla.mozilla.org/
 service: bugzilla5.2-jsonrpc
 
-[alias]
+[:alias:]
 search: search --product Bugzilla

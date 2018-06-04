@@ -173,8 +173,8 @@ class Aliases(object):
             sections.append(connection)
 
         # load aliases from connection config if they exist
-        if config is not None and config.has_section('alias'):
-            d = {'alias': dict(config.items('alias'))}
+        if config is not None and config.has_section(':alias:'):
+            d = {'alias': dict(config.items(':alias:'))}
             self._aliases.read_dict(d)
             sections.append('alias')
 
