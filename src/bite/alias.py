@@ -200,11 +200,13 @@ class Aliases(object):
                 return unparsed_args
 
         alias_cmd = alias_cmd.strip()
+        # strip quotes if the alias starts with them
+        if alias_cmd.startswith(('"', "'")):
+            alias_cmd = alias_cmd.strip('"\'')
 
-        # Run '!' prefixed aliases in the system shell, security issues with
-        # shell injections are the user's responsibility with their config.
-        if alias_cmd[0] == '!':
-            # assumes we're running in bash
+        # run '!' prefixed aliases in the system shell
+        if alias_cmd.startswith('!'):
+            # assumes we're running in bash or shell compatible with 'set -x'
             enable_debug = 'set -x; ' if debug else ''
             stderr = None if debug else subprocess.PIPE
             cmd_str = (
