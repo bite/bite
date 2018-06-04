@@ -159,7 +159,8 @@ class Aliases(object):
             raise BiteError(e)
 
     def substitute(self, unparsed_args, *,
-                   config=None, config_opts=None, connection=None, service_name=None):
+                   config=None, config_opts=None, connection=None,
+                   service_name=None, debug=False):
         # load alias files
         if config_opts is not None:
             self._aliases.config_opts = config_opts
@@ -203,9 +204,11 @@ class Aliases(object):
         # Run '!' prefixed aliases in the system shell, security issues with
         # shell injections are the user's responsibility with their config.
         if alias_cmd[0] == '!':
-            p = subprocess.run(
-                alias_cmd[1:] + ' ' + ' '.join(shlex.quote(s) for s in extra_cmds),
-                stderr=subprocess.PIPE, shell=True)
+            # assumes we're running in bash
+            enable_debug = 'set -x; ' if debug else ''
+            stderr = None if debug else subprocess.PIPE
+            cmd = f"{enable_debug}{alias_cmd[1:]} {' '.join(shlex.quote(s) for s in extra_cmds)}"
+            p = subprocess.run(cmd, stderr=stderr, shell=True)
             try:
                 p.check_returncode()
             except subprocess.CalledProcessError as e:
