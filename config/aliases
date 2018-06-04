@@ -34,21 +34,13 @@
 		get_deps() {
 			# get bug deps
 			DEPENDS=( $(%{depends} $1) )
-			# convert them into CSV
-			if [[ -n ${DEPENDS} ]]; then
+			if [[ -n ${DEPENDS[@]} ]]; then
+				# convert deps into CSV and search for matching open bugs
 				DEPENDS=$(IFS=, ; echo "${DEPENDS[*]}")
 				bite -q search --id ${DEPENDS} ${@:2}
 			fi
 		}
-		get_input() {
-			if [[ $1 == - ]]; then
-				IDS=( $(</dev/stdin) )
-			else
-				IFS=', ' read -r -a IDS <<< "$1"
-			fi
-			%{*parallel} get_deps ${IDS[@]}
-		}
-		get_input
+		get_deps
 
 	# output list of open bug blockers
 	show-blocks: !
@@ -56,9 +48,12 @@
 			# get bug blockers
 			BLOCKS=( $(%{blocks} $1) )
 			# convert them into CSV
-			BLOCKS=$(IFS=, ; echo "${BLOCKS[*]}")
-			[[ -n ${BLOCKS} ]] && bite -q search --id ${BLOCKS} ${@:2}
+			if [[ -n ${BLOCKS[@]} ]]; then
+				# convert blockers into CSV and search for matching open bugs
+				BLOCKS=$(IFS=, ; echo "${BLOCKS[*]}")
+				bite -q search --id ${BLOCKS} ${@:2}
+			fi
 		}
-		%{*cloop} get_blockers
+		get_blockers
 
 # vim: set ft=sh:
