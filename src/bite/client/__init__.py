@@ -361,17 +361,20 @@ class Cli(Client):
     def log(self, msg, newline=True, truncate=False, prefix=' * '):
         if isinstance(msg, (list, tuple)):
             if prefix:
-                msg = [prefix + line if i > 0 else line for i, line in enumerate(msg)]
+                msg = (prefix + line for line in msg)
+            if truncate:
+                msg = (self._truncate(x) for x in msg)
             msg = '\n'.join(msg)
+        else:
+            msg = prefix + msg
+            if truncate:
+                msg = self._truncate(msg)
 
         if sys.stdout.isatty():
             output = sys.stdout
         else:
             output = sys.stderr
 
-        msg = prefix + msg
-        if truncate:
-            msg = self._truncate(msg)
         if not self.quiet:
             if newline:
                 print(msg, file=output)
