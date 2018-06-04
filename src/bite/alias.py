@@ -213,13 +213,16 @@ class Aliases(object):
                 f"{enable_debug}{alias_cmd[1:]} "
                 f"{' '.join(shlex.quote(s) for s in remaining_args)}")
             p = subprocess.run(cmd_str, stderr=stderr, shell=True)
-            try:
-                p.check_returncode()
-            except subprocess.CalledProcessError as e:
-                msg = f'failed running alias {alias_name!r}'
-                if not debug:
-                    msg += f':\n{p.stderr.decode().strip()}'
-                raise BiteError(msg=msg)
+            if not debug:
+                try:
+                    p.check_returncode()
+                except subprocess.CalledProcessError as e:
+                    stderr_str = p.stderr.decode().strip()
+                    if stderr_str.startswith('/bin/sh: '):
+                        stderr_lines = '\n'.join(
+                            f'  {x}' for x in stderr_str.split('\n'))
+                        msg = f"failed running {alias_name!r}:\n{stderr_lines}"
+                        raise BiteError(msg=msg)
             sys.exit(p.returncode)
 
         params = shell_split(alias_cmd)
