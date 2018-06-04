@@ -212,7 +212,9 @@ class Aliases(object):
             try:
                 p.check_returncode()
             except subprocess.CalledProcessError as e:
-                msg = f'failed running alias {alias_name!r}:\n{p.stderr.decode().strip()}'
+                msg = f'failed running alias {alias_name!r}'
+                if not debug:
+                    msg += f':\n{p.stderr.decode().strip()}'
                 raise BiteError(msg=msg)
             sys.exit(p.returncode)
 
