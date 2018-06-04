@@ -26,8 +26,24 @@
 	# output list of bug blockers by ID
 	blocks: !f() { bite -q search --id $1 --fields blocks --output -; }; f
 	# output list of open bug dependencies
-	show-depends: !f() { %{depends} $1 | bite -q search --id - ${@:2}; }; %{cloop} f
+	show-depends: !
+		f() {
+			# get bug deps
+			DEPENDS=( $(%{depends} $1) )
+			# convert them into CSV
+			DEPENDS=$(IFS=, ; echo "${DEPENDS[*]}")
+			[[ -n ${DEPENDS} ]] && bite -q search --id ${DEPENDS} ${@:2}
+		};
+		%{cloop} f
 	# output list of open bug blockers
-	show-blocks: !f() { %{blocks} $1 | bite -q search --id - ${@:2}; }; %{cloop} f
+	show-blocks: !
+		f() {
+			# get bug blockers
+			BLOCKS=( $(%{blocks} $1) )
+			# convert them into CSV
+			BLOCKS=$(IFS=, ; echo "${BLOCKS[*]}")
+			[[ -n ${BLOCKS} ]] && bite -q search --id ${BLOCKS} ${@:2}
+		};
+		%{cloop} f
 
 # vim: set ft=sh:
