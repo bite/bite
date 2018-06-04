@@ -58,7 +58,7 @@ class SearchRequest4_4(ParseRequest, OffsetPagedRequest):
                 self.params['include_fields'] = ['id', 'assigned_to', 'summary']
 
         def _default_parser(self, k, v):
-            if k in self.service.item.attributes:
+            if k in self.service.item.attributes and v:
                 self.params[k] = v
                 values = ', '.join(map(str, v)) if isinstance(v, (list, tuple)) else v
                 self.options.append(f'{self.service.item.attributes[k]}: {values}')
