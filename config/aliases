@@ -19,8 +19,23 @@
 	# iterate over comma-separated values passed as the second argument
 	*cloop: !cloop() { for i in $(echo $2 | tr "," " "); do $1 $i ${@:3}; done }; cloop
 
-	# meta alias takes a function as an argument and spawns function in parallel for all other input
-	*parallel: !p() { export -f $1; echo ${@:2} | tr ' ' '\n' | parallel --will-cite -q bash -c '$0 {}' $1; }; p
+	# meta alias takes a function as an argument and spawns function in
+	# parallel using GNU parallel for all other input
+	*parallel: !
+		p() {
+			export -f $1
+			(IFS=$'\n'; echo "${*:2}") | parallel --will-cite -q bash -c '$0 {}' $1
+		}
+		p
+
+	# meta alias takes a function as an argument and spawns function in
+	# parallel using xargs for all other input
+	*xargs: !
+		p() {
+			export -f $1
+			(IFS=$'\n'; echo "${*:2}") | xargs -n1 -P4 bash -c '$0 $1' $1
+		}
+		p
 
 # aliases for all bugzilla services
 [:bugzilla:]
