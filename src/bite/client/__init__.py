@@ -93,7 +93,9 @@ class Cli(Client):
         self.color = color
         self.passwordcmd = passwordcmd
         self.skip_auth = skip_auth
-        self.wrapper = textwrap.TextWrapper(width=const.COLUMNS - 3)
+
+        # columns minus five for the appended ', ...' chars after truncated text
+        self.wrapper = textwrap.TextWrapper(width=const.COLUMNS - 5)
 
         self.quiet = quiet
         self.verbose = verbose
