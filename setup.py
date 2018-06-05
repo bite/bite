@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 
-import errno
+from distutils import log
+from distutils.util import byte_compile
 from itertools import chain
 import os
 import sys
 from textwrap import dedent
 
-from distutils import log
-from distutils.util import byte_compile
 from setuptools import setup
 
-import pkgdist
+from snakeoil.dist import distutils_extensions as pkgdist
 pkgdist_setup, pkgdist_cmds = pkgdist.setup()
 
 # These offsets control where we install the config and service files.
