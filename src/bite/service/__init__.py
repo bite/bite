@@ -1,3 +1,4 @@
+import atexit
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from multiprocessing import cpu_count
@@ -243,6 +244,14 @@ class Service(object):
             self.session.cookies = Cookies(self.service.connection)
             self.session.cookies.load()
             self.params = {}
+            atexit.register(self._cleanup)
+
+        def _cleanup(self):
+            # Close the session during program exit instead of context exit so
+            # we can reuse the context handler.
+            if self.authenticated:
+                self.session.cookies.save()
+            self.session.close()
 
         def add_params(self, user, password):
             """Add login params to send to the service."""
@@ -291,13 +300,6 @@ class Service(object):
 
         def __exit__(self, *args):
             pass
-
-        def __del__(self):
-            # close during removal instead of __exit__ so we can reuse the
-            # context handler
-            if self.authenticated:
-                self.session.cookies.save()
-            self.session.close()
 
     def send(self, *reqs, **kw):
         """Send requests and return parsed response data."""
