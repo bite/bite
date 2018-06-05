@@ -225,9 +225,7 @@ class Aliases(object):
                         raise BiteError(msg=msg)
             sys.exit(p.returncode)
 
-        params = shell_split(alias_cmd)
-        params.extend(remaining_args)
-        return params
+        return shell_split(alias_cmd) + remaining_args
 
     @staticmethod
     def get_sections(service_name):
