@@ -1,0 +1,3 @@
+[flyspray]
+service: flyspray-scraper
+base: https://bugs.flyspray.org

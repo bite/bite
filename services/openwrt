@@ -1,0 +1,3 @@
+[openwrt]
+service: flyspray-scraper
+base: https://bugs.openwrt.org
