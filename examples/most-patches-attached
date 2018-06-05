@@ -8,7 +8,7 @@ import datetime
 
 from dateutil.relativedelta import relativedelta
 
-from bite import get_service
+from bite.base import get_service
 
 today = datetime.datetime.utcnow()
 previous = today + relativedelta(weeks=-1)

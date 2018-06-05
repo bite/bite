@@ -11,8 +11,8 @@ import os
 
 from snakeoil.demandload import demandload
 
-from .. import get_service_cls, service_classes
 from ..argparser import ArgumentParser, parse_file, override_attr
+from ..base import get_service_cls, service_classes
 from ..alias import Aliases
 from ..client import Cli
 from ..config import Config

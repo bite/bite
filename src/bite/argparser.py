@@ -10,8 +10,8 @@ import sys
 from snakeoil.cli import arghparse, tool
 from snakeoil.demandload import demandload
 
-from . import get_service_cls, service_classes
 from .alias import Aliases
+from .base import get_service_cls, service_classes
 from .config import Config
 from .exceptions import BiteError
 from .objects import TimeInterval

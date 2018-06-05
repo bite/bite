@@ -7,7 +7,7 @@ import sys
 
 from snakeoil.demandload import demandload
 
-from . import service_classes
+from .base import service_classes
 from .exceptions import BiteError
 
 demandload('bite:const')
