@@ -1,4 +1,4 @@
-[bitlbee]
+[mc]
 # appears to support XML-RPC when authenticated
 service: trac-scraper
-base: https://bugs.bitlbee.org/
+base: https://midnight-commander.org/
