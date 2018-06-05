@@ -3,13 +3,11 @@ import re
 
 from snakeoil.demandload import demandload
 
+from .__version__ import __title__, __version__
 from .config import Config
 from .exceptions import BiteError
 
 demandload('bite:const,service')
-
-__title__ = 'bite'
-__version__ = '0.0.1'
 
 
 def get_service_cls(service_name, options, fallbacks=()):

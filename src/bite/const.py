@@ -6,7 +6,7 @@ import sys
 from snakeoil import mappings
 from snakeoil.demandload import demandload
 
-from . import __title__
+from .__version__ import __title__
 
 demandload(
     'inspect',
