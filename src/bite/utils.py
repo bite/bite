@@ -10,7 +10,7 @@ from textwrap import dedent
 from snakeoil.demandload import demandload
 from snakeoil.sequences import iflatten_instance
 
-from .__version__ import __title__ as prog
+from . import __title__ as prog
 from .exceptions import BiteError
 
 demandload('bite:const')

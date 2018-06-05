@@ -8,7 +8,7 @@ from snakeoil.demandload import demandload
 from snakeoil.sequences import iflatten_instance
 
 from ._reqs import Request, ExtractData
-from ..__version__ import __title__, __version__
+from .. import __title__, __version__
 from ..cache import Cache, Auth, Cookies
 from ..exceptions import RequestError, AuthError, BiteError
 from ..objects import Item, Attachment
