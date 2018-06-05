@@ -1,0 +1,3 @@
+[reactos]
+service: jira
+base: https://jira.reactos.org/projects/CORE
