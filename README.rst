@@ -51,6 +51,18 @@ To see the list of preconfigured trackers use::
 
     bite ls connections
 
+Installing
+==========
+
+Installing from git in a virtualenv::
+
+    git clone https://github.com/bite/bite.git
+    ./bite/requirements/pip.sh ./bite
+
+Note that bite uses a shim script for running pip in order to gracefully handle
+fallbacks to installing deps from git repos when the requested versions aren't
+released yet.
+
 
 .. |test| image:: https://travis-ci.org/bite/bite.svg?branch=master
     :target: https://travis-ci.org/bite/bite
