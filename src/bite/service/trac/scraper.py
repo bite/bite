@@ -5,15 +5,20 @@ import io
 from urllib.parse import urlparse, parse_qs
 
 from dateutil.parser import parse as parsetime
+from snakeoil.demandload import demandload
 from snakeoil.klass import aliased, alias
-from snakeoil.strings import pluralism
 
 from . import TracTicket, TracAttachment, BaseSearchRequest
 from .._html import HTML
 from .._rest import REST, RESTRequest
-from .._reqs import ParseRequest, req_cmd
+from .._reqs import req_cmd
 from ...cache import Cache
 from ...exceptions import BiteError
+
+demandload(
+    'snakeoil.strings:pluralism',
+    'bite.service.trac:jsonrpc',
+)
 
 
 class TracScraperCache(Cache):
@@ -46,7 +51,13 @@ class TracScraper(HTML, REST):
         # Trac uses a setting of 0 to disable paging search results.
         if max_results is None:
             max_results = 0
+        # store kwargs to morph classes on login
+        self._init_kw = kw
         super().__init__(max_results=max_results, **kw)
+
+    def _morph(self):
+        """Morph to a JSON-RPC based service."""
+        return jsonrpc.TracJsonrpc(**self._init_kw)
 
 
 class _SearchRequest(BaseSearchRequest, RESTRequest):

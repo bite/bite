@@ -1,4 +1,4 @@
 [kodi]
-# appears to support XML-RPC when authenticated
+# appears to support RPC services when authenticated
 service: trac-scraper
 base: https://trac.kodi.tv
