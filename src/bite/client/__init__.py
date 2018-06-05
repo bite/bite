@@ -13,7 +13,6 @@ from snakeoil.demandload import demandload
 
 from ..exceptions import AuthError, BiteError
 from ..objects import TarAttachment
-from ..service import Service
 from ..utils import confirm, get_input, launch_browser
 
 demandload('bite:const')

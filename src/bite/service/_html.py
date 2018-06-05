@@ -2,7 +2,7 @@ import lxml.html
 from snakeoil.klass import steal_docs
 
 from . import Service
-from ..exceptions import ParsingError, RequestError
+from ..exceptions import RequestError
 
 
 class HTML(Service):
