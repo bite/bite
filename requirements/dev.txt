@@ -1,5 +1,5 @@
 cython
-https://github.com/pkgcore/snakeoil/archive/py3.tar.gz#egg=snakeoil
+https://github.com/pkgcore/snakeoil/archive/master.tar.gz#egg=snakeoil
 requests>=2
 multidict
 chardet
