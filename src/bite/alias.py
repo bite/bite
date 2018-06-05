@@ -179,7 +179,10 @@ class Aliases(object):
             self._aliases.read_dict(d)
             sections.append('alias')
 
-        sections.extend(list(self.get_sections(service_name)))
+        # check for service level aliases
+        sections.extend(self.get_sections(service_name))
+        # check for global aliases last
+        sections.append(self._aliases.default_section)
 
         # first check for connection specific aliases, then service specific aliases
         for section in sections:
@@ -191,13 +194,8 @@ class Aliases(object):
                 if alias_cmd is not None:
                     break
         else:
-            # finally fallback to checking global aliases
-            try:
-                alias_cmd = self._aliases.get(self._aliases.default_section, alias_name, fallback=None)
-            except ConfigInterpolationError as e:
-                alias_cmd = None
-            if alias_cmd is None:
-                return unparsed_args
+            # no matching alias found
+            return unparsed_args
 
         alias_cmd = alias_cmd.strip()
         # strip quotes if the alias starts with them
