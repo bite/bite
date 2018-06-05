@@ -12,7 +12,7 @@ from snakeoil.demandload import demandload
 
 from . import get_service_cls, service_classes
 from .alias import Aliases
-from .config import get_config
+from .config import Config
 from .exceptions import BiteError
 from .objects import TimeInterval
 from .utils import block_edit, confirm
@@ -574,7 +574,7 @@ class ArgumentParser(arghparse.ArgumentParser):
                 initial_args, unparsed_args = self.parse_optionals(alias_unparsed_args, initial_args)
 
         # load config files
-        config, config_opts = get_config(initial_args, config_file=config_file)
+        config = Config(path=config_file, args=initial_args)
 
         if initial_args.base is None or initial_args.service is None:
             self.error('both arguments -b/--base and -s/--service are required '
@@ -593,7 +593,7 @@ class ArgumentParser(arghparse.ArgumentParser):
                 parser=self, service_name=service_name)
 
         # add service config options to args namespace
-        service_opts.add_config_opts(args=initial_args, config_opts=config_opts)
+        service_opts.add_config_opts(args=initial_args, config_opts=config.opts)
 
         # initialize requested service
         service = get_service_cls(service_name, const.SERVICES)(**vars(initial_args))
@@ -614,7 +614,7 @@ class ArgumentParser(arghparse.ArgumentParser):
         # check if unparsed args match any aliases
         if unparsed_args:
             alias_unparsed_args = aliases.substitute(
-                unparsed_args, config=config, config_opts=config_opts,
+                unparsed_args, config=config, config_opts=config.opts,
                 connection=initial_args.connection, service_name=service_name,
                 debug=initial_args.debug)
             # re-parse optionals to catch any added by aliases

@@ -2,12 +2,11 @@
 
 from importlib import import_module
 import os
-import sys
 
 from snakeoil.dist.generate_man_rsts import ManConverter
 
 from bite.argparser import ArgumentParser
-from bite.config import load_service_files
+from bite.config import Config
 from bite.const import SERVICES, SERVICE_OPTS
 
 
@@ -30,7 +29,7 @@ def main(f, docdir, gendir):
         service_opts_mod = get_service_cls(service_name, SERVICE_OPTS)
 
     parser = ArgumentParser(suppress=True)
-    config = load_service_files(user_dir=False)
+    config = Config.load_all()
 
     mod_name, cls_name = service_mod.rsplit('.', 1)
     for connection in config.sections():

@@ -15,7 +15,7 @@ from .. import get_service_cls, service_classes
 from ..argparser import ArgumentParser, parse_file, override_attr
 from ..alias import Aliases
 from ..client import Cli
-from ..config import load_full_config
+from ..config import Config
 from ..exceptions import RequestError
 
 demandload('bite:const')
@@ -133,10 +133,8 @@ def _ls(options, out, err):
             else:
                 out.write(name)
     elif options.item == 'connections':
-        config = load_full_config()
-        # filter connection-specific aliases
-        sections = (x for x in sorted(config.sections()) if x != ':alias:')
-        for connection in sections:
+        config = Config.load_all()
+        for connection in sorted(config.sections()):
             if options.verbose:
                 out.write(f'[{connection}]')
                 for (name, value) in config.items(connection):
@@ -157,7 +155,7 @@ def _validate_args(parser, namespace):
 
 @cache.bind_main_func
 def _cache(options, out, err):
-    config = load_full_config()
+    config = Config.load_all()
     connections = options.pop('connections')
     if not connections:
         connections = [options.connection]
@@ -173,7 +171,7 @@ def _cache(options, out, err):
         options.base = base
         args = vars(options)
         options.service = get_service_cls(service, const.SERVICES)(**args)
-        client = get_service_cls(args['service'], const.CLIENTS)(**args)
+        client = get_service_cls(args['service'], const.CLIENTS, fallbacks=(Cli,))(**args)
         try:
             client.cache(**args)
         except RequestError as e:
