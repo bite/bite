@@ -27,28 +27,6 @@ To get a specific bug via its ID::
 See the related tracker service man pages for more service specific information
 including what subcommands bite supports for the service and their options.
 
-Aliases
--------
-
-Similar to shells, git, and similar tools, bite supports command aliases. Some
-simple subcommand aliases are enabled by bite's system config allowing for
-quicker usage. For example, the previous subcommand examples can be simplified
-to searching via::
-
-    bite s -a radhermit
-
-and retrieving items with::
-
-    bite g 123456
-
-Note that any system level alias will be overridden by matching user aliases.
-See the bite man page for more information about alias precendence resolution
-in relation to services.
-
-Additionally, bite supports more advanced, dynamic forms of aliases that use
-shell functions or interpolate values from different config sections. See the
-man page for more details.
-
 Services
 --------
 
@@ -59,16 +37,17 @@ To view the list of supported bug, issue, and ticket trackers, run::
 These service IDs can be used to connect to unconfigured services directly on
 the command-line similar to::
 
-    bite --base https://bugzilla.mozilla.org --service bugzilla5.2-jsonrpc search bugzilla
+    bite --base https://bugzilla.mozilla.org --service bugzilla5.2-rest search bugzilla
 
-which will search for upstream Bugzilla related bugs.
+which will search for upstream Bugzilla related bugs using Bugzilla-5.2's REST
+API support.
 
-Note that many open source trackers have already been registered in bite itself
-so the previous command can be more easily run as::
+Note that bite comes with many open source project trackers preconfigured as
+named connections so the previous command can be more easily run as::
 
     bite -c mozilla search bugzilla
 
-To see the list of pre-configured trackers use::
+To see the list of preconfigured trackers use::
 
     bite ls connections
 
