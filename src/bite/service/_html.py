@@ -2,6 +2,7 @@ import lxml.html
 from snakeoil.klass import steal_docs
 
 from . import Service
+from ._rest import RESTRequest
 from ..exceptions import RequestError
 
 
@@ -16,4 +17,11 @@ class HTML(Service):
                 msg += ' (use verbose mode to see it)'
             raise RequestError(
                 msg, code=response.status_code, text=response.text, response=response)
+        return lxml.html.fromstring(response.text)
+
+
+class HTMLRequest(RESTRequest):
+    """Construct an HTML request."""
+
+    def parse_response(self, response):
         return lxml.html.fromstring(response.text)
