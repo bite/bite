@@ -1,10 +1,8 @@
-from urllib.parse import urlencode
-
 from multidict import MultiDict
 
 from . import Service
-from ._reqs import Request, ParseRequest
-from ..utils import dict2tuples
+from ._html import URLRequest
+from ._reqs import ParseRequest
 
 
 class REST(Service):
@@ -17,30 +15,12 @@ class REST(Service):
         super()._failed_http_response(response)
 
 
-class RESTRequest(Request):
+class RESTRequest(URLRequest):
     """Construct a REST request."""
 
-    def __init__(self, service, endpoint=None, method='GET', params=None, **kw):
-        self.method = method
-        if endpoint is None:
-            endpoint = service._base.rstrip('/')
-        elif endpoint.startswith('/'):
-            endpoint = f"{service._base.rstrip('/')}{endpoint}"
-        self.endpoint = endpoint
+    def __init__(self, **kw):
+        super().__init__(**kw)
         self.data = {}
-        params = params if params is not None else MultiDict()
-        super().__init__(service=service, method=method, params=params, **kw)
-
-    def encode_params(self, params=None):
-        params = params if params is not None else self.params
-        return urlencode(tuple(dict2tuples(params)))
-
-    @property
-    def url(self):
-        """Construct a full resource URL with params encoded."""
-        params = self.encode_params()
-        params_str = f'?{params}' if params else ''
-        return f"{self.endpoint}{params_str}"
 
     def params_to_data(self):
         """Convert params to encoded request data."""
