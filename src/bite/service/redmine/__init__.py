@@ -210,8 +210,9 @@ class _GetItemRequest(RESTParseRequest, RedminePagedRequest):
                 self.params['sort'] = 'id'
 
         def ids(self, k, v):
-            self.params['issue_id'] = ','.join(v)
-            self.options.append(f"IDs: {', '.join(v)}")
+            id_strs = list(map(str, v))
+            self.params['issue_id'] = ','.join(id_strs)
+            self.options.append(f"IDs: {', '.join(id_strs)}")
 
         def sort(self, k, v):
             sorting_terms = []
