@@ -1,7 +1,5 @@
 """Web scraper for Trac without RPC support."""
 
-import csv
-import io
 from urllib.parse import urlparse, parse_qs
 
 from dateutil.parser import parse as parsetime
@@ -10,8 +8,8 @@ from snakeoil.klass import aliased, alias
 
 from . import TracTicket, TracAttachment, BaseSearchRequest
 from .. import Service
-from .._html import HTML
-from .._rest import RESTRequest
+from .._csv import CSVRequest
+from .._html import HTML, URLRequest
 from .._reqs import req_cmd, Request, NullRequest
 from ...cache import Cache
 from ...exceptions import BiteError
@@ -72,7 +70,7 @@ class TracScraperCSV(_BaseTracScraper):
 
 
 @req_cmd(TracScraper, name='SearchRequest', cmd='search')
-class _SearchRequest(BaseSearchRequest, RESTRequest):
+class _SearchRequest(BaseSearchRequest, URLRequest):
     """Construct a web search request."""
 
     def __init__(self, **kw):
@@ -151,18 +149,13 @@ class _SearchRequest(BaseSearchRequest, RESTRequest):
 
 
 @req_cmd(TracScraperCSV, name='SearchRequest', cmd='search')
-class _SearchRequestCSV(_SearchRequest):
+class _SearchRequestCSV(CSVRequest, _SearchRequest):
     """Construct a search request pulling the CSV format."""
 
     def __init__(self, **kw):
-        super().__init__(raw=True, **kw)
+        super().__init__(**kw)
         self.params['format'] = 'csv'
 
     def parse(self, data):
-        """Parsing function for the raw CSV content."""
-        # Requesting the text content of the response doesn't remove the BOM so
-        # we request the binary content and decode it ourselves to remove it.
-        f = io.StringIO(data.decode('utf-8-sig'))
-        headers = [x.lower() for x in f.readline().strip().split(',')]
-        for item in csv.DictReader(f, fieldnames=headers):
+        for item in data:
             yield self.service.item(self.service, get_desc=False, **item)

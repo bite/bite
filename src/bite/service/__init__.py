@@ -327,7 +327,7 @@ class Service(object):
                 raw = getattr(req, '_raw', None)
                 generator = bool(getattr(req, '_reqs', ()))
 
-                if isinstance(req, Request) and len(req) > 1:
+                if isinstance(req, Request) and generator:
                     # force subreqs to be sent and parsed in parallel
                     data = _send_jobs(iter(req))
                     jobs.append(self.executor.submit(_parse, parse, iterate, data))
