@@ -1,10 +1,12 @@
 """Web scraper for Trac without RPC support."""
 
+from collections import OrderedDict
 from urllib.parse import urlparse, parse_qs
 
 from dateutil.parser import parse as parsetime
 from snakeoil.demandload import demandload
 from snakeoil.klass import aliased, alias
+from snakeoil.sequences import iflatten_instance
 
 from . import TracTicket, TracAttachment, BaseSearchRequest
 from .. import Service
@@ -159,3 +161,44 @@ class _SearchRequestCSV(CSVRequest, _SearchRequest):
     def parse(self, data):
         for item in data:
             yield self.service.item(self.service, get_desc=False, **item)
+
+
+@req_cmd(TracScraperCSV)
+class _GetItemRequest(Request):
+    """Construct an item request."""
+
+    def __init__(self, ids, **kw):
+        super().__init__(**kw)
+        if ids is None:
+            raise ValueError(f'No {self.service.item.type} ID(s) specified')
+
+        reqs = []
+        for i in ids:
+            reqs.append(CSVRequest(
+                service=self.service, endpoint=f'/ticket/{i}?format=csv'))
+
+        self.ids = ids
+        self._reqs = tuple(reqs)
+
+    def parse(self, data):
+        # flatten iterators of csv readers vs single reader objects --
+        # difference between multiple ID args or a single arg.
+        for item in iflatten_instance(data, OrderedDict):
+            yield self.service.item(self.service, get_desc=False, **item)
+
+
+@req_cmd(TracScraperCSV, cmd='get')
+class _GetRequest(_GetItemRequest):
+    """Construct requests to retrieve all known data for given issue IDs."""
+
+    def __init__(self, get_comments=True, get_attachments=True, get_changes=False, **kw):
+        super().__init__(**kw)
+
+        self._get_comments = get_comments
+        self._get_attachments = get_attachments
+        self._get_changes = get_changes
+
+    def parse(self, data):
+        items = super().parse(data)
+        for item in items:
+            yield item

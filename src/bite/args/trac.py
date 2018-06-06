@@ -77,3 +77,7 @@ class TracScraperOpts(args.ServiceOpts):
 
 class _ScrapedSearch(Search, TracScraperOpts):
     pass
+
+
+class _ScrapedGet(Get, TracScraperOpts):
+    pass
