@@ -216,8 +216,11 @@ class Service(object):
         return request, params
 
     def parse_response(self, response):
-        """Parse the returned response."""
-        raise NotImplementedError
+        """Parse the returned response.
+
+        Returns the raw content by default.
+        """
+        return response.content
 
     def handle_error(self, *, code, msg):
         """Handle service specific errors."""
