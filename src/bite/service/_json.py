@@ -28,4 +28,8 @@ class Json(Service):
         try:
             return response.json(**kw)
         except json.decoder.JSONDecodeError as e:
-            raise ParsingError(msg='failed parsing JSON', text=str(e))
+            # check for missing data content
+            if not response.text.strip():
+                raise ParsingError('no response content returned')
+            msg = f'failed parsing JSON: {e}'
+            raise ParsingError(msg=msg, text=response.text)
