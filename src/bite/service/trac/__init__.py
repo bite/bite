@@ -114,13 +114,13 @@ class TracTicket(Item):
 
     def __init__(self, service, get_desc=True, **kw):
         for k, v in kw.items():
-            if k == 'keywords':
+            if not v:
+                v = None
+            elif k == 'keywords':
                 if ';' in v:
                     v = v.split(';')
                 else:
                     v = v.split(' ')
-            if not v:
-                v = None
             setattr(self, k, v)
 
         self.comments = None
