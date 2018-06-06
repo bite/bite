@@ -9,7 +9,7 @@ from snakeoil.demandload import demandload
 from snakeoil.klass import aliased, alias
 
 from . import TracTicket, TracAttachment, BaseSearchRequest
-from .._html import HTML
+from .._html import HTMLRequest
 from .._rest import REST, RESTRequest
 from .._reqs import req_cmd
 from ...cache import Cache
@@ -37,7 +37,7 @@ class TracScraperCache(Cache):
         super().__init__(defaults=defaults, **kw)
 
 
-class TracScraper(HTML, REST):
+class TracScraper(REST):
     """Service supporting the Trac-based ticket trackers."""
 
     _service = 'trac-scraper'
@@ -60,7 +60,7 @@ class TracScraper(HTML, REST):
         return jsonrpc.TracJsonrpc(**self._init_kw)
 
 
-class _SearchRequest(BaseSearchRequest, RESTRequest):
+class _SearchRequest(BaseSearchRequest, HTMLRequest):
     """Construct a web search request."""
 
     def __init__(self, **kw):
