@@ -60,12 +60,13 @@ class Request(object):
         self.service = service
         self.options = options if options is not None else []
         self.params = params if params is not None else {}
+        self.method = method
         self._raw = raw
         self._finalized = False
 
-        if method is not None:
+        if self.method is not None:
             url = url if url is not None else self.service._base
-            self._req = requests.Request(method=method, url=url)
+            self._req = requests.Request(method=self.method, url=url)
         else:
             self._req = None
 
