@@ -5,6 +5,8 @@ API docs:
     - https://trac.videolan.org/vlc/rpc
 """
 
+import re
+
 from snakeoil.klass import aliased, alias
 
 from .. import Service
@@ -117,10 +119,7 @@ class TracTicket(Item):
             if not v:
                 v = None
             elif k == 'keywords':
-                if ';' in v:
-                    v = v.split(';')
-                else:
-                    v = v.split(' ')
+                v = re.split('\W+', v)
             setattr(self, k, v)
 
         self.comments = None
