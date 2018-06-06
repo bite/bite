@@ -1,7 +1,7 @@
 import csv
 import io
 
-from ._html import URLRequest
+from ._reqs import URLRequest
 
 
 class CSVRequest(URLRequest):

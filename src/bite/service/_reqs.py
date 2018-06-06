@@ -1,10 +1,13 @@
 from functools import partial
 import re
+from urllib.parse import urlencode
 
+from multidict import MultiDict
 import requests
 from snakeoil.strings import pluralism
 
 from ..exceptions import RequestError
+from ..utils import dict2tuples
 
 
 def req_cmd(service_cls, name=None, cmd=None, obj_args=False):
@@ -137,6 +140,37 @@ class Request(object):
     def _none_gen(self):
         while True:
             yield None
+
+
+class URLRequest(Request):
+    """Construct a basic URL request."""
+
+    def __init__(self, service, method='GET', endpoint=None, params=None, **kw):
+        if endpoint is None:
+            endpoint = service._base.rstrip('/')
+        elif endpoint.startswith('/'):
+            endpoint = f"{service._base.rstrip('/')}{endpoint}"
+        self.endpoint = endpoint
+        params = params if params is not None else MultiDict()
+        super().__init__(service=service, method=method, params=params, **kw)
+
+    def encode_params(self, params=None):
+        params = params if params is not None else self.params
+        return urlencode(tuple(dict2tuples(params)))
+
+    @property
+    def url(self):
+        """Construct a full resource URL with params encoded."""
+        params = self.encode_params()
+        params_str = f'?{params}' if params else ''
+        return f"{self.endpoint}{params_str}"
+
+    def _finalize(self):
+        """Set the request URL using the specified params and encode the data body."""
+        # inject auth params if available
+        super()._finalize()
+        # construct URL to resource with requested params
+        self._req.url = self.url
 
 
 class NullRequest(Request):

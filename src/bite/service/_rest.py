@@ -1,8 +1,7 @@
 from multidict import MultiDict
 
 from . import Service
-from ._html import URLRequest
-from ._reqs import ParseRequest
+from ._reqs import ParseRequest, URLRequest
 
 
 class REST(Service):

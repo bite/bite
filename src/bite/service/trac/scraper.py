@@ -11,8 +11,8 @@ from snakeoil.sequences import iflatten_instance
 from . import TracTicket, TracAttachment, BaseSearchRequest
 from .. import Service
 from .._csv import CSVRequest
-from .._html import HTML, URLRequest
-from .._reqs import req_cmd, Request, NullRequest
+from .._html import HTML
+from .._reqs import req_cmd, Request, NullRequest, URLRequest
 from ...cache import Cache
 from ...exceptions import BiteError
 
