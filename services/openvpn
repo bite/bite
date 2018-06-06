@@ -1,0 +1,3 @@
+[openvpn]
+service: trac-scraper-csv
+base: https://community.openvpn.net/openvpn/

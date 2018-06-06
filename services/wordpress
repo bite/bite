@@ -1,0 +1,4 @@
+[wordpress]
+# appears to support RPC services when authenticated
+service: trac-scraper-csv
+base: https://core.trac.wordpress.org/

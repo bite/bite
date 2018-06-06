@@ -1,0 +1,3 @@
+[lyx]
+service: trac-scraper-csv
+base: https://www.lyx.org/trac/

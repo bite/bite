@@ -1,0 +1,3 @@
+[grass]
+service: trac-scraper-csv
+base: https://trac.osgeo.org/grass

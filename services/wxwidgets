@@ -1,0 +1,3 @@
+[wxwidgets]
+service: trac-scraper-csv
+base: http://trac.wxwidgets.org/

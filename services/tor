@@ -1,0 +1,4 @@
+[tor]
+# appears to support RPC services when authenticated
+service: trac-scraper-csv
+base: https://trac.torproject.org/projects/tor/

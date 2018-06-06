@@ -1,0 +1,3 @@
+[nginx]
+service: trac-scraper-csv
+base: https://trac.nginx.org/nginx/

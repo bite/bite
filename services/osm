@@ -1,0 +1,3 @@
+[osm]
+service: trac-scraper-csv
+base: https://trac.openstreetmap.org/

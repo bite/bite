@@ -1,0 +1,3 @@
+[sage]
+service: trac-jsonrpc
+base: https://trac.sagemath.org/

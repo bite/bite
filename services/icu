@@ -1,0 +1,4 @@
+[icu]
+# appears to support RPC services when authenticated
+service: trac-scraper-csv
+base: http://bugs.icu-project.org/trac/

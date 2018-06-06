@@ -1,0 +1,3 @@
+[ffmpeg]
+service: trac-scraper-csv
+base: https://trac.ffmpeg.org/

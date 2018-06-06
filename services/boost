@@ -1,0 +1,4 @@
+[boost]
+# appears to support RPC services when authenticated
+service: trac-scraper-csv
+base: https://svn.boost.org/trac10/
