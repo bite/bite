@@ -1,0 +1,3 @@
+[chirp]
+service: redmine3.2-json
+base: https://chirp.danplanet.com/projects/chirp

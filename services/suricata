@@ -1,0 +1,3 @@
+[suricata]
+service: redmine-json
+base: https://redmine.openinfosecfoundation.org/projects/suricata
