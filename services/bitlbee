@@ -1,4 +1,4 @@
 [bitlbee]
 # appears to support RPC services when authenticated
-service: trac-scraper
+service: trac-scraper-csv
 base: https://bugs.bitlbee.org/

@@ -9,9 +9,10 @@ from snakeoil.demandload import demandload
 from snakeoil.klass import aliased, alias
 
 from . import TracTicket, TracAttachment, BaseSearchRequest
-from .._html import HTMLRequest
-from .._rest import REST, RESTRequest
-from .._reqs import req_cmd
+from .. import Service
+from .._html import HTML
+from .._rest import RESTRequest
+from .._reqs import req_cmd, Request, NullRequest
 from ...cache import Cache
 from ...exceptions import BiteError
 
@@ -37,10 +38,9 @@ class TracScraperCache(Cache):
         super().__init__(defaults=defaults, **kw)
 
 
-class TracScraper(REST):
-    """Service supporting the Trac-based ticket trackers."""
+class _BaseTracScraper(Service):
+    """Base service supporting the Trac-based ticket trackers."""
 
-    _service = 'trac-scraper'
     _cache_cls = TracScraperCache
 
     item = TracTicket
@@ -59,8 +59,20 @@ class TracScraper(REST):
         """Morph to a JSON-RPC based service."""
         return jsonrpc.TracJsonrpc(**self._init_kw)
 
+class TracScraper(_BaseTracScraper, HTML):
+    """Service supporting scraping Trac-based ticket trackers."""
 
-class _SearchRequest(BaseSearchRequest, HTMLRequest):
+    _service = 'trac-scraper'
+
+
+class TracScraperCSV(_BaseTracScraper):
+    """Service supporting pulling CSV/RSS data from Trac-based ticket trackers."""
+
+    _service = 'trac-scraper-csv'
+
+
+@req_cmd(TracScraper, name='SearchRequest', cmd='search')
+class _SearchRequest(BaseSearchRequest, RESTRequest):
     """Construct a web search request."""
 
     def __init__(self, **kw):
@@ -138,8 +150,7 @@ class _SearchRequest(BaseSearchRequest, HTMLRequest):
             self.options.append(f"{self.service.item.attributes[k]}: {', '.join(v)}")
 
 
-# Use the CSV format by default as it's faster than parsing the raw HTML pages.
-@req_cmd(TracScraper, name='SearchRequest', cmd='search')
+@req_cmd(TracScraperCSV, name='SearchRequest', cmd='search')
 class _SearchRequestCSV(_SearchRequest):
     """Construct a search request pulling the CSV format."""
 

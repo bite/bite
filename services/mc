@@ -1,4 +1,4 @@
 [mc]
 # appears to support RPC services when authenticated
-service: trac-scraper
+service: trac-scraper-csv
 base: https://midnight-commander.org/
