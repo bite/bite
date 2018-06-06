@@ -330,7 +330,8 @@ class Service(object):
                 if isinstance(req, Request) and generator:
                     # force subreqs to be sent and parsed in parallel
                     data = _send_jobs(iter(req))
-                    jobs.append(self.executor.submit(_parse, parse, iterate, data))
+                    jobs.append(self.executor.submit(
+                        _parse, parse, iterate, data, generator))
                 else:
                     http_reqs = []
                     if not hasattr(req, '__iter__'):

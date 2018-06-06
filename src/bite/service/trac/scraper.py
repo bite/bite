@@ -1,12 +1,11 @@
 """Web scraper for Trac without RPC support."""
 
-from collections import OrderedDict
+from itertools import chain
 from urllib.parse import urlparse, parse_qs
 
 from dateutil.parser import parse as parsetime
 from snakeoil.demandload import demandload
 from snakeoil.klass import aliased, alias
-from snakeoil.sequences import iflatten_instance
 
 from . import TracTicket, TracAttachment, BaseSearchRequest
 from .. import Service
@@ -181,9 +180,7 @@ class _GetItemRequest(Request):
         self._reqs = tuple(reqs)
 
     def parse(self, data):
-        # flatten iterators of csv readers vs single reader objects --
-        # difference between multiple ID args or a single arg.
-        for item in iflatten_instance(data, OrderedDict):
+        for item in chain.from_iterable(data):
             yield self.service.item(self.service, get_desc=False, **item)
 
 
