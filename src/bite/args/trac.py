@@ -3,7 +3,6 @@ from .. import args
 
 class TracOpts(args.ServiceOpts):
     """Trac options."""
-
     _service = 'trac'
 
 
@@ -65,19 +64,22 @@ class Changes(args.Changes, TracOpts):
 
 class Version(args.Subcmd, TracOpts):
     """get Trac version"""
-
     _name = 'version'
 
 
 class TracScraperOpts(args.ServiceOpts):
     """Trac web scraper options."""
-
     _service = 'trac-scraper'
+
+
+class TracScraperCSVOpts(TracScraperOpts):
+    """Trac CSV web scraper options."""
+    _service = 'trac-scraper-csv'
 
 
 class _ScrapedSearch(Search, TracScraperOpts):
     pass
 
 
-class _ScrapedGet(Get, TracScraperOpts):
+class _ScrapedGet(Get, TracScraperCSVOpts):
     pass
