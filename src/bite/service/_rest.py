@@ -1,7 +1,5 @@
-from multidict import MultiDict
-
 from . import Service
-from ._reqs import ParseRequest, URLRequest
+from ._reqs import URLRequest
 
 
 class REST(Service):
@@ -41,10 +39,3 @@ class RESTRequest(URLRequest):
         # encode additional params to data body
         if self.data:
             self._req.data = self.service._encode_request(self.data)
-
-
-class RESTParseRequest(ParseRequest):
-
-    def __init__(self, **kw):
-        initial_params = MultiDict()
-        super().__init__(initial_params=initial_params, **kw)

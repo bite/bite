@@ -15,10 +15,10 @@ from snakeoil.klass import aliased, alias
 
 from ._jsonrest import JsonREST
 from ._reqs import (
-    LinkPagedRequest, Request, req_cmd, ExtractData,
+    LinkPagedRequest, Request, req_cmd, ExtractData, URLParseRequest,
     BaseGetRequest, BaseCommentsRequest, BaseChangesRequest,
 )
-from ._rest import RESTRequest, RESTParseRequest
+from ._rest import RESTRequest
 from ..exceptions import BiteError, RequestError
 from ..objects import Item, Comment, Attachment, Change
 
@@ -215,7 +215,7 @@ class BitbucketPagedRequest(RESTRequest, LinkPagedRequest):
 
 
 @req_cmd(Bitbucket, cmd='search')
-class _SearchRequest(RESTParseRequest, BitbucketPagedRequest):
+class _SearchRequest(URLParseRequest, BitbucketPagedRequest):
     """Construct a search request."""
 
     # map from standardized kwargs name to expected service parameter name
@@ -235,7 +235,7 @@ class _SearchRequest(RESTParseRequest, BitbucketPagedRequest):
             yield self.service.item(self.service, issue)
 
     @aliased
-    class ParamParser(RESTParseRequest.ParamParser):
+    class ParamParser(URLParseRequest.ParamParser):
 
         # map of allowed sorting input values to service parameters
         _sorting_map = {

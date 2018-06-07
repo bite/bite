@@ -10,9 +10,10 @@ from snakeoil.klass import aliased, alias
 
 from ._jsonrest import JsonREST
 from ._reqs import (
-    OffsetPagedRequest, Request, BaseGetRequest, req_cmd, BaseCommentsRequest,
+    OffsetPagedRequest, Request, BaseGetRequest, req_cmd,
+    URLParseRequest, BaseCommentsRequest,
 )
-from ._rest import RESTRequest, RESTParseRequest
+from ._rest import RESTRequest
 from ..cache import Cache
 from ..exceptions import RequestError, BiteError
 from ..objects import Item, Attachment, Comment, Change
@@ -122,7 +123,7 @@ class LaunchpadPagedRequest(OffsetPagedRequest, RESTRequest):
 
 
 @req_cmd(Launchpad, cmd='search')
-class _SearchRequest(RESTParseRequest, LaunchpadPagedRequest):
+class _SearchRequest(URLParseRequest, LaunchpadPagedRequest):
     """Construct a search request.
 
     API docs: https://launchpad.net/+apidoc/1.0.html#bugs under the 'searchTasks'
@@ -146,7 +147,7 @@ class _SearchRequest(RESTParseRequest, LaunchpadPagedRequest):
         raise e
 
     @aliased
-    class ParamParser(RESTParseRequest.ParamParser):
+    class ParamParser(URLParseRequest.ParamParser):
 
         # Map of allowed sorting input values to service parameters determined by
         # looking at available values on the web interface.

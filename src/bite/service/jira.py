@@ -13,9 +13,9 @@ from snakeoil.klass import aliased, alias
 from ._jsonrest import JsonREST
 from ._reqs import (
     OffsetPagedRequest, req_cmd, BaseCommentsRequest, BaseChangesRequest,
-    NullRequest, Request
+    NullRequest, Request, URLParseRequest,
 )
-from ._rest import RESTRequest, RESTParseRequest
+from ._rest import RESTRequest
 from ..exceptions import BiteError, RequestError
 from ..objects import Item, Comment, Change, Attachment
 
@@ -192,7 +192,7 @@ class JiraPagedRequest(OffsetPagedRequest, RESTRequest):
 
 
 @req_cmd(Jira, cmd='search')
-class _SearchRequest(RESTParseRequest, JiraPagedRequest):
+class _SearchRequest(URLParseRequest, JiraPagedRequest):
     """Construct a search request."""
 
     def __init__(self, **kw):
@@ -214,7 +214,7 @@ class _SearchRequest(RESTParseRequest, JiraPagedRequest):
             yield self.service.item(id=id, **fields)
 
     @aliased
-    class ParamParser(RESTParseRequest.ParamParser):
+    class ParamParser(URLParseRequest.ParamParser):
 
         # date field key map
         _date_fields = {

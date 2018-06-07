@@ -9,8 +9,11 @@ from itertools import chain
 from dateutil.parser import parse as dateparse
 from snakeoil.klass import aliased, alias
 
-from .._reqs import OffsetPagedRequest, Request, req_cmd, BaseCommentsRequest
-from .._rest import REST, RESTRequest, RESTParseRequest
+from .._reqs import (
+    OffsetPagedRequest, Request, req_cmd,
+    BaseCommentsRequest, URLParseRequest,
+)
+from .._rest import REST, RESTRequest
 from ...exceptions import BiteError, RequestError
 from ...objects import Item, Comment, Attachment, Change
 
@@ -136,7 +139,7 @@ class RedminePagedRequest(OffsetPagedRequest, RESTRequest):
 
 
 @req_cmd(Redmine)
-class _GetItemRequest(RESTParseRequest, RedminePagedRequest):
+class _GetItemRequest(URLParseRequest, RedminePagedRequest):
     """Construct an issue request."""
 
     def __init__(self, *, service, ids=None, searchreq=False, get_desc=True,
@@ -176,7 +179,7 @@ class _GetItemRequest(RESTParseRequest, RedminePagedRequest):
             yield self.service.item(self.service, get_desc=self._get_desc, **issue)
 
     @aliased
-    class ParamParser(RESTParseRequest.ParamParser):
+    class ParamParser(URLParseRequest.ParamParser):
 
         # Map of allowed sorting input values to service parameters determined by
         # looking at available values on the web interface.
@@ -440,7 +443,7 @@ class _BasicSearchRequest(_3_2GetItemRequest):
         super().__init__(searchreq=True, **kw)
 
 
-class _BaseSearchRequest(RESTParseRequest, RedminePagedRequest):
+class _BaseSearchRequest(URLParseRequest, RedminePagedRequest):
 
     def __init__(self, *, service, **kw):
         self._itemreq_extra_params = {}
@@ -476,7 +479,7 @@ class _BaseSearchRequest(RESTParseRequest, RedminePagedRequest):
 class _SearchRequest(_BaseSearchRequest):
     """Construct a search request."""
 
-    class ParamParser(RESTParseRequest.ParamParser):
+    class ParamParser(URLParseRequest.ParamParser):
 
         def _finalize(self, **kw):
             query = self.params.get('q', {})
@@ -508,7 +511,7 @@ class _ElasticSearchRequest(_BaseSearchRequest):
     """
 
     @aliased
-    class ParamParser(RESTParseRequest.ParamParser):
+    class ParamParser(URLParseRequest.ParamParser):
 
         def _finalize(self, **kw):
             if not self.params or self.params.keys() == {'sort'}:

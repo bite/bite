@@ -500,6 +500,13 @@ class ParseRequest(Request):
             """Default parameter parser."""
 
 
+class URLParseRequest(ParseRequest):
+
+    def __init__(self, **kw):
+        initial_params = MultiDict()
+        super().__init__(initial_params=initial_params, **kw)
+
+
 class BaseCommentsRequest(Request):
 
     def __init__(self, creator=None, created=None, modified=None, attachment=None,

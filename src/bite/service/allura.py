@@ -15,10 +15,10 @@ from snakeoil.klass import aliased, alias
 from ._jsonrest import JsonREST
 from ._reqs import (
     NullRequest, Request, req_cmd,
-    FlaggedPagedRequest, PagedRequest,
+    FlaggedPagedRequest, PagedRequest, URLParseRequest,
     BaseCommentsRequest, BaseChangesRequest,
 )
-from ._rest import RESTRequest, RESTParseRequest
+from ._rest import RESTRequest
 from ..exceptions import BiteError, RequestError
 from ..objects import Item, Comment, Attachment, Change
 from ..utc import utc
@@ -249,7 +249,7 @@ class AlluraFlaggedPagedRequest(FlaggedPagedRequest, RESTRequest):
 
 
 @req_cmd(Allura, cmd='search')
-class _SearchRequest(RESTParseRequest, AlluraPagedRequest):
+class _SearchRequest(URLParseRequest, AlluraPagedRequest):
     """Construct a search request.
 
     Currently using on Solr on the backend, see the following docs for query help:
@@ -276,7 +276,7 @@ class _SearchRequest(RESTParseRequest, AlluraPagedRequest):
             yield self.service.item(self.service, **ticket)
 
     @aliased
-    class ParamParser(RESTParseRequest.ParamParser):
+    class ParamParser(URLParseRequest.ParamParser):
 
         # map of allowed sorting input values to service parameters
         _sorting_map = {
