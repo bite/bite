@@ -11,7 +11,10 @@ from . import TracTicket, TracComment, TracAttachment, TracEvent, BaseSearchRequ
 from .. import Service
 from .._csv import CSVRequest
 from .._html import HTML
-from .._reqs import req_cmd, Request, NullRequest, URLRequest
+from .._reqs import (
+    req_cmd, Request, NullRequest, URLRequest,
+    BaseCommentsRequest, BaseChangesRequest,
+)
 from .._xml import XMLRequest
 from ...cache import Cache
 from ...exceptions import BiteError, ParsingError
@@ -53,6 +56,135 @@ class TracScraperTicket(TracTicket):
                 setattr(self, attr, v)
 
         super().__init__(**kw)
+
+
+class _TracScraperXMLItem(object):
+    """RSS event feed items."""
+
+    _xml_namespace = {'dc': "http://purl.org/dc/elements/1.1/"}
+
+    def __init__(self, el):
+        self._el = el
+
+    @property
+    def title(self):
+        return self._el.xpath('./title/text()')
+
+    @property
+    def creator(self):
+        # extract comment creator
+        try:
+            creator = self._el.xpath('./dc:creator/text()', namespaces=self._xml_namespace)[0]
+        except IndexError:
+            try:
+                creator = self._el.xpath('./author/text()')[0]
+            except IndexError:
+                creator = None
+        return creator
+
+    @property
+    def desc(self):
+        return lxml.html.fromstring(self._el.xpath('./description/text()')[0])
+
+    @property
+    def created(self):
+        return parsetime(self._el.xpath('./pubDate/text()')[0])
+
+    @classmethod
+    def parse(cls, tree):
+        for item in tree.xpath('//item'):
+            yield cls(item)
+
+
+class TracScraperRSSComment(TracComment):
+
+    @classmethod
+    def parse(cls, data):
+        for id, tree in data:
+            count = 1
+            l = []
+            for item in _TracScraperXMLItem.parse(tree):
+                # skip attachment events
+                if item.title and item.title[0] == 'attachment set':
+                    continue
+
+                text = '\n'.join(x.text_content().strip() for x in item.desc.xpath('//p'))
+                # skip events without any comment
+                if not text:
+                    continue
+
+                l.append(cls(
+                    count=count, creator=item.creator, created=item.created, text=text))
+                count += 1
+            yield tuple(l)
+
+
+class TracScraperRSSAttachment(TracAttachment):
+
+    _xml_namespace = {'dc': "http://purl.org/dc/elements/1.1/"}
+
+    @classmethod
+    def parse(cls, data):
+        for id, tree in data:
+            l = []
+            for item in _TracScraperXMLItem.parse(tree):
+                # skip non-attachment events
+                if not item.title or item.title[0] != 'attachment set':
+                    continue
+
+                filename = item.desc.xpath('//em')[0].text_content()
+                l.append(cls(
+                    creator=item.creator, created=item.created, filename=filename))
+            yield tuple(l)
+
+
+class TracScraperRSSEvent(TracEvent):
+
+    _xml_namespace = {'dc': "http://purl.org/dc/elements/1.1/"}
+
+    @classmethod
+    def parse(cls, data):
+        for id, tree in data:
+            l = []
+            count = 1
+            for item in _TracScraperXMLItem.parse(tree):
+                # skip comments and attachment events
+                if not item.title or item.title[0] == 'attachment set':
+                    continue
+
+                changes = {}
+
+                # change elements are found in the first unordered list inside
+                # the description
+                events = item.desc.xpath('//ul[1]//li')
+                for change in events:
+                    field = change.xpath('./strong/text()')[0]
+                    updates = change.xpath('./em/text()')
+                    if updates:
+                        removed = added = None
+                        if len(updates) == 2:
+                            removed, added = updates
+                        elif len(updates) == 1:
+                            li_text = ''.join(change.xpath('./text()')).strip()
+                            value = change.xpath('./em/text()')[0]
+                            if li_text in ('deleted', 'removed'):
+                                removed = value
+                            elif li_text in ('set to', 'added'):
+                                added = value
+                            else:
+                                raise ParsingError(
+                                    f'item {id}: change {count}: '
+                                    f'unknown change action: {li_text}')
+                        changes[field] = (removed, added)
+                    else:
+                        # change fields without regular textual actions
+                        # descriptions, e.g. updating the ticket description
+                        changes[field] = 'modified'
+
+                l.append(cls(
+                    count=count, creator=item.creator, created=item.created, changes=changes))
+                count += 1
+            yield tuple(l)
 
 
 class _BaseTracScraper(Service):
@@ -237,40 +369,19 @@ class _ChangelogRequest(Request):
 
 
 @req_cmd(TracScraperCSV, cmd='comments')
-class _CommentsRequest(_ChangelogRequest):
+class _CommentsRequest(BaseCommentsRequest, _ChangelogRequest):
     """Construct a comments request."""
+
+    def __init__(self, **kw):
+        super().__init__(**kw)
+
+        if self.ids is None:
+            raise ValueError(f'No {self.service.item.type} ID(s) specified')
+        self.options.append(f"IDs: {', '.join(self.ids)}")
 
     def parse(self, data):
         data = super().parse(data)
-        for tree in data:
-            count = 1
-            l = []
-            for el in tree.xpath('//item'):
-                # skip attachment events
-                title = el.xpath('./title/text()')
-                if title and title[0] == 'attachment set':
-                    continue
-
-                desc = lxml.html.fromstring(el.xpath('./description/text()')[0])
-                text = '\n'.join(x.text_content().strip() for x in desc.xpath('//p'))
-                # skip events without any comment
-                if not text:
-                    continue
-
-                # extract comment creator
-                try:
-                    creator = el.xpath('./dc:creator/text()', namespaces=self._xml_namespace)[0]
-                except IndexError:
-                    try:
-                        creator = el.xpath('./author/text()')[0]
-                    except IndexError:
-                        creator = None
-
-                created = parsetime(el.xpath('./pubDate/text()')[0])
-                l.append(TracComment(
-                    count=count, creator=creator, created=created, text=text))
-                count += 1
-            yield tuple(l)
+        yield from self.filter(TracScraperRSSComment.parse(zip(self.ids, data)))
 
 
 @req_cmd(TracScraperCSV, cmd='attachments')
@@ -279,90 +390,23 @@ class _AttachmentsRequest(_ChangelogRequest):
 
     def parse(self, data):
         data = super().parse(data)
-        for i, tree in zip(self.ids, data):
-            l = []
-            for el in tree.xpath('//item'):
-                title = el.xpath('./title/text()')
-                # skip non-attachment events
-                if not title or title[0] != 'attachment set':
-                    continue
-
-                desc = lxml.html.fromstring(el.xpath('./description/text()')[0])
-                filename = desc.xpath('//em')[0].text_content()
-
-                # extract attachment creator
-                try:
-                    creator = el.xpath('./dc:creator/text()', namespaces=self._xml_namespace)[0]
-                except IndexError:
-                    try:
-                        creator = el.xpath('./author/text()')[0]
-                    except IndexError:
-                        creator = None
-
-                created = parsetime(el.xpath('./pubDate/text()')[0])
-                l.append(TracAttachment(creator=creator, created=created, filename=filename))
-            yield tuple(l)
+        yield from TracScraperRSSAttachment.parse(zip(self.ids, data))
 
 
 @req_cmd(TracScraperCSV, cmd='changes')
-class _ChangesRequest(_ChangelogRequest):
+class _ChangesRequest(BaseChangesRequest, _ChangelogRequest):
     """Construct a changes request."""
+
+    def __init__(self, **kw):
+        super().__init__(**kw)
+
+        if self.ids is None:
+            raise ValueError(f'No {self.service.item.type} ID(s) specified')
+        self.options.append(f"IDs: {', '.join(self.ids)}")
 
     def parse(self, data):
         data = super().parse(data)
-        for i, tree in zip(self.ids, data):
-            l = []
-            count = 1
-            for el in tree.xpath('//item'):
-                title = el.xpath('./title/text()')
-                # skip comments and attachment events
-                if not title or title[0] == 'attachment set':
-                    continue
-
-                changes = {}
-
-                # change elements are found in the first unordered list inside
-                # the description
-                desc = lxml.html.fromstring(el.xpath('./description/text()')[0])
-                events = desc.xpath('//ul[1]//li')
-                for change in events:
-                    field = change.xpath('./strong/text()')[0]
-                    updates = change.xpath('./em/text()')
-                    if updates:
-                        removed = added = None
-                        if len(updates) == 2:
-                            removed, added = updates
-                        elif len(updates) == 1:
-                            li_text = ''.join(change.xpath('./text()')).strip()
-                            value = change.xpath('./em/text()')[0]
-                            if li_text in ('deleted', 'removed'):
-                                removed = value
-                            elif li_text in ('set to', 'added'):
-                                added = value
-                            else:
-                                raise ParsingError(
-                                    f'{self.service.item.type} {i}: '
-                                    f'change {count}: unknown change action: {li_text}')
-                        changes[field] = (removed, added)
-                    else:
-                        # change fields without regular textual actions
-                        # descriptions, e.g. updating the ticket description
-                        changes[field] = 'modified'
-
-                # extract attachment creator
-                try:
-                    creator = el.xpath('./dc:creator/text()', namespaces=self._xml_namespace)[0]
-                except IndexError:
-                    try:
-                        creator = el.xpath('./author/text()')[0]
-                    except IndexError:
-                        creator = None
-
-                created = parsetime(el.xpath('./pubDate/text()')[0])
-                l.append(TracEvent(
-                    count=count, creator=creator, created=created, changes=changes))
-                count += 1
-            yield tuple(l)
+        yield from self.filter(TracScraperRSSEvent.parse(zip(self.ids, data)))
 
 
 @req_cmd(TracScraperCSV, cmd='get')
@@ -396,7 +440,7 @@ class _GetRequest(Request):
             changelogs = tuple(next(data))
             if self._get_comments:
                 item_descs = ((x.description,) for x in items)
-                item_comments = self.service.comments(data=changelogs)
+                item_comments = self.service.comments(ids=self.ids, data=changelogs)
                 comments = (x + y for x, y in zip(item_descs, item_comments))
             if self._get_attachments:
                 attachments = self.service.attachments(ids=self.ids, data=changelogs)
