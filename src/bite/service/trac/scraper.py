@@ -41,11 +41,11 @@ class TracScraperCache(Cache):
 
 class TracScraperTicket(TracTicket):
 
-    def __init__(self, time=None, changetime=None, created=None, modified=None, **kw):
+    def __init__(self, **kw):
         # Convert datetime strings to objects, created/modifed fields come
         # from CSV dumps when scraping.
         for attr in ('time', 'changetime', 'created', 'modified'):
-            v = locals().get(attr)
+            v = kw.pop(attr, None)
             if v is not None:
                 v = parsetime(v)
                 if v.tzinfo is None:
