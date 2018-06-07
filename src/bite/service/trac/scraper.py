@@ -252,7 +252,7 @@ class _CommentsRequest(_ChangelogRequest):
                     continue
 
                 desc = lxml.html.fromstring(el.xpath('./description/text()')[0])
-                text = ''.join(x.text_content() for x in desc.xpath('//p')).strip()
+                text = '\n'.join(x.text_content().strip() for x in desc.xpath('//p'))
                 # skip events without any comment
                 if not text:
                     continue
