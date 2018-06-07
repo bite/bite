@@ -300,8 +300,7 @@ class _AttachmentsRequest(_ChangelogRequest):
                         creator = None
 
                 created = parsetime(el.xpath('./pubDate/text()')[0])
-                l.append(TracAttachment(
-                    id=f'{i}-{filename}', creator=creator, created=created, filename=filename))
+                l.append(TracAttachment(creator=creator, created=created, filename=filename))
             yield tuple(l)
 
 
