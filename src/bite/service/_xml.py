@@ -1,7 +1,10 @@
-from lxml.etree import XMLPullParser, XMLSyntaxError
+import io
+
+from lxml.etree import XMLPullParser, XMLSyntaxError, parse as parse_xml
 from snakeoil.klass import steal_docs
 
 from . import Service
+from ._reqs import URLRequest
 from ..exceptions import ParsingError, RequestError
 
 
@@ -55,6 +58,17 @@ class Xml(Service):
     def loads(self, s):
         """Decode XML to dictionary object."""
         raise NotImplementedError
+
+
+class XMLRequest(URLRequest):
+    """Construct a XML request."""
+
+    def parse_response(self, response):
+        """Parse the raw XML content."""
+        # Requesting the text content of the response doesn't remove the BOM so
+        # we request the binary content and decode it ourselves to remove it.
+        f = io.StringIO(response.content.decode('utf-8-sig'))
+        return parse_xml(f)
 
 
 class _IterContent(object):
