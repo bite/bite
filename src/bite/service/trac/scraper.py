@@ -322,24 +322,33 @@ class _ChangesRequest(_ChangelogRequest):
 
                 changes = {}
 
-                # print(el.xpath('./description/text()')[0])
+                # change elements are found in the first unordered list inside
+                # the description
                 desc = lxml.html.fromstring(el.xpath('./description/text()')[0])
-                for change in desc.xpath('//li'):
+                events = desc.xpath('//ul[1]//li')
+                for change in events:
                     field = change.xpath('./strong/text()')[0]
                     updates = change.xpath('./em/text()')
-                    removed = added = None
-                    if len(updates) == 2:
-                        removed, added = updates
-                    elif len(updates) == 1:
-                        li_text = ''.join(change.xpath('./text()')).strip()
-                        value = change.xpath('./em/text()')[0]
-                        if li_text == 'deleted':
-                            removed = value
-                        elif li_text in ('set to', 'added'):
-                            added = value
-                        else:
-                            raise ParsingError(f'unknown change action: {li_text}')
-                    changes[field] = (removed, added)
+                    if updates:
+                        removed = added = None
+                        if len(updates) == 2:
+                            removed, added = updates
+                        elif len(updates) == 1:
+                            li_text = ''.join(change.xpath('./text()')).strip()
+                            value = change.xpath('./em/text()')[0]
+                            if li_text in ('deleted', 'removed'):
+                                removed = value
+                            elif li_text in ('set to', 'added'):
+                                added = value
+                            else:
+                                raise ParsingError(
+                                    f'{self.service.item.type} {i}: '
+                                    f'change {count}: unknown change action: {li_text}')
+                        changes[field] = (removed, added)
+                    else:
+                        # change fields without regular textual actions
+                        # descriptions, e.g. updating the ticket description
+                        changes[field] = 'modified'
 
                 # extract attachment creator
                 try:
