@@ -7,6 +7,7 @@ API docs:
 
 import re
 
+from dateutil.parser import parse as parsetime
 from snakeoil.klass import aliased, alias
 
 from .. import Service
@@ -120,6 +121,8 @@ class TracTicket(Item):
                 v = None
             elif k == 'keywords':
                 v = re.split('\W+', v)
+            elif k in ('time', 'changetime'):
+                v = parsetime(v)
             setattr(self, k, v)
 
         self.comments = None
