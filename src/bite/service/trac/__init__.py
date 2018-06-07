@@ -238,6 +238,11 @@ class BaseSearchRequest(ParseRequest):
             self.params[k] = [self._status_aliases.get(x, x) for x in v]
             self.options.append(f"{k.capitalize()}: {', '.join(v)}")
 
+        def id(self, k, v):
+            id_strs = list(map(str, v))
+            self.params[k] = ','.join(id_strs)
+            self.options.append(f"IDs: {', '.join(id_strs)}")
+
         @alias('modified')
         def created(self, k, v):
             if v.start and v.end:

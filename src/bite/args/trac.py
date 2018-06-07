@@ -1,4 +1,7 @@
+from functools import partial
+
 from .. import args
+from ..argparser import ParseStdin
 
 
 class TracOpts(args.ServiceOpts):
@@ -22,6 +25,16 @@ class Search(args.Search, TracOpts):
 
                 Note that sorting by multiple terms is not supported.
             """)
+
+        person = self.parser.add_argument_group('Person related')
+        person.add_argument(
+            '-a', '--assigned-to', dest='owner', type='str_list', action='parse_stdin',
+            help=f'person the {self.service.item.type} is assigned to')
+        person.add_argument(
+            '-r', '--creator', dest='reporter',
+            type='str_list', action='parse_stdin',
+            help=f'person who created the {self.service.item.type}')
+
         time = self.parser.add_argument_group('Time related')
         time.add_argument(
             '-c', '--created', type='time interval', metavar='TIME_INTERVAL',
@@ -29,14 +42,8 @@ class Search(args.Search, TracOpts):
         time.add_argument(
             '-m', '--modified', type='time interval', metavar='TIME_INTERVAL',
             help=f'{self.service.item.type}s modified within a specified time interval')
+
         attr = self.parser.add_argument_group('Attribute related')
-        attr.add_argument(
-            '-a', '--assigned-to', dest='owner', type='str_list', action='parse_stdin',
-            help=f'person the {self.service.item.type} is assigned to')
-        attr.add_argument(
-            '-r', '--creator', dest='reporter',
-            type='str_list', action='parse_stdin',
-            help=f'person who created the {self.service.item.type}')
         attr.add_argument(
             '-s', '--status', type='str_list', action='parse_stdin',
             help='restrict by status (one or more)',
@@ -46,6 +53,10 @@ class Search(args.Search, TracOpts):
                 Multiple statuses can be entered as comma-separated values in
                 which case results match any of the given values.
             """)
+        attr.add_argument(
+            '--id', type='id_list',
+            action=partial(ParseStdin, 'ids'),
+            help=f'restrict by {self.service.item.type} ID(s)')
 
 
 class Get(args.Get, TracOpts):
