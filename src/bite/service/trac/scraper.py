@@ -74,7 +74,13 @@ class TracScraperCSV(_BaseTracScraper):
 class _SearchRequest(BaseSearchRequest, URLRequest):
     """Construct a web search request."""
 
-    def __init__(self, **kw):
+    # map from standardized kwargs name to expected service parameter name
+    BaseSearchRequest._params_map.update({
+        'fields': 'col',
+    })
+
+    def __init__(self, get_desc=False, **kw):
+        self._get_desc = get_desc
         super().__init__(endpoint='/query', **kw)
 
     def parse(self, data):
@@ -105,7 +111,7 @@ class _SearchRequest(BaseSearchRequest, URLRequest):
                 if k == 'id' and v[0] == '#':
                     v = v[1:]
                 d[k] = v
-            yield self.service.item(self.service, get_desc=False, **d)
+            yield self.service.item(self.service, get_desc=self._get_desc, **d)
 
     @aliased
     class ParamParser(BaseSearchRequest.ParamParser):
@@ -114,8 +120,7 @@ class _SearchRequest(BaseSearchRequest, URLRequest):
             super()._finalize()
 
             # limit requested fields by default
-            fields = self.params.get('fields', ('id', 'owner', 'summary'))
-            self.params['col'] = fields
+            self.params.setdefault('fields', ('id', 'owner', 'summary'))
 
         def terms(self, k, v):
             or_queries = []
@@ -135,6 +140,7 @@ class _SearchRequest(BaseSearchRequest, URLRequest):
             self.options.append(f"Summary: {' AND '.join(display_terms)}")
 
         def fields(self, k, v):
+            # TODO: support field aliases?
             unknown_fields = set(v).difference(self.service.cache['search_cols'])
             if unknown_fields:
                 raise BiteError(
@@ -159,29 +165,24 @@ class _SearchRequestCSV(CSVRequest, _SearchRequest):
 
     def parse(self, data):
         for item in data:
-            yield self.service.item(self.service, get_desc=False, **item)
+            yield self.service.item(self.service, get_desc=self._get_desc, **item)
 
 
 @req_cmd(TracScraperCSV)
-class _GetItemRequest(Request):
+class _GetItemRequest(_SearchRequestCSV):
     """Construct an item request."""
 
-    def __init__(self, ids, **kw):
-        super().__init__(**kw)
+    def __init__(self, service, ids, **kw):
         if ids is None:
-            raise ValueError(f'No {self.service.item.type} ID(s) specified')
-
-        reqs = []
-        for i in ids:
-            reqs.append(CSVRequest(
-                service=self.service, endpoint=f'/ticket/{i}?format=csv'))
+            raise ValueError(f'No {service.item.type} ID(s) specified')
+        # request all fields by default
+        kw.setdefault('fields', service.cache['search_cols'])
+        super().__init__(service=service, id=ids, get_desc=True, **kw)
 
         self.ids = ids
-        self._reqs = tuple(reqs)
 
     def parse(self, data):
-        for item in chain.from_iterable(data):
-            yield self.service.item(self.service, get_desc=False, **item)
+        yield from super().parse(data)
 
 
 @req_cmd(TracScraperCSV, cmd='get')

@@ -404,7 +404,6 @@ class _GetRequest(MergedMulticall):
     def __init__(self, ids, get_comments=True, get_attachments=True,
                  get_changes=False, **kw):
         super().__init__(**kw)
-
         if not ids:
             raise ValueError('No {self.service.item.type} ID(s) specified')
         self.ids = ids
