@@ -2,7 +2,7 @@ from .. import args
 
 
 class LaunchpadOpts(args.ServiceOpts):
-    """Launchpad options."""
+    """Launchpad"""
 
     _service = 'launchpad'
 

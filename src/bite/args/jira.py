@@ -38,7 +38,7 @@ class JiraSubcmd(args.Subcmd):
 
 
 class JiraOpts(args.ServiceOpts):
-    """Jira options."""
+    """Jira"""
 
     _service = 'jira'
 

@@ -15,7 +15,7 @@ class ChangedTimeTuple(argparse.Action):
 
 
 class Bugzilla4_4Opts(args.ServiceOpts):
-    """Bugzilla 4.4 options."""
+    """Bugzilla 4.4"""
 
     _service = 'bugzilla4.4'
 
@@ -31,13 +31,13 @@ class Bugzilla4_4Opts(args.ServiceOpts):
 
 
 class Bugzilla5_0Opts(Bugzilla4_4Opts):
-    """Bugzilla 5.0 options."""
+    """Bugzilla 5.0"""
 
     _service = 'bugzilla5.0'
 
 
 class Bugzilla5_2Opts(Bugzilla5_0Opts):
-    """Bugzilla 5.2 options."""
+    """Bugzilla 5.2"""
 
     _service = 'bugzilla5.2'
 

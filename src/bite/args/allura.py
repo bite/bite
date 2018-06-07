@@ -5,7 +5,7 @@ from .. import args
 
 
 class AlluraOpts(args.ServiceOpts):
-    """Allura options."""
+    """Allura"""
 
     _service = 'allura'
 

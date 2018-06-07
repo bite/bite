@@ -5,7 +5,7 @@ from ..argparser import ParseStdin
 
 
 class TracOpts(args.ServiceOpts):
-    """Trac options."""
+    """Trac"""
     _service = 'trac'
 
 
@@ -81,12 +81,12 @@ class Version(args.Subcmd, TracOpts):
 # scraping classes
 
 class TracScraperOpts(args.ServiceOpts):
-    """Trac web scraper options."""
+    """Trac web scraper"""
     _service = 'trac-scraper'
 
 
 class TracScraperCSVOpts(TracScraperOpts):
-    """Trac CSV web scraper options."""
+    """Trac CSV/RSS web scraper"""
     _service = 'trac-scraper-csv'
 
 

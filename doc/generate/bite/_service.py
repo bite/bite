@@ -46,7 +46,7 @@ def main(f, docdir, gendir):
     parser._update_desc(service_opts.__doc__)
 
     service_opts.add_subcmd_opts(service=service, subcmd='_all_')
-    ManConverter(gendir, service_name, parser, out_name=service_name, strip_subcmd=True).run()
+    ManConverter(gendir, service_name, parser, out_name=service_name, replace_cmd='bite').run()
 
 
 if __name__ == '__main__':

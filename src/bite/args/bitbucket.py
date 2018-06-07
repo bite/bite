@@ -5,7 +5,7 @@ from ..argparser import ParseStdin
 
 
 class BitbucketOpts(args.ServiceOpts):
-    """Bitbucket options."""
+    """Bitbucket"""
 
     _service = 'bitbucket'
 

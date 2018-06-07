@@ -2,13 +2,13 @@ from .. import args
 
 
 class RedmineOpts(args.ServiceOpts):
-    """Redmine options."""
+    """Redmine"""
 
     _service = 'redmine'
 
 
 class RedmineElasticOpts(RedmineOpts):
-    """Redmine with elasticsearch options."""
+    """Redmine with elasticsearch"""
 
     _service = 'redmine-elastic'
 
