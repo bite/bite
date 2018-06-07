@@ -49,7 +49,7 @@ class TracScraperTicket(TracTicket):
             if v is not None:
                 v = parsetime(v)
                 if v.tzinfo is None:
-                    v = v.astimezone(utc)
+                    v = v.replace(tzinfo=utc)
                 setattr(self, attr, v)
 
         super().__init__(**kw)
