@@ -20,5 +20,5 @@ class CSVRequest(URLRequest):
         # Requesting the text content of the response doesn't remove the BOM so
         # we request the binary content and decode it ourselves to remove it.
         f = io.StringIO(response.content.decode('utf-8-sig'))
-        headers = [x.lower() for x in f.readline().strip().split(',')]
+        headers = [x.strip('"\'').lower() for x in f.readline().strip().split(',')]
         return csv.DictReader(f, fieldnames=headers)
