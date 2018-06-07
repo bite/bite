@@ -335,7 +335,7 @@ class _ChangesRequest(_ChangelogRequest):
                         value = change.xpath('./em/text()')[0]
                         if li_text == 'deleted':
                             removed = value
-                        elif li_text == 'set to':
+                        elif li_text in ('set to', 'added'):
                             added = value
                         else:
                             raise ParsingError(f'unknown change action: {li_text}')
