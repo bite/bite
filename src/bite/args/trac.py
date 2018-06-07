@@ -78,6 +78,8 @@ class Version(args.Subcmd, TracOpts):
     _name = 'version'
 
 
+# scraping classes
+
 class TracScraperOpts(args.ServiceOpts):
     """Trac web scraper options."""
     _service = 'trac-scraper'
@@ -93,4 +95,12 @@ class _ScrapedSearch(Search, TracScraperOpts):
 
 
 class _ScrapedGet(Get, TracScraperCSVOpts):
+    pass
+
+
+class _ScrapedComments(Comments, TracScraperCSVOpts):
+    pass
+
+
+class _ScrapedChanges(Changes, TracScraperCSVOpts):
     pass
