@@ -29,7 +29,8 @@ def main(f, docdir, gendir):
         service_opts_mod = get_service_cls(service_name, SERVICE_OPTS)
 
     parser = ArgumentParser(suppress=True)
-    config = Config.load_all()
+    # load all service connections
+    config = Config(connection=None)
 
     mod_name, cls_name = service_mod.rsplit('.', 1)
     for connection in config.sections():

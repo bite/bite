@@ -37,8 +37,7 @@ def get_service_cls(service_name, options, fallbacks=()):
 def get_service(connection):
     """Return a service object for a configured service."""
     # support getting passed service objects and service name strings
-    config = Config(init=False)
-    config = config.load(connection=connection)
+    config = Config(connection=connection)
 
     if not config.has_section(connection):
         raise BiteError(f'unknown connection: {connection!r}')

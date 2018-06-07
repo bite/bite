@@ -133,7 +133,8 @@ def _ls(options, out, err):
             else:
                 out.write(name)
     elif options.item == 'connections':
-        config = Config.load_all()
+        # load all service connections
+        config = Config(connection=None)
         for connection in sorted(config.sections()):
             if options.verbose:
                 out.write(f'[{connection}]')
@@ -155,7 +156,8 @@ def _validate_args(parser, namespace):
 
 @cache.bind_main_func
 def _cache(options, out, err):
-    config = Config.load_all()
+    # load all service connections
+    config = Config(connection=None)
     connections = options.pop('connections')
     if not connections:
         connections = [options.connection]

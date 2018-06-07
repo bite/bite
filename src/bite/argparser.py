@@ -574,7 +574,18 @@ class ArgumentParser(arghparse.ArgumentParser):
                 initial_args, unparsed_args = self.parse_optionals(alias_unparsed_args, initial_args)
 
         # load config files
-        config = Config(path=config_file, args=initial_args)
+        config = Config(
+            path=config_file, connection=initial_args.connection,
+            base=initial_args.base, service=initial_args.service)
+        initial_args.connection = config.connection
+
+        # pop base and service settings from the config and add them to parsed args
+        # if not already specified on the command line
+        for attr in ('base', 'service'):
+            if getattr(initial_args, attr, None) is None:
+                value = config.get(config.connection, attr, fallback=None)
+                setattr(initial_args, attr, value)
+            config.remove_option(config.connection, attr)
 
         if initial_args.base is None or initial_args.service is None:
             self.error('both arguments -b/--base and -s/--service are required '
