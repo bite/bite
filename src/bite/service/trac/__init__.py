@@ -115,14 +115,12 @@ class TracTicket(Item):
 
     type = 'ticket'
 
-    def __init__(self, service, get_desc=True, **kw):
+    def __init__(self, get_desc=True, **kw):
         for k, v in kw.items():
             if not v:
                 v = None
             elif k == 'keywords':
                 v = re.split('\W+', v)
-            elif k in ('time', 'changetime'):
-                v = parsetime(v)
             setattr(self, k, v)
 
         self.comments = None
@@ -316,7 +314,7 @@ class _GetItemRequest(Multicall):
         for item in data:
             id, created, modified, attrs = item
             yield self.service.item(
-                self.service, id=id, created=created, modified=modified, **attrs)
+                id=id, created=created, modified=modified, **attrs)
 
 
 @req_cmd(Trac, name='_ChangelogRequest')

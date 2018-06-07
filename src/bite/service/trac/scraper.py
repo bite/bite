@@ -1,19 +1,21 @@
 """Web scraper for Trac without RPC support."""
 
-from itertools import chain
+import lxml.html
 from urllib.parse import urlparse, parse_qs
 
 from dateutil.parser import parse as parsetime
 from snakeoil.demandload import demandload
 from snakeoil.klass import aliased, alias
 
-from . import TracTicket, TracAttachment, BaseSearchRequest
+from . import TracTicket, TracComment, TracAttachment, TracEvent, BaseSearchRequest
 from .. import Service
 from .._csv import CSVRequest
 from .._html import HTML
 from .._reqs import req_cmd, Request, NullRequest, URLRequest
+from .._xml import XMLRequest
 from ...cache import Cache
-from ...exceptions import BiteError
+from ...exceptions import BiteError, ParsingError
+from ...utc import utc
 
 demandload(
     'snakeoil.strings:pluralism',
@@ -37,14 +39,31 @@ class TracScraperCache(Cache):
         super().__init__(defaults=defaults, **kw)
 
 
+class TracScraperTicket(TracTicket):
+
+    def __init__(self, time=None, changetime=None, created=None, modified=None, **kw):
+        # Convert datetime strings to objects, created/modifed fields come
+        # from CSV dumps when scraping.
+        for attr in ('time', 'changetime', 'created', 'modified'):
+            v = locals().get(attr)
+            if v is not None:
+                v = parsetime(v)
+                if v.tzinfo is None:
+                    v = v.astimezone(utc)
+                setattr(self, attr, v)
+
+        super().__init__(**kw)
+
+
 class _BaseTracScraper(Service):
     """Base service supporting the Trac-based ticket trackers."""
 
     _cache_cls = TracScraperCache
 
-    item = TracTicket
+    item = TracScraperTicket
     item_endpoint = '/ticket/{id}'
     attachment = TracAttachment
+    attachment_endpoint = '/ticket/{id}/{filename}'
 
     def __init__(self, max_results=None, **kw):
         # Trac uses a setting of 0 to disable paging search results.
@@ -111,7 +130,7 @@ class _SearchRequest(BaseSearchRequest, URLRequest):
                 if k == 'id' and v[0] == '#':
                     v = v[1:]
                 d[k] = v
-            yield self.service.item(self.service, get_desc=self._get_desc, **d)
+            yield self.service.item(get_desc=self._get_desc, **d)
 
     @aliased
     class ParamParser(BaseSearchRequest.ParamParser):
@@ -165,7 +184,7 @@ class _SearchRequestCSV(CSVRequest, _SearchRequest):
 
     def parse(self, data):
         for item in data:
-            yield self.service.item(self.service, get_desc=self._get_desc, **item)
+            yield self.service.item(get_desc=self._get_desc, **item)
 
 
 @req_cmd(TracScraperCSV)
@@ -177,7 +196,7 @@ class _GetItemRequest(_SearchRequestCSV):
             raise ValueError(f'No {service.item.type} ID(s) specified')
         # request all fields by default
         kw.setdefault('fields', service.cache['search_cols'])
-        super().__init__(service=service, id=ids, get_desc=True, **kw)
+        super().__init__(service=service, id=ids, status=['ALL'], get_desc=True, **kw)
 
         self.ids = ids
 
@@ -185,18 +204,199 @@ class _GetItemRequest(_SearchRequestCSV):
         yield from super().parse(data)
 
 
+@req_cmd(TracScraperCSV, name='_ChangelogRequest')
+class _ChangelogRequest(Request):
+    """Construct a changelog request pulling the RSS comments feed."""
+
+    _xml_namespace = {'dc': "http://purl.org/dc/elements/1.1/"}
+
+    def __init__(self, ids=None, data=None, **kw):
+        super().__init__(**kw)
+        if ids is None and data is None:
+            raise ValueError(f'No {self.service.item.type} ID(s) specified')
+
+        if data is None:
+            reqs = []
+            for i in ids:
+                reqs.append(XMLRequest(
+                    service=self.service, endpoint=f'/ticket/{i}?format=rss'))
+        else:
+            reqs = [NullRequest()]
+
+        self._reqs = tuple(reqs)
+        self.ids = ids
+        self._data = data
+
+    def parse(self, data):
+        # TODO: Fallback to raw HTML parsing for sites that disable the RSS
+        # feed support, e.g. pidgin.
+        if self._data is not None:
+            yield from self._data
+        else:
+            yield from data
+
+
+@req_cmd(TracScraperCSV, cmd='comments')
+class _CommentsRequest(_ChangelogRequest):
+    """Construct a comments request."""
+
+    def parse(self, data):
+        data = super().parse(data)
+        for tree in data:
+            count = 1
+            l = []
+            for el in tree.xpath('//item'):
+                # skip attachment events
+                title = el.xpath('./title/text()')
+                if title and title[0] == 'attachment set':
+                    continue
+
+                desc = lxml.html.fromstring(el.xpath('./description/text()')[0])
+                text = ''.join(x.text_content() for x in desc.xpath('//p')).strip()
+                # skip events without any comment
+                if not text:
+                    continue
+
+                # extract comment creator
+                try:
+                    creator = el.xpath('./dc:creator/text()', namespaces=self._xml_namespace)[0]
+                except IndexError:
+                    try:
+                        creator = el.xpath('./author/text()')[0]
+                    except IndexError:
+                        creator = None
+
+                created = parsetime(el.xpath('./pubDate/text()')[0])
+                l.append(TracComment(
+                    count=count, creator=creator, created=created, text=text))
+                count += 1
+            yield tuple(l)
+
+
+@req_cmd(TracScraperCSV, cmd='attachments')
+class _AttachmentsRequest(_ChangelogRequest):
+    """Construct an attachments request."""
+
+    def parse(self, data):
+        data = super().parse(data)
+        for i, tree in zip(self.ids, data):
+            l = []
+            for el in tree.xpath('//item'):
+                title = el.xpath('./title/text()')
+                # skip non-attachment events
+                if not title or title[0] != 'attachment set':
+                    continue
+
+                desc = lxml.html.fromstring(el.xpath('./description/text()')[0])
+                filename = desc.xpath('//em')[0].text_content()
+
+                # extract attachment creator
+                try:
+                    creator = el.xpath('./dc:creator/text()', namespaces=self._xml_namespace)[0]
+                except IndexError:
+                    try:
+                        creator = el.xpath('./author/text()')[0]
+                    except IndexError:
+                        creator = None
+
+                created = parsetime(el.xpath('./pubDate/text()')[0])
+                l.append(TracAttachment(
+                    id=f'{i}-{filename}', creator=creator, created=created, filename=filename))
+            yield tuple(l)
+
+
+@req_cmd(TracScraperCSV, cmd='changes')
+class _ChangesRequest(_ChangelogRequest):
+    """Construct a changes request."""
+
+    def parse(self, data):
+        data = super().parse(data)
+        for i, tree in zip(self.ids, data):
+            l = []
+            count = 1
+            for el in tree.xpath('//item'):
+                title = el.xpath('./title/text()')
+                # skip comments and attachment events
+                if not title or title[0] == 'attachment set':
+                    continue
+
+                changes = {}
+
+                # print(el.xpath('./description/text()')[0])
+                desc = lxml.html.fromstring(el.xpath('./description/text()')[0])
+                for change in desc.xpath('//li'):
+                    field = change.xpath('./strong/text()')[0]
+                    updates = change.xpath('./em/text()')
+                    removed = added = None
+                    if len(updates) == 2:
+                        removed, added = updates
+                    elif len(updates) == 1:
+                        li_text = ''.join(change.xpath('./text()')).strip()
+                        value = change.xpath('./em/text()')[0]
+                        if li_text == 'deleted':
+                            removed = value
+                        elif li_text == 'set to':
+                            added = value
+                        else:
+                            raise ParsingError(f'unknown change action: {li_text}')
+                    changes[field] = (removed, added)
+
+                # extract attachment creator
+                try:
+                    creator = el.xpath('./dc:creator/text()', namespaces=self._xml_namespace)[0]
+                except IndexError:
+                    try:
+                        creator = el.xpath('./author/text()')[0]
+                    except IndexError:
+                        creator = None
+
+                created = parsetime(el.xpath('./pubDate/text()')[0])
+                l.append(TracEvent(
+                    count=count, creator=creator, created=created, changes=changes))
+                count += 1
+            yield tuple(l)
+
+
 @req_cmd(TracScraperCSV, cmd='get')
-class _GetRequest(_GetItemRequest):
+class _GetRequest(Request):
     """Construct requests to retrieve all known data for given issue IDs."""
 
-    def __init__(self, get_comments=True, get_attachments=True, get_changes=False, **kw):
-        super().__init__(**kw)
+    def __init__(self, service, ids, get_comments=True, get_attachments=True, get_changes=False, **kw):
+        super().__init__(service=service, **kw)
+        if not ids:
+            raise ValueError('No {self.service.item.type} ID(s) specified')
 
+        reqs = [self.service.GetItemRequest(ids=ids, **kw)]
+        if any((get_comments, get_attachments, get_changes)):
+            reqs.append(self.service._ChangelogRequest(ids=ids))
+
+        self.ids = ids
+        self._reqs = tuple(reqs)
         self._get_comments = get_comments
         self._get_attachments = get_attachments
         self._get_changes = get_changes
 
     def parse(self, data):
-        items = super().parse(data)
+        data = super().parse(data)
+        items = tuple(next(data))
+
+        comments = self._none_gen
+        attachments = self._none_gen
+        changes = self._none_gen
+
+        if any((self._get_comments, self._get_attachments, self._get_changes)):
+            changelogs = tuple(next(data))
+            if self._get_comments:
+                item_descs = ((x.description,) for x in items)
+                item_comments = self.service.comments(data=changelogs)
+                comments = (x + y for x, y in zip(item_descs, item_comments))
+            if self._get_attachments:
+                attachments = self.service.attachments(ids=self.ids, data=changelogs)
+            if self._get_changes:
+                changes = self.service.changes(ids=self.ids, data=changelogs)
+
         for item in items:
+            item.comments = next(comments)
+            item.attachments = next(attachments)
+            item.changes = next(changes)
             yield item
