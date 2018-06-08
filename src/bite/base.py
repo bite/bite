@@ -24,6 +24,10 @@ def get_service_cls(service_name, options, fallbacks=()):
             # if fallback is a class, use it
             if isinstance(fallback, type):
                 return fallback
+            # if fallback is True, inject service fallbacks automatically
+            elif fallback is True and not any((x is True for x in fallbacks[i:])):
+                fallbacks = tuple(service_classes(service_name))[1:] + tuple(fallbacks[i:])
+                return get_service_cls(fallbacks[0], options, fallbacks=fallbacks[1:])
             # otherwise try to find matching fallback class
             elif isinstance(fallback, str):
                 return get_service_cls(fallback, options, fallbacks=fallbacks[i:])

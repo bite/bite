@@ -12,7 +12,7 @@ import os
 from snakeoil.demandload import demandload
 
 from ..argparser import ArgumentParser, parse_file, override_attr
-from ..base import get_service_cls, service_classes
+from ..base import get_service_cls
 from ..alias import Aliases
 from ..client import Cli
 from ..config import Config
@@ -117,8 +117,8 @@ def get_cli(args):
             args[attr] = val
 
     service_name = args['service']._service
-    fallbacks = list(service_classes(service_name))[1:] + [Cli]
-    client = get_service_cls(service_name, const.CLIENTS, fallbacks=fallbacks)(**args)
+    client = get_service_cls(
+        service_name, const.CLIENTS, fallbacks=(True, Cli))(**args)
     return client, fcn_args
 
 
