@@ -17,7 +17,7 @@ from ._rpc import Multicall, RPCRequest
 from ._xmlrpc import Xmlrpc
 from ..cache import Cache, csv2tuple
 from ..exceptions import RequestError, BiteError
-from ..objects import Item, Attachment, Comment
+from ..objects import Item, Attachment, Comment, TimeInterval
 from ..utc import utc
 
 
@@ -320,8 +320,11 @@ class _SearchRequest(ParseRequest, RPCRequest):
 
         @alias('modified')
         def created(self, k, v):
-            self.params[k] = f"{v.strftime('%Y-%m-%d.%H:%M:%S')};."
-            self.options.append(f'{k.capitalize()}: {v} (since {v.isoformat()})')
+            if not isinstance(v, TimeInterval):
+                v = TimeInterval(v)
+            interval = ';'.join(x.strftime('%Y-%m-%d.%H:%M:%S') if x else '' for x in v)
+            self.params[k] = interval
+            self.options.append(f'{k.capitalize()}: {v}')
 
         def sort(self, k, v):
             sorting_terms = []

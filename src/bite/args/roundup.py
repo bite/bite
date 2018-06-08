@@ -24,13 +24,14 @@ class Search(args.Search, RoundupOpts):
                 sorting term with '-'; otherwise, sorting is done in an
                 ascending fashion by default.
             """)
+
         time = self.parser.add_argument_group('Time related')
         time.add_argument(
-            '-c', '--created', type='date', metavar='TIME',
-            help=f'{self.service.item.type}s created at this time or later')
+            '-c', '--created', type='time interval', metavar='TIME_INTERVAL',
+            help=f'{self.service.item.type}s created within a specified time interval')
         time.add_argument(
-            '-m', '--modified', type='date', metavar='TIME',
-            help=f'{self.service.item.type}s modified at this time or later')
+            '-m', '--modified', type='time interval', metavar='TIME_INTERVAL',
+            help=f'{self.service.item.type}s modified within a specified time interval')
 
 
 class Get(args.Get, RoundupOpts):
