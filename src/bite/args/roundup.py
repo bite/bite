@@ -1,4 +1,7 @@
+from functools import partial
+
 from .. import args
+from ..argparser import ParseStdin
 
 
 class RoundupOpts(args.ServiceOpts):
@@ -32,6 +35,12 @@ class Search(args.Search, RoundupOpts):
         time.add_argument(
             '-m', '--modified', type='time interval', metavar='TIME_INTERVAL',
             help=f'{self.service.item.type}s modified within a specified time interval')
+
+        attr = self.parser.add_argument_group('Attribute related')
+        attr.add_argument(
+            '--id', type='id_list',
+            action=partial(ParseStdin, 'ids'),
+            help=f'restrict by {self.service.item.type} ID(s)')
 
 
 class Get(args.Get, RoundupOpts):

@@ -326,6 +326,10 @@ class _SearchRequest(ParseRequest, RPCRequest):
             self.params[k] = interval
             self.options.append(f'{k.capitalize()}: {v}')
 
+        def id(self, k, v):
+            self.params[k] = v
+            self.options.append(f"IDs: {', '.join(map(str, v))}")
+
         def sort(self, k, v):
             sorting_terms = []
             for sort in v:
