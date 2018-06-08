@@ -41,6 +41,12 @@ class Search(args.Search, RoundupOpts):
             '--id', type='id_list',
             action=partial(ParseStdin, 'ids'),
             help=f'restrict by {self.service.item.type} ID(s)')
+        attr.add_argument(
+            '--followers', type=int,
+            help='restrict by the specified number of followers or greater')
+        attr.add_argument(
+            '--comments', type=int,
+            help='restrict by the specified number of comments or greater')
 
 
 class Get(args.Get, RoundupOpts):

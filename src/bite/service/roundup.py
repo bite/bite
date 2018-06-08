@@ -244,6 +244,8 @@ class _SearchRequest(ParseRequest, RPCRequest):
     _params_map = {
         'created': 'creation',
         'modified': 'activity',
+        'followers': 'nosy_count',
+        'comments': 'message_count',
     }
 
     def __init__(self, fields=None, **kw):
@@ -329,6 +331,11 @@ class _SearchRequest(ParseRequest, RPCRequest):
         def id(self, k, v):
             self.params[k] = v
             self.options.append(f"IDs: {', '.join(map(str, v))}")
+
+        @alias('followers')
+        def comments(self, k, v):
+            self.params[k] = v
+            self.options.append(f"{k.capitalize()}: {v}")
 
         def sort(self, k, v):
             sorting_terms = []
