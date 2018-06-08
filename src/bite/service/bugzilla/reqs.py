@@ -12,6 +12,7 @@ from .._reqs import (
     BaseGetRequest, BaseCommentsRequest, BaseChangesRequest,
 )
 from ...exceptions import BiteError
+from ...objects import TimeInterval
 
 demandload('bite:const')
 
@@ -76,7 +77,7 @@ class SearchRequest4_4(ParseRequest, OffsetPagedRequest):
         @alias('modified')
         def created(self, k, v):
             self.params[k] = v.isoformat()
-            self.options.append(f'{k.capitalize()}: {v} (since {v!r} UTC)')
+            self.options.append(f'{k.capitalize()}: {v} or later')
 
         @alias('creator', 'qa_contact')
         def assigned_to(self, k, v):
@@ -173,17 +174,21 @@ class SearchRequest5_0(SearchRequest4_4):
         @alias('modified')
         def created(self, k, v):
             field = 'creation_ts' if k == 'created' else 'delta_ts'
-            if v.start is not None:
+            if isinstance(v, (str, tuple)):
+                v = TimeInterval(v)
+            start, end = v
+            if start is not None:
                 self.params[f'f{self.adv_num}'] = field
                 self.params[f'o{self.adv_num}'] = 'greaterthan'
-                self.params[f'v{self.adv_num}'] = v.start.isoformat()
+                self.params[f'v{self.adv_num}'] = start.isoformat()
                 self.adv_num += 1
-            if v.end is not None:
+            if end is not None:
                 self.params[f'f{self.adv_num}'] = field
                 self.params[f'o{self.adv_num}'] = 'lessthan'
-                self.params[f'v{self.adv_num}'] = v.end.isoformat()
+                self.params[f'v{self.adv_num}'] = end.isoformat()
                 self.adv_num += 1
-            self.options.append(f'{k.capitalize()}: {v} ({v!r} UTC)')
+
+            self.options.append(f'{k.capitalize()}: {v}')
 
         def comments(self, k, v):
             self.params[f'f{self.adv_num}'] = 'longdescs.count'
@@ -202,18 +207,21 @@ class SearchRequest5_0(SearchRequest4_4):
 
         def changed(self, k, v):
             field, time = v
-            if time.start is not None:
+            if isinstance(time, (str, tuple)):
+                time = TimeInterval(time)
+            start, end = time
+            if start is not None:
                 self.params[f'f{self.adv_num}'] = field
                 self.params[f'o{self.adv_num}'] = 'changedafter'
-                self.params[f'v{self.adv_num}'] = time.start.isoformat()
+                self.params[f'v{self.adv_num}'] = start.isoformat()
                 self.adv_num += 1
-            if time.end is not None:
+            if end is not None:
                 self.params[f'f{self.adv_num}'] = field
                 self.params[f'o{self.adv_num}'] = 'changedbefore'
-                self.params[f'v{self.adv_num}'] = time.end.isoformat()
+                self.params[f'v{self.adv_num}'] = end.isoformat()
                 self.adv_num += 1
             self.options.append(
-                f"{field.capitalize()} changed: {time} ({time!r} UTC)")
+                f"{field.capitalize()} changed: {time}")
 
         @alias('changed_to')
         def changed_from(self, k, v):
@@ -306,7 +314,7 @@ class ChangesRequest(BaseChangesRequest, ParseRequest):
 
         def created(self, k, v):
             self.params['new_since'] = v.isoformat()
-            self.options.append(f'Created: {v} (since {v!r} UTC)')
+            self.options.append(f'{k.capitalize()}: {v} or later')
 
 
 class CommentsRequest(BaseCommentsRequest, ParseRequest):
@@ -338,7 +346,7 @@ class CommentsRequest(BaseCommentsRequest, ParseRequest):
 
         def created(self, k, v):
             self.params['new_since'] = v.isoformat()
-            self.options.append(f'Created: {v} (since {v!r} UTC)')
+            self.options.append(f'{k.capitalize()}: {v} or later')
 
         def fields(self, k, v):
             self.params['include_fields'] = v

@@ -17,7 +17,7 @@ from .._reqs import (
 )
 from .._rpc import Multicall, MergedMulticall, RPCRequest
 from ...exceptions import BiteError, RequestError
-from ...objects import Item, Comment, Attachment, Change
+from ...objects import Item, Comment, Attachment, Change, TimeInterval
 from ...utils import dict2tuples
 
 
@@ -246,13 +246,16 @@ class BaseSearchRequest(ParseRequest):
 
         @alias('modified')
         def created(self, k, v):
-            if v.start and v.end:
-                self.params[k] = f'{v.start.isoformat()}..{v.end.isoformat()}'
-            elif v.start:
-                self.params[k] = f'{v.start.isoformat()}..'
-            elif v.end:
-                self.params[k] = f'..{v.end.isoformat()}'
-            self.options.append(f'{k.capitalize()}: {v} ({v!r})')
+            if isinstance(v, (str, tuple)):
+                v = TimeInterval(v)
+            start, end = v
+            if start and end:
+                self.params[k] = f'{start.isoformat()}..{end.isoformat()}'
+            elif start:
+                self.params[k] = f'{start.isoformat()}..'
+            elif end:
+                self.params[k] = f'..{end.isoformat()}'
+            self.options.append(f'{k.capitalize()}: {v}')
 
         def sort(self, k, v):
             if v[0] == '-':

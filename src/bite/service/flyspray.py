@@ -6,7 +6,7 @@ from snakeoil.klass import aliased, alias
 from ._csv import CSVRequest
 from ._html import HTML
 from ._reqs import URLRequest, URLParseRequest, req_cmd
-from ..objects import Item, Comment, Attachment
+from ..objects import Item, Comment, Attachment, TimeInterval
 from ..exceptions import BiteError, RequestError
 
 
@@ -135,8 +135,11 @@ class SearchRequest(URLParseRequest, CSVRequest, URLRequest):
 
         @alias('modified', 'due', 'closed')
         def created(self, k, v):
-            if v.start:
-                self.params[f'{self._date_fields[k]}from'] = v.start.isoformat()
-            if v.end:
-                self.params[f'{self._date_fields[k]}to'] = v.end.isoformat()
-            self.options.append(f'{k.capitalize()}: {v} ({v!r})')
+            if isinstance(v, (str, tuple)):
+                v = TimeInterval(v)
+            start, end = v
+            if start:
+                self.params[f'{self._date_fields[k]}from'] = start.isoformat()
+            if end:
+                self.params[f'{self._date_fields[k]}to'] = end.isoformat()
+            self.options.append(f'{k.capitalize()}: {v}')

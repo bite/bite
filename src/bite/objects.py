@@ -50,19 +50,22 @@ def decompress(fcn):
 
 
 class DateTime(object):
-    """Object that stores a given date token and its corresponding datetime object."""
+    """Object that converts/stores a given datetime object."""
 
-    def __init__(self, token, datetime=None):
-        self.token = token
-        if datetime is None:
-            datetime = parse_date(token)
+    def __init__(self, datetime):
+        # TODO: handle different time zones?
+        self.token = datetime if isinstance(datetime, str) else None
+        if self.token is not None:
+            datetime = parse_date(datetime)
         self._datetime = datetime.replace(tzinfo=utc)
 
     def __str__(self):
-        return self.token
+        if self.token is not None:
+            return f'{self.token!r} -- {self._datetime}'
+        return str(self._datetime)
 
     def __repr__(self):
-        return str(self._datetime)
+        return repr(self._datetime)
 
     def isoformat(self, **kw):
         """Return a string representing the date and time in ISO 8601 format."""
@@ -97,14 +100,15 @@ class DateTime(object):
 
 
 class TimeInterval(object):
-    """Object that stores a given time interval token and its corresponding datetime objects."""
+    """Object that converts/stores a given time interval."""
 
-    def __init__(self, token, interval=None):
-        self.token = token
-        if interval is None:
-            start, _sep, end = token.partition('/')
-            start = DateTime(start) if start else None
-            end = DateTime(end) if end else None
+    def __init__(self, interval):
+        # TODO: handle different time zones?
+        self.token = interval if isinstance(interval, str) else None
+        if self.token is not None:
+            start, _sep, end = interval.partition('/')
+            start = parse_date(start) if start else None
+            end = parse_date(end) if end else None
             interval = (start, end)
 
         self.start, self.end = interval
@@ -114,16 +118,22 @@ class TimeInterval(object):
                 'invalid time interval: start time after end time '
                 f'({self.start!r} -> {self.end!r})')
 
-    def __str__(self):
-        return self.token
-
     def __repr__(self):
+        return repr((self.start, self.end))
+
+    def __str__(self):
+        l = []
+        if self.token is not None:
+            l.extend((repr(self.token), '--'))
+
         if self.start and self.end:
-            return f'between {self.start!r} and {self.end!r}'
+            l.append(f'between {self.start} and {self.end}')
         elif self.end is None:
-            return f'after {self.start!r}'
+            l.append(f'after {self.start}')
         else:
-            return f'before {self.end!r}'
+            l.append(f'before {self.end}')
+
+        return ' '.join(l)
 
     def __contains__(self, obj):
         if not isinstance(obj, datetime):
@@ -134,14 +144,17 @@ class TimeInterval(object):
             return False
         return True
 
+    def __iter__(self):
+        return iter((self.start, self.end))
+
 
 class IntRange(object):
-    """Object that stores a given integer range token and its corresponding objects."""
+    """Object that converts/stores a given integer range."""
 
-    def __init__(self, token, interval=None):
-        self.token = token
-        if interval is None:
-            start, _sep, end = token.partition('-')
+    def __init__(self, interval):
+        self.token = interval if isinstance(interval, str) else None
+        if self.token is not None:
+            start, _sep, end = interval.partition('-')
             start = int(start) if start else None
             end = int(end) if end else None
             interval = (start, end)
@@ -153,16 +166,25 @@ class IntRange(object):
                 'invalid range: start occurs after end '
                 f'({self.start!r} -> {self.end!r})')
 
-    def __str__(self):
-        return self.token
-
     def __repr__(self):
+        return repr((self.start, self.end))
+
+    def __str__(self):
+        l = []
+        if self.token is not None:
+            l.extend((repr(self.token), '--'))
+
         if self.start and self.end:
-            return f'between {self.start!r} and {self.end!r}'
+            l.append(f'between {self.start!r} and {self.end!r}')
         elif self.end is None:
-            return f'>= {self.start!r}'
+            l.append(f'>= {self.start!r}')
         else:
-            return f'<= {self.end!r}'
+            l.append(f'<= {self.end!r}')
+
+        return ' '.join(l)
+
+    def __iter__(self):
+        return iter((self.start, self.end))
 
 
 class Item(object):

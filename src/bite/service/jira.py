@@ -17,7 +17,7 @@ from ._reqs import (
 )
 from ._rest import RESTRequest
 from ..exceptions import BiteError, RequestError
-from ..objects import Item, Comment, Change, Attachment
+from ..objects import Item, Comment, Change, Attachment, TimeInterval, IntRange
 
 
 class JiraError(RequestError):
@@ -290,13 +290,16 @@ class _SearchRequest(URLParseRequest, JiraPagedRequest):
         @alias('modified', 'viewed', 'resolved')
         def created(self, k, v):
             field = self._date_fields.get(k, k)
-            if v.start is not None:
-                time_str = v.start.strftime('%Y-%m-%d %H:%M')
+            if isinstance(v, (str, tuple)):
+                v = TimeInterval(v)
+            start, end = v
+            if start is not None:
+                time_str = start.strftime('%Y-%m-%d %H:%M')
                 self.params.setdefault('jql', []).append(f'{field} > "{time_str}"')
-            if v.end is not None:
-                time_str = v.end.strftime('%Y-%m-%d %H:%M')
+            if end is not None:
+                time_str = end.strftime('%Y-%m-%d %H:%M')
                 self.params.setdefault('jql', []).append(f'{field} < "{time_str}"')
-            self.options.append(f'{k.capitalize()}: {v} ({v!r} UTC)')
+            self.options.append(f'{k.capitalize()}: {v}')
 
         @alias('creator')
         def assigned_to(self, k, v):
@@ -306,11 +309,14 @@ class _SearchRequest(URLParseRequest, JiraPagedRequest):
 
         @alias('watchers')
         def votes(self, k, v):
-            if v.start is not None:
-                self.params.setdefault('jql', []).append(f'{k} >= {v.start}')
-            if v.end is not None:
-                self.params.setdefault('jql', []).append(f'{k} <= {v.end}')
-            self.options.append(f"{k.capitalize()}: {v} ({v!r} {k})")
+            if isinstance(v, (str, tuple)):
+                v = IntRange(v)
+            start, end = v
+            if start is not None:
+                self.params.setdefault('jql', []).append(f'{k} >= {start}')
+            if end is not None:
+                self.params.setdefault('jql', []).append(f'{k} <= {end}')
+            self.options.append(f"{k.capitalize()}: {v} {k}")
 
 
 @req_cmd(Jira, cmd='get')

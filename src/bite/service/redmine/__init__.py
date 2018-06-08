@@ -15,7 +15,7 @@ from .._reqs import (
 )
 from .._rest import REST, RESTRequest
 from ...exceptions import BiteError, RequestError
-from ...objects import Item, Comment, Attachment, Change
+from ...objects import Item, Comment, Attachment, Change, TimeInterval
 
 
 class RedmineError(RequestError):
@@ -238,15 +238,18 @@ class _GetItemRequest(URLParseRequest, RedminePagedRequest):
 
         @alias('modified', 'closed')
         def created(self, k, v):
-            if v.start and v.end:
-                range_str = f'><{v.start.utcformat()}|{v.end.utcformat()}'
-            elif v.start:
-                range_str = f'>={v.start.utcformat()}'
+            if isinstance(v, (str, tuple)):
+                v = TimeInterval(v)
+            start, end = v
+            if start and end:
+                range_str = f'><{start.utcformat()}|{end.utcformat()}'
+            elif start:
+                range_str = f'>={start.utcformat()}'
             else:
-                range_str = f'<={v.end.utcformat()}'
+                range_str = f'<={end.utcformat()}'
             field = self.service.item.attribute_aliases[k]
             self.params[field] = range_str
-            self.options.append(f'{k.capitalize()}: {v} ({v!r} UTC)')
+            self.options.append(f'{k.capitalize()}: {v}')
 
         def status(self, k, v):
             # TODO: map between statuses and their IDs here -- only the
@@ -317,21 +320,24 @@ class _3_2GetItemRequest(_GetItemRequest):
 
         @alias('modified', 'closed')
         def created(self, k, v):
-            if v.start and v.end:
+            if isinstance(v, (str, tuple)):
+                v = TimeInterval(v)
+            start, end = v
+            if start and end:
                 op = '><'
-                values = [v.start.utcformat(), v.end.utcformat()]
-            elif v.start:
+                values = [start.utcformat(), end.utcformat()]
+            elif start:
                 op = '>='
-                values = [v.start.utcformat()]
+                values = [start.utcformat()]
             else:
                 op = '<='
-                values = [v.end.utcformat()]
+                values = [end.utcformat()]
             field = self.service.item.attribute_aliases[k]
             self.params.add('f[]', field)
             self.params[f'op[{field}]'] = op
             for x in values:
                 self.params.add(f'v[{field}][]', x)
-            self.options.append(f'{k.capitalize()}: {v} ({v!r} UTC)')
+            self.options.append(f'{k.capitalize()}: {v}')
 
         def ids(self, k, v):
             # Old redmine versions can't handle issue_id param requests so ignore it.
@@ -554,12 +560,15 @@ class _ElasticSearchRequest(_BaseSearchRequest):
 
         @alias('modified', 'closed')
         def created(self, k, v):
-            if v.start and v.end:
-                range_str = f'{v.start.isoformat()} TO {v.end.isoformat()}'
-            elif v.start:
-                range_str = f'{v.start.isoformat()} TO *'
+            if isinstance(v, (str, tuple)):
+                v = TimeInterval(v)
+            start, end = v
+            if start and end:
+                range_str = f'{start.isoformat()} TO {end.isoformat()}'
+            elif start:
+                range_str = f'{start.isoformat()} TO *'
             else:
-                range_str = f'* TO {v.end.isoformat()}'
+                range_str = f'* TO {end.isoformat()}'
             field = self.service.item.attribute_aliases[k]
             self.params.setdefault('q', {})[k] = f'{field}:[{range_str}]'
-            self.options.append(f'{k.capitalize()}: {v} ({v!r} UTC)')
+            self.options.append(f'{k.capitalize()}: {v}')
