@@ -6,6 +6,7 @@ from multidict import MultiDict
 import requests
 from snakeoil.strings import pluralism
 
+from ..config import load_template
 from ..exceptions import RequestError
 from ..utils import dict2tuples
 
@@ -446,6 +447,16 @@ class ParseRequest(Request):
             params = kw
             self.strict = False
 
+        # load templated args -- params/kwargs override these
+        template = params.pop('template', None)
+        self.template_args = set()
+        if template is not None:
+            if isinstance(template, str):
+                template = load_template(template, self.service.connection)
+            self.template_args |= template.keys()
+            template.update(params)
+            params = template
+
         # parse given arguments using defined methods
         self.param_parser = self.ParamParser(request=self)
         self.parse_params(**params)
@@ -465,6 +476,8 @@ class ParseRequest(Request):
                 parse = self.param_parser._default_parser
                 if parse(k, v) is not None:
                     del self.unused_params[k]
+                elif k in self.template_args:
+                    raise RequestError(f"invalid template parameter: {k!r}")
             else:
                 if not callable(parse):
                     if self.strict:

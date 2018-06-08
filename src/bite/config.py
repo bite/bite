@@ -111,3 +111,48 @@ class Config(object):
 
     def remove_option(self, *args, **kw):
         return self._config.remove_option(*args, **kw)
+
+
+def load_template(template, connection, user_dir=True):
+    # scan for specified template file
+    if not template.startswith('/'):
+        cwd_path = os.path.join(os.getcwd(), template)
+        if os.path.isfile(cwd_path):
+            template = cwd_path
+        else:
+            dirs = [
+                os.path.join(const.DATA_PATH, 'templates'),
+                os.path.join(const.DATA_PATH, 'templates', connection),
+            ]
+
+            if user_dir:
+                dirs.extend([
+                    os.path.join(const.USER_DATA_PATH, 'templates'),
+                    os.path.join(const.USER_DATA_PATH, 'templates', connection),
+                ])
+
+            templates = []
+            for d in (x for x in dirs if os.path.isdir(x)):
+                for p in os.listdir(d):
+                    f = os.path.join(d, p)
+                    if os.path.isfile(f):
+                        templates.append(f)
+
+            for x in templates:
+                if template == os.path.basename(x):
+                    template = x
+                    break
+            else:
+                raise BiteError(f'unknown template file: {template!r}')
+
+    template_conf = configparser.ConfigParser()
+    try:
+        # add a fake section so configparser doesn't complain
+        with open(template) as f:
+            template_string = '[fake_section]\n' + f.read()
+        template_conf.read_string(template_string)
+    except IOError as e:
+        raise BiteError(f'cannot load template file {e.filename!r}: {e.strerror}')
+
+    template_args = dict(template_conf.items('fake_section'))
+    return template_args

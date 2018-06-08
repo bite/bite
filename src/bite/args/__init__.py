@@ -187,7 +187,16 @@ class ReceiveSubcmd(RequestSubcmd):
             help='fields to output')
 
 
-class Search(ReceiveSubcmd):
+class TemplatedSubcmd(Subcmd):
+
+    def add_args(self):
+        super().add_args()
+        self.opts.add_argument(
+            '--template',
+            help='load options from a specified template')
+
+
+class Search(TemplatedSubcmd, ReceiveSubcmd):
 
     _name = 'search'
 
@@ -374,7 +383,7 @@ class Attach(SendSubcmd):
             help='a short description of the attachment (default: filename)')
 
 
-class Modify(SendSubcmd):
+class Modify(TemplatedSubcmd, SendSubcmd):
 
     _name = 'modify'
 
@@ -447,7 +456,7 @@ class Modify(SendSubcmd):
         return args
 
 
-class Create(SendSubcmd):
+class Create(TemplatedSubcmd, SendSubcmd):
 
     _name = 'create'
 
