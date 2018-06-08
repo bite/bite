@@ -246,7 +246,7 @@ class BaseSearchRequest(ParseRequest):
 
         @alias('modified')
         def created(self, k, v):
-            if isinstance(v, (str, tuple)):
+            if not isinstance(v, TimeInterval):
                 v = TimeInterval(v)
             start, end = v
             if start and end:

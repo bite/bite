@@ -135,7 +135,7 @@ class SearchRequest(URLParseRequest, CSVRequest, URLRequest):
 
         @alias('modified', 'due', 'closed')
         def created(self, k, v):
-            if isinstance(v, (str, tuple)):
+            if not isinstance(v, TimeInterval):
                 v = TimeInterval(v)
             start, end = v
             if start:

@@ -238,7 +238,7 @@ class _GetItemRequest(URLParseRequest, RedminePagedRequest):
 
         @alias('modified', 'closed')
         def created(self, k, v):
-            if isinstance(v, (str, tuple)):
+            if not isinstance(v, TimeInterval):
                 v = TimeInterval(v)
             start, end = v
             if start and end:
@@ -320,7 +320,7 @@ class _3_2GetItemRequest(_GetItemRequest):
 
         @alias('modified', 'closed')
         def created(self, k, v):
-            if isinstance(v, (str, tuple)):
+            if not isinstance(v, TimeInterval):
                 v = TimeInterval(v)
             start, end = v
             if start and end:
@@ -560,7 +560,7 @@ class _ElasticSearchRequest(_BaseSearchRequest):
 
         @alias('modified', 'closed')
         def created(self, k, v):
-            if isinstance(v, (str, tuple)):
+            if not isinstance(v, TimeInterval):
                 v = TimeInterval(v)
             start, end = v
             if start and end:

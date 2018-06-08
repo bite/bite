@@ -290,7 +290,7 @@ class _SearchRequest(URLParseRequest, JiraPagedRequest):
         @alias('modified', 'viewed', 'resolved')
         def created(self, k, v):
             field = self._date_fields.get(k, k)
-            if isinstance(v, (str, tuple)):
+            if not isinstance(v, TimeInterval):
                 v = TimeInterval(v)
             start, end = v
             if start is not None:

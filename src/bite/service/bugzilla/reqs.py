@@ -174,7 +174,7 @@ class SearchRequest5_0(SearchRequest4_4):
         @alias('modified')
         def created(self, k, v):
             field = 'creation_ts' if k == 'created' else 'delta_ts'
-            if isinstance(v, (str, tuple)):
+            if not isinstance(v, TimeInterval):
                 v = TimeInterval(v)
             start, end = v
             if start is not None:
@@ -207,7 +207,7 @@ class SearchRequest5_0(SearchRequest4_4):
 
         def changed(self, k, v):
             field, time = v
-            if isinstance(time, (str, tuple)):
+            if not isinstance(time, TimeInterval):
                 time = TimeInterval(time)
             start, end = time
             if start is not None:

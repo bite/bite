@@ -110,6 +110,9 @@ class TimeInterval(object):
             start = parse_date(start) if start else None
             end = parse_date(end) if end else None
             interval = (start, end)
+        # assume singular datetime obj input means that time or later
+        elif isinstance(interval, datetime):
+            interval = (interval, None)
 
         self.start, self.end = interval
 
