@@ -1,4 +1,8 @@
-import configparser
+from configparser import (
+    ConfigParser, InterpolationError, ExtendedInterpolation, MAX_INTERPOLATION_DEPTH,
+    InterpolationDepthError, InterpolationSyntaxError, NoSectionError, NoOptionError,
+    InterpolationMissingOptionError, DuplicateSectionError, DuplicateOptionError,
+)
 import os
 import re
 import shlex
@@ -13,11 +17,11 @@ from .exceptions import BiteError
 demandload('bite:const')
 
 
-class ConfigInterpolationError(configparser.InterpolationError):
+class ConfigInterpolationError(InterpolationError):
     pass
 
 
-class BiteInterpolation(configparser.ExtendedInterpolation):
+class BiteInterpolation(ExtendedInterpolation):
     """Modified version of ExtendedInterpolation.
 
     Uses %{option} for options local to the current section or default section
@@ -41,8 +45,8 @@ class BiteInterpolation(configparser.ExtendedInterpolation):
 
     def _interpolate_some(self, parser, option, accum, rest, section, map,
                           depth):
-        if depth > configparser.MAX_INTERPOLATION_DEPTH:
-            raise configparser.InterpolationDepthError(option, section, rest)
+        if depth > MAX_INTERPOLATION_DEPTH:
+            raise InterpolationDepthError(option, section, rest)
         while rest:
             p = rest.find("%")
             if p < 0:
@@ -59,7 +63,7 @@ class BiteInterpolation(configparser.ExtendedInterpolation):
             elif c == "{":
                 m = self._KEYCRE.match(rest)
                 if m is None:
-                    raise configparser.InterpolationSyntaxError(
+                    raise InterpolationSyntaxError(
                         option, section,
                         "bad interpolation variable reference %r" % rest)
                 path = m.group(1).split(':')
@@ -85,7 +89,7 @@ class BiteInterpolation(configparser.ExtendedInterpolation):
                                     msg = (
                                         f"{option}: {section} config section doesn't contain "
                                         f"{path[1]!r} (from config lookup '%{{{':'.join(path)}}}')")
-                                    raise configparser.InterpolationError(option, section, msg)
+                                    raise InterpolationError(option, section, msg)
                             elif not parser.raw:
                                 msg = (
                                     f"skipping alias {option!r} since config options "
@@ -100,11 +104,11 @@ class BiteInterpolation(configparser.ExtendedInterpolation):
                             opt = parser.optionxform(path[1])
                             v = parser.get(sect, opt, raw=True)
                     else:
-                        raise configparser.InterpolationSyntaxError(
+                        raise InterpolationSyntaxError(
                             option, section,
                             "More than one ':' found: %r" % (rest,))
-                except (KeyError, configparser.NoSectionError, configparser.NoOptionError):
-                    raise configparser.InterpolationMissingOptionError(
+                except (KeyError, NoSectionError, NoOptionError):
+                    raise InterpolationMissingOptionError(
                         option, section, rest, ":".join(path))
                 if "%" in v:
                     self._interpolate_some(parser, opt, accum, v, sect,
@@ -115,13 +119,13 @@ class BiteInterpolation(configparser.ExtendedInterpolation):
                         v = v[1:]
                     accum.append(v)
             else:
-                raise configparser.InterpolationSyntaxError(
+                raise InterpolationSyntaxError(
                     option, section,
                     "'%' must be followed by '%' or '{', "
                     "found: %r" % (rest,))
 
 
-class AliasConfigParser(configparser.ConfigParser):
+class AliasConfigParser(ConfigParser):
     """Alias config parser using our customized interpolation."""
 
     def __init__(self, *args, config_opts=None, raw=False, **kwargs):
@@ -155,7 +159,7 @@ class Aliases(object):
                 self._aliases.read(path)
         except IOError as e:
             raise BiteError(f'cannot load aliases file {e.filename!r}: {e.strerror}')
-        except (configparser.DuplicateSectionError, configparser.DuplicateOptionError) as e:
+        except (DuplicateSectionError, DuplicateOptionError) as e:
             raise BiteError(e)
 
     def substitute(self, unparsed_args, *,
@@ -186,14 +190,15 @@ class Aliases(object):
             if self._aliases.has_section(section):
                 try:
                     alias_cmd = self._aliases.get(section, alias_name, fallback=None)
-                except configparser.InterpolationError as e:
+                except InterpolationError as e:
                     raise BiteError(f'failed parsing alias: {e}')
                 if alias_cmd is not None:
                     break
         else:
             # finally fallback to checking global aliases
             try:
-                alias_cmd = self._aliases.get(self._aliases.default_section, alias_name, fallback=None)
+                alias_cmd = self._aliases.get(
+                    self._aliases.default_section, alias_name, fallback=None)
             except ConfigInterpolationError as e:
                 alias_cmd = None
             if alias_cmd is None:
