@@ -86,9 +86,9 @@ class Config(object):
 
         for service_dir in service_dirs:
             if connection is not None:
-                p = os.path.join(service_dir, connection)
-                if os.path.exists(p):
-                    yield p
+                conf = os.path.join(service_dir, connection)
+                if os.path.exists(conf):
+                    yield conf
             else:
                 for service_file in os.listdir(service_dir):
                     if not service_file.startswith('.'):
