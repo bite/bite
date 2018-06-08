@@ -38,17 +38,23 @@ def get_service_cls(service_name, options, fallbacks=()):
     return getattr(import_module(mod_name), cls_name)
 
 
-def get_service(connection):
-    """Return a service object for a configured service."""
+def get_service(connection, **kw):
+    """Return a service object for a configured service or generic service type."""
     # support getting passed service objects and service name strings
-    config = Config(connection=connection)
+    args = {}
+    try:
+        config = Config(connection=connection)
+        args.update(config.items(connection))
+        service_cls = get_service_cls(args['service'], const.SERVICES)
+    except BiteError:
+        # assume it's an actual service class name
+        try:
+            service_cls = get_service_cls(connection, const.SERVICES)
+        except BiteError:
+            raise BiteError(f'unknown connection or service name: {connection!r}') from None
 
-    if not config.has_section(connection):
-        raise BiteError(f'unknown connection: {connection!r}')
-
-    args = dict(config.items(connection))
-    service_obj = get_service_cls(args['service'], const.SERVICES)(**args)
-    return service_obj
+    args.update(kw)
+    return service_cls(**args)
 
 
 def service_classes(service_name):
