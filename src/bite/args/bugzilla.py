@@ -517,7 +517,7 @@ class Search5_0(Search, Bugzilla5_0Opts):
 
 
 class APIKeys(args.Subcmd, Bugzilla5_0Opts):
-    """generate, revoke, or list API keys"""
+    """list, generate, or (un)revoke API keys"""
 
     _name = 'apikeys'
 
