@@ -121,7 +121,7 @@ class _GetItemRequest(GetItemRequest, RESTRequest):
 
 @req_cmd(Bugzilla5_0Rest)
 class _LoginRequest(LoginRequest, RESTRequest):
-    """Construct an login request.
+    """Construct a login request.
 
     API docs: https://bugzilla.readthedocs.io/en/latest/api/core/v1/user.html#login
     """

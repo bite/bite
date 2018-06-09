@@ -22,12 +22,14 @@ class Bugzilla4_4Xmlrpc(_BugzillaXmlrpcBase, Bugzilla4_4Rpc):
     _service = 'bugzilla4.4-xmlrpc'
 
 
+# TODO: notify upstream that API docs link returns 404
 class Bugzilla5_0Xmlrpc(_BugzillaXmlrpcBase, Bugzilla5_0Rpc):
     """Service for Bugzilla 5.0 XML-RPC interface."""
 
     _service = 'bugzilla5.0-xmlrpc'
 
 
+# TODO: notify upstream that API docs link returns 404
 class BugzillaXmlrpc(_BugzillaXmlrpcBase, Bugzilla5_2Rpc):
     """Service for Bugzilla 5.2 XML-RPC interface."""
 

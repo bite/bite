@@ -1,3 +1,5 @@
+"""Generic support for Bugzilla's RPC interfaces."""
+
 from . import Bugzilla, Bugzilla5_0, Bugzilla5_2
 from .reqs import (
     SearchRequest4_4, SearchRequest5_0, ChangesRequest, CommentsRequest,
@@ -10,7 +12,10 @@ from .._rpc import RPCRequest
 
 
 class Bugzilla4_4Rpc(Bugzilla):
-    """Support bugzilla 4.4 RPC calls."""
+    """Support bugzilla 4.4 RPC calls.
+
+    API docs: https://www.bugzilla.org/docs/4.4/en/html/api/Bugzilla/WebService.html
+    """
 
 
 class Bugzilla5_0Rpc(Bugzilla4_4Rpc, Bugzilla5_0):
@@ -23,36 +28,66 @@ class Bugzilla5_2Rpc(Bugzilla5_0Rpc, Bugzilla5_2):
 
 @req_cmd(Bugzilla4_4Rpc)
 class _LoginRequest(LoginRequest, RPCRequest):
+    """Construct a login request.
+
+    API docs: https://www.bugzilla.org/docs/4.4/en/html/api/Bugzilla/WebService/User.html#login
+    """
+
     def __init__(self, **kw):
         super().__init__(command='User.login', **kw)
 
 
 @req_cmd(Bugzilla4_4Rpc, cmd='users')
 class _UsersRequest(UsersRequest, RPCRequest):
+    """Construct a users request.
+
+    API docs: https://www.bugzilla.org/docs/4.4/en/html/api/Bugzilla/WebService/User.html#get
+    """
+
     def __init__(self, **kw):
         super().__init__(command='User.get', **kw)
 
 
 @req_cmd(Bugzilla4_4Rpc, cmd='fields')
 class _FieldsRequest(FieldsRequest, RPCRequest):
+    """Construct a fields request.
+
+    API docs: https://www.bugzilla.org/docs/4.4/en/html/api/Bugzilla/WebService/Bug.html#fields
+    """
+
     def __init__(self, **kw):
         super().__init__(command='Bug.fields', **kw)
 
 
 @req_cmd(Bugzilla4_4Rpc, cmd='products')
 class _ProductsRequest(ProductsRequest, RPCRequest):
+    """Construct a product request.
+
+    API docs: https://www.bugzilla.org/docs/4.4/en/html/api/Bugzilla/WebService/Product.html#get
+    """
+
     def __init__(self, **kw):
         super().__init__(command='Product.get', **kw)
 
 
 @req_cmd(Bugzilla4_4Rpc, cmd='extensions')
 class _ExtensionsRequest(ExtensionsRequest, RPCRequest):
+    """Construct an extensions request.
+
+    API docs: https://www.bugzilla.org/docs/4.4/en/html/api/Bugzilla/WebService/Bugzilla.html#extensions
+    """
+
     def __init__(self, **kw):
         super().__init__(command='Bugzilla.extensions', **kw)
 
 
 @req_cmd(Bugzilla4_4Rpc, cmd='version')
 class _VersionRequest(VersionRequest, RPCRequest):
+    """Construct a version request.
+
+    API docs: https://www.bugzilla.org/docs/4.4/en/html/api/Bugzilla/WebService/Bugzilla.html#version
+    """
+
     def __init__(self, **kw):
         super().__init__(command='Bugzilla.version', **kw)
 
