@@ -14,7 +14,7 @@ from .._reqs import (
 from ...exceptions import BiteError
 from ...objects import TimeInterval
 
-demandload('bite:const')
+demandload('bite:const,magic')
 
 
 @req_cmd(Bugzilla, cmd='get')
@@ -409,6 +409,9 @@ class ModifyRequest(ParseRequest):
             if not ids:
                 raise ValueError('No bug ID(s) specified')
 
+            if 'alias' in self.params and len(ids) > 1:
+                raise ValueError('unable to set aliases on multiple bugs at once')
+
             if not self.params:
                 raise ValueError('No changes specified')
 
@@ -463,9 +466,6 @@ class ModifyRequest(ParseRequest):
         # fields that can be added, removed, or set
         @alias('alias', 'blocks', 'depends', 'keywords')
         def _add_remove_set(self, k, v):
-            if k == 'alias' and len(ids) > 1:
-                raise ValueError('unable to set aliases on multiple bugs at once')
-
             # fields supporting add/remove/set actions
             try:
                 remove, set, add = v
@@ -626,8 +626,8 @@ class CreateRequest(ParseRequest):
             self.options.append(f"Assigned to: {self.service._desuffix(v)}")
 
         def cc(self, k, v):
-            self.params[k] = list(map(service._resuffix, v))
-            self.options.append(f"CC: {', '.join(map(service._desuffix, v))}")
+            self.params[k] = list(map(self.service._resuffix, v))
+            self.options.append(f"CC: {', '.join(map(self.service._desuffix, v))}")
 
         def milestone(self, k, v):
             self.params[k] = v
