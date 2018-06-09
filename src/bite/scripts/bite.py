@@ -72,9 +72,11 @@ single_auth_opts.add_argument(
 single_auth_opts.add_argument(
     '-u', '--user',
     help='username for authentication')
-auth_opts.add_argument('-p', '--password',
+auth_opts.add_argument(
+    '-p', '--password',
     help='password for authentication')
-single_auth_opts.add_argument('-a', '--auth-token',
+single_auth_opts.add_argument(
+    '-a', '--auth-token',
     help='use the specified token for authentication')
 single_auth_opts.add_argument(
     '--auth-file',
@@ -149,7 +151,7 @@ def _ls(options, out, err):
 
 
 @cache.bind_final_check
-def _validate_args(parser, namespace):
+def _cache_validate_args(parser, namespace):
     if not namespace.update and not namespace.remove:
         cache.error('either -u/--update or -r/--remove must be specified')
 
