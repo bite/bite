@@ -147,12 +147,11 @@ def load_template(template, connection, user_dir=True):
 
     template_conf = configparser.ConfigParser()
     try:
-        # add a fake section so configparser doesn't complain
         with open(template) as f:
-            template_string = '[fake_section]\n' + f.read()
-        template_conf.read_string(template_string)
+            # add a fake section so configparser doesn't complain
+            template_conf.read_string('[template]\n' + f.read())
     except IOError as e:
         raise BiteError(f'cannot load template file {e.filename!r}: {e.strerror}')
 
-    template_args = dict(template_conf.items('fake_section'))
+    template_args = dict(template_conf.items('template'))
     return template_args
