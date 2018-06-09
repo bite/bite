@@ -178,245 +178,247 @@ class Bugzilla(Service):
             super()._failed_http_response(response)
 
 
+class _ApiKeys(object):
+    """Provide access to web service API keys."""
+
+    _ApiKey = namedtuple("_ApiKey", ['key', 'desc', 'used', 'revoked'])
+
+    def __init__(self, service):
+        self._service = service
+        self._userprefs_url = f"{self._service.base.rstrip('/')}/userprefs.cgi"
+        self._doc = None
+
+    @property
+    def _keys(self):
+        with self._service.web_session() as session:
+            # get the apikeys page
+            r = session.get(f'{self._userprefs_url}?tab=apikey')
+            self._doc = lxml.html.fromstring(r.text)
+            # verify API keys table still has the same id
+            table = self._doc.xpath('//table[@id="email_prefs"]')
+            if not table:
+                raise RequestError('failed to extract API keys table')
+
+            # extract API key info from table
+            apikeys = self._doc.xpath('//table[@id="email_prefs"]/tr/td[1]/text()')
+            descriptions = self._doc.xpath('//table[@id="email_prefs"]/tr/td[2]/input/@value')
+            last_used = self._doc.xpath('//table[@id="email_prefs"]/tr/td[3]//text()')
+            revoked = self._doc.xpath('//table[@id="email_prefs"]/tr/td[4]/input')
+            revoked = [bool(getattr(x, 'checked', False)) for x in revoked]
+
+            existing_keys = []
+            for desc, key, used, revoked in zip(descriptions, apikeys, last_used, revoked):
+                if used != 'never used':
+                    used = parsetime(used)
+                existing_keys.append(self._ApiKey(key, desc, used, revoked))
+
+        return existing_keys
+
+    def __iter__(self):
+        return iter(self._keys)
+
+    def generate(self, description=None):
+        """Generate API keys."""
+        with self._service.web_session() as session:
+            # check for existing keys with matching descriptions
+            try:
+                match = next(k for k in self if k.desc == description)
+                if not self._service.client.confirm(
+                        f'{description!r} key already exists, continue?'):
+                    return
+            except StopIteration:
+                pass
+
+            params = {f'description_{i + 1}': x.desc for i, x in enumerate(self)}
+            # add new key fields
+            params.update({
+                'new_key': 'on',
+                'new_description': description,
+            })
+
+            r = session.post(self._userprefs_url, data=self._add_form_params(params))
+            self._verify_changes(r)
+
+    def _verify_changes(self, response):
+        """Verify that apikey changes worked as expected."""
+        doc = lxml.html.fromstring(response.text)
+        msg = doc.xpath('//div[@id="message"]/text()')[0].strip()
+        if msg != 'The changes to your api keys have been saved.':
+            raise RequestError('failed generating apikey', text=msg)
+
+    def _add_form_params(self, params):
+        """Extract required token data from apikey generation form."""
+        apikeys_form = self._doc.xpath('//form[@name="userprefsform"]/input')
+        if not apikeys_form:
+            raise BugzillaError('missing form data')
+        for x in apikeys_form:
+            params[x.name] = x.value
+        return params
+
+    def revoke(self, disable=(), enable=()):
+        """Revoke and/or unrevoke API keys."""
+        with self._service.web_session() as session:
+            params = {}
+            for i, x in enumerate(self):
+                params[f'description_{i + 1}'] = x.desc
+                if x.revoked:
+                    if x.key in enable or x.desc in enable:
+                        params[f'revoked_{i + 1}'] = 0
+                    else:
+                        # have to resubmit already revoked keys
+                        params[f'revoked_{i + 1}'] = 1
+                if x.key in disable or x.desc in disable:
+                    params[f'revoked_{i + 1}'] = 1
+
+            r = session.post(self._userprefs_url, data=self._add_form_params(params))
+            self._verify_changes(r)
+
+
+class _SavedSearches(object):
+    """Provide access to web service saved searches."""
+
+    def __init__(self, service):
+        self._service = service
+        self._userprefs_url = f"{self._service.base.rstrip('/')}/userprefs.cgi"
+        self._search_url = f"{self._service.base.rstrip('/')}/buglist.cgi"
+        self._doc = None
+
+    @jit_attr_none
+    def _searches(self):
+        with self._service.web_session() as session:
+            # get the saved searches page
+            r = session.get(f'{self._userprefs_url}?tab=saved-searches')
+            self._doc = lxml.html.fromstring(r.text)
+
+            existing_searches = {}
+
+            # Scan for both personal and shared searches, personal searches
+            # override shared if names collide.
+            for table in ('shared_search_prefs', 'saved_search_prefs'):
+                # verify saved search table exists, shared searches might not
+                if (table == 'saved_search_prefs' and
+                        not self._doc.xpath(f'//table[@id="{table}"]')):
+                    raise RequestError('failed to extract saved search table')
+
+                # extract saved searches from tables
+                names = self._doc.xpath(f'//table[@id="{table}"]/tr/td[1]/text()')
+                # determine the column number pull elements from it
+                edit_col_num = len(self._doc.xpath(
+                    f'//table[@id="{table}"]/tr/th[.="Edit"][1]/preceding-sibling::th')) + 1
+                query_col = self._doc.xpath(
+                    f'//table[@id="{table}"]/tr/td[{edit_col_num}]')
+                forget_col_num = len(self._doc.xpath(
+                    f'//table[@id="{table}"]/tr/th[.="Forget"][1]/preceding-sibling::th')) + 1
+                forget_col = self._doc.xpath(
+                    f'//table[@id="{table}"]/tr/td[{forget_col_num}]')
+
+                for i, (q, f) in enumerate(zip(query_col, forget_col)):
+                    # find the query edit/forget links
+                    query = tuple(q.iterlinks())
+                    forget = tuple(f.iterlinks())
+                    query = query[0][2] if query else None
+                    forget = forget[0][2] if forget else None
+
+                    # skip the default "My Bugs" search which is uneditable
+                    # and not removable
+                    if query is not None:
+                        if forget is not None:
+                            forget = forget.split('?', 1)[1]
+                        query = query.split('?', 1)[1]
+                        existing_searches[names[i].strip()] = {
+                            'query': query,
+                            'forget': forget,
+                        }
+
+        return ImmutableDict(existing_searches)
+
+    def save(self, name, data):
+        """Save a given search."""
+        if isinstance(data, str):
+            base, _url_params = data.split('?', 1)
+            if base != self._search_url:
+                raise RequestError(f'invalid advanced search URL: {data!r}')
+            search_url = data
+        else:
+            if not data:
+                raise RequestError('missing search parameters')
+            search_url = f"{self._search_url}?{urlencode(data)}"
+
+        with self._service.web_session() as session:
+            r = session.get(search_url)
+            doc = lxml.html.fromstring(r.text)
+
+            # extract saved search form params
+            save_search = doc.xpath(
+                '//div[@class="bz_query_remember"]/form/input[@type="hidden"]')
+            if not save_search:
+                raise BugzillaError('missing save search option')
+
+            params = {}
+            for x in save_search:
+                params[x.name] = x.value
+            params['newqueryname'] = name
+
+            r = session.get(self._search_url, params=params)
+            doc = lxml.html.fromstring(r.text)
+            msg = doc.xpath('//div[@id="bugzilla-body"]/div//a/text()')
+            if not msg or msg[0] != name:
+                raise RequestError(f'failed saving search: {name!r}')
+
+        # reset jitted attr to force refresh
+        self.__searches = None
+
+    def remove(self, names):
+        """Remove a given saved search."""
+        searches = dict(self._searches.items())
+        removals = []
+        for name in names:
+            search = searches.get(name)
+            if search is None:
+                raise RequestError(f'nonexistent saved search: {name!r}')
+            forget = search['forget']
+            if forget is None:
+                raise RequestError(f'unable to remove saved search: {name!r}')
+            removals.append(f"{self._search_url}?{forget}")
+
+        # TODO: send these reqs in parallel
+        with self._service.web_session() as session:
+            for name, remove_url in zip(names, removals):
+                r = session.get(remove_url)
+                doc = lxml.html.fromstring(r.text)
+                msg = doc.xpath('//div[@id="bugzilla-body"]/div/b/text()')
+                if not msg or msg[0] != name:
+                    raise RequestError(f'failed removing search: {name!r}')
+
+        # reset jitted attr to force refresh
+        self.__searches = None
+
+    def __iter__(self):
+        return iter(self._searches)
+
+    def __contains__(self, name):
+        return name in self._searches
+
+    def get(self, name, default=None):
+        return self._searches.get(name, default)
+
+    def items(self):
+        return self._searches.items()
+
+    def keys(self):
+        return self._searches.keys()
+
+    def values(self):
+        return self._searches.values()
+
+
 class Bugzilla5_0(Bugzilla):
     """Generic bugzilla 5.0 service support."""
 
     def __init__(self, **kw):
         super().__init__(**kw)
-        self.apikeys = self.ApiKeys(self)
-        self.saved_searches = self.SavedSearches(self)
-
-    class ApiKeys(object):
-        """Provide access to web service API keys."""
-
-        _ApiKey = namedtuple("_ApiKey", ['key', 'desc', 'used', 'revoked'])
-
-        def __init__(self, service):
-            self._service = service
-            self._userprefs_url = f"{self._service.base.rstrip('/')}/userprefs.cgi"
-            self._doc = None
-
-        @property
-        def _keys(self):
-            with self._service.web_session() as session:
-                # get the apikeys page
-                r = session.get(f'{self._userprefs_url}?tab=apikey')
-                self._doc = lxml.html.fromstring(r.text)
-                # verify API keys table still has the same id
-                table = self._doc.xpath('//table[@id="email_prefs"]')
-                if not table:
-                    raise RequestError('failed to extract API keys table')
-
-                # extract API key info from table
-                apikeys = self._doc.xpath('//table[@id="email_prefs"]/tr/td[1]/text()')
-                descriptions = self._doc.xpath('//table[@id="email_prefs"]/tr/td[2]/input/@value')
-                last_used = self._doc.xpath('//table[@id="email_prefs"]/tr/td[3]//text()')
-                revoked = self._doc.xpath('//table[@id="email_prefs"]/tr/td[4]/input')
-                revoked = [bool(getattr(x, 'checked', False)) for x in revoked]
-
-                existing_keys = []
-                for desc, key, used, revoked in zip(descriptions, apikeys, last_used, revoked):
-                    if used != 'never used':
-                        used = parsetime(used)
-                    existing_keys.append(self._ApiKey(key, desc, used, revoked))
-
-            return existing_keys
-
-        def __iter__(self):
-            return iter(self._keys)
-
-        def generate(self, description=None):
-            """Generate API keys."""
-            with self._service.web_session() as session:
-                # check for existing keys with matching descriptions
-                try:
-                    match = next(k for k in self if k.desc == description)
-                    if not self._service.client.confirm(
-                            f'{description!r} key already exists, continue?'):
-                        return
-                except StopIteration:
-                    pass
-
-                params = {f'description_{i + 1}': x.desc for i, x in enumerate(self)}
-                # add new key fields
-                params.update({
-                    'new_key': 'on',
-                    'new_description': description,
-                })
-
-                r = session.post(self._userprefs_url, data=self._add_form_params(params))
-                self._verify_changes(r)
-
-        def _verify_changes(self, response):
-            """Verify that apikey changes worked as expected."""
-            doc = lxml.html.fromstring(response.text)
-            msg = doc.xpath('//div[@id="message"]/text()')[0].strip()
-            if msg != 'The changes to your api keys have been saved.':
-                raise RequestError('failed generating apikey', text=msg)
-
-        def _add_form_params(self, params):
-            """Extract required token data from apikey generation form."""
-            apikeys_form = self._doc.xpath('//form[@name="userprefsform"]/input')
-            if not apikeys_form:
-                raise BugzillaError('missing form data')
-            for x in apikeys_form:
-                params[x.name] = x.value
-            return params
-
-        def revoke(self, disable=(), enable=()):
-            """Revoke and/or unrevoke API keys."""
-            with self._service.web_session() as session:
-                params = {}
-                for i, x in enumerate(self):
-                    params[f'description_{i + 1}'] = x.desc
-                    if x.revoked:
-                        if x.key in enable or x.desc in enable:
-                            params[f'revoked_{i + 1}'] = 0
-                        else:
-                            # have to resubmit already revoked keys
-                            params[f'revoked_{i + 1}'] = 1
-                    if x.key in disable or x.desc in disable:
-                        params[f'revoked_{i + 1}'] = 1
-
-                r = session.post(self._userprefs_url, data=self._add_form_params(params))
-                self._verify_changes(r)
-
-    class SavedSearches(object):
-        """Provide access to web service saved searches."""
-
-        def __init__(self, service):
-            self._service = service
-            self._userprefs_url = f"{self._service.base.rstrip('/')}/userprefs.cgi"
-            self._search_url = f"{self._service.base.rstrip('/')}/buglist.cgi"
-            self._doc = None
-
-        @jit_attr_none
-        def _searches(self):
-            with self._service.web_session() as session:
-                # get the saved searches page
-                r = session.get(f'{self._userprefs_url}?tab=saved-searches')
-                self._doc = lxml.html.fromstring(r.text)
-
-                existing_searches = {}
-
-                # Scan for both personal and shared searches, personal searches
-                # override shared if names collide.
-                for table in ('shared_search_prefs', 'saved_search_prefs'):
-                    # verify saved search table exists, shared searches might not
-                    if (table == 'saved_search_prefs' and
-                            not self._doc.xpath(f'//table[@id="{table}"]')):
-                        raise RequestError('failed to extract saved search table')
-
-                    # extract saved searches from tables
-                    names = self._doc.xpath(f'//table[@id="{table}"]/tr/td[1]/text()')
-                    # determine the column number pull elements from it
-                    edit_col_num = len(self._doc.xpath(
-                        f'//table[@id="{table}"]/tr/th[.="Edit"][1]/preceding-sibling::th')) + 1
-                    query_col = self._doc.xpath(
-                        f'//table[@id="{table}"]/tr/td[{edit_col_num}]')
-                    forget_col_num = len(self._doc.xpath(
-                        f'//table[@id="{table}"]/tr/th[.="Forget"][1]/preceding-sibling::th')) + 1
-                    forget_col = self._doc.xpath(
-                        f'//table[@id="{table}"]/tr/td[{forget_col_num}]')
-
-                    for i, (q, f) in enumerate(zip(query_col, forget_col)):
-                        # find the query edit/forget links
-                        query = tuple(q.iterlinks())
-                        forget = tuple(f.iterlinks())
-                        query = query[0][2] if query else None
-                        forget = forget[0][2] if forget else None
-
-                        # skip the default "My Bugs" search which is uneditable
-                        # and not removable
-                        if query is not None:
-                            if forget is not None:
-                                forget = forget.split('?', 1)[1]
-                            query = query.split('?', 1)[1]
-                            existing_searches[names[i].strip()] = {
-                                'query': query,
-                                'forget': forget,
-                            }
-
-            return ImmutableDict(existing_searches)
-
-        def save(self, name, data):
-            """Save a given search."""
-            if isinstance(data, str):
-                base, _url_params = data.split('?', 1)
-                if base != self._search_url:
-                    raise RequestError(f'invalid advanced search URL: {v!r}')
-                search_url = data
-            else:
-                if not data:
-                    raise RequestError('missing search parameters')
-                search_url = f"{self._search_url}?{urlencode(data)}"
-
-            with self._service.web_session() as session:
-                r = session.get(search_url)
-                doc = lxml.html.fromstring(r.text)
-
-                # extract saved search form params
-                save_search = doc.xpath(
-                    '//div[@class="bz_query_remember"]/form/input[@type="hidden"]')
-                if not save_search:
-                    raise BugzillaError('missing save search option')
-
-                params = {}
-                for x in save_search:
-                    params[x.name] = x.value
-                params['newqueryname'] = name
-
-                r = session.get(self._search_url, params=params)
-                doc = lxml.html.fromstring(r.text)
-                msg = doc.xpath('//div[@id="bugzilla-body"]/div//a/text()')
-                if not msg or msg[0] != name:
-                    raise RequestError(f'failed saving search: {name!r}')
-
-            # reset jitted attr to force refresh
-            self.__searches = None
-
-        def remove(self, names):
-            """Remove a given saved search."""
-            searches = dict(self._searches.items())
-            removals = []
-            for name in names:
-                search = searches.get(name)
-                if search is None:
-                    raise RequestError(f'nonexistent saved search: {name!r}')
-                forget = search['forget']
-                if forget is None:
-                    raise RequestError(f'unable to remove saved search: {name!r}')
-                removals.append(f"{self._search_url}?{forget}")
-
-            # TODO: send these reqs in parallel
-            with self._service.web_session() as session:
-                for name, remove_url in zip(names, removals):
-                    r = session.get(remove_url)
-                    doc = lxml.html.fromstring(r.text)
-                    msg = doc.xpath('//div[@id="bugzilla-body"]/div/b/text()')
-                    if not msg or msg[0] != name:
-                        raise RequestError(f'failed removing search: {name!r}')
-
-            # reset jitted attr to force refresh
-            self.__searches = None
-
-        def __iter__(self):
-            return iter(self._searches)
-
-        def __contains__(self, name):
-            return name in self._searches
-
-        def get(self, name, default=None):
-            return self._searches.get(name, default)
-
-        def items(self):
-            return self._searches.items()
-
-        def keys(self):
-            return self._searches.keys()
-
-        def values(self):
-            return self._searches.values()
+        self.apikeys = _ApiKeys(self)
+        self.saved_searches = _SavedSearches(self)
 
 
 class Bugzilla5_2(Bugzilla5_0):
