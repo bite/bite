@@ -121,8 +121,6 @@ class TracScraperRSSComment(TracComment):
 
 class TracScraperRSSAttachment(TracAttachment):
 
-    _xml_namespace = {'dc': "http://purl.org/dc/elements/1.1/"}
-
     @classmethod
     def parse(cls, data):
         for id, tree in data:
@@ -139,8 +137,6 @@ class TracScraperRSSAttachment(TracAttachment):
 
 
 class TracScraperRSSEvent(TracEvent):
-
-    _xml_namespace = {'dc': "http://purl.org/dc/elements/1.1/"}
 
     @classmethod
     def parse(cls, data):
@@ -339,8 +335,6 @@ class _GetItemRequest(_SearchRequestCSV):
 @req_cmd(TracScraperCSV, name='_ChangelogRequest')
 class _ChangelogRequest(Request):
     """Construct a changelog request pulling the RSS comments feed."""
-
-    _xml_namespace = {'dc': "http://purl.org/dc/elements/1.1/"}
 
     def __init__(self, ids=None, data=None, **kw):
         super().__init__(**kw)
