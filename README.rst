@@ -32,7 +32,7 @@ Services
 
 To view the list of supported bug, issue, and ticket trackers, run::
 
-    bite ls services
+    bite services
 
 These service IDs can be used to connect to unconfigured services directly on
 the command-line similar to::
@@ -49,7 +49,7 @@ named connections so the previous command can be more easily run as::
 
 To see the list of preconfigured trackers use::
 
-    bite ls connections
+    bite connections
 
 Installing
 ==========

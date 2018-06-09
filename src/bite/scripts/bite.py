@@ -89,12 +89,15 @@ auth_opts.add_argument(
 service_specific_opts = argparser.add_argument_group('Service specific options')
 
 subparsers = argparser.add_subparsers()
-ls = subparsers.add_parser('ls', description='list various config info')
-ls.add_argument(
-    'item', choices=('aliases', 'connections', 'services'),
-    help='items to list')
+aliases = subparsers.add_parser(
+    'aliases', description='view available aliases')
+connections = subparsers.add_parser(
+    'connections', description='view available connections')
+services = subparsers.add_parser(
+    'services', description='view available services')
 
-cache = subparsers.add_parser('cache', description='various cache related options')
+cache = subparsers.add_parser(
+    'cache', description='various cache related options')
 cache.add_argument(
     'connections', nargs='*', metavar='connection',
     help='connection cache(s) to update')
@@ -124,29 +127,35 @@ def get_cli(args):
     return client, fcn_args
 
 
-@ls.bind_main_func
-def _ls(options, out, err):
-    if options.item == 'aliases':
-        aliases = Aliases(raw=True)
-        section = options.connection if options.connection else 'DEFAULT'
-        for name, value in aliases.items(section):
-            if options.verbose:
-                out.write(f'{name}: {value}')
-            else:
-                out.write(name)
-    elif options.item == 'connections':
-        # load all service connections
-        config = Config(connection=None)
-        for connection in sorted(config.sections()):
-            if options.verbose:
-                out.write(f'[{connection}]')
-                for (name, value) in config.items(connection):
-                    out.write(f'  {name}: {value}')
-            else:
-                out.write(connection)
-    elif options.item == 'services':
-        out.write('\n'.join(sorted(const.SERVICES)))
+@aliases.bind_main_func
+def _aliases(options, out, err):
+    aliases = Aliases(raw=True)
+    section = options.connection if options.connection else 'DEFAULT'
+    for name, value in aliases.items(section):
+        if options.verbose:
+            out.write(f'{name}: {value}')
+        else:
+            out.write(name)
+    return 0
 
+
+@connections.bind_main_func
+def _connections(options, out, err):
+    # load all service connections
+    config = Config(connection=None)
+    for connection in sorted(config.sections()):
+        if options.verbose:
+            out.write(f'[{connection}]')
+            for (name, value) in config.items(connection):
+                out.write(f'  {name}: {value}')
+        else:
+            out.write(connection)
+    return 0
+
+
+@services.bind_main_func
+def _services(options, out, err):
+    out.write('\n'.join(sorted(const.SERVICES)))
     return 0
 
 
