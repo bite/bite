@@ -121,24 +121,44 @@ class _GetItemRequest(GetItemRequest, RESTRequest):
 
 @req_cmd(Bugzilla5_0Rest)
 class _LoginRequest(LoginRequest, RESTRequest):
+    """Construct an login request.
+
+    API docs: https://bugzilla.readthedocs.io/en/latest/api/core/v1/user.html#login
+    """
+
     def __init__(self, **kw):
         super().__init__(endpoint='/login', **kw)
 
 
 @req_cmd(Bugzilla5_0Rest, cmd='extensions')
 class _ExtensionsRequest(ExtensionsRequest, RESTRequest):
+    """Construct an extensions request.
+
+    API docs: https://bugzilla.readthedocs.io/en/latest/api/core/v1/bugzilla.html#extensions
+    """
+
     def __init__(self, **kw):
         super().__init__(endpoint='/extensions', **kw)
 
 
 @req_cmd(Bugzilla5_0Rest, cmd='version')
 class _VersionRequest(VersionRequest, RESTRequest):
+    """Construct a version request.
+
+    API docs: https://bugzilla.readthedocs.io/en/latest/api/core/v1/bugzilla.html#version
+    """
+
     def __init__(self, **kw):
         super().__init__(endpoint='/version', **kw)
 
 
 @req_cmd(Bugzilla5_0Rest, cmd='fields')
 class _FieldsRequest(FieldsRequest, RESTRequest):
+    """Construct a fields request.
+
+    API docs: https://bugzilla.readthedocs.io/en/latest/api/core/v1/field.html#fields
+    """
+
     def __init__(self, **kw):
         super().__init__(endpoint='/field/bug', **kw)
         # use the first parameter for the base url then add any leftovers
@@ -150,11 +170,21 @@ class _FieldsRequest(FieldsRequest, RESTRequest):
 
 @req_cmd(Bugzilla5_0Rest, cmd='products')
 class _ProductsRequest(ProductsRequest, RESTRequest):
+    """Construct a products request.
+
+    API docs: https://bugzilla.readthedocs.io/en/latest/api/core/v1/product.html#get-product
+    """
+
     def __init__(self, **kw):
         super().__init__(endpoint='/product', **kw)
 
 
 @req_cmd(Bugzilla5_0Rest, cmd='users')
 class _UsersRequest(UsersRequest, RESTRequest):
+    """Construct a users request.
+
+    API docs: https://bugzilla.readthedocs.io/en/latest/api/core/v1/user.html#get-user
+    """
+
     def __init__(self, **kw):
         super().__init__(endpoint='/user', **kw)
