@@ -1,3 +1,4 @@
+from functools import partial
 from importlib import import_module
 import os
 from shutil import get_terminal_size
@@ -64,44 +65,20 @@ def _service_cls(x):
     return False
 
 
-def _clients():
-    from . import client as mod
-    clients = []
-    for imp, name, _ in pkgutil.walk_packages(mod.__path__, mod.__name__ + '.'):
+def _find_service_classes(module_name, matcher=_service_cls):
+    module = import_module(f'.{module_name}', __title__)
+    classes = []
+    for imp, name, _ in pkgutil.walk_packages(module.__path__, module.__name__ + '.'):
+        # skip "private" modules
+        if name.rsplit('.', 1)[1][0] == '_':
+            continue
         try:
-            module = import_module(name)
+            m = import_module(name)
         except ImportError as e:
             raise Exception(f'failed importing {name!r}: {e}')
-        for name, cls in inspect.getmembers(module, _service_cls):
-            clients.append((cls._service, '.'.join([module.__name__, cls.__name__])))
-    return clients
-
-
-def _services():
-    from . import service as mod
-    services = []
-    for imp, name, _ in pkgutil.walk_packages(mod.__path__, mod.__name__ + '.'):
-        try:
-            module = import_module(name)
-        except ImportError as e:
-            raise Exception(f'failed importing {name!r}: {e}')
-        for name, cls in inspect.getmembers(module, _service_cls):
-            services.append((cls._service, '.'.join([module.__name__, cls.__name__])))
-    return services
-
-
-def _service_opts():
-    from . import args as mod
-    opts = []
-    service_opts_cls = lambda x: _service_cls(x) and not issubclass(x, mod.Subcmd)
-    for imp, name, _ in pkgutil.walk_packages(mod.__path__, mod.__name__ + '.'):
-        try:
-            module = import_module(name)
-        except ImportError as e:
-            raise Exception(f'failed importing {name!r}: {e}')
-        for name, cls in inspect.getmembers(module, service_opts_cls):
-            opts.append((cls._service, '.'.join([module.__name__, cls.__name__])))
-    return opts
+        for name, cls in inspect.getmembers(m, matcher):
+            classes.append((cls._service, '.'.join([m.__name__, cls.__name__])))
+    return classes
 
 
 def _GET_VALS(attr, func):
@@ -113,8 +90,11 @@ def _GET_VALS(attr, func):
 
 
 try:
-    CLIENTS = mappings.ImmutableDict(_GET_VALS('CLIENTS', _clients))
-    SERVICES = mappings.ImmutableDict(_GET_VALS('SERVICES', _services))
-    SERVICE_OPTS = mappings.ImmutableDict(_GET_VALS('SERVICE_OPTS', _service_opts))
+    CLIENTS = mappings.ImmutableDict(_GET_VALS(
+        'CLIENTS', partial(_find_service_classes, 'client')))
+    SERVICES = mappings.ImmutableDict(_GET_VALS(
+        'SERVICES', partial(_find_service_classes, 'service')))
+    SERVICE_OPTS = mappings.ImmutableDict(_GET_VALS(
+        'SERVICE_OPTS', partial(_find_service_classes, 'args')))
 except SyntaxError as e:
     raise SyntaxError(f'invalid syntax: {e.filename}, line {e.lineno}')
