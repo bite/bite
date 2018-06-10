@@ -19,6 +19,7 @@ demandload('bite:const')
 class Subcmd(object):
 
     _name = None
+    _service = None
 
     def __init__(self, parser, service, global_opts):
         self.service = service
