@@ -13,24 +13,22 @@ demandload(
 
 def get_service_cls(service_name, options, fallbacks=()):
     """Return the class for a given, supported service type."""
-    # support getting passed service objects and service name strings
-    if isinstance(service_name, service.Service):
+    # support getting passed service objects, service name strings, and raw
+    # class objects
+    if isinstance(service_name, type):
+        return service_name
+    elif isinstance(service_name, service.Service):
         service_name = getattr(service_name, '_service')
 
     try:
         mod_name, cls_name = options[service_name].rsplit('.', 1)
     except KeyError:
-        for i, fallback in enumerate(fallbacks, start=1):
-            # if fallback is a class, use it
-            if isinstance(fallback, type):
-                return fallback
-            # if fallback is True, inject service fallbacks automatically
-            elif fallback is True and not any((x is True for x in fallbacks[i:])):
-                fallbacks = tuple(service_classes(service_name))[1:] + tuple(fallbacks[i:])
-                return get_service_cls(fallbacks[0], options, fallbacks=fallbacks[1:])
-            # otherwise try to find matching fallback class
-            elif isinstance(fallback, str):
-                return get_service_cls(fallback, options, fallbacks=fallbacks[i:])
+        if fallbacks:
+            # if initial fallback value is True, inject service fallbacks automatically
+            if fallbacks[0] is True and not any((x is True for x in fallbacks[1:])):
+                fallbacks = tuple(service_classes(service_name))[1:] + tuple(fallbacks[1:])
+            # try to find a matching, existing fallback class
+            return get_service_cls(fallbacks[0], options, fallbacks=fallbacks[1:])
         raise BiteError(
             f'invalid service: {service_name!r}\n'
             f"(available services: {', '.join(sorted(options))})")
