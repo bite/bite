@@ -61,10 +61,9 @@ class TracScraperTicket(TracTicket):
 class _TracScraperXMLItem(object):
     """RSS event feed items."""
 
-    _xml_namespace = {'dc': "http://purl.org/dc/elements/1.1/"}
-
     def __init__(self, el):
         self._el = el
+        self._namespaces = self._el.nsmap
 
     @property
     def title(self):
@@ -74,7 +73,7 @@ class _TracScraperXMLItem(object):
     def creator(self):
         # extract comment creator
         try:
-            creator = self._el.xpath('./dc:creator/text()', namespaces=self._xml_namespace)[0]
+            creator = self._el.xpath('./dc:creator/text()', namespaces=self._namespaces)[0]
         except IndexError:
             try:
                 creator = self._el.xpath('./author/text()')[0]
