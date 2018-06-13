@@ -237,7 +237,7 @@ class _SearchRequest(URLParseRequest, LaunchpadPagedRequest):
         # launchpad doesn't support time intervals for modified args
         def modified(self, k, v):
             self.params[f'{k}_since'] = v.isoformat()
-            self.options.append(f'{k.capitalize()}: {v}')
+            self.options.append(f'{k.capitalize()}: {v} or later')
 
         @alias('has_patch')
         def has_cve(self, k, v):
