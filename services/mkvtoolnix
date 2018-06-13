@@ -1,0 +1,3 @@
+[mkvtoolnix]
+base: https://gitlab.com/mbunkus/mkvtoolnix
+service: gitlab
