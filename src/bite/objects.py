@@ -61,8 +61,8 @@ class DateTime(object):
 
     def __str__(self):
         if self.token is not None:
-            return f'{self.token!r} -- {self._datetime}'
-        return str(self._datetime)
+            return f'{self.token!r} -- {self.local}'
+        return self.local
 
     def __repr__(self):
         return repr(self._datetime)
@@ -74,6 +74,11 @@ class DateTime(object):
     def utcformat(self):
         """Return a string representing the date and time in ISO 8601 format, assuming UTC."""
         return self._datetime.strftime('%Y-%m-%dT%H:%M:%SZ')
+
+    @property
+    def local(self):
+        """Return datetime string converted to the system timezone."""
+        return self._datetime.astimezone().strftime("%Y-%m-%d %H:%M:%S %Z")
 
     def replace(self, **kw):
         """Return a modified datetime with kwargs specifying new attributes."""
@@ -114,7 +119,9 @@ class TimeInterval(object):
         elif isinstance(interval, datetime):
             interval = (interval, None)
 
-        self.start, self.end = interval
+        start, end = interval
+        self.start = DateTime(start) if start else start
+        self.end = DateTime(end) if end else end
 
         if self.start and self.end and self.start > self.end:
             raise ValueError(
