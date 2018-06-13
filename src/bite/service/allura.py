@@ -20,7 +20,7 @@ from ._reqs import (
 )
 from ._rest import RESTRequest
 from ..exceptions import BiteError, RequestError
-from ..objects import Item, Comment, Attachment, Change
+from ..objects import Item, Comment, Attachment, Change, TimeInterval
 from ..utc import utc
 
 
@@ -363,8 +363,13 @@ class _SearchRequest(URLParseRequest, AlluraPagedRequest):
 
         @alias('modified')
         def created(self, k, v):
-            self.params.setdefault('q', {})[k] = f'{self.remap[k]}:[{v.utcformat} TO NOW]'
-            self.options.append(f'{k.capitalize()}: {v} (since {v.isoformat()})')
+            if not isinstance(v, TimeInterval):
+                v = TimeInterval(v)
+            start, end = v
+            start = start.utcformat if start else '*'
+            end = end.utcformat if end else '*'
+            self.params.setdefault('q', {})[k] = f'{self.remap[k]}:[{start} TO {end}]'
+            self.options.append(f'{k.capitalize()}: {v}')
 
         @alias('assignee')
         def creator(self, k, v):
