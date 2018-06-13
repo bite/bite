@@ -243,6 +243,7 @@ class PagedRequest(_BasePagedRequest):
     # page and query size parameter keys for a related service query
     _page_key = None
     _size_key = None
+    _start_page = 0
 
     def __init__(self, limit=None, page=None, **kw):
         super().__init__(**kw)
@@ -259,7 +260,7 @@ class PagedRequest(_BasePagedRequest):
             self.params[self._page_key] = page
             self.options.append(f'Page: {page}')
         else:
-            self.params[self._page_key] = 0
+            self.params[self._page_key] = self._start_page
 
     def _finalize(self):
         if self._size_key not in self.params and self.service.max_results is not None:
@@ -283,6 +284,7 @@ class FlaggedPagedRequest(_BasePagedRequest):
     # page, query size, and total results parameter keys for a related service query
     _page_key = None
     _size_key = None
+    _start_page = 0
 
     def __init__(self, limit=None, page=None, **kw):
         super().__init__(**kw)
@@ -299,7 +301,7 @@ class FlaggedPagedRequest(_BasePagedRequest):
             self.params[self._page_key] = page
             self.options.append(f'Page: {page}')
         else:
-            self.params[self._page_key] = 0
+            self.params[self._page_key] = self._start_page
 
         # flag to note when all data has been consumed
         self._exhausted = False
