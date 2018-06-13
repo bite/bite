@@ -1,3 +1,0 @@
-[bz-landfill-trunk]
-base: https://landfill.bugzilla.org/bugzilla-tip/
-service: bugzilla5.2-rest
