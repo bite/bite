@@ -13,7 +13,7 @@ from snakeoil.dist import distutils_extensions as pkgdist
 pkgdist_setup, pkgdist_cmds = pkgdist.setup()
 
 # These offsets control where we install the config and service files.
-DATA_INSTALL_OFFSET = os.path.join('share', pkgdist.MODULE)
+DATA_INSTALL_OFFSET = os.path.join('share', pkgdist.MODULE_NAME)
 CONFIG_INSTALL_OFFSET = os.path.join(DATA_INSTALL_OFFSET, 'config')
 
 
@@ -35,7 +35,7 @@ class install(pkgdist.install):
 
 def write_lookup_config(python_base, install_prefix):
     """Generate file of install path constants."""
-    path = os.path.join(python_base, pkgdist.MODULE, "_const.py")
+    path = os.path.join(python_base, pkgdist.MODULE_NAME, "_const.py")
     os.makedirs(os.path.dirname(path), exist_ok=True)
     log.info("writing lookup config to %r" % path)
 
