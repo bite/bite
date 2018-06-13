@@ -363,7 +363,7 @@ class _SearchRequest(URLParseRequest, AlluraPagedRequest):
 
         @alias('modified')
         def created(self, k, v):
-            self.params.setdefault('q', {})[k] = f'{self.remap[k]}:[{v.utcformat()} TO NOW]'
+            self.params.setdefault('q', {})[k] = f'{self.remap[k]}:[{v.utcformat} TO NOW]'
             self.options.append(f'{k.capitalize()}: {v} (since {v.isoformat()})')
 
         @alias('assignee')

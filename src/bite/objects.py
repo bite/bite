@@ -71,6 +71,7 @@ class DateTime(object):
         """Return a string representing the date and time in ISO 8601 format."""
         return self._datetime.isoformat(**kw)
 
+    @property
     def utcformat(self):
         """Return a string representing the date and time in ISO 8601 format, assuming UTC."""
         return self._datetime.strftime('%Y-%m-%dT%H:%M:%SZ')

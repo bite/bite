@@ -242,11 +242,11 @@ class _GetItemRequest(URLParseRequest, RedminePagedRequest):
                 v = TimeInterval(v)
             start, end = v
             if start and end:
-                range_str = f'><{start.utcformat()}|{end.utcformat()}'
+                range_str = f'><{start.utcformat}|{end.utcformat}'
             elif start:
-                range_str = f'>={start.utcformat()}'
+                range_str = f'>={start.utcformat}'
             else:
-                range_str = f'<={end.utcformat()}'
+                range_str = f'<={end.utcformat}'
             field = self.service.item.attribute_aliases[k]
             self.params[field] = range_str
             self.options.append(f'{k.capitalize()}: {v}')
@@ -325,13 +325,13 @@ class _3_2GetItemRequest(_GetItemRequest):
             start, end = v
             if start and end:
                 op = '><'
-                values = [start.utcformat(), end.utcformat()]
+                values = [start.utcformat, end.utcformat]
             elif start:
                 op = '>='
-                values = [start.utcformat()]
+                values = [start.utcformat]
             else:
                 op = '<='
-                values = [end.utcformat()]
+                values = [end.utcformat]
             field = self.service.item.attribute_aliases[k]
             self.params.add('f[]', field)
             self.params[f'op[{field}]'] = op
