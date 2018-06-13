@@ -219,7 +219,7 @@ class _BasePagedRequest(Request):
             # response objects based on how expensive it is to compute so allow
             # it to be missing.
             if self._total_key is not None:
-                self._total = data.get(self._total_key)
+                self._total = int(data.get(self._total_key))
         return super().parse(data)
 
     def send(self):
@@ -417,7 +417,7 @@ class LinkHeaderPagedRequest(_BasePagedRequest):
 
     def parse_response(self, response):
         if self._total_header is not None:
-            self._total = response.headers.get(self._total_header)
+            self._total = int(response.headers.get(self._total_header))
         self._next_page = response.links.get('next', {}).get('url')
         return self.service.parse_response(response)
 
