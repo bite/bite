@@ -16,7 +16,7 @@ from ._reqs import (
 from ._rest import RESTRequest
 from ..cache import Cache
 from ..exceptions import RequestError, BiteError
-from ..objects import Item, Attachment, Comment, Change
+from ..objects import Item, Attachment, Comment, Change, TimeInterval
 
 
 class LaunchpadError(RequestError):
@@ -224,10 +224,20 @@ class _SearchRequest(URLParseRequest, LaunchpadPagedRequest):
             self.params[k] = f"{self.service.base}/~{v}"
             self.options.append(f"{self.service.item.attributes[k]}: {v}")
 
-        @alias('modified_since')
-        def created_since(self, k, v):
-            self.params[k] = v.isoformat()
-            self.options.append(f'{self.service.item.attributes[k]}: {v} (since {v!r} UTC)')
+        def created(self, k, v):
+            if not isinstance(v, TimeInterval):
+                v = TimeInterval(v)
+            start, end = v
+            if start:
+                self.params[f'{k}_since'] = start.isoformat()
+            if end:
+                self.params[f'{k}_before'] = end.isoformat()
+            self.options.append(f'{k.capitalize()}: {v}')
+
+        # launchpad doesn't support time intervals for modified args
+        def modified(self, k, v):
+            self.params[f'{k}_since'] = v.isoformat()
+            self.options.append(f'{k.capitalize()}: {v}')
 
         @alias('has_patch')
         def has_cve(self, k, v):

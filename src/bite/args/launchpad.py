@@ -25,6 +25,7 @@ class Search(args.PagedSearch, LaunchpadOpts):
                 sorting term with '-'; otherwise, sorting is done in an
                 ascending fashion by default.
             """)
+
         person = self.parser.add_argument_group('Person related')
         person.add_argument(
             '-a', '--assigned-to', dest='owner',
@@ -38,15 +39,16 @@ class Search(args.PagedSearch, LaunchpadOpts):
         person.add_argument(
             '--cc', dest='bug_subscriber',
             help='search by bug subscriber')
+
         time = self.parser.add_argument_group('Time related')
         time.add_argument(
-            '-c', '--created', type='date',
-            dest='created_since', metavar='TIME',
-            help='bugs created at this time or later')
+            '-c', '--created', type='time interval', metavar='TIME_INTERVAL',
+            help=f'{self.service.item.type}s created within a specified time interval')
+        # launchpad doesn't support time intervals for modified args
         time.add_argument(
-            '-m', '--modified', type='date',
-            dest='modified_since', metavar='TIME',
-            help='bugs modified at this time or later')
+            '-m', '--modified', type='date', metavar='TIME',
+            help=f'{self.service.item.type}s modified at this time or later')
+
         attr = self.parser.add_argument_group('Attribute related')
         attr.add_argument(
             '-i', '--importance', action='csv',
