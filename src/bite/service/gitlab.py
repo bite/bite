@@ -74,8 +74,6 @@ class Gitlab(JsonREST):
     #attachment_endpoint = '/file'
 
     def __init__(self, base, max_results=None, **kw):
-        self.webbase = base
-
         # extract gitlab domain
         url = urlparse(base)
         # TODO: generalize and allow versioned API support
@@ -95,6 +93,8 @@ class Gitlab(JsonREST):
         super().__init__(
             endpoint=f"/projects/{quote_plus(self._project)}", base=self._api_base,
             max_results=max_results, **kw)
+
+        self.webbase = base
 
     def parse_response(self, response):
         data = super().parse_response(response)
