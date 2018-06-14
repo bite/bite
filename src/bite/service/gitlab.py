@@ -90,6 +90,10 @@ class Gitlab(JsonREST):
         if max_results is None:
             max_results = 100
 
+        # use endpoint for namespaced API calls:
+        # https://docs.gitlab.com/ee/api/README.html#namespaced-path-encoding
+        #
+        # TODO: Allow overarching service objects as well, similar to jira support.
         super().__init__(
             endpoint=f"/projects/{quote_plus(self._project)}", base=self._api_base,
             max_results=max_results, **kw)
