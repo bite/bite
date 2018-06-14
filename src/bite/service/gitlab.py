@@ -44,9 +44,16 @@ class GitlabIssue(Item):
 
     def __init__(self, comments=None, attachments=None, **kw):
         for k, v in kw.items():
-            if k in ('created_at', 'updated_at', 'closed_at') and v:
+            # TODO: fix this once support for global connections are enabled
+            # skip global IDs and only use project IDs for now
+            # https://docs.gitlab.com/ee/api/README.html#id-vs-iid
+            if k == 'id':
+                continue
+            elif k == 'iid':
+                k = 'id'
+            elif k in ('created_at', 'updated_at', 'closed_at') and v:
                 v = parsetime(v)
-            if k in ('author', 'assignee') and v:
+            elif k in ('author', 'assignee') and v:
                 v = v['username']
             setattr(self, k, v)
 
