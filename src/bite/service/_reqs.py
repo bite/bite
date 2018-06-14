@@ -15,6 +15,7 @@ def req_cmd(service_cls, name=None, cmd=None, obj_args=False):
     """Register service request and command functions."""
     def wrapped(req_name, cls, *args, **kwds):
         req_func = lambda self, *args, **kw: cls(*args, service=self, **kw)
+        req_func.__doc__ = cls._gen_req_doc()
         if req_name is None:
             req_name = re.match(r'^_?([a-zA-Z]+).*$', cls.__name__)
             if not req_name:
@@ -24,13 +25,14 @@ def req_cmd(service_cls, name=None, cmd=None, obj_args=False):
         if cmd is not None:
             send = getattr(service_cls, 'send')
             # TODO: figure out a better function overloading method
-            def send_func(self, *args, **kw):
+            def cmd_func(self, *args, **kw):
                 # support passing in item object iterables for marked reqs
                 if obj_args and (args and not kw):
                     reqs = tuple(cls(service=self, **item) for item in args)
                     return send(self, Request(service=self, reqs=reqs))
                 return send(self, cls(*args, service=self, **kw))
-            setattr(service_cls, cmd, send_func)
+            cmd_func.__doc__ = cls._gen_cmd_doc()
+            setattr(service_cls, cmd, cmd_func)
         return cls
     return partial(wrapped, name)
 
@@ -58,6 +60,11 @@ class Request(object):
     """Construct a request."""
 
     _iterate = ExtractData
+
+    # Static docstring for request command function injected into the service
+    # class. For dynamic docstring generation, override the related
+    # _gen_req_doc and _gen_cmd_doc methods.
+    _cmd_doc = None
 
     def __init__(self, *, service, url=None, method=None, params=None,
                  reqs=None, options=None, raw=None, **kw):
@@ -136,6 +143,16 @@ class Request(object):
 
     def __iter__(self):
         return self._requests
+
+    @classmethod
+    def _gen_req_doc(cls):
+        """Generate docstring for injected service request."""
+        return cls.__doc__
+
+    @classmethod
+    def _gen_cmd_doc(cls):
+        """Generate docstring for injected service request command."""
+        return cls._cmd_doc
 
     @property
     def _none_gen(self):
@@ -513,6 +530,16 @@ class ParseRequest(Request):
 
         def _default_parser(self, k, v):
             """Default parameter parser."""
+
+    # @classmethod
+    # def _gen_req_doc(cls):
+        # """Generate docstring for injected service request."""
+        # # print(dir(cls.ParamParser))
+        # # print(getattr(cls.ParamParser, '_aliases', None))
+
+    # @classmethod
+    # def _gen_cmd_doc(cls):
+        # """Generate docstring for injected service request command."""
 
 
 class URLParseRequest(ParseRequest):

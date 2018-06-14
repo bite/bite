@@ -184,7 +184,7 @@ class Jira(JsonREST):
             self.handle_error(code=response.status_code, msg=data['errorMessages'][0])
 
 
-class JiraPagedRequest(OffsetPagedRequest, RESTRequest):
+class _JiraPagedRequest(OffsetPagedRequest, RESTRequest):
 
     _offset_key = 'startAt'
     _size_key = 'maxResults'
@@ -192,8 +192,27 @@ class JiraPagedRequest(OffsetPagedRequest, RESTRequest):
 
 
 @req_cmd(Jira, cmd='search')
-class _SearchRequest(URLParseRequest, JiraPagedRequest):
-    """Construct a search request."""
+class _SearchRequest(URLParseRequest, _JiraPagedRequest):
+    """Construct a search request.
+
+    Keyword Arguments:
+        id (list): issue IDs either in int form or with a 'project-' prefix
+            for conglomerate connections
+        fields (list): fields to return in the response
+        attachments (boolean): restrict based on attachment status
+        project (list): restrict based on projects
+        terms (list): restrict by summary text
+        created (tuple): restrict by creation time interval
+        modified (tuple): restrict by modification time interval
+        viewed (tuple): restrict by viewed time interval
+        resolved (tuple): restrict by resolved time interval
+        creator: restrict by creator
+        assigned_to: restrict by assignee
+        watchers (tuple): restrict by number of watchers
+        votes (tuple): restrict by number of votes
+    """
+
+    _cmd_doc = "Run a search request and return the results."
 
     def __init__(self, **kw):
         # use POST requests to avoid URL length issues with massive JQL queries
@@ -323,6 +342,8 @@ class _SearchRequest(URLParseRequest, JiraPagedRequest):
 class _GetRequest(Request):
     """Construct an issue request."""
 
+    _cmd_doc = "Run an issue request and return the results."
+
     def __init__(self, ids, get_comments=True, get_attachments=True,
                  get_changes=False, **kw):
         super().__init__(**kw)
@@ -431,7 +452,7 @@ class _CommentsRequest(BaseCommentsRequest):
             else:
                 id_key = i
             endpoint = f'{self.service._base}/issue/{id_key}/comment'
-            reqs.append(JiraPagedRequest(service=self.service, endpoint=endpoint))
+            reqs.append(_JiraPagedRequest(service=self.service, endpoint=endpoint))
         self._reqs = tuple(reqs)
 
     def parse(self, data):
@@ -472,7 +493,6 @@ class _AttachmentsRequest(Request):
 @req_cmd(Jira, cmd='changes')
 class _ChangesRequest(BaseChangesRequest):
     """Construct a comments request."""
-
 
 
 @req_cmd(Jira, cmd='version')
