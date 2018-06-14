@@ -8,7 +8,7 @@ from snakeoil.klass import aliased, alias
 from urllib.parse import urlparse, urlunparse, quote_plus
 
 from ._jsonrest import JsonREST
-from ..exceptions import RequestError
+from ..exceptions import RequestError, BiteError
 from ..objects import Item, Attachment, Comment, TimeInterval
 from ._reqs import LinkHeaderPagedRequest, PagedRequest, ParseRequest, req_cmd
 from ._rest import RESTRequest
@@ -176,7 +176,11 @@ class _SearchRequest(ParseRequest, GitlabPagedRequest):
 
         def terms(self, k, v):
             self.params['search'] = v
-            self.options.append(f"Summary: {', '.join(map(str, v))}")
+            self.options.append(f"Summary: {', '.join(v)}")
+
+        def id(self, k, v):
+            self.params['iids[]'] = v
+            self.options.append(f"IDs: {', '.join(map(str, v))}")
 
         @alias('modified')
         def created(self, k, v):
