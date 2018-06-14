@@ -30,5 +30,8 @@ class Search(args.PagedSearch, GitlabOpts):
             '--labels', type='str_list', action='parse_stdin',
             help=f'restrict by {self.service.item.type} labels')
         attr.add_argument(
+            '--milestone',
+            help='restrict by milestone')
+        attr.add_argument(
             '-s', '--status',
             help='restrict by status')

@@ -200,6 +200,10 @@ class _SearchRequest(ParseRequest, GitlabPagedRequest):
             self.params[k] = ','.join(v)
             self.options.append(f"{k.capitalize()}: {', '.join(v)}")
 
+        def milestone(self, k, v):
+            self.params[k] = v
+            self.options.append(f"{k.capitalize()}: {v}")
+
         def status(self, k, v):
             value = self._status_map.get(v)
             if value is None:
