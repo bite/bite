@@ -455,6 +455,7 @@ class ParseRequest(Request):
         if template is not None:
             if isinstance(template, str):
                 template = load_template(template, self.service.connection)
+            # TODO: remap keys via reversed item attributes
             self.template_args |= template.keys()
             template.update(params)
             params = template
