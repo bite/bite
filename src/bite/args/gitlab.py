@@ -27,5 +27,8 @@ class Search(args.PagedSearch, GitlabOpts):
             '--id', type='id_list', action=partial(ParseStdin, 'ids'),
             help=f'restrict by {self.service.item.type} ID(s)')
         attr.add_argument(
+            '--labels', type='str_list', action='parse_stdin',
+            help=f'restrict by {self.service.item.type} labels')
+        attr.add_argument(
             '-s', '--status',
             help='restrict by status')

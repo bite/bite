@@ -196,6 +196,10 @@ class _SearchRequest(ParseRequest, GitlabPagedRequest):
             self.params['iids[]'] = v
             self.options.append(f"IDs: {', '.join(map(str, v))}")
 
+        def labels(self, k, v):
+            self.params[k] = ','.join(v)
+            self.options.append(f"{k.capitalize()}: {', '.join(v)}")
+
         def status(self, k, v):
             value = self._status_map.get(v)
             if value is None:
