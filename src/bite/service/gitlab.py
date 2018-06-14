@@ -136,6 +136,9 @@ class GitlabPagedRequest(PagedRequest, LinkHeaderPagedRequest, RESTRequest):
     _start_page = 1
 
 
+# TODO: Add more specific Elasticsearch functionality to another search req
+# class, especially since gitlab.com doesn't support elasticsearch queries yet
+# but newer self-hosted instances should.
 @req_cmd(Gitlab, cmd='search')
 class _SearchRequest(ParseRequest, GitlabPagedRequest):
     """Construct a search request.
@@ -161,12 +164,23 @@ class _SearchRequest(ParseRequest, GitlabPagedRequest):
     @aliased
     class ParamParser(ParseRequest.ParamParser):
 
+        # map of allowed status input values to service parameters, aliases are
+        # capitalized
+        _status_map = {
+            'open': 'opened',
+            'closed': 'closed',
+            'ALL': 'ALL',
+        }
+
         def _finalize(self, **kw):
             if not self.params:
                 raise BiteError('no supported search terms or options specified')
 
             # default to returning only open issues
             self.params.setdefault('status', 'opened')
+            # status must be unset to search across all values
+            if self.params['status'] == 'ALL':
+                del self.params['status']
 
             # don't restrict scope by default
             self.params.setdefault('scope', 'all')
@@ -181,6 +195,15 @@ class _SearchRequest(ParseRequest, GitlabPagedRequest):
         def id(self, k, v):
             self.params['iids[]'] = v
             self.options.append(f"IDs: {', '.join(map(str, v))}")
+
+        def status(self, k, v):
+            value = self._status_map.get(v)
+            if value is None:
+                raise BiteError(
+                    f"invalid status value: {v} "
+                    f"(available: {', '.join(sorted(self._status_map))})")
+            self.params[k] = value
+            self.options.append(f"{k.capitalize()}: {v}")
 
         @alias('modified')
         def created(self, k, v):
