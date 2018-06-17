@@ -197,6 +197,12 @@ class BugzillaComment(Comment):
             id=id, creator=creator, created=created,
             count=count, changes=changes, text=text)
 
+    @classmethod
+    def parse(cls, ids, data):
+        for i in ids:
+            yield tuple(cls(comment=comment, id=i, count=j)
+                        for j, comment in enumerate(data[i]['comments']))
+
 
 class BugzillaEvent(Change):
     """Bugzilla change object."""
@@ -298,6 +304,12 @@ class BugzillaEvent(Change):
                 lines.append(f'{field}: {changes}')
 
         return '\n'.join(lines)
+
+    @classmethod
+    def parse(cls, data):
+        for b in data:
+            yield tuple(cls(change=x, id=b['id'], alias=b['alias'], count=i)
+                        for i, x in enumerate(b['history'], start=1))
 
 
 class BugzillaAttachment(Attachment):

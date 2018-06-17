@@ -294,12 +294,7 @@ class ChangesRequest(BaseChangesRequest, ParseRequest):
     """Construct a changes request."""
 
     def parse(self, data):
-        def items():
-            bugs = data['bugs']
-            for b in bugs:
-                yield tuple(BugzillaEvent(change=x, id=b['id'], alias=b['alias'], count=i)
-                            for i, x in enumerate(b['history'], start=1))
-        yield from self.filter(items())
+        yield from self.filter(BugzillaEvent.parse(data['bugs']))
 
     class ParamParser(ParseRequest.ParamParser):
 
@@ -321,12 +316,7 @@ class CommentsRequest(BaseCommentsRequest, ParseRequest):
     """Construct a comments request."""
 
     def parse(self, data):
-        def items():
-            bugs = data['bugs']
-            for i in self.params['ids']:
-                yield tuple(BugzillaComment(comment=comment, id=i, count=j)
-                            for j, comment in enumerate(bugs[i]['comments']))
-        yield from self.filter(items())
+        yield from self.filter(BugzillaComment.parse(ids=self.ids, data=data['bugs']))
 
     class ParamParser(ParseRequest.ParamParser):
 
