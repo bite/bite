@@ -1,0 +1,3 @@
+[ceph]
+service: redmine-json
+base: https://tracker.ceph.com/projects/ceph
