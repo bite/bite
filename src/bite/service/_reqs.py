@@ -517,10 +517,21 @@ class ParseRequest(Request):
 
 
 class URLParseRequest(ParseRequest):
+    """Allow duplicate parameters to construct URL-based queries."""
 
     def __init__(self, **kw):
         initial_params = MultiDict()
         super().__init__(initial_params=initial_params, **kw)
+
+
+class QueryParseRequest(URLParseRequest):
+    """Support directly building up a custom query string."""
+
+    class ParamParser(URLParseRequest.ParamParser):
+
+        def __init__(self, **kw):
+            super().__init__(**kw)
+            self.query = MultiDict()
 
 
 class BaseCommentsRequest(Request):

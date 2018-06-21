@@ -16,7 +16,7 @@ from snakeoil.klass import aliased, alias
 
 from ._jsonrest import JsonREST
 from ._reqs import (
-    LinkPagedRequest, Request, req_cmd, ExtractData, URLParseRequest,
+    LinkPagedRequest, Request, req_cmd, ExtractData, QueryParseRequest,
     BaseGetRequest, BaseCommentsRequest, BaseChangesRequest,
 )
 from ._rest import RESTRequest
@@ -216,7 +216,7 @@ class BitbucketPagedRequest(RESTRequest, LinkPagedRequest):
 
 
 @req_cmd(Bitbucket, cmd='search')
-class _SearchRequest(URLParseRequest, BitbucketPagedRequest):
+class _SearchRequest(QueryParseRequest, BitbucketPagedRequest):
     """Construct a search request."""
 
     # map from standardized kwargs name to expected service parameter name
@@ -236,7 +236,7 @@ class _SearchRequest(URLParseRequest, BitbucketPagedRequest):
             yield self.service.item(self.service, issue)
 
     @aliased
-    class ParamParser(URLParseRequest.ParamParser):
+    class ParamParser(QueryParseRequest.ParamParser):
 
         # map of allowed sorting input values to service parameters
         _sorting_map = {
@@ -292,12 +292,8 @@ class _SearchRequest(URLParseRequest, BitbucketPagedRequest):
             'ALL': _status_map.values(),
         }
 
-        def __init__(self, **kw):
-            super().__init__(**kw)
-            self.query = MultiDict()
-
         def _finalize(self, **kw):
-            if not self.query or self.params.keys() == {'sort'}:
+            if not self.query:
                 raise BiteError('no supported search terms or options specified')
 
             # default to showing issues that aren't closed

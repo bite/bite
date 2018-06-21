@@ -13,7 +13,7 @@ from snakeoil.klass import aliased, alias
 from ._jsonrest import JsonREST
 from ._reqs import (
     OffsetPagedRequest, req_cmd, BaseCommentsRequest, BaseChangesRequest,
-    NullRequest, Request, URLParseRequest,
+    NullRequest, Request, QueryParseRequest,
 )
 from ._rest import RESTRequest
 from ..exceptions import BiteError, RequestError
@@ -192,7 +192,7 @@ class JiraPagedRequest(OffsetPagedRequest, RESTRequest):
 
 
 @req_cmd(Jira, cmd='search')
-class _SearchRequest(URLParseRequest, JiraPagedRequest):
+class _SearchRequest(QueryParseRequest, JiraPagedRequest):
     """Construct a search request."""
 
     def __init__(self, **kw):
@@ -214,7 +214,7 @@ class _SearchRequest(URLParseRequest, JiraPagedRequest):
             yield self.service.item(id=id, **fields)
 
     @aliased
-    class ParamParser(URLParseRequest.ParamParser):
+    class ParamParser(QueryParseRequest.ParamParser):
 
         # date field key map
         _date_fields = {
@@ -223,14 +223,14 @@ class _SearchRequest(URLParseRequest, JiraPagedRequest):
         }
 
         def _finalize(self, **kw):
-            if not self.params or self.params.keys() == {'sort'}:
+            if not self.query:
                 raise BiteError('no supported search terms or options specified')
 
             # limit fields by default to decrease requested data size and speed up response
             if 'fields' not in self.params:
                 self.params['fields'] = ['id', 'assignee', 'summary']
 
-            jql = ' AND '.join(self.params['jql'])
+            jql = ' AND '.join(self.query.values())
 
             # default to sorting ascending by ID for search reqs
             sort = self.params.pop('sort', ['id'])
@@ -248,7 +248,7 @@ class _SearchRequest(URLParseRequest, JiraPagedRequest):
                     id_keys.append(f'{self.service.project}-{i}')
                 else:
                     id_keys.append(i)
-            self.params.setdefault('jql', []).append(f"{k} in ({','.join(id_keys)})")
+            self.query[k] = f"{k} in ({','.join(id_keys)})"
             self.options.append(f"IDs: {', '.join(id_strs)}")
 
         def fields(self, k, v):
@@ -262,7 +262,7 @@ class _SearchRequest(URLParseRequest, JiraPagedRequest):
         def attachments(self, k, v):
             val = 'not empty' if v else 'empty'
             display_val = 'yes' if v else 'no'
-            self.params.setdefault('jql', []).append(f'{k} is {val}')
+            self.query[k] = f'{k} is {val}'
             self.options.append(f"{k.capitalize()}: {display_val}")
 
         def project(self, k, v):
@@ -275,16 +275,16 @@ class _SearchRequest(URLParseRequest, JiraPagedRequest):
                     contain.append(x)
 
             if contain:
-                self.params.setdefault('jql', []).append(f"project in ({','.join(contain)})")
+                self.query[k] = f"project in ({','.join(contain)})"
             if not_contain:
-                self.params.setdefault('jql', []).append(f"project not in ({','.join(not_contain)})")
+                self.query[k] = f"project not in ({','.join(not_contain)})"
 
             if self.service.project is None or len(v) > 1 or (len(v) == 1 and self.service.project != v[0]):
                 self.options.append(f"Project: {', '.join(v)}")
 
         def terms(self, k, v):
             for term in v:
-                self.params.setdefault('jql', []).append(f'summary ~ "{term}"')
+                self.query[k] = f'summary ~ "{term}"'
             self.options.append(f"Summary: {', '.join(map(str, v))}")
 
         @alias('modified', 'viewed', 'resolved')
@@ -295,16 +295,16 @@ class _SearchRequest(URLParseRequest, JiraPagedRequest):
             start, end = v
             if start is not None:
                 time_str = start.strftime('%Y-%m-%d %H:%M')
-                self.params.setdefault('jql', []).append(f'{field} > "{time_str}"')
+                self.query[k] = f'{field} > "{time_str}"'
             if end is not None:
                 time_str = end.strftime('%Y-%m-%d %H:%M')
-                self.params.setdefault('jql', []).append(f'{field} < "{time_str}"')
+                self.query[k] = f'{field} < "{time_str}"'
             self.options.append(f'{k.capitalize()}: {v}')
 
         @alias('creator')
         def assigned_to(self, k, v):
             field = 'assignee' if k == 'assigned_to' else 'reporter'
-            self.params.setdefault('jql', []).append(f"{field} in ({','.join(v)})")
+            self.query[k] = f"{field} in ({','.join(v)})"
             self.options.append(f"{field.capitalize()}: {', '.join(map(str, v))}")
 
         @alias('watchers')
@@ -313,9 +313,9 @@ class _SearchRequest(URLParseRequest, JiraPagedRequest):
                 v = IntRange(v)
             start, end = v
             if start is not None:
-                self.params.setdefault('jql', []).append(f'{k} >= {start}')
+                self.query[k] = f'{k} >= {start}'
             if end is not None:
-                self.params.setdefault('jql', []).append(f'{k} <= {end}')
+                self.query[k] = f'{k} <= {end}'
             self.options.append(f"{k.capitalize()}: {v} {k}")
 
 

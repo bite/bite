@@ -11,7 +11,7 @@ from urllib.parse import urlparse, urlunparse, quote_plus
 from ._jsonrest import JsonREST
 from ..exceptions import RequestError, BiteError
 from ..objects import Item, Attachment, Comment, TimeInterval
-from ._reqs import LinkHeaderPagedRequest, PagedRequest, ParseRequest, req_cmd
+from ._reqs import LinkHeaderPagedRequest, PagedRequest, QueryParseRequest, req_cmd
 from ._rest import RESTRequest
 
 
@@ -117,7 +117,7 @@ class GithubPagedRequest(PagedRequest, LinkHeaderPagedRequest, RESTRequest):
 
 
 @req_cmd(Github, cmd='search')
-class _SearchRequest(ParseRequest, GithubPagedRequest):
+class _SearchRequest(QueryParseRequest, GithubPagedRequest):
     """Construct a search request.
 
     Docs: https://developer.github.com/v3/search/#search-issues
@@ -139,7 +139,7 @@ class _SearchRequest(ParseRequest, GithubPagedRequest):
             yield self.service.item(**issue)
 
     @aliased
-    class ParamParser(ParseRequest.ParamParser):
+    class ParamParser(QueryParseRequest.ParamParser):
 
         # map of allowed status input values to service parameters, aliases are
         # capitalized
@@ -148,10 +148,6 @@ class _SearchRequest(ParseRequest, GithubPagedRequest):
             'closed': 'closed',
             'all': 'all',
         }
-
-        def __init__(self, **kw):
-            super().__init__(**kw)
-            self.query = MultiDict()
 
         def _finalize(self, **kw):
             if not self.query:

@@ -11,7 +11,7 @@ from snakeoil.klass import aliased, alias
 
 from .._reqs import (
     OffsetPagedRequest, Request, req_cmd,
-    BaseCommentsRequest, URLParseRequest,
+    BaseCommentsRequest, QueryParseRequest,
 )
 from .._rest import REST, RESTRequest
 from ...exceptions import BiteError, RequestError
@@ -139,7 +139,7 @@ class RedminePagedRequest(OffsetPagedRequest, RESTRequest):
 
 
 @req_cmd(Redmine)
-class _GetItemRequest(URLParseRequest, RedminePagedRequest):
+class _GetItemRequest(QueryParseRequest, RedminePagedRequest):
     """Construct an issue request."""
 
     def __init__(self, *, service, ids=None, searchreq=False, get_desc=True,
@@ -179,7 +179,7 @@ class _GetItemRequest(URLParseRequest, RedminePagedRequest):
             yield self.service.item(self.service, get_desc=self._get_desc, **issue)
 
     @aliased
-    class ParamParser(URLParseRequest.ParamParser):
+    class ParamParser(QueryParseRequest.ParamParser):
 
         # Map of allowed sorting input values to service parameters determined by
         # looking at available values on the web interface.
@@ -449,7 +449,7 @@ class _BasicSearchRequest(_3_2GetItemRequest):
         super().__init__(searchreq=True, **kw)
 
 
-class _BaseSearchRequest(URLParseRequest, RedminePagedRequest):
+class _BaseSearchRequest(QueryParseRequest, RedminePagedRequest):
 
     def __init__(self, *, service, **kw):
         self._itemreq_extra_params = {}
@@ -485,12 +485,11 @@ class _BaseSearchRequest(URLParseRequest, RedminePagedRequest):
 class _SearchRequest(_BaseSearchRequest):
     """Construct a search request."""
 
-    class ParamParser(URLParseRequest.ParamParser):
+    class ParamParser(QueryParseRequest.ParamParser):
 
         def _finalize(self, **kw):
-            query = self.params.get('q', {})
-            if query:
-                self.params['q'] = ' AND '.join(query.values())
+            if self.query:
+                self.params['q'] = ' AND '.join(self.query.values())
 
                 # only return issues
                 self.params['issues'] = 1
@@ -503,7 +502,7 @@ class _SearchRequest(_BaseSearchRequest):
                 self.params['titles_only'] = 1
 
         def terms(self, k, v):
-            self.params.setdefault('q', {})['summary'] = '+'.join(v)
+            self.query['summary'] = '+'.join(v)
             self.options.append(f"Summary: {', '.join(map(str, v))}")
 
 
@@ -517,19 +516,17 @@ class _ElasticSearchRequest(_BaseSearchRequest):
     """
 
     @aliased
-    class ParamParser(URLParseRequest.ParamParser):
+    class ParamParser(QueryParseRequest.ParamParser):
 
         def _finalize(self, **kw):
-            if not self.params or self.params.keys() == {'sort'}:
+            if not self.query:
                 raise BiteError('no supported search terms or options specified')
 
-            query = self.params.get('q', {})
-
             # return all non-closed issues by default
-            if 'status' not in query:
+            if 'status' not in self.query:
                 self.params['open_issues'] = 1
 
-            q_str = ' AND '.join(query.values())
+            q_str = ' AND '.join(self.query.values())
             self.params['q'] = f'_type:issue AND ({q_str})'
 
         def terms(self, k, v):
@@ -545,17 +542,17 @@ class _ElasticSearchRequest(_BaseSearchRequest):
                 else:
                     or_queries.append(or_search_terms[0])
                     display_terms.append(or_display_terms[0])
-            self.params.setdefault('q', {})['summary'] = f"{' AND '.join(or_queries)}"
+            self.query['summary'] = f"{' AND '.join(or_queries)}"
             self.options.append(f"Summary: {' AND '.join(display_terms)}")
 
         def status(self, k, v):
-            self.params.setdefault('q', {})[k] = f"{k}:({' OR '.join(v)})"
+            self.query[k] = f"{k}:({' OR '.join(v)})"
             self.options.append(f"{k.capitalize()}: {', '.join(v)}")
             # make sure itemreq doesn't override our status
             self.request._itemreq_extra_params['status'] = '*'
 
         def category(self, k, v):
-            self.params.setdefault('q', {})[k] = f"{k}:({' OR '.join(v)})"
+            self.query[k] = f"{k}:({' OR '.join(v)})"
             self.options.append(f"{k.capitalize()}: {', '.join(v)}")
 
         @alias('modified', 'closed')
@@ -570,5 +567,5 @@ class _ElasticSearchRequest(_BaseSearchRequest):
             else:
                 range_str = f'* TO {end.isoformat()}'
             field = self.service.item.attribute_aliases[k]
-            self.params.setdefault('q', {})[k] = f'{field}:[{range_str}]'
+            self.query[k] = f'{field}:[{range_str}]'
             self.options.append(f'{k.capitalize()}: {v}')
