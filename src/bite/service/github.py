@@ -4,9 +4,8 @@ API docs: https://developer.github.com/v3/
 """
 
 from dateutil.parser import parse as parsetime
-from multidict import MultiDict
 from snakeoil.klass import aliased, alias
-from urllib.parse import urlparse, urlunparse, quote_plus
+from urllib.parse import urlparse
 
 from ._jsonrest import JsonREST
 from ..exceptions import RequestError, BiteError
@@ -70,10 +69,10 @@ class GithubAttachment(Attachment):
     pass
 
 
-class Github(JsonREST):
-    """Service supporting the Github issue tracker."""
+class GithubRest(JsonREST):
+    """Service supporting the Github issue tracker via its v3 REST API."""
 
-    _service = 'github'
+    _service = 'github-rest'
     _service_error_cls = GithubError
 
     item = GithubIssue
@@ -116,7 +115,7 @@ class GithubPagedRequest(PagedRequest, LinkHeaderPagedRequest, RESTRequest):
     _start_page = 1
 
 
-@req_cmd(Github, cmd='search')
+@req_cmd(GithubRest, cmd='search')
 class _SearchRequest(QueryParseRequest, GithubPagedRequest):
     """Construct a search request.
 

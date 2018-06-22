@@ -1,11 +1,11 @@
 from .. import args
 
 
-class GithubOpts(args.ServiceOpts):
-    """Github options."""
+class GithubRestOpts(args.ServiceOpts):
+    """Github REST API v3 options."""
 
-    _service = 'github'
+    _service = 'github-rest'
 
 
-class Search(args.PagedSearch, GithubOpts):
+class Search(args.PagedSearch, GithubRestOpts):
     pass
