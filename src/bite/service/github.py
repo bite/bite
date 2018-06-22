@@ -180,9 +180,9 @@ class _SearchRequest(QueryParseRequest, GithubPagedRequest):
         def label(self, k, v):
             disabled, enabled = v
             for x in disabled:
-                self.query.add('-label', x)
+                self.query.add('-label', f'"{x}"')
             for x in enabled:
-                self.query.add('label', x)
+                self.query.add('label', f'"{x}"')
             self.options.append(f"{k.capitalize()}: {', '.join(disabled + enabled)}")
 
         def status(self, k, v):
