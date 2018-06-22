@@ -1,5 +1,4 @@
 import lxml.html
-from snakeoil.klass import steal_docs
 
 from . import Service
 from ._reqs import URLRequest
@@ -9,8 +8,11 @@ from ..exceptions import RequestError
 class HTML(Service):
     """Support generic webscraping services."""
 
-    @steal_docs(Service)
     def parse_response(self, response, **kw):
+        """Parse the returned response.
+
+        Returns lxml element doc created from the response.
+        """
         if not response.headers.get('Content-Type', '').startswith('text/html'):
             msg = 'non-HTML response from server'
             if not self.verbose:
