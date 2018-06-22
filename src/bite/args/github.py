@@ -26,3 +26,6 @@ class Search(args.PagedSearch, GithubRestOpts):
         attr.add_argument(
             '--label', action='csv_negations',
             help=f'restrict by {self.service.item.type} labels')
+        attr.add_argument(
+            '-s', '--status',
+            help='restrict by status')

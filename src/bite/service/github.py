@@ -185,6 +185,15 @@ class _SearchRequest(QueryParseRequest, GithubPagedRequest):
                 self.query.add('label', x)
             self.options.append(f"{k.capitalize()}: {', '.join(disabled + enabled)}")
 
+        def status(self, k, v):
+            value = self._status_map.get(v)
+            if value is None:
+                raise BiteError(
+                    f"invalid status value: {v} "
+                    f"(available: {', '.join(sorted(self._status_map))})")
+            self.query['state'] = value
+            self.options.append(f"{k.capitalize()}: {v}")
+
         @alias('modified', 'closed')
         def created(self, k, v):
             field = 'updated' if k == 'modified' else k
