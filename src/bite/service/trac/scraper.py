@@ -204,6 +204,7 @@ class _BaseTracScraper(Service):
         """Morph to a JSON-RPC based service."""
         return jsonrpc.TracJsonrpc(**self._init_kw)
 
+
 class TracScraper(_BaseTracScraper, HTML):
     """Service supporting scraping Trac-based ticket trackers."""
 

@@ -7,7 +7,7 @@ from ._csv import CSVRequest
 from ._html import HTML
 from ._reqs import URLRequest, URLParseRequest, req_cmd
 from ..objects import Item, Comment, Attachment, TimeInterval
-from ..exceptions import BiteError, RequestError
+from ..exceptions import RequestError
 
 
 class FlysprayError(RequestError):
