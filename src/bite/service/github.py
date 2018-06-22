@@ -183,7 +183,10 @@ class _SearchRequest(QueryParseRequest, GithubPagedRequest):
                 self.query.add('-label', f'"{x}"')
             for x in enabled:
                 self.query.add('label', f'"{x}"')
-            self.options.append(f"{k.capitalize()}: {', '.join(disabled + enabled)}")
+            if disabled:
+                self.options.append(f"{k.capitalize()}: NOT {', '.join(disabled)}")
+            elif enabled:
+                self.options.append(f"{k.capitalize()}: {', '.join(enabled)}")
 
         def status(self, k, v):
             value = self._status_map.get(v)
@@ -200,7 +203,10 @@ class _SearchRequest(QueryParseRequest, GithubPagedRequest):
                 self.query.add('-milestone', f'"{x}"')
             for x in enabled:
                 self.query.add('milestone', f'"{x}"')
-            self.options.append(f"{k.capitalize()}: {', '.join(disabled + enabled)}")
+            if disabled:
+                self.options.append(f"{k.capitalize()}: NOT {', '.join(disabled)}")
+            elif enabled:
+                self.options.append(f"{k.capitalize()}: {', '.join(enabled)}")
 
         def comments(self, k, v):
             if isinstance(v, (str, tuple)):
