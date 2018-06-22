@@ -183,10 +183,8 @@ class _SearchRequest(QueryParseRequest, GithubPagedRequest):
                 self.query.add('-label', f'"{x}"')
             for x in enabled:
                 self.query.add('label', f'"{x}"')
-            if disabled:
-                self.options.append(f"{k.capitalize()}: NOT {', '.join(disabled)}")
-            elif enabled:
-                self.options.append(f"{k.capitalize()}: {', '.join(enabled)}")
+            disabled = [f'-{x}' for x in disabled]
+            self.options.append(f"{k.capitalize()}: {', '.join(disabled + enabled)}")
 
         def status(self, k, v):
             value = self._status_map.get(v)
@@ -203,10 +201,8 @@ class _SearchRequest(QueryParseRequest, GithubPagedRequest):
                 self.query.add('-milestone', f'"{x}"')
             for x in enabled:
                 self.query.add('milestone', f'"{x}"')
-            if disabled:
-                self.options.append(f"{k.capitalize()}: NOT {', '.join(disabled)}")
-            elif enabled:
-                self.options.append(f"{k.capitalize()}: {', '.join(enabled)}")
+            disabled = [f'-{x}' for x in disabled]
+            self.options.append(f"{k.capitalize()}: {', '.join(disabled + enabled)}")
 
         def comments(self, k, v):
             if isinstance(v, (str, tuple)):
@@ -233,3 +229,14 @@ class _SearchRequest(QueryParseRequest, GithubPagedRequest):
             elif end:
                 self.query[field] = f'<={start.isoformat()}'
             self.options.append(f'{k.capitalize()}: {v}')
+
+        @alias('assignee')
+        def creator(self, k, v):
+            field = 'author' if k == 'creator' else k
+            disabled, enabled = v
+            for x in disabled:
+                self.query.add(f'-{field}', x)
+            for x in enabled:
+                self.query.add(field, x)
+            disabled = [f'-{x}' for x in disabled]
+            self.options.append(f"{k.capitalize()}: {', '.join(disabled + enabled)}")
