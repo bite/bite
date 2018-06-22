@@ -11,6 +11,17 @@ class Search(args.PagedSearch, GithubRestOpts):
 
     def add_args(self):
         super().add_args()
+        time = self.parser.add_argument_group('Time related')
+        time.add_argument(
+            '-c', '--created', type='time interval', metavar='TIME_INTERVAL',
+            help=f'{self.service.item.type}s created within a specified time interval')
+        time.add_argument(
+            '-m', '--modified', type='time interval', metavar='TIME_INTERVAL',
+            help=f'{self.service.item.type}s modified within a specified time interval')
+        time.add_argument(
+            '--closed', type='time interval', metavar='TIME_INTERVAL',
+            help=f'{self.service.item.type}s closed within a specified time interval')
+
         attr = self.parser.add_argument_group('Attribute related')
         attr.add_argument(
             '--label', action='csv_negations',

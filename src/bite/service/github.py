@@ -184,3 +184,17 @@ class _SearchRequest(QueryParseRequest, GithubPagedRequest):
             for x in enabled:
                 self.query.add('label', x)
             self.options.append(f"{k.capitalize()}: {', '.join(disabled + enabled)}")
+
+        @alias('modified', 'closed')
+        def created(self, k, v):
+            field = 'updated' if k == 'modified' else k
+            if not isinstance(v, TimeInterval):
+                v = TimeInterval(v)
+            start, end = v
+            if start and end:
+                self.query[field] = f'{start.isoformat()}..{end.isoformat()}'
+            elif start:
+                self.query[field] = f'>={start.isoformat()}'
+            elif end:
+                self.query[field] = f'<={start.isoformat()}'
+            self.options.append(f'{k.capitalize()}: {v}')
