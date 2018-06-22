@@ -194,6 +194,14 @@ class _SearchRequest(QueryParseRequest, GithubPagedRequest):
             self.query['state'] = value
             self.options.append(f"{k.capitalize()}: {v}")
 
+        def milestone(self, k, v):
+            disabled, enabled = v
+            for x in disabled:
+                self.query.add('-milestone', f'"{x}"')
+            for x in enabled:
+                self.query.add('milestone', f'"{x}"')
+            self.options.append(f"{k.capitalize()}: {', '.join(disabled + enabled)}")
+
         def comments(self, k, v):
             if isinstance(v, (str, tuple)):
                 v = IntRange(v)
