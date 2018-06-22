@@ -165,7 +165,7 @@ class IntRange(object):
     def __init__(self, interval):
         self.token = interval if isinstance(interval, str) else None
         if self.token is not None:
-            start, _sep, end = interval.partition('-')
+            start, _sep, end = interval.partition('..')
             start = int(start) if start else None
             end = int(end) if end else None
             interval = (start, end)
