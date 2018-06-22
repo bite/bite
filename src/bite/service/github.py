@@ -176,3 +176,11 @@ class _SearchRequest(QueryParseRequest, GithubPagedRequest):
             # TODO: support AND/OR ops
             self.query[k] = ' '.join(v)
             self.options.append(f"Summary: {', '.join(v)}")
+
+        def label(self, k, v):
+            disabled, enabled = v
+            for x in disabled:
+                self.query.add('-label', x)
+            for x in enabled:
+                self.query.add('label', x)
+            self.options.append(f"{k.capitalize()}: {', '.join(disabled + enabled)}")

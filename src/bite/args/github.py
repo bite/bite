@@ -8,4 +8,10 @@ class GithubRestOpts(args.ServiceOpts):
 
 
 class Search(args.PagedSearch, GithubRestOpts):
-    pass
+
+    def add_args(self):
+        super().add_args()
+        attr = self.parser.add_argument_group('Attribute related')
+        attr.add_argument(
+            '--label', action='csv_negations',
+            help=f'restrict by {self.service.item.type} labels')
