@@ -94,8 +94,8 @@ class Xmlrpc(Xml, Rpc):
     def _encode_params(params):
         return (params,) if params is not None else ()
 
-    @steal_docs(Service)
     def parse_response(self, response):
+        """Parse the returned response."""
         try:
             data = super().parse_response(response)
         except Fault as e:

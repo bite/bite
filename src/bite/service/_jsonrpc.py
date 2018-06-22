@@ -73,8 +73,8 @@ class Jsonrpc(Json, Rpc):
         id = data['id']
         return method, params, id
 
-    @steal_docs(Service)
     def parse_response(self, response, **kw):
+        """Parse the returned response."""
         data = super().parse_response(response, **kw)
         error = data.get('error')
         if error is None:

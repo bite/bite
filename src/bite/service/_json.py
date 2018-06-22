@@ -1,8 +1,6 @@
 try: import simplejson as json
 except ImportError: import json
 
-from snakeoil.klass import steal_docs
-
 from . import Service
 from ..exceptions import ParsingError, RequestError
 
@@ -17,8 +15,8 @@ class Json(Service):
             'Content-Type': 'application/json'
         })
 
-    @steal_docs(Service)
     def parse_response(self, response, **kw):
+        """Parse the returned response."""
         if not response.headers.get('Content-Type', '').startswith('application/json'):
             msg = 'non-JSON response from server'
             if not self.verbose:

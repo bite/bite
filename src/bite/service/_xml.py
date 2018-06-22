@@ -1,7 +1,6 @@
 import io
 
 from lxml.etree import XMLPullParser, XMLSyntaxError, parse as parse_xml
-from snakeoil.klass import steal_docs
 
 from . import Service
 from ._reqs import URLRequest
@@ -18,8 +17,8 @@ class Xml(Service):
             'Content-Type': 'text/xml'
         })
 
-    @steal_docs(Service)
     def parse_response(self, response):
+        """Parse the returned response."""
         if not response.headers.get('Content-Type', '').startswith('text/xml'):
             msg = 'non-XML response from server'
             if not self.verbose:
