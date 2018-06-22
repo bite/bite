@@ -29,3 +29,6 @@ class Search(args.PagedSearch, GithubRestOpts):
         attr.add_argument(
             '-s', '--status',
             help='restrict by status')
+        attr.add_argument(
+            '--comments', type='int range',
+            help='restrict by number of comments')

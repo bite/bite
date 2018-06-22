@@ -9,7 +9,7 @@ from urllib.parse import urlparse
 
 from ._jsonrest import JsonREST
 from ..exceptions import RequestError, BiteError
-from ..objects import Item, Attachment, Comment, TimeInterval
+from ..objects import Item, Attachment, Comment, TimeInterval, IntRange
 from ._reqs import LinkHeaderPagedRequest, PagedRequest, QueryParseRequest, req_cmd
 from ._rest import RESTRequest
 
@@ -192,6 +192,18 @@ class _SearchRequest(QueryParseRequest, GithubPagedRequest):
                     f"invalid status value: {v} "
                     f"(available: {', '.join(sorted(self._status_map))})")
             self.query['state'] = value
+            self.options.append(f"{k.capitalize()}: {v}")
+
+        def comments(self, k, v):
+            if isinstance(v, (str, tuple)):
+                v = IntRange(v)
+            start, end = v
+            if start and end:
+                self.query[k] = f'{start}..{end}'
+            elif start:
+                self.query[k] = f'>={start}'
+            elif end:
+                self.query[k] = f'<={end}'
             self.options.append(f"{k.capitalize()}: {v}")
 
         @alias('modified', 'closed')
