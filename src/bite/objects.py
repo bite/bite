@@ -127,7 +127,7 @@ class TimeInterval(object):
         if self.start and self.end and self.start > self.end:
             raise ValueError(
                 'invalid time interval: start time after end time '
-                f'({self.start!r} -> {self.end!r})')
+                f'({self.start} -> {self.end})')
 
     def __repr__(self):
         return repr((self.start, self.end))
@@ -175,7 +175,7 @@ class IntRange(object):
         if self.start and self.end and self.start > self.end:
             raise ValueError(
                 'invalid range: start occurs after end '
-                f'({self.start!r} -> {self.end!r})')
+                f'({self.start} -> {self.end})')
 
     def __repr__(self):
         return repr((self.start, self.end))
@@ -186,11 +186,11 @@ class IntRange(object):
             l.extend((repr(self.token), '--'))
 
         if self.start and self.end:
-            l.append(f'between {self.start!r} and {self.end!r}')
+            l.append(f'between {self.start} and {self.end}')
         elif self.end is None:
-            l.append(f'>= {self.start!r}')
+            l.append(f'>= {self.start}')
         else:
-            l.append(f'<= {self.end!r}')
+            l.append(f'<= {self.end}')
 
         return ' '.join(l)
 
