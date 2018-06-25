@@ -14,7 +14,7 @@ from .alias import Aliases
 from .base import get_service_cls
 from .config import Config
 from .exceptions import BiteError
-from .objects import TimeInterval
+from .objects import TimeInterval, IntRange
 from .utils import block_edit, confirm
 
 demandload('bite:const')
@@ -151,6 +151,16 @@ class TimeIntervalArg(ArgType):
     def parse(s):
         try:
             return TimeInterval(s)
+        except ValueError as e:
+            raise ArgumentTypeError(e)
+
+
+class IntRangeArg(ArgType):
+
+    @staticmethod
+    def parse(s):
+        try:
+            return IntRange(s)
         except ValueError as e:
             raise ArgumentTypeError(e)
 
