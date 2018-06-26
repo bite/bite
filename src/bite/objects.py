@@ -112,6 +112,8 @@ class TimeInterval(object):
         # TODO: handle different time zones?
         self.token = interval if isinstance(interval, str) else None
         if self.token is not None:
+            if not self.token:
+                raise ValueError(f'invalid time interval: {interval!r}')
             start, _sep, end = interval.partition('/')
             start = parse_date(start) if start else None
             end = parse_date(end) if end else None
@@ -120,7 +122,11 @@ class TimeInterval(object):
         elif isinstance(interval, datetime):
             interval = (interval, None)
 
-        start, end = interval
+        try:
+            start, end = interval
+        except ValueError:
+            raise ValueError(f'invalid time interval: {interval!r}')
+
         self.start = DateTime(start) if start else start
         self.end = DateTime(end) if end else end
 
@@ -134,12 +140,12 @@ class TimeInterval(object):
 
     def __str__(self):
         l = []
-        if self.token is not None:
+        if self.token:
             l.extend((repr(self.token), '--'))
 
         if self.start and self.end:
             l.append(f'between {self.start} and {self.end}')
-        elif self.end is None:
+        elif self.start:
             l.append(f'after {self.start}')
         else:
             l.append(f'before {self.end}')
@@ -165,12 +171,17 @@ class IntRange(object):
     def __init__(self, interval):
         self.token = interval if isinstance(interval, str) else None
         if self.token is not None:
+            if not self.token:
+                raise ValueError(f'invalid range: {interval!r}')
             start, _sep, end = interval.partition('..')
             start = int(start) if start else None
             end = int(end) if end else None
             interval = (start, end)
 
-        self.start, self.end = interval
+        try:
+            self.start, self.end = interval
+        except ValueError:
+            raise ValueError(f'invalid range: {interval!r}')
 
         if self.start and self.end and self.start > self.end:
             raise ValueError(
@@ -182,12 +193,12 @@ class IntRange(object):
 
     def __str__(self):
         l = []
-        if self.token is not None:
+        if self.token:
             l.extend((repr(self.token), '--'))
 
         if self.start and self.end:
             l.append(f'between {self.start} and {self.end}')
-        elif self.end is None:
+        elif self.start:
             l.append(f'>= {self.start}')
         else:
             l.append(f'<= {self.end}')
