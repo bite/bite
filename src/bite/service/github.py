@@ -173,9 +173,19 @@ class _SearchRequest(QueryParseRequest, GithubPagedRequest):
             self.params.setdefault('order', 'asc')
 
         def terms(self, k, v):
-            # TODO: support AND/OR ops
-            self.query[k] = ' '.join(v)
-            self.options.append(f"Summary: {', '.join(v)}")
+            or_queries = []
+            display_terms = []
+            for term in v:
+                or_terms = [x.replace('"', '\\"') for x in term.split(',')]
+                or_display_terms = [f'"{x}"' for x in or_terms]
+                if len(or_terms) > 1:
+                    or_queries.append(f"({' OR '.join(or_terms)})")
+                    display_terms.append(f"({' OR '.join(or_display_terms)})")
+                else:
+                    or_queries.append(or_terms[0])
+                    display_terms.append(or_display_terms[0])
+            self.query[k] = f"{' AND '.join(or_queries)}"
+            self.options.append(f"Summary: {' AND '.join(display_terms)}")
 
         def label(self, k, v):
             disabled, enabled = v
