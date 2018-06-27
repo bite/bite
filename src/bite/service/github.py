@@ -12,6 +12,7 @@ from ..exceptions import RequestError, BiteError
 from ..objects import Item, Attachment, Comment, TimeInterval, IntRange
 from ._reqs import LinkHeaderPagedRequest, PagedRequest, QueryParseRequest, req_cmd
 from ._rest import RESTRequest
+from ..utils import dict2tuples
 
 
 class GithubError(RequestError):
@@ -145,7 +146,7 @@ class _SearchRequest(QueryParseRequest, GithubPagedRequest):
         _status_map = {
             'open': 'open',
             'closed': 'closed',
-            'all': 'all',
+            'ALL': ('open', 'closed'),
         }
 
         def _finalize(self, **kw):
@@ -154,7 +155,6 @@ class _SearchRequest(QueryParseRequest, GithubPagedRequest):
 
             # return issues relating to the specified project
             self.query.setdefault('repo', self.service._project)
-
             # default to returning only open issues
             self.query.setdefault('state', 'open')
 
@@ -166,7 +166,8 @@ class _SearchRequest(QueryParseRequest, GithubPagedRequest):
                 self.query[''] = terms
 
             # create query string
-            self.params['q'] = ' '.join(f'{k}:{v}' if k else v for k, v in self.query.items())
+            self.params['q'] = ' '.join(
+                f'{k}:{v}' if k else v for k, v in dict2tuples(self.query))
 
             # show issues in ascending order by default
             self.params.setdefault('sort', 'created')
