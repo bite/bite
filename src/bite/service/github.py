@@ -192,7 +192,10 @@ class _SearchRequest(QueryParseRequest, GithubPagedRequest):
             for x in disabled:
                 self.query.add('-label', f'"{x}"')
             for x in enabled:
-                self.query.add('label', f'"{x}"')
+                if x == 'NONE':
+                    self.query.add('', 'no:label')
+                else:
+                    self.query.add('label', f'"{x}"')
             disabled = [f'-{x}' for x in disabled]
             self.options.append(f"{k.capitalize()}: {', '.join(disabled + enabled)}")
 
@@ -210,7 +213,10 @@ class _SearchRequest(QueryParseRequest, GithubPagedRequest):
             for x in disabled:
                 self.query.add('-milestone', f'"{x}"')
             for x in enabled:
-                self.query.add('milestone', f'"{x}"')
+                if x == 'NONE':
+                    self.query.add('', 'no:milestone')
+                else:
+                    self.query.add('milestone', f'"{x}"')
             disabled = [f'-{x}' for x in disabled]
             self.options.append(f"{k.capitalize()}: {', '.join(disabled + enabled)}")
 
@@ -247,6 +253,9 @@ class _SearchRequest(QueryParseRequest, GithubPagedRequest):
             for x in disabled:
                 self.query.add(f'-{field}', x)
             for x in enabled:
-                self.query.add(field, x)
+                if k == 'assignee' and x == 'NONE':
+                    self.query.add('', 'no:assignee')
+                else:
+                    self.query.add(field, x)
             disabled = [f'-{x}' for x in disabled]
             self.options.append(f"{k.capitalize()}: {', '.join(disabled + enabled)}")
