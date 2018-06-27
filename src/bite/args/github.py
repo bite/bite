@@ -18,6 +18,12 @@ class Search(args.PagedSearch, GithubRestOpts):
         person.add_argument(
             '-r', '--creator', action='csv_negations',
             help=f'user who created the {self.service.item.type}')
+        person.add_argument(
+            '--mentions', action='csv_negations',
+            help=f'user mentioned in the {self.service.item.type}')
+        person.add_argument(
+            '--commenter', action='csv_negations',
+            help=f'user commented on the {self.service.item.type}')
 
         time = self.parser.add_argument_group('Time related')
         time.add_argument(

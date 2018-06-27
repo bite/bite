@@ -240,7 +240,7 @@ class _SearchRequest(QueryParseRequest, GithubPagedRequest):
                 self.query[field] = f'<={start.isoformat()}'
             self.options.append(f'{k.capitalize()}: {v}')
 
-        @alias('assignee')
+        @alias('assignee', 'mentions', 'commenter')
         def creator(self, k, v):
             field = 'author' if k == 'creator' else k
             disabled, enabled = v
