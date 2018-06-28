@@ -5,7 +5,7 @@ API docs: https://developer.github.com/v3/
 
 from dateutil.parser import parse as parsetime
 from snakeoil.klass import aliased, alias
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlunparse
 
 from ._jsonrest import JsonREST
 from ..exceptions import RequestError, BiteError
@@ -84,13 +84,28 @@ class GithubRest(JsonREST):
     def __init__(self, base, max_results=None, **kw):
         # extract github project info
         url = urlparse(base)
-        self._project = url.path.strip('/')
+        api_base = urlunparse((
+            url.scheme,
+            f'api.{url.netloc}',
+            '',
+            None, None, None))
+
+        paths = url.path.strip('/').split('/')
+        try:
+            org, project = paths
+            self.repo = f'{org}/{project}'
+        except ValueError:
+            org = paths[0] if paths[0] else None
+            project = None
+            self.repo = None
+        self.org = org
+        self.project = project
 
         # github maxes out at 100 results per page
         if max_results is None:
             max_results = 100
 
-        super().__init__(base='https://api.github.com', max_results=max_results, **kw)
+        super().__init__(base=api_base, max_results=max_results, **kw)
 
         self.session.headers.update({'Accept': 'application/vnd.github.v3+json'})
         self.webbase = base
@@ -148,8 +163,9 @@ class _SearchRequest(QueryParseRequest, GithubPagedRequest):
             if not self.query:
                 raise BiteError('no supported search terms or options specified')
 
-            # return issues relating to the specified project
-            self.query.setdefault('repo', self.service._project)
+            if self.service.repo is not None:
+                # return issues relating to the specified project
+                self.query.setdefault('repo', self.service.repo)
             # default to returning only open issues
             self.query.setdefault('is', 'open')
 
