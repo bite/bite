@@ -146,42 +146,42 @@ class ServiceOpts(object, metaclass=_RegisterSubcmds):
                 d.update(subcmds)
         return d
 
+    def _add_subcmd_args(self, subcmds, service):
+        subcmd_parsers = {}
+        registered_subcmds = []
+        for cls in subcmds:
+            cmds = cls._name.rsplit(' ', 1)
+            try:
+                subcmd_parser = subcmd_parsers[cmds[0]]
+            except KeyError:
+                if len(cmds) == 1:
+                    subcmd_parser = self.parser
+                else:
+                    # subcmds have to be listed in order so they get registered properly
+                    raise ValueError(
+                        f'unregistered subcommand parent {cmds[0]!r} '
+                        f'for subcommand {cls._name!r}')
+            parser = subcmd_parser.add_subparsers(help='help for subcommands')
+            subcmd = cls(
+                parser=parser, service=service, cmd=cmds[-1],
+                global_opts=self.global_subcmd_opts)
+            subcmd.add_args()
+            subcmd_parsers[cls._name] = subcmd.parser
+            registered_subcmds.append(subcmd)
+        return registered_subcmds[0], cls._name.replace(' ', '_')
+
+
     def add_subcmd_opts(self, service, subcmd):
         """Add subcommand specific options."""
         # try to only add the options for the single subcmd
         try:
-            subcmds = self.subcmds[subcmd]
-            subcmd_parsers = {}
-            registered_subcmds = []
-            for cls in subcmds:
-                cmds = cls._name.rsplit(' ', 1)
-                try:
-                    subcmd_parser = subcmd_parsers[cmds[0]]
-                except KeyError:
-                    if len(cmds) == 1:
-                        subcmd_parser = self.parser
-                    else:
-                        # subcmds have to be listed in order so they get registered properly
-                        raise ValueError(
-                            f'unregistered subcommand parent {cmds[0]!r} '
-                            f'for subcommand {cls._name!r}')
-                parser = subcmd_parser.add_subparsers(help='help for subcommands')
-                subcmd = cls(
-                    parser=parser, service=service, cmd=cmds[-1],
-                    global_opts=self.global_subcmd_opts)
-                subcmd.add_args()
-                subcmd_parsers[cls._name] = subcmd.parser
-                registered_subcmds.append(subcmd)
-            return registered_subcmds[0], cls._name.replace(' ', '_')
+            subcmd, fcn = self._add_subcmd_args(self.subcmds[subcmd], service)
+            return subcmd, fcn
         # fallback to adding all subcmd options, since the user is
         # requesting help output (-h/--help) or entering unknown input
         except KeyError:
-            subcmd_parser = self.parser.add_subparsers(help='help for subcommands')
             for name, cmds in self.subcmds.items():
-                subcmd = cmds[0](
-                    parser=subcmd_parser, service=service,
-                    global_opts=self.global_subcmd_opts)
-                subcmd.add_args()
+                self._add_subcmd_args(cmds, service)
             return None, None
 
 
