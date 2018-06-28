@@ -182,6 +182,7 @@ class ServiceOpts(object, metaclass=_RegisterSubcmds):
                     parser=subcmd_parser, service=service,
                     global_opts=self.global_subcmd_opts)
                 subcmd.add_args()
+            return None, None
 
 
 class RequestSubcmd(Subcmd):
