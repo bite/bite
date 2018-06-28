@@ -260,3 +260,8 @@ class _SearchRequest(QueryParseRequest, GithubPagedRequest):
                     self.query.add(field, x)
             disabled = [f'-{x}' for x in disabled]
             self.options.append(f"{k.capitalize()}: {', '.join(disabled + enabled)}")
+
+
+@req_cmd(GithubRest, cmd='pr_search')
+class _PRSearchRequest(_SearchRequest):
+    """Construct a search request for pull requests."""

@@ -7,7 +7,7 @@ class GithubRestOpts(args.ServiceOpts):
     _service = 'github-rest'
 
 
-class Search(args.PagedSearch, GithubRestOpts):
+class _BaseSearch(args.PagedSearch):
 
     def add_args(self):
         super().add_args()
@@ -49,3 +49,26 @@ class Search(args.PagedSearch, GithubRestOpts):
         attr.add_argument(
             '--comments', type='int range',
             help='restrict by number of comments')
+
+
+class Search(_BaseSearch, GithubRestOpts):
+    """Search for issues."""
+
+
+class PRs(args.Subcmd, GithubRestOpts):
+
+    _name = 'pr'
+
+    @property
+    def description(self):
+        return 'operate on pull requests'
+
+
+class PRSearch(_BaseSearch, GithubRestOpts):
+    """Search for pull requests."""
+
+    _name = 'pr search'
+
+    @property
+    def description(self):
+        return 'search pull requests'
