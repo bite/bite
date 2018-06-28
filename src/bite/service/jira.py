@@ -143,12 +143,15 @@ class Jira(JsonREST):
         except ValueError as e:
             raise BiteError(f'invalid project base: {base!r}')
         self.project = project if project else None
+
         # most jira instances default to 1k results per query
         if max_results is None:
             max_results = 1000
+
         # TODO: generalize and allow versioned API support
         super().__init__(
             endpoint=f"/rest/api/2", base=api_base, max_results=max_results, **kw)
+
         self.webbase = api_base
 
     @property
