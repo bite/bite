@@ -96,10 +96,8 @@ class GithubRest(JsonREST):
             self.repo = f'{org}/{project}'
         except ValueError:
             org = paths[0] if paths[0] else None
-            project = None
             self.repo = None
         self.org = org
-        self.project = project
 
         # github maxes out at 100 results per page
         if max_results is None:
@@ -166,6 +164,10 @@ class _SearchRequest(QueryParseRequest, GithubPagedRequest):
             if self.service.repo is not None:
                 # return issues relating to the specified project
                 self.query.setdefault('repo', self.service.repo)
+            elif self.service.org is not None:
+                # return issues relating to the specified organization
+                self.query.setdefault('org', self.service.org)
+
             # default to returning only open issues
             self.query.setdefault('is', 'open')
 
@@ -272,6 +274,17 @@ class _SearchRequest(QueryParseRequest, GithubPagedRequest):
                     self.query.add(field, x)
             disabled = [f'-{x}' for x in disabled]
             self.options.append(f"{k.capitalize()}: {', '.join(disabled + enabled)}")
+
+        @alias('org')
+        def user(self, k, v):
+            self.query[k] = v
+            self.options.append(f"{k.capitalize()}: {v}")
+
+        def repo(self, k, v):
+            if self.service.org is None and '/' not in v:
+                raise BiteError(f'repo missing organization: {v!r}')
+            self.query[k] = v
+            self.options.append(f"{k.capitalize()}: {v}")
 
 
 @req_cmd(GithubRest, cmd='pr_search')

@@ -52,6 +52,18 @@ class _BaseSearch(args.PagedSearch):
             '--comments', type='int range',
             help='restrict by number of comments')
 
+        if self.service.org is None:
+            self.attr.add_argument(
+                '--org',
+                help='restrict by repos owned by a given organization')
+            self.attr.add_argument(
+                '--user',
+                help='restrict by repos owned by a given user')
+        if self.service.repo is None:
+            self.attr.add_argument(
+                '--repo',
+                help='restrict by a given repo')
+
 
 class Search(_BaseSearch, GithubRestOpts):
     """Search for issues."""
