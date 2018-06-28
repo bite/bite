@@ -37,17 +37,17 @@ class _BaseSearch(args.PagedSearch):
             '--closed', type='time interval', metavar='TIME_INTERVAL',
             help=f'{item}s closed within a specified time interval')
 
-        attr = self.parser.add_argument_group('Attribute related')
-        attr.add_argument(
+        self.attr = self.parser.add_argument_group('Attribute related')
+        self.attr.add_argument(
             '-M', '--milestone', action='csv_negations',
             help='restrict by milestone')
-        attr.add_argument(
+        self.attr.add_argument(
             '-s', '--status', action='csv',
             help='restrict by status')
-        attr.add_argument(
+        self.attr.add_argument(
             '--label', action='csv_negations',
             help=f'restrict by {item} labels')
-        attr.add_argument(
+        self.attr.add_argument(
             '--comments', type='int range',
             help='restrict by number of comments')
 
@@ -81,3 +81,10 @@ class PRSearch(_BaseSearch, GithubRestOpts):
         self.time.add_argument(
             '--merged', type='time interval', metavar='TIME_INTERVAL',
             help=f'{item}s merged within a specified time interval')
+
+        self.attr.add_argument(
+            '--head',
+            help='restrict pull requests based on the branch they came from')
+        self.attr.add_argument(
+            '--base',
+            help='restrict pull requests based on the branch they are merging into')

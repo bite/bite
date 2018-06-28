@@ -283,3 +283,8 @@ class _PRSearchRequest(_SearchRequest):
 
         def merged(self, k, v):
             self.created(k, v)
+
+        @alias('head', 'base')
+        def _branch(self, k, v):
+            self.query[k] = v
+            self.options.append(f"{k.capitalize()}: {v}")
