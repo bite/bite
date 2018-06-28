@@ -16,41 +16,48 @@ from ..utils import str2bool, block_edit, confirm
 demandload('bite:const')
 
 
+class SubcmdArgumentParser(arghparse.SubcmdAbbrevArgumentParser, arghparse.ArgumentParser):
+
+    def __init__(self, *args, service, **kw):
+        # Suppress empty attribute creation during parse_args() calls, this
+        # means that only the args passed in will create attributes in the
+        # returned namespace instead of attributes for all options using their
+        # default values.
+        super().__init__(*args, argument_default=argparse.SUPPRESS, **kw)
+
+        # register arg types and actions for subcmd parsing
+        self.register('type', 'ids', IDs(service))
+        self.register('type', 'int_list', IntList(service))
+        self.register('type', 'id_list', IDList(service))
+        self.register('type', 'id_maps', ID_Maps(service))
+        self.register('type', 'id_str_maps', ID_Str_Maps(service))
+        self.register('type', 'str_list', StringList(service))
+        self.register('type', 'comment', Comment(service))
+        self.register('type', 'date', DateTime)
+        self.register('type', 'time interval', TimeIntervalArg(service))
+        self.register('type', 'int range', IntRangeArg(service))
+        self.register('action', 'parse_stdin', ParseStdin)
+
+
 class Subcmd(object):
 
     _name = None
     _service = None
 
-    def __init__(self, parser, service, global_opts):
+    def __init__(self, parser, service, global_opts, cmd=None):
         self.service = service
         if self.description is None:
             raise ValueError(
                 f'missing description for subcommand {self._name!r}: {self.__class__}')
 
-        # Suppress empty attribute creation during parse_args() calls, this
-        # means that only the args passed in will create attributes in the
-        # returned namespace instead of attributes for all options using their
-        # default values.
-        subcmd_parser = partial(
-            arghparse.ArgumentParser, argument_default=argparse.SUPPRESS)
+        if cmd is None:
+            cmd = self._name.rsplit(' ', 1)[-1]
 
         self.parser = parser.add_parser(
-            self._name, cls=subcmd_parser, quiet=False, color=False, description=self.description)
+            cmd, cls=partial(SubcmdArgumentParser, service=service),
+            quiet=False, color=False, description=self.description)
 
-        # register arg types and actions for subcmd parsing
-        self.parser.register('type', 'ids', IDs(service))
-        self.parser.register('type', 'int_list', IntList(service))
-        self.parser.register('type', 'id_list', IDList(service))
-        self.parser.register('type', 'id_maps', ID_Maps(service))
-        self.parser.register('type', 'id_str_maps', ID_Str_Maps(service))
-        self.parser.register('type', 'str_list', StringList(service))
-        self.parser.register('type', 'comment', Comment(service))
-        self.parser.register('type', 'date', DateTime)
-        self.parser.register('type', 'time interval', TimeIntervalArg(service))
-        self.parser.register('type', 'int range', IntRangeArg(service))
-        self.parser.register('action', 'parse_stdin', ParseStdin)
-
-        self.parser.set_defaults(fcn=self._name)
+        self.parser.set_defaults(fcn=self._name.replace(' ', '_'))
         self.opts = self.parser.add_argument_group(f'{self._name.capitalize()} options')
 
         # add global subcmd options
@@ -80,7 +87,7 @@ class _RegisterSubcmds(type):
             if subcmds is None:
                 subcmds = OrderedDict()
                 setattr(opts_cls, f'_{opts_cls.__name__}_subcmds', subcmds)
-            subcmds[subcmd_name] = cls
+            subcmds.setdefault(subcmd_name.split(' ')[0], []).append(cls)
         elif issubclass(cls, Subcmd):
             raise ValueError(f'missing name for subcommand: {cls}')
         return cls
@@ -141,20 +148,37 @@ class ServiceOpts(object, metaclass=_RegisterSubcmds):
 
     def add_subcmd_opts(self, service, subcmd):
         """Add subcommand specific options."""
-        subcmd_parser = self.parser.add_subparsers(help='help for subcommands')
         # try to only add the options for the single subcmd
         try:
-            cls = self.subcmds[subcmd]
-            subcmd = cls(
-                parser=subcmd_parser, service=service,
-                global_opts=self.global_subcmd_opts)
-            subcmd.add_args()
-            return subcmd
+            subcmds = self.subcmds[subcmd]
+            subcmd_parsers = {}
+            registered_subcmds = []
+            for cls in subcmds:
+                cmds = cls._name.rsplit(' ', 1)
+                try:
+                    subcmd_parser = subcmd_parsers[cmds[0]]
+                except KeyError:
+                    if len(cmds) == 1:
+                        subcmd_parser = self.parser
+                    else:
+                        # subcmds have to be listed in order so they get registered properly
+                        raise ValueError(
+                            f'unregistered subcommand parent {cmds[0]!r} '
+                            f'for subcommand {cls._name!r}')
+                parser = subcmd_parser.add_subparsers(help='help for subcommands')
+                subcmd = cls(
+                    parser=parser, service=service, cmd=cmds[-1],
+                    global_opts=self.global_subcmd_opts)
+                subcmd.add_args()
+                subcmd_parsers[cls._name] = subcmd.parser
+                registered_subcmds.append(subcmd)
+            return registered_subcmds[0], cls._name.replace(' ', '_')
         # fallback to adding all subcmd options, since the user is
         # requesting help output (-h/--help) or entering unknown input
         except KeyError:
-            for name, cls in self.subcmds.items():
-                subcmd = cls(
+            subcmd_parser = self.parser.add_subparsers(help='help for subcommands')
+            for name, cmds in self.subcmds.items():
+                subcmd = cmds[0](
                     parser=subcmd_parser, service=service,
                     global_opts=self.global_subcmd_opts)
                 subcmd.add_args()
