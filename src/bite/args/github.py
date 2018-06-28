@@ -2,7 +2,7 @@ from .. import args
 
 
 class GithubRestOpts(args.ServiceOpts):
-    """Github REST API v3 options."""
+    """Github API v3"""
 
     _service = 'github-rest'
 

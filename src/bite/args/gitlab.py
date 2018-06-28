@@ -5,7 +5,7 @@ from ..argparser import ParseStdin
 
 
 class GitlabOpts(args.ServiceOpts):
-    """Gitlab options."""
+    """Gitlab"""
 
     _service = 'gitlab'
 
