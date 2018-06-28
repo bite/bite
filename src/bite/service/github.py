@@ -124,11 +124,6 @@ class _SearchRequest(QueryParseRequest, GithubPagedRequest):
         https://help.github.com/articles/searching-issues-and-pull-requests/
     """
 
-    # map from standardized kwargs name to expected service parameter name
-    _params_map = {
-        'status': 'state',
-    }
-
     def __init__(self, **kw):
         super().__init__(endpoint='/search/issues', **kw)
 
@@ -156,7 +151,7 @@ class _SearchRequest(QueryParseRequest, GithubPagedRequest):
             # return issues relating to the specified project
             self.query.setdefault('repo', self.service._project)
             # default to returning only open issues
-            self.query.setdefault('state', 'open')
+            self.query.setdefault('is', 'open')
 
             terms = self.query.pop('terms', None)
             if terms is not None:
@@ -201,13 +196,14 @@ class _SearchRequest(QueryParseRequest, GithubPagedRequest):
             self.options.append(f"{k.capitalize()}: {', '.join(disabled + enabled)}")
 
         def status(self, k, v):
-            value = self._status_map.get(v)
-            if value is None:
-                raise BiteError(
-                    f"invalid status value: {v} "
-                    f"(available: {', '.join(sorted(self._status_map))})")
-            self.query['state'] = value
-            self.options.append(f"{k.capitalize()}: {v}")
+            for x in v:
+                value = self._status_map.get(x)
+                if value is None:
+                    raise BiteError(
+                        f"invalid status value: {x} "
+                        f"(available: {', '.join(sorted(self._status_map))})")
+                self.query.add('is', value)
+            self.options.append(f"{k.capitalize()}: {', '.join(v)}")
 
         def milestone(self, k, v):
             disabled, enabled = v
@@ -268,6 +264,16 @@ class _PRSearchRequest(_SearchRequest):
 
     @aliased
     class ParamParser(_SearchRequest.ParamParser):
+
+        # map of allowed status input values to service parameters, aliases are
+        # capitalized
+        _status_map = {
+            'open': 'open',
+            'closed': 'closed',
+            'merged': 'merged',
+            'unmerged': 'unmerged',
+            'ALL': ('merged', 'unmerged'),
+        }
 
         def _finalize(self, **kw):
             # limit search to pull requests

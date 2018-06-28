@@ -42,7 +42,7 @@ class _BaseSearch(args.PagedSearch):
             '-M', '--milestone', action='csv_negations',
             help='restrict by milestone')
         attr.add_argument(
-            '-s', '--status',
+            '-s', '--status', action='csv',
             help='restrict by status')
         attr.add_argument(
             '--label', action='csv_negations',
