@@ -63,6 +63,9 @@ class _BaseSearch(args.PagedSearch):
             self.attr.add_argument(
                 '--repo',
                 help='restrict by a given repo')
+            self.attr.add_argument(
+                '--language',
+                help='restrict by a given repo written in a given language')
 
 
 class Search(_BaseSearch, GithubRestOpts):

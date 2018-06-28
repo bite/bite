@@ -286,6 +286,10 @@ class _SearchRequest(QueryParseRequest, GithubPagedRequest):
             self.query[k] = v
             self.options.append(f"{k.capitalize()}: {v}")
 
+        def language(self, k, v):
+            self.query[k] = v
+            self.options.append(f"{k.capitalize()}: {v}")
+
 
 @req_cmd(GithubRest, cmd='pr_search')
 class _PRSearchRequest(_SearchRequest):
