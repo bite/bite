@@ -266,6 +266,7 @@ class _SearchRequest(QueryParseRequest, GithubPagedRequest):
 class _PRSearchRequest(_SearchRequest):
     """Construct a search request for pull requests."""
 
+    @aliased
     class ParamParser(_SearchRequest.ParamParser):
 
         def _finalize(self, **kw):
@@ -273,3 +274,6 @@ class _PRSearchRequest(_SearchRequest):
             self.query.setdefault('type', 'pr')
 
             super()._finalize(**kw)
+
+        def merged(self, k, v):
+            self.created(k, v)
