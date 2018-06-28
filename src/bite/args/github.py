@@ -88,3 +88,13 @@ class PRSearch(_BaseSearch, GithubRestOpts):
         self.attr.add_argument(
             '--base',
             help='restrict pull requests based on the branch they are merging into')
+        self.attr.add_argument(
+            '--sha',
+            help='restrict pull requests containing a specific commit SHA hash',
+            docs="""
+                Filter pull requests to those containing a commit with the
+                specified SHA hash.
+
+                Note that this overrides generic search terms if both are
+                specified.
+            """)

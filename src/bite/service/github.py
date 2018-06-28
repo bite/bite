@@ -158,7 +158,7 @@ class _SearchRequest(QueryParseRequest, GithubPagedRequest):
                 # default to searching only the title
                 self.query.setdefault('in', 'title')
                 # search terms don't have type prefix in query string
-                self.query[''] = terms
+                self.query.add('', terms)
 
             # create query string
             self.params['q'] = ' '.join(
@@ -288,3 +288,7 @@ class _PRSearchRequest(_SearchRequest):
         def _branch(self, k, v):
             self.query[k] = v
             self.options.append(f"{k.capitalize()}: {v}")
+
+        def sha(self, k, v):
+            self.query.add('', v)
+            self.options.append(f"{k.upper()}: {v}")
