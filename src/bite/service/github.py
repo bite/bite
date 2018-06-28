@@ -136,9 +136,9 @@ class _SearchRequest(QueryParseRequest, GithubPagedRequest):
     @aliased
     class ParamParser(QueryParseRequest.ParamParser):
 
-        # map of allowed status input values to service parameters, aliases are
+        # map of allowed state input values to service parameters, aliases are
         # capitalized
-        _status_map = {
+        _state_map = {
             'open': 'open',
             'closed': 'closed',
             'ALL': ('open', 'closed'),
@@ -195,13 +195,13 @@ class _SearchRequest(QueryParseRequest, GithubPagedRequest):
             disabled = [f'-{x}' for x in disabled]
             self.options.append(f"{k.capitalize()}: {', '.join(disabled + enabled)}")
 
-        def status(self, k, v):
+        def state(self, k, v):
             for x in v:
-                value = self._status_map.get(x)
+                value = self._state_map.get(x)
                 if value is None:
                     raise BiteError(
-                        f"invalid status value: {x} "
-                        f"(available: {', '.join(sorted(self._status_map))})")
+                        f"invalid state value: {x} "
+                        f"(available: {', '.join(sorted(self._state_map))})")
                 self.query.add('is', value)
             self.options.append(f"{k.capitalize()}: {', '.join(v)}")
 
@@ -265,14 +265,23 @@ class _PRSearchRequest(_SearchRequest):
     @aliased
     class ParamParser(_SearchRequest.ParamParser):
 
-        # map of allowed status input values to service parameters, aliases are
+        # map of allowed state input values to service parameters, aliases are
         # capitalized
-        _status_map = {
+        _state_map = {
             'open': 'open',
             'closed': 'closed',
             'merged': 'merged',
             'unmerged': 'unmerged',
             'ALL': ('merged', 'unmerged'),
+        }
+
+        # map of allowed status input values to service parameters, aliases are
+        # capitalized
+        _status_map = {
+            'pending': 'pending',
+            'success': 'success',
+            'failure': 'failure',
+            'ALL': ('pending', 'success', 'failure'),
         }
 
         def _finalize(self, **kw):
@@ -292,3 +301,13 @@ class _PRSearchRequest(_SearchRequest):
         def sha(self, k, v):
             self.query.add('', v)
             self.options.append(f"{k.upper()}: {v}")
+
+        def status(self, k, v):
+            for x in v:
+                value = self._status_map.get(x)
+                if value is None:
+                    raise BiteError(
+                        f"invalid status value: {x} "
+                        f"(available: {', '.join(sorted(self._status_map))})")
+                self.query.add('status', value)
+            self.options.append(f"{k.capitalize()}: {', '.join(v)}")

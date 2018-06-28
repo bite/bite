@@ -41,9 +41,10 @@ class _BaseSearch(args.PagedSearch):
         self.attr.add_argument(
             '-M', '--milestone', action='csv_negations',
             help='restrict by milestone')
+        # called --state here since pr searching adds a different --status option
         self.attr.add_argument(
-            '-s', '--status', action='csv',
-            help='restrict by status')
+            '-s', '--state', action='csv',
+            help='restrict by {item} state')
         self.attr.add_argument(
             '--label', action='csv_negations',
             help=f'restrict by {item} labels')
@@ -82,6 +83,13 @@ class PRSearch(_BaseSearch, GithubRestOpts):
             '--merged', type='time interval', metavar='TIME_INTERVAL',
             help=f'{item}s merged within a specified time interval')
 
+        self.attr.add_argument(
+            '-S', '--status', action='csv',
+            help='restrict by {item} status',
+            docs="""
+                Filter pull requests based on the status of the commits in
+                relation to usage of the Status API or a CI service.
+            """)
         self.attr.add_argument(
             '--head',
             help='restrict pull requests based on the branch they came from')
