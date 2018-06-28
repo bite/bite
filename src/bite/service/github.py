@@ -265,3 +265,11 @@ class _SearchRequest(QueryParseRequest, GithubPagedRequest):
 @req_cmd(GithubRest, cmd='pr_search')
 class _PRSearchRequest(_SearchRequest):
     """Construct a search request for pull requests."""
+
+    class ParamParser(_SearchRequest.ParamParser):
+
+        def _finalize(self, **kw):
+            # limit search to pull requests
+            self.query.setdefault('type', 'pr')
+
+            super()._finalize(**kw)
