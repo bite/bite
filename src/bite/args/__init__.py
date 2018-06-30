@@ -168,21 +168,21 @@ class ServiceOpts(object, metaclass=_RegisterSubcmds):
             subcmd.add_args()
             subcmd_parsers[cls._name] = subcmd.parser
             registered_subcmds.append(subcmd)
-        return registered_subcmds[0], cls._name.replace(' ', '_')
+        return registered_subcmds[0]
 
 
     def add_subcmd_opts(self, service, subcmd):
         """Add subcommand specific options."""
         # try to only add the options for the single subcmd
         try:
-            subcmd, fcn = self._add_subcmd_args(self.subcmds[subcmd], service)
-            return subcmd, fcn
+            subcmd = self._add_subcmd_args(self.subcmds[subcmd], service)
+            return subcmd
         # fallback to adding all subcmd options, since the user is
         # requesting help output (-h/--help) or entering unknown input
         except KeyError:
             for name, cmds in self.subcmds.items():
                 self._add_subcmd_args(cmds, service)
-            return None, None
+            return None
 
 
 class RequestSubcmd(Subcmd):

@@ -349,7 +349,7 @@ class ArgumentParser(arghparse.ArgumentParser):
         # add selected subcommand options
         try:
             subcmd = unparsed_args.pop(0)
-            subcmd, fcn = service_opts.add_subcmd_opts(service=service, subcmd=subcmd)
+            subcmd = service_opts.add_subcmd_opts(service=service, subcmd=subcmd)
         except IndexError:
             subcmd = None
 
@@ -369,8 +369,9 @@ class ArgumentParser(arghparse.ArgumentParser):
                 sys.stdin = open('/dev/tty')
 
         fcn_args = subcmd.finalize_args(vars(fcn_args))
-        # override function for nested subcommands
-        fcn_args['fcn' ] = fcn
+        # fix called function name for nested subcommands
+        if 'prog' in fcn_args:
+            fcn_args['fcn' ] = fcn_args['prog'].split(' ', 1)[1].replace(' ', '_')
 
         # client settings that override unset service level args
         for attr in ('verbose', 'debug'):
