@@ -517,30 +517,34 @@ class Search5_0(Search, Bugzilla5_0Opts):
 
 
 class APIKeys(args.Subcmd, Bugzilla5_0Opts):
-    """list, generate, or (un)revoke API keys"""
+    """perform actions on API keys"""
 
     _name = 'apikeys'
 
-    def add_args(self):
-        super().add_args()
-        action = self.parser.add_argument_group('Action')
-        single_action = action.add_mutually_exclusive_group()
-        single_action.add_argument(
-            '-l', '--list', action='store_true',
-            help='list available apikeys')
-        single_action.add_argument(
-            '-g', '--generate', nargs='?', const='bite', metavar='DESCRIPTION',
-            help='generate an apikey')
-        single_action.add_argument(
-            '-r', '--revoke', action='csv_negations', metavar='KEY',
-            help='toggle apikey(s) revoked status',
-            docs="""
-                Add/remove apikeys from the revoked list using their
-                descriptions or values.
 
-                To revoke multiple keys at once, use a comma-separated list.
-                Also, prefix an argument with '-' to unrevoke the related key.
-            """)
+class APIKeysList(args.Subcmd, Bugzilla5_0Opts):
+    """list API keys"""
+
+    _name = 'apikeys list'
+
+
+class APIKeysGenerate(args.Subcmd, Bugzilla5_0Opts):
+    """generate API keys"""
+
+    _name = 'apikeys generate'
+
+
+class APIKeysRevoke(args.Subcmd, Bugzilla5_0Opts):
+    """(un)revoke API keys
+
+    Add/remove apikeys from the revoked list using their
+    descriptions or values.
+
+    To revoke multiple keys at once, use a comma-separated list.
+    Also, prefix an argument with '-' to unrevoke the related key.
+    """
+
+    _name = 'apikeys revoke'
 
 
 class SavedSearches(args.Subcmd, Bugzilla5_0Opts):

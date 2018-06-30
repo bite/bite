@@ -312,25 +312,26 @@ class Bugzilla5_0(Bugzilla):
 
     _service = 'bugzilla5.0'
 
-    def apikeys(self, generate=None, revoke=None, *args, **kw):
-        if generate is not None:
-            # TODO: cache generated key for use with bite if it's named 'bite'
-            self.service.apikeys.generate(generate)
-        elif revoke is not None:
-            unrevoke, revoke = revoke
-            self.service.apikeys.revoke(disable=revoke, enable=unrevoke)
+    def apikeys_list(self, *args, **kw):
+        # fallback to listing available apikeys
+        keys = [x for x in self.service.apikeys]
+        if self.verbose and keys:
+            print('{:<41} {:<16} {:<26} {:<8}'.format(
+                'API key', 'Description', 'Last used', 'Revoked'))
+            print('-' * const.COLUMNS)
+            for k in keys:
+                print(f'{k.key:<41} {k.desc[:15]:<16} {str(k.used):<26} {k.revoked}')
         else:
-            # fallback to listing available apikeys
-            keys = [x for x in self.service.apikeys]
-            if self.verbose and keys:
-                print('{:<41} {:<16} {:<26} {:<8}'.format(
-                    'API key', 'Description', 'Last used', 'Revoked'))
-                print('-' * const.COLUMNS)
-                for k in keys:
-                    print(f'{k.key:<41} {k.desc[:15]:<16} {str(k.used):<26} {k.revoked}')
-            else:
-                for k in (x for x in keys if not x.revoked):
-                    print(f'{k.key} {k.desc}')
+            for k in (x for x in keys if not x.revoked):
+                print(f'{k.key} {k.desc}')
+
+    def apikeys_generate(self, *args, **kw):
+        # TODO: cache generated key for use with bite if it's named 'bite'
+        self.service.apikeys.generate(generate)
+
+    def apikeys_revoke(self, *args, **kw):
+        unrevoke, revoke = revoke
+        self.service.apikeys.revoke(disable=revoke, enable=unrevoke)
 
     def savedsearches(self, save=None, remove=None, edit=None, **kw):
         if save is not None:
