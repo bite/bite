@@ -90,8 +90,14 @@ class Gitlab(JsonREST):
             '/api/v4',
             None, None, None))
 
-        self._api_base = api_base
-        self._project = url.path.strip('/')
+        paths = url.path.strip('/').split('/')
+        try:
+            org, project = paths
+            self.repo = f'{org}/{project}'
+        except ValueError:
+            org = paths[0] if paths[0] else None
+            self.repo = None
+        self.org = org
 
         # gitlab maxes out at 100 results per page
         if max_results is None:
@@ -99,11 +105,9 @@ class Gitlab(JsonREST):
 
         # use endpoint for namespaced API calls:
         # https://docs.gitlab.com/ee/api/README.html#namespaced-path-encoding
-        #
-        # TODO: Allow overarching service objects as well, similar to jira support.
-        super().__init__(
-            endpoint=f"/projects/{quote_plus(self._project)}", base=self._api_base,
-            max_results=max_results, **kw)
+        endpoint = f"/projects/{quote_plus(self.repo)}" if self.repo is not None else ''
+
+        super().__init__(endpoint=endpoint, base=api_base, max_results=max_results, **kw)
 
         self.webbase = base
 
