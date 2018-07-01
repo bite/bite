@@ -1,0 +1,3 @@
+[gnucash]
+base: https://bugs.gnucash.org/
+service: bugzilla5.0-jsonrpc
