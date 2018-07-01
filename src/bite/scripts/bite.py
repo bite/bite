@@ -93,6 +93,8 @@ aliases = subparsers.add_parser(
     'aliases', description='view available aliases')
 connections = subparsers.add_parser(
     'connections', description='view available connections')
+connections.add_argument(
+    '-s', '--service', help='connections using matching service')
 services = subparsers.add_parser(
     'services', description='view available services')
 
@@ -143,7 +145,10 @@ def _aliases(options, out, err):
 def _connections(options, out, err):
     # load all service connections
     config = Config(connection=None)
-    for connection in sorted(config.sections()):
+    connections = (
+        x for x in config.sections()
+        if config[x]['service'].startswith(options.service))
+    for connection in sorted(connections):
         if options.verbose:
             out.write(f'[{connection}]')
             for (name, value) in config.items(connection):

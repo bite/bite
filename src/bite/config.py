@@ -94,6 +94,9 @@ class Config(object):
                     if not service_file.startswith('.'):
                         yield os.path.join(service_dir, service_file)
 
+    def __getitem__(self, key):
+        return self._config[key]
+
     # proxied ConfigParser methods
 
     def has_section(self, name):
