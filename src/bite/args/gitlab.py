@@ -35,3 +35,15 @@ class Search(args.PagedSearch, GitlabOpts):
         attr.add_argument(
             '-s', '--status',
             help='restrict by status')
+
+        if self.service.group is None:
+            attr.add_argument(
+                '--group',
+                help='restrict by repos owned by a given group')
+            attr.add_argument(
+                '--repo',
+                help='restrict by a given repo')
+        elif self.service.repo is None:
+            attr.add_argument(
+                '--project',
+                help='restrict by a given project')

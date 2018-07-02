@@ -92,12 +92,12 @@ class Gitlab(JsonREST):
 
         paths = url.path.strip('/').split('/')
         try:
-            org, project = paths
-            self.repo = f'{org}/{project}'
+            group, project = paths
+            self.repo = f'{group}/{project}'
         except ValueError:
-            org = paths[0] if paths[0] else None
+            group = paths[0] if paths[0] else None
             self.repo = None
-        self.org = org
+        self.group = group
 
         # gitlab maxes out at 100 results per page
         if max_results is None:
@@ -158,7 +158,11 @@ class _SearchRequest(ParseRequest, GitlabPagedRequest):
     }
 
     def __init__(self, **kw):
-        super().__init__(endpoint='/issues', **kw)
+        if kw['service'].group is not None and kw['service'].repo is None:
+            self.endpoint = f"/groups/{kw['service'].group}/issues"
+        else:
+            self.endpoint = '/issues'
+        super().__init__(endpoint=self.endpoint, **kw)
 
     def parse(self, data):
         issues = super().parse(data)
@@ -215,6 +219,28 @@ class _SearchRequest(ParseRequest, GitlabPagedRequest):
                     f"invalid status value: {v} "
                     f"(available: {', '.join(sorted(self._status_map))})")
             self.params[k] = value
+            self.options.append(f"{k.capitalize()}: {v}")
+
+        def group(self, k, v):
+            self.request.kwargs['endpoint'] = f'/groups/{v}/issues'
+            self.options.append(f"{k.capitalize()}: {v}")
+
+        def repo(self, k, v):
+            if self.service.group is None:
+                if '/' not in v:
+                    raise BiteError(f'repo missing group: {v!r}')
+                repo = v
+            else:
+                repo = f'{self.service.group}/{v}'
+            self.request.kwargs['endpoint'] = f"/projects/{quote_plus(repo)}/issues"
+            self.options.append(f"{k.capitalize()}: {v}")
+
+        def project(self, k, v):
+            if self.service.group is None:
+                raise BiteError(f'missing group')
+            repo = f'{self.service.group}/{v}'
+            self.request.kwargs['endpoint'] = f"/projects/{quote_plus(repo)}/issues"
+            self.request._repo = repo
             self.options.append(f"{k.capitalize()}: {v}")
 
         @alias('modified')

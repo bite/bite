@@ -441,6 +441,7 @@ class ParseRequest(Request):
     def __init__(self, params=None, initial_params=None, **kw):
         self.service = kw['service']
         self.options = kw.get('options', [])
+        self.kwargs = kw
         self.params = initial_params if initial_params is not None else {}
         self.strict = True
 
