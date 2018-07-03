@@ -42,15 +42,18 @@ class GitlabIssue(Item):
 
     type = 'issue'
 
-    def __init__(self, comments=None, attachments=None, **kw):
+    def __init__(self, repo=None, comments=None, attachments=None, **kw):
         for k, v in kw.items():
-            # TODO: fix this once support for global connections are enabled
-            # skip global IDs and only use project IDs for now
+            # Prefix project ID to issue iid depending on the connection type.
+            # The 'id' field unique across all issues is essentially useless
+            # for us since most API calls only use project IDs and iids.
             # https://docs.gitlab.com/ee/api/README.html#id-vs-iid
             if k == 'id':
                 continue
             elif k == 'iid':
                 k = 'id'
+                if repo is None:
+                    v = f"{kw['project_id']}-{v}"
             elif k in ('created_at', 'updated_at', 'closed_at') and v:
                 v = parsetime(v)
             elif k in ('author', 'assignee') and v:
@@ -162,12 +165,13 @@ class _SearchRequest(ParseRequest, GitlabPagedRequest):
             self.endpoint = f"/groups/{kw['service'].group}/issues"
         else:
             self.endpoint = '/issues'
+        self._repo = kw['service'].repo
         super().__init__(endpoint=self.endpoint, **kw)
 
     def parse(self, data):
         issues = super().parse(data)
         for issue in issues:
-            yield self.service.item(**issue)
+            yield self.service.item(repo=self._repo, **issue)
 
     @aliased
     class ParamParser(ParseRequest.ParamParser):
@@ -233,6 +237,7 @@ class _SearchRequest(ParseRequest, GitlabPagedRequest):
             else:
                 repo = f'{self.service.group}/{v}'
             self.request.kwargs['endpoint'] = f"/projects/{quote_plus(repo)}/issues"
+            self.request._repo = repo
             self.options.append(f"{k.capitalize()}: {v}")
 
         def project(self, k, v):
