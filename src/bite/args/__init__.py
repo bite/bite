@@ -67,6 +67,11 @@ class Subcmd(object):
     def description(self):
         return self.__doc__
 
+    @staticmethod
+    def add(service):
+        """Conditionalize adding the subcommand to the parser."""
+        return True
+
     def add_args(self):
         """Add arguments to the subcommand parser."""
 
@@ -149,7 +154,7 @@ class ServiceOpts(object, metaclass=_RegisterSubcmds):
     def _add_subcmd_args(self, subcmds, service):
         subcmd_parsers = {}
         registered_subcmds = []
-        for cls in subcmds:
+        for cls in (c for c in subcmds if c.add(service)):
             cmds = cls._name.rsplit(' ', 1)
             try:
                 subcmd_parser = subcmd_parsers[cmds[0]]
