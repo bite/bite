@@ -168,7 +168,7 @@ class Auth(object):
             except gpg.errors.GpgError as e:
                 raise BiteError(f'failed encrypting auth token: {e}')
 
-            os.makedirs(os.path.dirname(self.path), exist_ok=True)
+            os.makedirs(os.path.dirname(self.path), mode=0o700, exist_ok=True)
             try:
                 with open(self.path, 'wb') as f:
                     f.write(cipertext)
@@ -265,7 +265,7 @@ class Cookies(LWPCookieJar):
             except gpg.errors.GpgError as e:
                 raise BiteError(f'failed encrypting cookies: {e}')
 
-            os.makedirs(os.path.dirname(filename), exist_ok=True)
+            os.makedirs(os.path.dirname(filename), mode=0o700, exist_ok=True)
             try:
                 with open(filename, 'wb') as f:
                     f.write(cipertext)
