@@ -72,6 +72,21 @@ class GitlabAttachment(Attachment):
     pass
 
 
+class GitlabProject(object):
+
+    def __init__(self, **kw):
+        self.id = kw['id']
+        self.desc = kw['description']
+        self.owner, self.name = kw['path_with_namespace'].split('/', 1)
+        self.created = parsetime(kw['created_at'])
+        self.updated = parsetime(kw['last_activity_at'])
+        self.git_repo = kw['http_url_to_repo']
+        self.webbase = kw['web_url']
+        self.tags = tuple(kw['tag_list'])
+        self.stars = kw['star_count']
+        self.forks = kw['forks_count']
+
+
 class Gitlab(JsonREST):
     """Service supporting the Gitlab issue tracker."""
 
@@ -259,3 +274,35 @@ class _SearchRequest(ParseRequest, GitlabPagedRequest):
             if end:
                 self.params[f'{field}_before'] = end.isoformat()
             self.options.append(f'{k.capitalize()}: {v}')
+
+
+# TODO: move to using search API
+@req_cmd(Gitlab, cmd='project_search')
+class _ProjectSearchRequest(ParseRequest, GitlabPagedRequest):
+    """Construct a project search request."""
+
+    def __init__(self, **kw):
+        if kw['service'].group is not None and kw['service'].repo is None:
+            self.endpoint = f"/groups/{kw['service'].group}/projects"
+        else:
+            self.endpoint = '/projects'
+        super().__init__(endpoint=self.endpoint, **kw)
+
+    def parse(self, data):
+        projects = list(super().parse(data))
+        for project in projects:
+            yield GitlabProject(**project)
+
+    @aliased
+    class ParamParser(ParseRequest.ParamParser):
+
+        def _finalize(self, **kw):
+            if not self.params:
+                raise BiteError('no supported search terms or options specified')
+
+            # show issues in ascending order by default
+            self.params.setdefault('sort', 'asc')
+
+        def terms(self, k, v):
+            self.params['search'] = v
+            self.options.append(f"Summary: {', '.join(v)}")

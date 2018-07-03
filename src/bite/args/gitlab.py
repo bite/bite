@@ -47,3 +47,31 @@ class Search(args.PagedSearch, GitlabOpts):
             attr.add_argument(
                 '--project',
                 help='restrict by a given project')
+
+
+class Project(args.Subcmd, GitlabOpts):
+
+    _name = 'project'
+
+    @property
+    def description(self):
+        return 'operate on projects'
+
+    @staticmethod
+    def add(service):
+        """Only define the subcommand for non-repo specific connections."""
+        return service.repo is None
+
+
+class ProjectSearch(args.Search, GitlabOpts):
+
+    _name = 'project search'
+
+    @property
+    def description(self):
+        return 'search for projects'
+
+    @staticmethod
+    def add(service):
+        """Only define the subcommand for non-repo specific connections."""
+        return service.repo is None
