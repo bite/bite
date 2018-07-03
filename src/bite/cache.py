@@ -211,34 +211,26 @@ class Cookies(LWPCookieJar):
         else:
             self._path = None
 
-    def save(self, filename=None, *args, **kw):
-        if self._orig != self.as_lwp_str():
-            if filename is None:
-                filename = self._path
-            if self._path is not None:
-                os.makedirs(os.path.dirname(self._path), exist_ok=True)
+    def save(self, filename=None, **kw):
+        cookies_str = self.as_lwp_str(**kw)
+        filename = filename if filename is not None else self._path
+        if self._orig != cookies_str and filename is not None:
+            os.makedirs(os.path.dirname(filename), exist_ok=True)
             try:
-                super().save(filename=filename, *args, **kw)
+                with open(filename, 'w') as f:
+                    f.write(cookies_str)
                 os.chmod(self._path, stat.S_IREAD | stat.S_IWRITE)
-            except ValueError:
-                # running without a configured connection
-                if filename is None:
-                    pass
-                else:
-                    raise
+            except IOError as e:
+                raise BiteError(f'failed writing cookies: {filename!r}: {e}')
 
     def load(self, filename=None, *args, **kw):
-        if filename is None:
-            filename = self._path
-        try:
-            super().load(filename=filename, *args, **kw)
-            self._orig = self.as_lwp_str()
-        except FileNotFoundError:
-            # connection doesn't have a saved cache file yet
-            pass
-        except ValueError:
-            # running without a configured connection
-            if filename is None:
+        filename = filename if filename is not None else self._path
+        if filename is not None:
+            try:
+                super().load(filename=filename, *args, **kw)
+                self._orig = self.as_lwp_str()
+            except FileNotFoundError:
+                # connection doesn't have a saved cache file yet
                 pass
-            else:
-                raise
+            except IOError as e:
+                raise BiteError(f'failed loading cookies: {filename!r}: {e}')
