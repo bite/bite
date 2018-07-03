@@ -204,6 +204,7 @@ class Auth(object):
 class Cookies(LWPCookieJar):
 
     def __init__(self, connection):
+        self._orig = None
         super().__init__()
         if connection is not None:
             self._path = os.path.join(const.USER_CACHE_PATH, 'cookies', connection)
@@ -211,25 +212,27 @@ class Cookies(LWPCookieJar):
             self._path = None
 
     def save(self, filename=None, *args, **kw):
-        if filename is None:
-            filename = self._path
-        if self._path is not None:
-            os.makedirs(os.path.dirname(self._path), exist_ok=True)
-        try:
-            super().save(filename=filename, *args, **kw)
-            os.chmod(self._path, stat.S_IREAD | stat.S_IWRITE)
-        except ValueError:
-            # running without a configured connection
+        if self._orig != self.as_lwp_str():
             if filename is None:
-                pass
-            else:
-                raise
+                filename = self._path
+            if self._path is not None:
+                os.makedirs(os.path.dirname(self._path), exist_ok=True)
+            try:
+                super().save(filename=filename, *args, **kw)
+                os.chmod(self._path, stat.S_IREAD | stat.S_IWRITE)
+            except ValueError:
+                # running without a configured connection
+                if filename is None:
+                    pass
+                else:
+                    raise
 
     def load(self, filename=None, *args, **kw):
         if filename is None:
             filename = self._path
         try:
             super().load(filename=filename, *args, **kw)
+            self._orig = self.as_lwp_str()
         except FileNotFoundError:
             # connection doesn't have a saved cache file yet
             pass

@@ -277,14 +277,13 @@ class Service(object):
 
         def try_login(self, msg=None):
             """Repeatedly try to login until successful."""
-            orig_cookies = list(self.session.cookies)
             # Pull site to set any required cookies and check login status if
             # cookies were set.
             r = self.session.get(self.service.webbase)
             if self.logged_in(r):
                 return True
             # cookies are bad, force login and refresh them
-            if orig_cookies:
+            if self.session.cookies._orig:
                 self.session.cookies.clear()
                 for x in r.cookies:
                     self.session.cookies.set_cookie(x)
