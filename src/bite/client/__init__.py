@@ -425,11 +425,12 @@ class Cli(Client):
         if data:
             yield f"Created {self.service.item.type} #{data}"
 
-    def _render_search(self, data, fields=None, output=None, **kw):
+    def _render_search(self, data, fields=None, output=None,
+                       default_fields=('id', 'owner', 'title'), **kw):
         """Render search data for output."""
         if output is None:
             if fields is None:
-                fields = ('id', 'owner', 'title')
+                fields = default_fields
                 output = '{:<8} {:<20} {}'
             else:
                 output = ' '.join('{}' for x in fields)
