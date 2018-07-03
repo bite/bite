@@ -308,7 +308,7 @@ class ArgumentParser(arghparse.ArgumentParser):
         elif not re.match(r'^http(s)?://.+', initial_args.base):
             self.error(f'invalid base: {initial_args.base!r}')
 
-        service_name = initial_args.service
+        service_name = initial_args.pop('service')
         if service_name not in const.SERVICES:
             self.error(f"invalid service: {service_name!r} "
                        f"(available services: {', '.join(const.SERVICES)}")
