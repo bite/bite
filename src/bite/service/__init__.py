@@ -283,7 +283,7 @@ class Service(object):
             if self.logged_in(r):
                 return True
             # cookies are bad, force login and refresh them
-            if self.session.cookies._orig:
+            if self.session.cookies:
                 self.session.cookies.clear()
                 for x in r.cookies:
                     self.session.cookies.set_cookie(x)

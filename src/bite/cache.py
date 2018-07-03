@@ -1,4 +1,5 @@
 import configparser
+from enum import Enum
 from http.cookiejar import LWPCookieJar
 import os
 import stat
@@ -228,9 +229,15 @@ class Auth(object):
 
 
 class Cookies(LWPCookieJar):
+    """Cookiejar wrapper that uses GPGME to encrypt/decrypt cookies."""
+
+    class _Exists(Enum):
+        NOTEXISTS = 0
+        EXISTS = 1
+        CHANGED = 2
 
     def __init__(self, connection, gpgkeys=()):
-        self._orig = None
+        self._exist = self._Exists.NOTEXISTS
         self._gpgkeys = gpgkeys
         super().__init__()
         if connection is not None:
@@ -238,10 +245,17 @@ class Cookies(LWPCookieJar):
         else:
             self._path = None
 
+    def __bool__(self):
+        return self._exist != self._Exists.NOTEXISTS
+
+    def set_cookie(self, cookie):
+        self._exist = self._Exists.CHANGED
+        super().set_cookie(cookie)
+
     def save(self, filename=None, ignore_discard=False, ignore_expires=False):
         cookie_str = self.as_lwp_str(ignore_discard, ignore_expires)
         filename = filename if filename is not None else self._path
-        if self._orig != cookie_str and filename is not None:
+        if self._exist is self._Exists.CHANGED and filename is not None:
             # header needed since loading process checks for it
             cookie_bytes = b"#LWP-Cookies-2.0\n" + cookie_str.encode()
             try:
@@ -271,7 +285,8 @@ class Cookies(LWPCookieJar):
                         raise BiteError(f'failed decrypting cookies: {filename!r}: {e}')
                 self._really_load(
                     StringIO(plaintext.decode()), filename, ignore_discard, ignore_expires)
-                self._orig = self.as_lwp_str()
+                if self.as_lwp_str:
+                    self._exist = self._Exists.EXISTS
             except FileNotFoundError:
                 # connection doesn't have a saved cache file yet
                 pass
