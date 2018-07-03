@@ -7,7 +7,11 @@ from snakeoil.demandload import demandload
 
 from .exceptions import BiteError
 
-demandload('bite:const')
+demandload(
+    'bite:const',
+    'gpg',
+    'io:StringIO',
+)
 
 
 def csv2tuple(s):
@@ -203,31 +207,48 @@ class Auth(object):
 
 class Cookies(LWPCookieJar):
 
-    def __init__(self, connection):
+    def __init__(self, connection, gpgkeys=()):
         self._orig = None
+        self._gpgkeys = gpgkeys
         super().__init__()
         if connection is not None:
-            self._path = os.path.join(const.USER_CACHE_PATH, 'cookies', connection)
+            self._path = os.path.join(const.USER_CACHE_PATH, 'cookies', f'{connection}.gpg')
         else:
             self._path = None
 
-    def save(self, filename=None, **kw):
-        cookies_str = self.as_lwp_str(**kw)
+    def save(self, filename=None, ignore_discard=False, ignore_expires=False):
+        cookie_str = self.as_lwp_str(ignore_discard, ignore_expires)
         filename = filename if filename is not None else self._path
-        if self._orig != cookies_str and filename is not None:
+        if self._orig != cookie_str and filename is not None:
+            # header needed since loading process checks for it
+            cookie_bytes = b"#LWP-Cookies-2.0\n" + cookie_str.encode()
+            try:
+                with gpg.Context() as c:
+                    cipertext, _result, _sign_result = c.encrypt(
+                        cookie_bytes, recipients=self._gpgkeys, sign=False)
+            except gpg.errors.GpgError as e:
+                raise BiteError(f'failed encrypting cookies: {e}')
+
             os.makedirs(os.path.dirname(filename), exist_ok=True)
             try:
-                with open(filename, 'w') as f:
-                    f.write(cookies_str)
+                with open(filename, 'wb') as f:
+                    f.write(cipertext)
                 os.chmod(self._path, stat.S_IREAD | stat.S_IWRITE)
             except IOError as e:
                 raise BiteError(f'failed writing cookies: {filename!r}: {e}')
 
-    def load(self, filename=None, *args, **kw):
+    def load(self, filename=None, ignore_discard=False, ignore_expires=False):
         filename = filename if filename is not None else self._path
         if filename is not None:
             try:
-                super().load(filename=filename, *args, **kw)
+                with open(filename, 'rb') as f:
+                    try:
+                        with gpg.Context() as c:
+                            plaintext, _result, _verify_result = c.decrypt(f)
+                    except gpg.errors.GpgError as e:
+                        raise BiteError(f'failed decrypting cookies: {filename!r}: {e}')
+                self._really_load(
+                    StringIO(plaintext.decode()), filename, ignore_discard, ignore_expires)
                 self._orig = self.as_lwp_str()
             except FileNotFoundError:
                 # connection doesn't have a saved cache file yet

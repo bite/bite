@@ -4,3 +4,4 @@ multidict
 chardet
 python-dateutil>=2.1
 lxml
+gpg>=1.10.0
