@@ -132,6 +132,8 @@ class Comment(ArgType):
                             data = block_edit('Edit comment', comment_from=data).strip()
                     except IOError as e:
                         raise BiteError('unable to read file: {s!r}: {e}')
+            else:
+                data = s
             if data or confirm('Empty comment, submit anyway?'):
                 break
 
