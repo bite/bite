@@ -145,9 +145,10 @@ def _aliases(options, out, err):
 def _connections(options, out, err):
     # load all service connections
     config = Config(connection=None)
+    service = options.service if options.service is not None else ''
     connections = (
         x for x in config.sections()
-        if config[x]['service'].startswith(options.service))
+        if config[x]['service'].startswith(service))
     for connection in sorted(connections):
         if options.verbose:
             out.write(f'[{connection}]')
