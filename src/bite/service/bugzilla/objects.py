@@ -155,6 +155,7 @@ class BugzillaBug(Item):
                 value = prefix + f'{prefix}'.join(value)
             else:
                 prefix = ''
+                value = value[0]
             yield f'{title:<12}: {value}'
 
     def __getattribute__(self, name):
