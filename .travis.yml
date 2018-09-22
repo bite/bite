@@ -1,8 +1,8 @@
 language: python
-addons:
-  apt:
-    packages:
-    - libgpgme-dev
+before_install:
+- sudo add-apt-repository ppa:kubuntu-ppa/backports -y
+- sudo apt-get update -q
+- sudo apt-get install libgpgme-dev swig -y
 install:
 - pip install -U pip
 before_script:
@@ -27,6 +27,8 @@ stages:
 matrix:
   include:
     - python: 3.6
+      dist: xenial
+      sudo: true
     - python: 3.7
       dist: xenial
       sudo: true
