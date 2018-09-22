@@ -26,6 +26,14 @@ def login_retry(func):
     """
     @wraps(func)
     def wrapper(self, *args, **kw):
+        # Login if all credentials provided on launch and not skipping;
+        # otherwise, credentials will be requested when needed.
+        if self.skip_auth:
+            self.service.auth.reset()
+        elif (self.service.user is not None and
+                any((self.service.auth.path, self.service.password, self.passwordcmd))):
+            self.login(force=True)
+
         try:
             return func(self, *args, **kw)
         except AuthError as e:
@@ -101,13 +109,6 @@ class Cli(Client):
         self.verbose = verbose
         self.debug = debug
 
-        # Login if all credentials provided on launch and not skipping;
-        # otherwise, credentials will be requested when needed.
-        if self.skip_auth:
-            self.service.auth.reset()
-        elif self.service.user is not None and any((self.service.password, self.passwordcmd)):
-            self.login()
-
         self.log(f'Service: {self.service}')
 
     def get_user_pass(self, msg=None):
@@ -146,8 +147,9 @@ class Cli(Client):
         # fallback to manual user/pass login
         if not self.service.auth:
             user, password = self.service.user, self.service.password
-            while not all((user, password)):
-                user, password = self.get_user_pass()
+            if not self.service.auth.path:
+                while not all((user, password)):
+                    user, password = self.get_user_pass()
             self.service.login(user=user, password=password)
 
     @dry_run

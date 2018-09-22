@@ -152,9 +152,6 @@ class Auth(object):
         else:
             self.path = None
 
-        if self.token is None:
-            self.read()
-
     def write(self, token):
         if token is None:
             return
@@ -225,7 +222,7 @@ class Auth(object):
         return bool(self.token)
 
     def __len__(self):
-        return len(self.token)
+        return len(str(self))
 
 
 class Cookies(LWPCookieJar):

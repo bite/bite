@@ -154,7 +154,10 @@ class Service(object):
 
     def login(self, *, user, password, **kw):
         """Authenticate a session."""
-        if user is None or password is None:
+        if self.auth.path:
+            self.auth.read()
+            return
+        elif user is None or password is None:
             raise BiteError('both user and password parameters must be specified')
 
         token = self._get_auth_token(user, password, **kw)
