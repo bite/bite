@@ -277,7 +277,7 @@ class Item(object):
 
             lines.append(f'{title:<12}: {value}')
 
-        lines.extend(self._custom_str_fields())
+        lines.extend(sorted(self._custom_str_fields()))
         return '\n'.join(lines)
 
     def __getattr__(self, name):
