@@ -144,10 +144,10 @@ class Cli(Client):
         if self.skip_auth and not force:
             return
 
-        # fallback to manual user/pass login
         if not self.service.auth:
             user, password = self.service.user, self.service.password
             if not self.service.auth.path:
+                # fallback to manual user/pass login
                 while not all((user, password)):
                     user, password = self.get_user_pass()
             self.service.login(user=user, password=password)
