@@ -182,7 +182,7 @@ class Auth(object):
                             with gpg.Context() as c:
                                 plaintext, _result, _verify_result = c.decrypt(f)
                         except gpg.errors.GpgError as e:
-                            raise BiteError(f'failed decrypting auth token: {self.path!r}: {e}')
+                            raise BiteError(f'failed decrypting auth token: {self.path!r}')
                     token = plaintext.decode().strip()
                 except IOError as e:
                     raise BiteError(f'failed reading auth token: {self.path!r}: {e}')
@@ -279,7 +279,7 @@ class Cookies(LWPCookieJar):
                         with gpg.Context() as c:
                             plaintext, _result, _verify_result = c.decrypt(f)
                     except gpg.errors.GpgError as e:
-                        raise BiteError(f'failed decrypting cookies: {filename!r}: {e}')
+                        raise BiteError(f'failed decrypting cookies: {filename!r}')
                 self._really_load(
                     StringIO(plaintext.decode()), filename, ignore_discard, ignore_expires)
                 if self.as_lwp_str:
