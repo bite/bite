@@ -41,6 +41,9 @@ service_opts.add_argument(
     help='service type')
 
 argparser.add_argument(
+    '-I', '--interactive',
+    help='start an interactive command prompt')
+argparser.add_argument(
     '-i', '--input',
     type=argparse.FileType('r'), action=parse_file,
     help='read data from an input file')
