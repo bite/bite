@@ -1,0 +1,3 @@
+[xiph]
+base: https://gitlab.xiph.org/xiph/
+service: gitlab
