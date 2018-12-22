@@ -1,0 +1,3 @@
+[vim]
+base: https://github.com/vim/vim
+service: github-rest
