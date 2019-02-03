@@ -21,7 +21,7 @@ class Xml(Service):
         """Parse the returned response."""
         if not response.headers.get('Content-Type', '').startswith('text/xml'):
             msg = 'non-XML response from server'
-            if not self.verbose:
+            if self.verbosity > 0:
                 msg += ' (use verbose mode to see it)'
             raise RequestError(
                 msg, code=response.status_code, text=response.text, response=response)

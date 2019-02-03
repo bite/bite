@@ -95,7 +95,7 @@ class Client(object):
 class Cli(Client):
     """Generic commandline interface for a service."""
 
-    def __init__(self, service, quiet=False, verbose=False, debug=False, color=False,
+    def __init__(self, service, quiet=False, verbosity=0, debug=False, color=False,
                  connection=None, passwordcmd=None, skip_auth=True, **kw):
         super().__init__(service)
         self.color = color
@@ -106,7 +106,7 @@ class Cli(Client):
         self.wrapper = textwrap.TextWrapper(width=const.COLUMNS - 5)
 
         self.quiet = quiet
-        self.verbose = verbose
+        self.verbosity = verbosity
         self.debug = debug
 
         self.log(f'Service: {self.service}')

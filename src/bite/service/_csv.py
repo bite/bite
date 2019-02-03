@@ -12,7 +12,7 @@ class CSVRequest(URLRequest):
         """Parse the raw CSV content."""
         if not response.headers.get('Content-Type', '').startswith('text/csv'):
             msg = 'non-CSV response from server'
-            if not self.service.verbose:
+            if self.service.verbosity > 0:
                 msg += ' (use verbose mode to see it)'
             raise RequestError(
                 msg, code=response.status_code, text=response.text, response=response)

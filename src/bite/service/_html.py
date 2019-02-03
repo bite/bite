@@ -15,7 +15,7 @@ class HTML(Service):
         """
         if not response.headers.get('Content-Type', '').startswith('text/html'):
             msg = 'non-HTML response from server'
-            if not self.verbose:
+            if self.verbosity > 0:
                 msg += ' (use verbose mode to see it)'
             raise RequestError(
                 msg, code=response.status_code, text=response.text, response=response)

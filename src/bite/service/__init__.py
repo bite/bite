@@ -112,14 +112,14 @@ class Service(object):
 
     def __init__(self, *, base, endpoint='', connection=None, verify=True, user=None, password=None,
                  auth_file=None, auth_token=None, suffix=None, timeout=None, concurrent=None,
-                 max_results=None, debug=None, verbose=None, **kw):
+                 max_results=None, debug=None, verbosity=0, **kw):
         self.base = base
         self.webbase = base
         self.connection = connection
         self.user = user
         self.password = password
         self.suffix = suffix
-        self.verbose = verbose
+        self.verbosity = verbosity
         self.debug = debug
         self.max_results = max_results
 
@@ -394,7 +394,7 @@ class Service(object):
                 reason = e.response.reason.lower()
                 if reason:
                     error_str += f': {reason}'
-                elif not self.verbose:
+                elif self.verbosity > 0:
                     error_str += ' (enable verbose mode to see server response)'
                 raise RequestError(
                     error_str, text=e.response.text, code=e.response.status_code,

@@ -118,7 +118,7 @@ def get_cli(args):
     fcn_args = args.pop('fcn_args')
 
     # fcn settings that override client level args
-    for attr in ('verbose', 'debug'):
+    for attr in ('verbosity', 'debug'):
         val = fcn_args.pop(attr, None)
         if val:
             args[attr] = val
@@ -134,7 +134,7 @@ def _aliases(options, out, err):
     aliases = Aliases(raw=True)
     section = options.connection if options.connection else 'DEFAULT'
     for name, value in aliases.items(section):
-        if options.verbose:
+        if options.verbosity > 0:
             out.write(f'{name}: {value}')
         else:
             out.write(name)
@@ -150,7 +150,7 @@ def _connections(options, out, err):
         x for x in config.sections()
         if config[x]['service'].startswith(service))
     for connection in sorted(connections):
-        if options.verbose:
+        if options.verbosity > 0:
             out.write(f'[{connection}]')
             for (name, value) in config.items(connection):
                 out.write(f'  {name}: {value}')

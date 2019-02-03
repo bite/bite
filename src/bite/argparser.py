@@ -376,7 +376,7 @@ class ArgumentParser(arghparse.ArgumentParser):
             fcn_args['fcn' ] = fcn_args['prog'].split(' ', 1)[1].replace(' ', '_')
 
         # client settings that override unset service level args
-        for attr in ('verbose', 'debug'):
+        for attr in ('verbosity', 'debug'):
             if not getattr(service, attr):
                 setattr(service, attr, fcn_args.get(attr))
 
@@ -395,8 +395,8 @@ class Tool(tool.Tool):
         if isinstance(e, BiteError):
             if self.parser.debug:
                 raise e
-            elif self.parser.verbose >= 0:
-                msg = e.message if self.parser.verbose else str(e)
+            elif self.parser.verbosity >= 0:
+                msg = e.message if self.parser.verbosity else str(e)
                 self.parser.error(msg)
             return 1
         else:

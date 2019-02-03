@@ -209,7 +209,7 @@ class Bugzilla(Cli):
 
         for field in data:
             print(f"{field['display_name']} ({field['name']})")
-            if self.verbose or fields and len(fields) == 1:
+            if self.verbosity > 0 or (fields and len(fields) == 1):
                 for value in field.get('values', []):
                     if value.get('name', False):
                         print(f"  {value['name']}")
@@ -315,7 +315,7 @@ class Bugzilla5_0(Bugzilla):
     def apikeys_list(self, *args, **kw):
         # fallback to listing available apikeys
         keys = [x for x in self.service.apikeys]
-        if self.verbose and keys:
+        if self.verbosity > 0 and keys:
             print('{:<41} {:<16} {:<26} {:<8}'.format(
                 'API key', 'Description', 'Last used', 'Revoked'))
             print('-' * const.COLUMNS)
@@ -350,7 +350,7 @@ class Bugzilla5_0(Bugzilla):
                 launch_browser(url)
         else:
             # fallback to listing available saved searches
-            if self.verbose:
+            if self.verbosity > 0:
                 pp = pprint.PrettyPrinter(indent=4)
                 for k, v in self.service.saved_searches.items():
                     print(f'Name: {k}')
