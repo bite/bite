@@ -154,14 +154,15 @@ class Service(object):
 
     def login(self, *, user, password, **kw):
         """Authenticate a session."""
-        if self.auth.path:
-            self.auth.read()
-            return
-        elif user is None or password is None:
-            raise BiteError('both user and password parameters must be specified')
+        try:
+            return self.auth.read()
+        except FileNotFoundError:
+            if user is None or password is None:
+                raise BiteError('both user and password parameters must be specified')
 
         token = self._get_auth_token(user, password, **kw)
         self.auth.update(token)
+        return token
 
     def _get_auth_token(self, user=None, password=None, **kw):
         """Get an authentication token from the service."""

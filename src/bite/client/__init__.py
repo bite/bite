@@ -145,11 +145,10 @@ class Cli(Client):
             return
 
         if not self.service.auth:
+            # fallback to manual user/pass login
             user, password = self.service.user, self.service.password
-            if not self.service.auth.path:
-                # fallback to manual user/pass login
-                while not all((user, password)):
-                    user, password = self.get_user_pass()
+            while not all((user, password)):
+                user, password = self.get_user_pass()
             self.service.login(user=user, password=password)
 
     @dry_run

@@ -174,25 +174,29 @@ class Auth(object):
                 raise BiteError(f'failed writing auth token: {self.path!r}: {e.strerror}')
 
     def read(self):
-        if self.path is not None and os.path.exists(self.path):
-            if self.path.endswith('.gpg'):
-                try:
-                    with open(self.path, 'rb') as f:
-                        try:
-                            with gpg.Context() as c:
-                                plaintext, _result, _verify_result = c.decrypt(f)
-                        except gpg.errors.GpgError as e:
-                            raise BiteError(f'failed decrypting auth token: {self.path!r}')
-                    token = plaintext.decode().strip()
-                except IOError as e:
-                    raise BiteError(f'failed reading auth token: {self.path!r}: {e}')
-            else:
-                try:
-                    with open(self.path, 'r') as f:
-                        token = f.read().strip()
-                except IOError as e:
-                    raise BiteError(f'failed reading auth token: {self.path!r}: {e}')
-            self.token = token
+        if self.path.endswith('.gpg'):
+            try:
+                with open(self.path, 'rb') as f:
+                    try:
+                        with gpg.Context() as c:
+                            plaintext, _result, _verify_result = c.decrypt(f)
+                    except gpg.errors.GpgError as e:
+                        raise BiteError(f'failed decrypting auth token: {self.path!r}')
+                token = plaintext.decode().strip()
+            except FileNotFoundError:
+                raise
+            except IOError as e:
+                raise BiteError(f'failed reading auth token: {self.path!r}: {e}')
+        else:
+            try:
+                with open(self.path, 'r') as f:
+                    token = f.read().strip()
+            except FileNotFoundError:
+                raise
+            except IOError as e:
+                raise BiteError(f'failed reading auth token: {self.path!r}: {e}')
+        self.token = token
+        return token
 
     def update(self, token):
         self.token = token
