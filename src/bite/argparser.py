@@ -277,7 +277,7 @@ class ArgumentParser(arghparse.ArgumentParser):
 
     def parse_args(self, args=None, namespace=None):
         # pull config and service settings from args if they exist
-        initial_args, unparsed_args = self.parse_optionals(args, namespace)
+        initial_args, unparsed_args = self.parse_known_optionals(args, namespace)
         config_file = initial_args.pop('config_file')
 
         # load alias files
@@ -288,7 +288,7 @@ class ArgumentParser(arghparse.ArgumentParser):
             alias_unparsed_args = aliases.substitute(unparsed_args)
             # re-parse optionals to catch any added by aliases
             if unparsed_args != alias_unparsed_args:
-                initial_args, unparsed_args = self.parse_optionals(alias_unparsed_args, initial_args)
+                initial_args, unparsed_args = self.parse_known_optionals(alias_unparsed_args, initial_args)
 
         # load config files
         config = Config(
@@ -329,7 +329,7 @@ class ArgumentParser(arghparse.ArgumentParser):
             # add service specific main opts to the argparser
             service_opts.add_main_opts(service=service)
             # re-parse for any top level service-specific options that were added
-            initial_args, unparsed_args = self.parse_optionals(unparsed_args, initial_args)
+            initial_args, unparsed_args = self.parse_known_optionals(unparsed_args, initial_args)
         except ArgumentError as e:
             # skip multiple main_opts() run issues during doc generation
             if 'conflicting option string' not in str(e):
@@ -346,7 +346,8 @@ class ArgumentParser(arghparse.ArgumentParser):
                 debug=initial_args.debug)
             # re-parse optionals to catch any added by aliases
             if unparsed_args != alias_unparsed_args:
-                initial_args, unparsed_args = self.parse_optionals(alias_unparsed_args, initial_args)
+                initial_args, unparsed_args = self.parse_known_optionals(
+                    alias_unparsed_args, initial_args)
 
         # add selected subcommand options
         try:
