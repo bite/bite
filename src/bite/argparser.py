@@ -6,16 +6,14 @@ import shlex
 import sys
 
 from snakeoil.cli import arghparse, tool
-from snakeoil.demandload import demandload
 
+from . import const
 from .alias import Aliases
 from .base import get_service_cls
 from .config import Config
 from .exceptions import BiteError
 from .objects import TimeInterval, IntRange
 from .utils import block_edit, confirm
-
-demandload('bite:const')
 
 
 class ArgType(object):

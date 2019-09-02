@@ -2,11 +2,8 @@ from copy import deepcopy
 from operator import attrgetter
 from urllib.parse import urlencode
 
-from snakeoil.demandload import demandload
-
 from . import Cli
-
-demandload('bite:const')
+from .. import const
 
 
 class Monorail(Cli):

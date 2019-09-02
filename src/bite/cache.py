@@ -1,18 +1,13 @@
 import configparser
 from enum import Enum
+import gpg
 from http.cookiejar import LWPCookieJar
+from io import StringIO
 import os
 import stat
 
-from snakeoil.demandload import demandload
-
+from . import const
 from .exceptions import BiteError
-
-demandload(
-    'bite:const',
-    'gpg',
-    'io:StringIO',
-)
 
 
 def csv2tuple(s):

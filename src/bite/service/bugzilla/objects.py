@@ -4,14 +4,11 @@ import re
 import string
 
 from dateutil.parser import parse as dateparse
-from snakeoil.demandload import demandload
 from snakeoil.osutils import sizeof_fmt
 
-from ... import utc
+from ... import utc, const
 from ...objects import Item, Change, Comment, Attachment, decompress
 from ...utils import nonstring_iterable
-
-demandload('bite:const')
 
 
 def parsetime(time):

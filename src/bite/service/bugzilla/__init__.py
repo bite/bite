@@ -1,9 +1,9 @@
 from urllib.parse import urlencode
 import re
+import textwrap
 
 from dateutil.parser import parse as parsetime
 import lxml.html
-from snakeoil.demandload import demandload
 from snakeoil.klass import steal_docs, jit_attr_none
 from snakeoil.mappings import ImmutableDict
 from snakeoil.sequences import namedtuple
@@ -12,8 +12,6 @@ from .objects import BugzillaBug, BugzillaAttachment
 from .. import Service
 from ...cache import Cache, csv2tuple
 from ...exceptions import RequestError, AuthError
-
-demandload('textwrap')
 
 
 class BugzillaError(RequestError):

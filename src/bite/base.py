@@ -1,14 +1,9 @@
 from importlib import import_module
 import re
 
-from snakeoil.demandload import demandload
-
+from . import const, service
 from .exceptions import BiteError
-
-demandload(
-    'bite:const,service',
-    'bite.config:Config',
-)
+from .config import Config
 
 
 def get_service_cls(service_name, options, fallbacks=()):

@@ -1,8 +1,5 @@
-from snakeoil.demandload import demandload
-
 from . import Cli
-
-demandload('bite:const')
+from .. import const
 
 
 class Roundup(Cli):

@@ -13,14 +13,11 @@ try:
 except ImportError:
     import chardet
 from snakeoil import klass
-from snakeoil.demandload import demandload
 from snakeoil.osutils import sizeof_fmt
 
-from . import magic
+from . import magic, const
 from .exceptions import BiteError
 from .utc import utc, parse_date
-
-demandload('bite:const')
 
 
 def decompress(fcn):

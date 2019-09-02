@@ -9,12 +9,9 @@ import shlex
 import subprocess
 import sys
 
-from snakeoil.demandload import demandload
-
+from . import const
 from .base import service_classes
 from .exceptions import BiteError
-
-demandload('bite:const')
 
 
 class ConfigInterpolationError(InterpolationError):

@@ -1,9 +1,7 @@
-from snakeoil.demandload import demandload
 from snakeoil.strings import pluralism
 
 from . import Cli, dry_run, login_retry
-
-demandload('bite:const')
+from .. import const
 
 
 class Github(Cli):

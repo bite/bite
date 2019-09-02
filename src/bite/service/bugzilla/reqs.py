@@ -2,7 +2,6 @@ import base64
 import os
 from urllib.parse import parse_qs
 
-from snakeoil.demandload import demandload
 from snakeoil.klass import aliased, alias
 
 from . import Bugzilla
@@ -11,10 +10,9 @@ from .._reqs import (
     OffsetPagedRequest, Request, ParseRequest, req_cmd,
     BaseGetRequest, BaseCommentsRequest, BaseChangesRequest,
 )
+from ... import const, magic
 from ...exceptions import BiteError
 from ...objects import TimeInterval
-
-demandload('bite:const,magic')
 
 
 @req_cmd(Bugzilla, cmd='get')

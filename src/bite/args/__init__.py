@@ -3,8 +3,8 @@ from collections import OrderedDict
 from functools import partial
 
 from snakeoil.cli import arghparse
-from snakeoil.demandload import demandload
 
+from .. import const
 from ..exceptions import BiteError
 from ..argparser import (
     ParseStdin, Comment, IntList, IDList, StringList, IDs, ID_Maps, ID_Str_Maps,
@@ -12,8 +12,6 @@ from ..argparser import (
 )
 from ..objects import DateTime, IntRange
 from ..utils import str2bool, block_edit, confirm
-
-demandload('bite:const')
 
 
 class SubcmdArgumentParser(arghparse.SubcmdAbbrevArgumentParser, arghparse.ArgumentParser):

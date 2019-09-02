@@ -2,12 +2,10 @@ import configparser
 import os
 
 from snakeoil import klass
-from snakeoil.demandload import demandload
 from snakeoil.mappings import ImmutableDict
 
+from . import const
 from .exceptions import BiteError
-
-demandload('bite:const')
 
 
 class Config(object):

@@ -9,13 +9,12 @@ import tarfile
 import textwrap
 
 from snakeoil.strings import pluralism
-from snakeoil.demandload import demandload
 
 from ..exceptions import AuthError, BiteError
 from ..objects import TarAttachment
 from ..utils import confirm, get_input, launch_browser
 
-demandload('bite:const')
+from .. import const
 
 
 def login_retry(func):

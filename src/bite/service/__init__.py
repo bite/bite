@@ -3,9 +3,10 @@ from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from multiprocessing import cpu_count
 from urllib.parse import urlparse, urlunparse
+import warnings
+import urllib3
 
 import requests
-from snakeoil.demandload import demandload
 from snakeoil.sequences import iflatten_instance
 
 from ._reqs import Request, ExtractData
@@ -13,11 +14,6 @@ from .. import __title__, __version__
 from ..cache import Cache, Auth, Cookies
 from ..exceptions import RequestError, AuthError, BiteError
 from ..objects import Item, Attachment
-
-demandload(
-    'warnings',
-    'urllib3',
-)
 
 
 class Session(requests.Session):

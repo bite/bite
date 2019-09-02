@@ -9,8 +9,6 @@ import concurrent.futures
 from functools import partial
 import os
 
-from snakeoil.demandload import demandload
-
 from ..argparser import ArgumentParser, parse_file, override_attr
 from ..base import get_service_cls
 from ..alias import Aliases
@@ -18,7 +16,7 @@ from ..client import Cli
 from ..config import Config
 from ..exceptions import RequestError
 
-demandload('bite:const')
+from .. import const
 
 
 argparser = ArgumentParser(

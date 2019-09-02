@@ -4,10 +4,10 @@ import lxml.html
 from urllib.parse import urlparse, parse_qs
 
 from dateutil.parser import parse as parsetime
-from snakeoil.demandload import demandload
 from snakeoil.klass import aliased, alias
+from snakeoil.strings import pluralism
 
-from . import TracTicket, TracComment, TracAttachment, TracEvent, BaseSearchRequest
+from . import TracTicket, TracComment, TracAttachment, TracEvent, BaseSearchRequest, jsonrpc
 from .. import Service
 from .._csv import CSVRequest
 from .._html import HTML
@@ -19,11 +19,6 @@ from .._xml import XMLRequest
 from ...cache import Cache
 from ...exceptions import BiteError, ParsingError
 from ...utc import utc
-
-demandload(
-    'snakeoil.strings:pluralism',
-    'bite.service.trac:jsonrpc',
-)
 
 
 class TracScraperCache(Cache):

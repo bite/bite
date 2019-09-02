@@ -1,18 +1,15 @@
 from functools import partial
 from importlib import import_module
+import inspect
 import os
+import pkgutil
 from shutil import get_terminal_size
 import sys
 
-from snakeoil import mappings
-from snakeoil.demandload import demandload
+from snakeoil import demandimport, mappings
 
 from . import __title__
 
-demandload(
-    'inspect',
-    'pkgutil',
-)
 
 _reporoot = os.path.realpath(__file__).rsplit(os.path.sep, 3)[0]
 # TODO: handle running from build dir inside repo in a better fashion
@@ -85,7 +82,8 @@ def _GET_VALS(attr, func):
     try:
         result = getattr(_defaults, attr)
     except AttributeError:
-        result = func()
+        with demandimport.disabled():
+            result = func()
     return result
 
 

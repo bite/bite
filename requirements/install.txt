@@ -1,4 +1,4 @@
-snakeoil>=0.8.0
+snakeoil~=0.8.2
 requests>=2
 multidict
 chardet
