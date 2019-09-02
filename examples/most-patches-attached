@@ -8,12 +8,12 @@ import datetime
 
 from dateutil.relativedelta import relativedelta
 
-from bite.base import get_service
+import bite
 
 today = datetime.datetime.utcnow()
 previous = today + relativedelta(weeks=-1)
 
-bugz = get_service('gentoo')
+bugz = bite.get_service('gentoo')
 params = {}
 
 params['status'] = ['all']
