@@ -76,6 +76,7 @@ def write_lookup_config(python_base, install_prefix):
 
             f.close()
             byte_compile([path], prefix=python_base)
+            byte_compile([path], optimize=1, prefix=python_base)
             byte_compile([path], optimize=2, prefix=python_base)
 
 
@@ -113,10 +114,11 @@ setup(
         pkgdist_cmds,
         install=install,
         test=test),
-    classifiers=(
+    classifiers=[
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
         'Programming Language :: Python :: 3.6',
-    ),
+        'Programming Language :: Python :: 3.7',
+    ],
     **pkgdist_setup
 )
