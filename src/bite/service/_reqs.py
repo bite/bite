@@ -224,12 +224,15 @@ class _BasePagedRequest(Request):
 
     def send(self):
         """Send a request object to the related service."""
-        while True:
-            data = self.service.send(self)
-            for x in data:
-                self._seen += 1
-                yield x
-            self.next_page()
+        try:
+            while True:
+                data = self.service.send(self)
+                for x in data:
+                    self._seen += 1
+                    yield x
+                self.next_page()
+        except StopIteration:
+            return
 
     def next_page(self):
         """Modify a request in order to grab the next page of results."""
