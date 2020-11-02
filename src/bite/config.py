@@ -11,13 +11,13 @@ from .exceptions import BiteError
 class Config(object):
 
     def __init__(self, path=None, config=None,
-                 connection=klass._sentinel, base=klass._sentinel, service=klass._sentinel):
+                 connection=klass.sentinel, base=klass.sentinel, service=klass.sentinel):
         self._config = config if config is not None else configparser.ConfigParser()
-        self.connection = None if connection is klass._sentinel else connection
+        self.connection = None if connection is klass.sentinel else connection
 
-        if connection is not klass._sentinel:
+        if connection is not klass.sentinel:
             # load system/user configs
-            if base is not klass._sentinel and service is not klass._sentinel:
+            if base is not klass.sentinel and service is not klass.sentinel:
                 system_config = os.path.join(const.CONFIG_PATH, 'bite.conf')
                 user_config = os.path.join(const.USER_CONFIG_PATH, 'bite.conf')
 
@@ -56,10 +56,10 @@ class Config(object):
             return ImmutableDict(self._config.items(self.connection))
         return ImmutableDict(self._config.defaults())
 
-    def load(self, *, paths=(), connection=klass._sentinel, force=True):
+    def load(self, *, paths=(), connection=klass.sentinel, force=True):
         if isinstance(paths, str):
             paths = (paths,)
-        if connection is not klass._sentinel:
+        if connection is not klass.sentinel:
             paths += tuple(self.service_files(connection=connection))
 
         for path in paths:
