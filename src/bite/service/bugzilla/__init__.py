@@ -1,12 +1,12 @@
-from urllib.parse import urlencode
 import re
 import textwrap
+from collections import namedtuple
+from urllib.parse import urlencode
 
 from dateutil.parser import parse as parsetime
 import lxml.html
 from snakeoil.klass import steal_docs, jit_attr_none
 from snakeoil.mappings import ImmutableDict
-from snakeoil.sequences import namedtuple
 
 from .objects import BugzillaBug, BugzillaAttachment
 from .. import Service
